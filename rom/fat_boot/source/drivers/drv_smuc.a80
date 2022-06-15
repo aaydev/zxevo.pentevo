@@ -1,5 +1,5 @@
 
-;LAST UPDATE: 12.04.2018 savelij
+; LAST UPDATE: 15.06.2022 savelij
 
 ;==================óíÖçàÖ ëé ëåìä ÇàçíÄ=======================
 RD_HDDS		PUSH BC
@@ -15,7 +15,7 @@ HDSRDM2		CALL SINPRT
 		JR NZ,HDSRDM2
 		EX AF,AF'
 HDSRDM1		PUSH AF
-		LD DE,PRTS_RW
+		LD DE,PS_PORT_RW
 		LD A,0X40
 RDCSSC1		EX AF,AF'
 		LD B,D

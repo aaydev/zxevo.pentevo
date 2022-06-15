@@ -1,5 +1,5 @@
 
-;LAST UPDATE: 04.03.2021 savelij
+; LAST UPDATE: 25.05.2022 savelij
 
 ; нумерация контроллеров HDD
  INIT_VAR
@@ -21,7 +21,7 @@ PV_1F1		EQU 0xA7			; порт ошибок/свойств
 PV_1F0		EQU 0xA3			; порт данных
 PV_3F6		EQU 0xE3			; регистр состояния/управления
 PV_HI		EQU 0xA3			; старшие 8 бит
-PRTV_RW		EQU PV_1F0*256+PV_HI		; порты чтения/записи одним словом
+PRTV_RW		EQU PV_1F0 << 8 + PV_HI		; порты чтения/записи одним словом
 
 ; порты NEMO
 PN_1F7		EQU 0xF0			; регистр состояния/регистр команд
@@ -34,7 +34,7 @@ PN_1F1		EQU 0x30			; порт ошибок/свойств
 PN_1F0		EQU 0x10			; порт данных
 PN_3F6		EQU 0xC8			; регистр состояния/управления
 PN_HI		EQU 0x11			; старшие 8 бит
-PRTN_RW		EQU PN_1F0*256+PN_HI		; порты чтения/записи одним словом
+PRTN_RW		EQU PN_1F0 << 8 + PN_HI		; порты чтения/записи одним словом
 
 ; порты PROFI
 PP_1F7W		EQU 0x07EB			; W регистр команд
@@ -58,6 +58,15 @@ PP_HIW		EQU 0xFFCB			; W порт данных старшие 8 бит
 PP_HIR		EQU 0xFFEB			; R порт данных старшие 8 бит
 
 ; порты SMUC
+PS_1F7_H	EQU 0xFF			; регистр состояния/регистр команд
+PS_1F6_H	EQU 0xFE			; CHS-номер головы и устройства/LBA адрес 24-27
+PS_1F5_H	EQU 0xFD			; CHS-цилиндр 8-15/LBA адрес 16-23
+PS_1F4_H	EQU 0xFC			; CHS-цилиндр 0-7/LBA адрес 8-15
+PS_1F3_H	EQU 0xFB			; CHS-номер сектора/LBA адрес 0-7
+PS_1F2_H	EQU 0xFA			; счетчик секторов
+PS_1F1_H	EQU 0xF9			; порт ошибок/свойств
+PS_1F0_H	EQU 0xF8			; порт данных
+PS_HI_H		EQU 0xD8			; старшие 8 бит
 PS_1F7		EQU 0xFFBE			; регистр состояния/регистр команд
 PS_1F6		EQU 0xFEBE			; CHS-номер головы и устройства/LBA адрес 24-27
 PS_1F5		EQU 0xFDBE			; CHS-цилиндр 8-15/LBA адрес 16-23
@@ -66,11 +75,12 @@ PS_1F3		EQU 0xFBBE			; CHS-номер сектора/LBA адрес 0-7
 PS_1F2		EQU 0xFABE			; счетчик секторов
 PS_1F1		EQU 0xF9BE			; порт ошибок/свойств
 PS_1F0		EQU 0xF8BE			; порт данных
-;PS3F6						; регистр состояния/управления
 PS_HI		EQU 0xD8BE			; старшие 8 бит
-PRTS_RW		EQU HIGH (PS_1F0)<<8+HIGH (PS_HI)	;порты чтения/записи одним словом
-;SMUCSYS		EQU 0xFFBA			;системный порт SMUC
-;SMUCVER		EQU 0x5FBA			;порт версии SMUC
+PS_PORT_RW	EQU PS_1F0_H << 8 + PS_HI_H	; порты чтения / записи одним словом
+PS_LOW_HDDPORT	EQU 0XBE			; младший байт адреса SMUC IDE
+;PS3F6						; регистр состояния/управления
+;SMUCSYS		EQU 0xFFBA		; системный порт SMUC
+;SMUCVER		EQU 0x5FBA		; порт версии SMUC
 
 ; порты ATM TURBO 2+
 PA_1F7		EQU 0xFEEF			; регистр команд
