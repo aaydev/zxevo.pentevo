@@ -1,5 +1,5 @@
 
-; LAST UPDATE: 15.06.2022 savelij
+; LAST UPDATE: 19.07.2022 savelij
 
 COM_FAT		EX AF,AF'
 		CALL P5_READ_BYTE
@@ -187,7 +187,7 @@ RDFAT03		PUSH DE				;ROOTDIRSECTORS
 
 		LD A,(FATType)
 		CP 0XFF
-		JR NZ,RDFAT04
+		JR NZ,.L4
 ; определение типа FAT при отсуствии MBR
 		LD DE,(FATSize - 1)
 		LD BC,(FATSize + 1)
@@ -202,7 +202,7 @@ RDFAT03		PUSH DE				;ROOTDIRSECTORS
 		PUSH HL				; сохранили
 		CALL HLBCDEM			; количество кластеров - (количество секторов * 0x80)
 		LD A,E
-		AND 0X7F			; количество менее 128 кластеров в секторе для FAT32
+		AND 0x80			; количество менее 128 кластеров в секторе для FAT32
 		OR D
 		OR C
 		OR B
@@ -210,37 +210,39 @@ RDFAT03		PUSH DE				;ROOTDIRSECTORS
 		POP HL
 		POP DE
 		POP BC
-		JR Z,RDFAT04			; FAT32 если флаг Z=0
+		JR Z,.L2			; FAT32 если флаг Z=0
 		CALL HLBCDEM			; количество кластеров - (количество секторов * 0x100)
 		LD A,D
 		OR C
 		OR B
 		LD A,1				; FAT16
-		JR Z,RDFAT04			; FAT16 если флаг Z=0
+		JR Z,.L2			; FAT16 если флаг Z=0
 		XOR A				; иначе FAT12
-		LD (FATType),A
+.L2		LD (FATType),A
 
 ; для FAT12/16 ROOT кластер = 0
 ; для FAT32 берем по смещению +44
 ; На выходе: BCDE - СЕКТОР ROOTDIR КЛАСТЕР
-RDFAT04		XOR A
+.L4		XOR A
 		LD (TEK_LEV),A
 		LD (BUF_PATH),A
 		CALL INIT_PATH
 		LD A,(FATType)
+		PUSH AF
 		AND A
 		LD DE,0
 		LD B,D
 		LD C,E
-		JR Z,.L1			;FAT12-NONE
+		JR Z,.L3			;FAT12-NONE
 		DEC A
-		JR Z,.L1			;FAT16
+		JR Z,.L3			;FAT16
 		LD DE,(BUF_512 + _BPB_RootClus)
 		LD BC,(BUF_512 + _BPB_RootClus + 2)	;FAT32
-.L1		LD (CurrentDIRCluster),DE
+.L3		LD (CurrentDIRCluster),DE
 		LD (CurrentDIRCluster + 2),BC	; номер текущего кластера
 		LD (RootDIRCluster),DE
 		LD (RootDIRCluster + 2),BC	; номер корневого кластера
+		POP AF
 		RET
 
 ; проверка 0 сектора раздела
@@ -262,9 +264,6 @@ VALID_BOOTSEC	LD HL,(BUF_512 + _BPB_BytsPerSec)
 		JR NC,VALID_BOOTSEC1
 		XOR A
 		RET
-
-;2A72200-2A54200=1E000	120945-120611
-;2A90200
 
 VALID_BOOTSEC1	OR IXH
 		RET

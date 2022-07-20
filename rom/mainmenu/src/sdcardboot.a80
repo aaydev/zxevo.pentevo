@@ -1,22 +1,22 @@
 
-;LAST UPDATE: 01.03.2020 savelij
+; LAST UPDATE: 19.07.2020 savelij
 
-;ЗАГРУЗЧИК С SD КАРТЫ
+; загрузчик с SD карты
 SDCARDBOOT	DI
 		LD HL,ERS_FLAGS
-		SET B_RUN_FAT,(HL)		;РАБОТАТЬ БУДЕМ С FAT
-		RST8 _COM_DEV,_KOL_VOL
+		SET B_RUN_FAT,(HL)		; работать будем с FAT
+	RST8 _COM_DEV,_KOL_VOL
 		LD A,E
 		AND A
 		JP Z,_STUPID
-		LD HL,ADR_CAT-0X100		;АДРЕС КУДА ПОЛОЖИТЬ ТАБЛИЦУ НАЙДЕННЫХ РАЗДЕЛОВ
+		LD HL,ADR_CAT-0X100		; адрес куда положить таблицу найденных разделов
 		PUSH HL
-		RST8 _COM_DEV,_GET_FNDVOLUME	;ПОЛУЧЕНИЕ ТАБЛИЦЫ НАЙДЕННЫХ РАЗДЕЛОВ
+	RST8 _COM_DEV,_GET_FNDVOLUME		; получение таблицы найденных разделов
 		PUSH DE
 		LD A,E
 		DEC A
-		RST8 _COM_DEV,_SET_VOL
-		RST8 _COM_FAT,_ROOT_DIR
+	RST8 _COM_DEV,_SET_VOL
+	RST8 _COM_FAT,_ROOT_DIR
 		POP DE
 		DEC E
 		LD L,E
@@ -30,20 +30,18 @@ SDCARDBOOT	DI
 		CP _SD_SDZ
 		JP NZ,RESTART
 		LD HL,BOOTNAME
-		RST 8
-		DB _COM_FAT
-		DB _FIND_NAME
+	RST8 _COM_FAT,_FIND_NAME
 		JP C,_STUPID
-		LD DE,0X0B			;НУЖЕН БАЙТ ПО СМЕЩЕНИЮ
-		ADD HL,DE			;ДЛЯ ОПРЕДЕЛЕНИЯ ФАЙЛ ИЛИ ДИРЕКТОРИЯ
-		LD A,(HL)			;ИЗ ЭТОГО БАЙТА НУЖЕН ОДИН БИТ
+		LD DE,0X0B			; нужен байт по смещению
+		ADD HL,DE			; для определения файл или директория
+		LD A,(HL)			; из этого байта нужен один бит
 		SBC HL,DE
-		AND 0X10			;ПРОВЕРИЛИ
-		JP NZ,RESTART			;ЭТО ДИРЕКТОРИЯ
+		AND 0X10			; проверили
+		JP NZ,RESTART			; это директория
 		LD A,7
-		RST8 _COM_FAT,_POS_FILES
+	RST8 _COM_FAT,_POS_FILES
 		LD HL,BUF_FILEITEM
-		RST8 _COM_FAT,_READ_DIR		;ПОЛУЧИЛИ ОПИСАТЕЛЬ ПО УСТАНОВЛЕННОМУ НОМЕРУ
-		JP GO_RUN_HOB			;ЕСЛИ ЭТО ФАЙЛ, ТО ЗАПУСКАЕМ КОДОВЫЙ БЛОК
+	RST8 _COM_FAT,_READ_DIR			; получили описатель по установленному номеру
+		JP GO_RUN_HOB			; если это файл, то запускаем кодовый блок
 
 BOOTNAME	DZ "SD_BOOT.$C"
