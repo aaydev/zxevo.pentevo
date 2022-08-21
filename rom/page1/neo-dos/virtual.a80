@@ -1,5 +1,5 @@
 
-; LAST UPDATE: 07.01.2022 savelij
+; LAST UPDATE: 20.08.2022 savelij
 
 		TITLE "virtual.a80"
 
@@ -150,6 +150,8 @@ WRITE_WCPU12	LD BC,(BB_CPU1)
 		LD C,LOW (WIN_A0)
 		OUT (C),A
 		RET
+
+		DUPL 0x0901 - $,0xFF
 
 ; чтение конфигурации окон проецирования 1,2
 READ_WCPU12	LD BC,RD_RAMNROM

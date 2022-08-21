@@ -1,5 +1,5 @@
 
-; LAST UPDATE: 07.01.2022 savelij
+; LAST UPDATE: 20.08.2022 savelij
 
 		TITLE "extend.a80"
 
@@ -62,6 +62,8 @@ EDOS2RST8	LD A,ROM_BAS48 | 0X80
 		POP AF
 		EX (SP),HL
 		RET
+
+		DUPL 0x0A01 - $,0xFF
 
 ; ABCDEFGHIJKLMNOPQRSTUVWXYZ
 EXTEND_COM	
@@ -178,6 +180,8 @@ PRT_NUM_VIRT	LD HL,TXT4VIRTDRV
 		LD A,0X0D
 		RST 0X10
 		RET
+
+		DUPL 0x0B01 - $,0xFF
 
 ; установка виртуального диска
 SET_VIRT	LD A,(DE)
