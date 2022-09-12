@@ -338,12 +338,12 @@ READ_REG_FUNC(read_PROTOR){
 
 READ_REG_FUNC(read_TX_FSR32){
 	if (z == 0) return 0;
-	return ((sizeof(s->tx) - (u_int)s->tx_ptr + (u_int)s->tx) & 0x00010000) >> 16;
+	return ((sizeof(s->tx) - ((u_int)(s->tx_ptr - s->tx))) & 0x00010000) >> 16;
 }
 
 READ_REG_FUNC(read_TX_FSR10){
-	if (z == 0) return ((sizeof(s->tx) - (u_int)s->tx_ptr + (u_int)s->tx) & 0x0000ff00) >> 8;
-	return (sizeof(s->tx) - (u_int)s->tx_ptr + (u_int)s->tx) & 0x000000fF;
+	if (z == 0) return ((sizeof(s->tx) - ((u_int)(s->tx_ptr - s->tx))) & 0x0000ff00) >> 8;
+	return (sizeof(s->tx) - ((u_int)(s->tx_ptr - s->tx))) & 0x000000fF;
 }
 
 READ_REG_FUNC(read_RX_RSR32){
