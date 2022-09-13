@@ -1,73 +1,60 @@
-.SUFFIXES : .dep .cpp
+#.SUFFIXES : .dep .cpp .res .o .rc
+#!ifdef USE_CLANG
+#CXX_COMPILER=clang++
+#CXX_LTO=
+#!else
+CXX_COMPILER=i686-w64-mingw32-g++
+CXX_LTO=-flto
+#CXX_LTO=
+#!endif
 
-!ifdef X64
-OUT_DIR=x64
-LIBPATH=lib64
-LFLAGS=-subsystem:console,5.02
-!else
-OUT_DIR=x32
-LIBPATH=lib32
-LFLAGS=-subsystem:console,5.01
-!endif
-
-LFLAGS=$(LFLAGS) -osversion:5.0 -pdbaltpath:%_PDB%
-
-!ifdef USE_CL
-!ifndef DEBUG
-LFLAGS=-LTCG
-!endif #DEBUG
-
-CXX=cl -c
-ICL_FLAGS_COMMON=-Zc:externConstexpr
-ICL_FLAGS_RELEASE=
-ICL_IA32=
-CL_FLAGS_RELEASE=-Ox -GL
-LINK=link
-LFLAGS=$(LFLAGS) #-pdbpath:none
-!else #USE_CL
-CXX=icl -c
-ICL_FLAGS_COMMON=-Wcheck -Qms0 -Qstd:c++17 -debug:inline-debug-info -Qopt-report-embed- -notraceback
-ICL_FLAGS_RELEASE=-O3 -Qip -Qipo
-ICL_IA32=-arch:IA32
-CL_FLAGS_RELEASE=
-LINK=xilink
-LFLAGS=$(LFLAGS) -qipo #-pdbpath:none
-!endif #USE_CL
+CXX=$(CXX_COMPILER) -c
+LINK=$(CXX_COMPILER)
+LIB=ar
+RC=i686-w64-mingw32-windres
 
 #-RTCsu -Qtrapuv
+#-DD3DVECTOR_DEFINED
+CFLAGS_COMMON=-D_CRT_SECURE_NO_DEPRECATE -DUSE_SND_EXTERNAL_BUFFER -D_PREFIX_ -std=c++14 -Wno-attributes 
+# -Wall
 
-CFLAGS_COMMON=-nologo -W3 -EHa- -GR- -Zi -MP -Oi -Zc:threadSafeInit- $(ICL_FLAGS_COMMON) \
-         -D_CRT_SECURE_NO_DEPRECATE -DUSE_SND_EXTERNAL_BUFFER -D_PREFIX_ -D_USING_V110_SDK71_
+#!ifdef VGEMUL
+#CFLAGS_COMMON=$(CFLAGS_COMMON) -DVG_EMUL
+#!endif
 
-!ifdef VGEMUL
-CFLAGS_COMMON=$(CFLAGS_COMMON) -DVG_EMUL
-!endif
+#!ifdef SSE1
+#ARCH=-march=pentium3 -msse
+#CFLAGS_COMMON=$(CFLAGS_COMMON) $(ARCH)
+#!elseifdef SSE2
+#ARCH=-march=pentium4 -msse2
+#CFLAGS_COMMON=$(CFLAGS_COMMON) $(ARCH) -D_M_IX86_FP=2
+#!elseifdef NATIVE
+#ARCH=-march=native
+#CFLAGS_COMMON=$(CFLAGS_COMMON) $(ARCH)
+#!else
+ARCH=-march=pentium2 -mmmx
+CFLAGS_COMMON+=$(ARCH)
+#!endif
 
-!ifdef SSE1
-CFLAGS_COMMON=$(CFLAGS_COMMON) -QxK
-!elseifdef SSE2
-CFLAGS_COMMON=$(CFLAGS_COMMON) -arch:SSE2 -D_M_IX86_FP=2
-!elseifdef SSE42
-CFLAGS_COMMON=$(CFLAGS_COMMON) -QxSSE4.2 -D_M_IX86_FP=2
-!else
-CFLAGS_COMMON=$(CFLAGS_COMMON) $(ICL_IA32)
-!endif
+#!ifdef DEBUG
+#CFLAGS_DEBUG=-g -O0 -DDEBUG -D_DEBUG
+#LFLAGS_DEBUG=-g
+#!else
+CFLAGS_RELEASE=-O3 -static $(CXX_LTO) -fomit-frame-pointer
+LFLAGS_DEBUG=-O3 $(CXX_LTO) -static $(ARCH)
+#!endif
 
-!ifdef DEBUG
-CFLAGS_DEBUG=-Od -MTd -DDEBUG -D_DEBUG
-!else
-CFLAGS_RELEASE=-DNDEBUG -MT $(CL_FLAGS_RELEASE) $(ICL_FLAGS_RELEASE)
-!endif
+CXXFLAGS=$(CFLAGS_COMMON) $(CFLAGS_DEBUG) $(CFLAGS_RELEASE)
+CFLAGS=$(CFLAGS_COMMON) $(CFLAGS_DEBUG) $(CFLAGS_RELEASE)
 
-CXXFLAGS=$(CFLAGS_COMMON) $(CFLAGS_DEBUG) $(CFLAGS_RELEASE) -Zc:forScope,wchar_t
-CFLAGS=$(CFLAGS_COMMON) $(CFLAGS_DEBUG) $(CFLAGS_RELEASE) -Zc:wchar_t
+LFLAGS=$(LFLAGS_DEBUG)
 
-LFLAGS=$(LFLAGS) -debug -fixed:no -release -libpath:$(LIBPATH)
+#LIBS=$(LIBS) sndrender/snd.a z80/z80.a
+#LIBS=sndrender/*.o z80/*.o
+LIBS2=-lws2_32 -lcomctl32 -lcomdlg32 -luser32 -lkernel32 -lgdi32 -lwinmm -ldxguid \
+  -lddraw -ldsound -ldinput -ldxerr9 -lsetupapi -lgcc -lstdc++ -liphlpapi
 
-RCFLAGS=-D_USING_V110_SDK71_
-
-LIBS=$(LIBS) sndrender/snd.lib z80/z80.lib
-
+# top-level sources
 SRCS=emul.cpp std.cpp atm.cpp cheat.cpp config.cpp dbgbpx.cpp dbgcmd.cpp dbglabls.cpp \
     dbgmem.cpp dbgoth.cpp dbgpaint.cpp dbgreg.cpp dbgrwdlg.cpp dbgtrace.cpp \
         debug.cpp draw.cpp drawnomc.cpp draw_384.cpp dx.cpp dxerr.cpp dxovr.cpp \
@@ -81,38 +68,71 @@ SRCS=emul.cpp std.cpp atm.cpp cheat.cpp config.cpp dbgbpx.cpp dbgcmd.cpp dbglabl
         input.cpp inputpc.cpp io.cpp keydefs.cpp leds.cpp mainloop.cpp \
         memory.cpp modem.cpp opendlg.cpp savesnd.cpp sdcard.cpp snapshot.cpp \
         snd_bass.cpp sound.cpp sshot_png.cpp tape.cpp util.cpp vars.cpp \
-        vs1001.cpp wd93cmd.cpp wd93crc.cpp fdd.cpp upd765.cpp wd93trk.cpp \
+        vs1001.cpp wd93cmd.cpp wd93crc.cpp wd93trk.cpp fdd.cpp upd765.cpp \
         wldr_fdi.cpp wldr_isd.cpp wldr_pro.cpp wldr_td0.cpp wldr_trd.cpp wldr_udi.cpp \
-        wldr_dsk.cpp wldr_ipf.cpp z80.cpp z80asm.cpp zc.cpp savevid.cpp \
-		zxevo.cpp dxr_pentatm7.cpp zxusbnet.cpp 
+        wldr_dsk.cpp wldr_ipf.cpp \
+        z80.cpp z80asm.cpp zc.cpp savevid.cpp zxevo.cpp dxr_pentatm7.cpp zxusbnet.cpp 
 
-OBJS=$(SRCS:.cpp=.obj)
+# sndrender sources
+SRCS+=sndrender/saa1099.cpp
+SRCS+=sndrender/sndbuffer.cpp
+SRCS+=sndrender/sndchip.cpp
+SRCS+=sndrender/sndcounter.cpp
+SRCS+=sndrender/sndrender.cpp
+SRCS+=sndrender/emul_2203.cpp
 
-all: $(OUT_DIR)/emul.exe
+# z80 sources
+SRCS+=z80/daa_tabs.cpp
+SRCS+=z80/op_cb.cpp
+SRCS+=z80/op_dd.cpp
+SRCS+=z80/op_ddcb.cpp
+SRCS+=z80/op_ed.cpp
+SRCS+=z80/op_fd.cpp
+SRCS+=z80/op_noprefix.cpp
+SRCS+=z80/tables.cpp
 
-dep: mk.dep
+OBJS=$(SRCS:.cpp=.o)
 
-mk.dep: $(SRCS)
-    $(CXX) -QMM $** >mk.dep
+EXE=x32/emul-i686-mingw-w64-gcc930.exe
 
-.c.obj::
-    $(CXX) $(CFLAGS) $<
 
-std.obj: std.cpp
-    $(CXX) $(CXXFLAGS) -Yc"std.h" std.cpp
 
-.cpp.obj::
-    $(CXX) $(CXXFLAGS) -Yu"std.h" $<
 
-.rc.res:
-    $(RC) $(RCFLAGS) $<
+all: std.h.gch settings.res $(EXE)
 
-$(OUT_DIR)/emul.exe: $(OBJS) $(LIBS) settings.res
-    $(LINK) $(LFLAGS) -out:$@ -pdb:$*.pdb -map:$*.map $** $(LIBS)
+#dep: mk.dep
+
+#mk.dep: $(SRCS)
+#    $(CXX) $(CXXFLAGS) -MM $** >mk.dep
+
+#.c.o::
+#	$(CXX) $(CFLAGS) $<
+%.o: %.c
+	$(CXX) $(CFLAGS) -o $@ $<
+
+
+std.h.gch: std.h
+	$(CXX) $(CXXFLAGS) -x c++-header std.h
+
+#.cpp.o::
+#	$(CXX) $(CXXFLAGS)  $<
+%.o: %.cpp
+	$(CXX) $(CXXFLAGS) -o $@ $<
+
+
+%.res: %.rc
+	$(RC) -o$@ -i$<
+
+settings.o: settings.res
+	$(RC) -o$@ -i$<
+
+$(EXE): $(OBJS) settings.o
+	$(LINK) $(LFLAGS) -o$@ $(OBJS) settings.o $(LIBS2)
+	strip $(EXE)
 
 clean:
-    -del *.obj *.res *.map *.pdb *.pch *.pchi
+	rm *.o *.res *.gch sndrender/*.o z80/*.o
 
-!if exist(mk.dep)
-!include mk.dep
-!endif
+#!if exist(mk.dep)
+#!include mk.dep
+#!endif
