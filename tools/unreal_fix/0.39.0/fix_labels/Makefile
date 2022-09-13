@@ -1,56 +1,26 @@
-#.SUFFIXES : .dep .cpp .res .o .rc
-#!ifdef USE_CLANG
-#CXX_COMPILER=clang++
-#CXX_LTO=
-#!else
+
+
+
 CXX_COMPILER=i686-w64-mingw32-g++
-CXX_LTO=-flto
-#CXX_LTO=
-#!endif
+#CXX_LTO=-flto
 
 CXX=$(CXX_COMPILER) -c
 LINK=$(CXX_COMPILER)
-LIB=ar
 RC=i686-w64-mingw32-windres
 
-#-RTCsu -Qtrapuv
-#-DD3DVECTOR_DEFINED
-CFLAGS_COMMON=-D_CRT_SECURE_NO_DEPRECATE -DUSE_SND_EXTERNAL_BUFFER -D_PREFIX_ -std=c++14 -Wno-attributes 
-# -Wall
+CFLAGS_COMMON=-D_CRT_SECURE_NO_DEPRECATE -DUSE_SND_EXTERNAL_BUFFER -D_PREFIX_ -DMOD_SSE2 -std=c++14 -Wno-attributes 
 
-#!ifdef VGEMUL
-#CFLAGS_COMMON=$(CFLAGS_COMMON) -DVG_EMUL
-#!endif
-
-#!ifdef SSE1
-#ARCH=-march=pentium3 -msse
-#CFLAGS_COMMON=$(CFLAGS_COMMON) $(ARCH)
-#!elseifdef SSE2
-#ARCH=-march=pentium4 -msse2
-#CFLAGS_COMMON=$(CFLAGS_COMMON) $(ARCH) -D_M_IX86_FP=2
-#!elseifdef NATIVE
-#ARCH=-march=native
-#CFLAGS_COMMON=$(CFLAGS_COMMON) $(ARCH)
-#!else
-ARCH=-march=pentium2 -mmmx
+ARCH=-march=pentium-m -msse -msse2 -mno-mmx
 CFLAGS_COMMON+=$(ARCH)
-#!endif
 
-#!ifdef DEBUG
-#CFLAGS_DEBUG=-g -O0 -DDEBUG -D_DEBUG
-#LFLAGS_DEBUG=-g
-#!else
 CFLAGS_RELEASE=-O3 -static $(CXX_LTO) -fomit-frame-pointer
 LFLAGS_DEBUG=-O3 $(CXX_LTO) -static $(ARCH)
-#!endif
 
 CXXFLAGS=$(CFLAGS_COMMON) $(CFLAGS_DEBUG) $(CFLAGS_RELEASE)
 CFLAGS=$(CFLAGS_COMMON) $(CFLAGS_DEBUG) $(CFLAGS_RELEASE)
 
 LFLAGS=$(LFLAGS_DEBUG)
 
-#LIBS=$(LIBS) sndrender/snd.a z80/z80.a
-#LIBS=sndrender/*.o z80/*.o
 LIBS2=-lws2_32 -lcomctl32 -lcomdlg32 -luser32 -lkernel32 -lgdi32 -lwinmm -ldxguid \
   -lddraw -ldsound -ldinput -ldxerr9 -lsetupapi -lgcc -lstdc++ -liphlpapi
 
@@ -93,20 +63,13 @@ SRCS+=z80/tables.cpp
 
 OBJS=$(SRCS:.cpp=.o)
 
-EXE=x32/emul-i686-mingw-w64-gcc930.exe
+EXE=x32/emul.exe
 
 
 
 
 all: std.h.gch settings.res $(EXE)
 
-#dep: mk.dep
-
-#mk.dep: $(SRCS)
-#    $(CXX) $(CXXFLAGS) -MM $** >mk.dep
-
-#.c.o::
-#	$(CXX) $(CFLAGS) $<
 %.o: %.c
 	$(CXX) $(CFLAGS) -o $@ $<
 
@@ -114,8 +77,6 @@ all: std.h.gch settings.res $(EXE)
 std.h.gch: std.h
 	$(CXX) $(CXXFLAGS) -x c++-header std.h
 
-#.cpp.o::
-#	$(CXX) $(CXXFLAGS)  $<
 %.o: %.cpp
 	$(CXX) $(CXXFLAGS) -o $@ $<
 
@@ -133,6 +94,3 @@ $(EXE): $(OBJS) settings.o
 clean:
 	rm *.o *.res *.gch sndrender/*.o z80/*.o
 
-#!if exist(mk.dep)
-#!include mk.dep
-#!endif

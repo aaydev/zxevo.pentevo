@@ -630,4 +630,4 @@ bool ConfirmExit();
 BOOL WINAPI ConsoleHandler(DWORD CtrlType);
 void showhelp(const char *anchor = nullptr);
 
-#endif UNREAL_EMUL_H
+#endif // UNREAL_EMUL_H
