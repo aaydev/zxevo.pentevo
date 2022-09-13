@@ -1,22 +1,41 @@
-CXX_COMPILER=i686-w64-mingw32-g++
-#CXX_LTO=-flto
+# AMD64 = 1
+# LTO = 1
 
-CXX=$(CXX_COMPILER) -c
-LINK=$(CXX_COMPILER)
-RC=i686-w64-mingw32-windres
+ifdef AMD64
+PREFIX=x86_64
+else
+PREFIX=i686
+endif
+
+ifdef LTO
+CXX_LTO=-flto
+endif
+
+TOOLPREFIX=$(PREFIX)-w64-mingw32
+
+
+CXX_COMPILER=$(TOOLPREFIX)-g++
+
+RC=$(TOOLPREFIX)-windres
+CXX=$(CXX_COMPILER)
+LNK=$(CXX_COMPILER)
 
 CFLAGS_COMMON=-D_CRT_SECURE_NO_DEPRECATE -DUSE_SND_EXTERNAL_BUFFER -D_PREFIX_ -DMOD_SSE2 -std=c++14 -Wno-attributes 
 
+ifdef AMD64
+ARCH=-march=x86-64 -msse -msse2 -mno-mmx
+else
 ARCH=-march=pentium-m -msse -msse2 -mno-mmx
+endif
+
 CFLAGS_COMMON+=$(ARCH)
 
 CFLAGS_RELEASE=-O3 -static $(CXX_LTO) -fomit-frame-pointer
-LFLAGS_DEBUG=-O3 $(CXX_LTO) -static $(ARCH)
+LDFLAGS_DEBUG=-O3 $(CXX_LTO) -static $(ARCH)
 
 CXXFLAGS=$(CFLAGS_COMMON) $(CFLAGS_DEBUG) $(CFLAGS_RELEASE)
-CFLAGS=$(CFLAGS_COMMON) $(CFLAGS_DEBUG) $(CFLAGS_RELEASE)
 
-LFLAGS=$(LFLAGS_DEBUG)
+LDFLAGS=$(LDFLAGS_DEBUG)
 
 LIBS=-lws2_32 -lcomctl32 -lcomdlg32 -luser32 -lkernel32 -lgdi32 -lwinmm -ldxguid \
   -lddraw -ldsound -ldinput -ldxerr9 -lsetupapi -lgcc -lstdc++ -liphlpapi
@@ -72,7 +91,7 @@ $(PCH): std.h
 	$(CXX) $(CXXFLAGS) -x c++-header std.h
 
 %.o: %.cpp Makefile $(PCH)
-	$(CXX) $(CXXFLAGS) -o $@ $<
+	$(CXX) $(CXXFLAGS) -c -o $@ $<
 
 
 %.res: %.rc
@@ -82,7 +101,7 @@ settings.o: settings.res
 	$(RC) -o$@ -i$<
 
 $(EXE): $(OBJS) settings.o Makefile
-	$(LINK) $(LFLAGS) -o$@ $(OBJS) settings.o $(LIBS)
+	$(LNK) $(LDFLAGS) -o$@ $(OBJS) settings.o $(LIBS)
 	strip $(EXE)
 
 clean:
