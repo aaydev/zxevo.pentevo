@@ -45,9 +45,8 @@ const int CONSCLR_INFO      = 0x02;
 
 /* ************************************************************************* */
 
-#if defined(_M_IX86_FP) && (_M_IX86_FP >= 2) || defined(_M_X64) // compiled with option /arch:SSE2
- #define MOD_SSE2
-#else
- #undef MOD_SSE2
-#endif
-
+//#if defined(_M_IX86_FP) && (_M_IX86_FP >= 2) || defined(_M_X64) // compiled with option /arch:SSE2
+// #define MOD_SSE2
+//#else
+// #undef MOD_SSE2
+//#endif

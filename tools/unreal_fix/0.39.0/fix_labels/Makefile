@@ -1,6 +1,3 @@
-
-
-
 CXX_COMPILER=i686-w64-mingw32-g++
 #CXX_LTO=-flto
 
@@ -21,45 +18,35 @@ CFLAGS=$(CFLAGS_COMMON) $(CFLAGS_DEBUG) $(CFLAGS_RELEASE)
 
 LFLAGS=$(LFLAGS_DEBUG)
 
-LIBS2=-lws2_32 -lcomctl32 -lcomdlg32 -luser32 -lkernel32 -lgdi32 -lwinmm -ldxguid \
+LIBS=-lws2_32 -lcomctl32 -lcomdlg32 -luser32 -lkernel32 -lgdi32 -lwinmm -ldxguid \
   -lddraw -ldsound -ldinput -ldxerr9 -lsetupapi -lgcc -lstdc++ -liphlpapi
 
 # top-level sources
 SRCS=emul.cpp std.cpp atm.cpp cheat.cpp config.cpp dbgbpx.cpp dbgcmd.cpp dbglabls.cpp \
-    dbgmem.cpp dbgoth.cpp dbgpaint.cpp dbgreg.cpp dbgrwdlg.cpp dbgtrace.cpp \
-        debug.cpp draw.cpp drawnomc.cpp draw_384.cpp dx.cpp dxerr.cpp dxovr.cpp \
-        dxrcopy.cpp dxrend.cpp dxrendch.cpp dxrframe.cpp dxr_4bpp.cpp dxr_512.cpp \
-        dxr_advm.cpp dxr_atm.cpp dxr_atm0.cpp dxr_atm2.cpp dxr_atm4.cpp dxr_atm6.cpp \
-        dxr_atm7.cpp profi.cpp \
-        dxr_atmf.cpp dxr_prof.cpp dxr_rsm.cpp dxr_text.cpp dxr_vd.cpp \
-        emulkeys.cpp fntsrch.cpp font.cpp font14.cpp font16.cpp \
-        font8.cpp fontatm2.cpp fontdata.cpp gs.cpp gshlbass.cpp gshle.cpp \
-        gsz80.cpp gui.cpp hdd.cpp hddio.cpp iehelp.cpp init.cpp \
-        input.cpp inputpc.cpp io.cpp keydefs.cpp leds.cpp mainloop.cpp \
-        memory.cpp modem.cpp opendlg.cpp savesnd.cpp sdcard.cpp snapshot.cpp \
-        snd_bass.cpp sound.cpp sshot_png.cpp tape.cpp util.cpp vars.cpp \
-        vs1001.cpp wd93cmd.cpp wd93crc.cpp wd93trk.cpp fdd.cpp upd765.cpp \
-        wldr_fdi.cpp wldr_isd.cpp wldr_pro.cpp wldr_td0.cpp wldr_trd.cpp wldr_udi.cpp \
-        wldr_dsk.cpp wldr_ipf.cpp \
-        z80.cpp z80asm.cpp zc.cpp savevid.cpp zxevo.cpp dxr_pentatm7.cpp zxusbnet.cpp 
+     dbgmem.cpp dbgoth.cpp dbgpaint.cpp dbgreg.cpp dbgrwdlg.cpp dbgtrace.cpp \
+     debug.cpp draw.cpp drawnomc.cpp draw_384.cpp dx.cpp dxerr.cpp dxovr.cpp \
+     dxrcopy.cpp dxrend.cpp dxrendch.cpp dxrframe.cpp dxr_4bpp.cpp dxr_512.cpp \
+     dxr_advm.cpp dxr_atm.cpp dxr_atm0.cpp dxr_atm2.cpp dxr_atm4.cpp dxr_atm6.cpp \
+     dxr_atm7.cpp profi.cpp \
+     dxr_atmf.cpp dxr_prof.cpp dxr_rsm.cpp dxr_text.cpp dxr_vd.cpp \
+     emulkeys.cpp fntsrch.cpp font.cpp font14.cpp font16.cpp \
+     font8.cpp fontatm2.cpp fontdata.cpp gs.cpp gshlbass.cpp gshle.cpp \
+     gsz80.cpp gui.cpp hdd.cpp hddio.cpp iehelp.cpp init.cpp \
+     input.cpp inputpc.cpp io.cpp keydefs.cpp leds.cpp mainloop.cpp \
+     memory.cpp modem.cpp opendlg.cpp savesnd.cpp sdcard.cpp snapshot.cpp \
+     snd_bass.cpp sound.cpp sshot_png.cpp tape.cpp util.cpp vars.cpp \
+     vs1001.cpp wd93cmd.cpp wd93crc.cpp wd93trk.cpp fdd.cpp upd765.cpp \
+     wldr_fdi.cpp wldr_isd.cpp wldr_pro.cpp wldr_td0.cpp wldr_trd.cpp wldr_udi.cpp \
+     wldr_dsk.cpp wldr_ipf.cpp \
+     z80.cpp z80asm.cpp zc.cpp savevid.cpp zxevo.cpp dxr_pentatm7.cpp zxusbnet.cpp 
 
 # sndrender sources
-SRCS+=sndrender/saa1099.cpp
-SRCS+=sndrender/sndbuffer.cpp
-SRCS+=sndrender/sndchip.cpp
-SRCS+=sndrender/sndcounter.cpp
-SRCS+=sndrender/sndrender.cpp
-SRCS+=sndrender/emul_2203.cpp
+SRCS+=sndrender/saa1099.cpp sndrender/sndbuffer.cpp sndrender/sndchip.cpp \
+      sndrender/sndcounter.cpp sndrender/sndrender.cpp sndrender/emul_2203.cpp
 
 # z80 sources
-SRCS+=z80/daa_tabs.cpp
-SRCS+=z80/op_cb.cpp
-SRCS+=z80/op_dd.cpp
-SRCS+=z80/op_ddcb.cpp
-SRCS+=z80/op_ed.cpp
-SRCS+=z80/op_fd.cpp
-SRCS+=z80/op_noprefix.cpp
-SRCS+=z80/tables.cpp
+SRCS+=z80/daa_tabs.cpp z80/op_cb.cpp z80/op_dd.cpp z80/op_ddcb.cpp z80/op_ed.cpp \
+      z80/op_fd.cpp z80/op_noprefix.cpp z80/tables.cpp
 
 OBJS=$(SRCS:.cpp=.o)
 
@@ -88,9 +75,9 @@ settings.o: settings.res
 	$(RC) -o$@ -i$<
 
 $(EXE): $(OBJS) settings.o
-	$(LINK) $(LFLAGS) -o$@ $(OBJS) settings.o $(LIBS2)
+	$(LINK) $(LFLAGS) -o$@ $(OBJS) settings.o $(LIBS)
 	strip $(EXE)
 
 clean:
-	rm *.o *.res *.gch sndrender/*.o z80/*.o
+	rm -f *.o *.res *.gch sndrender/*.o z80/*.o
 
