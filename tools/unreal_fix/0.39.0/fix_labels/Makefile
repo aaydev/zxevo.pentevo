@@ -58,8 +58,8 @@ EXE=x32/emul.exe
 
 
 
-.PHONY: all
-all: std.h.gch settings.res $(EXE)
+.PHONY: all clean
+all: $(EXE)
 
 -include $(NAMES:%=%.d)
 
@@ -71,7 +71,7 @@ endif
 $(PCH): std.h
 	$(CXX) $(CXXFLAGS) -x c++-header std.h
 
-%.o: %.cpp
+%.o: %.cpp Makefile $(PCH)
 	$(CXX) $(CXXFLAGS) -o $@ $<
 
 
@@ -81,7 +81,7 @@ $(PCH): std.h
 settings.o: settings.res
 	$(RC) -o$@ -i$<
 
-$(EXE): $(OBJS) settings.o
+$(EXE): $(OBJS) settings.o Makefile
 	$(LINK) $(LFLAGS) -o$@ $(OBJS) settings.o $(LIBS)
 	strip $(EXE)
 
