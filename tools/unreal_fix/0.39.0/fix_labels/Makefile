@@ -49,19 +49,26 @@ SRCS+=z80/daa_tabs.cpp z80/op_cb.cpp z80/op_dd.cpp z80/op_ddcb.cpp z80/op_ed.cpp
       z80/op_fd.cpp z80/op_noprefix.cpp z80/tables.cpp
 
 OBJS=$(SRCS:.cpp=.o)
+NAMES=$(SRCS:.cpp=)
+
+PCH=std.h.gch
 
 EXE=x32/emul.exe
 
 
 
 
+.PHONY: all
 all: std.h.gch settings.res $(EXE)
 
-%.o: %.c
-	$(CXX) $(CFLAGS) -o $@ $<
+-include $(NAMES:%=%.d)
 
+ifeq (,$(findstring $(MAKECMDGOALS),clean))
+%.d: %.cpp 
+	$(CXX) -MM $(CXXFLAGS) $< | sed 's,\($*\)\.o[ :]*,\1.o $@ : ,g' > $@
+endif
 
-std.h.gch: std.h
+$(PCH): std.h
 	$(CXX) $(CXXFLAGS) -x c++-header std.h
 
 %.o: %.cpp
@@ -80,4 +87,5 @@ $(EXE): $(OBJS) settings.o
 
 clean:
 	rm -f *.o *.res *.gch sndrender/*.o z80/*.o
+	rm -f *.d sndrender/*.d z80/*.d
 
