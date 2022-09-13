@@ -1,0 +1,38 @@
+To be compiled with gnu make and 
+mingw-w64 in ubuntu.
+
+
+pkts to install:
+
+binutils-mingw-w64-i686                         
+binutils-mingw-w64-x86-64                       
+g++-mingw-w64-i686                              
+g++-mingw-w64-i686-posix                        
+g++-mingw-w64-i686-win32                        
+g++-mingw-w64-x86-64                            
+g++-mingw-w64-x86-64-posix                      
+g++-mingw-w64-x86-64-win32                      
+gcc-mingw-w64-base:amd64                        
+gcc-mingw-w64-i686                              
+gcc-mingw-w64-i686-posix                        
+gcc-mingw-w64-i686-posix-runtime                
+gcc-mingw-w64-i686-win32                        
+gcc-mingw-w64-i686-win32-runtime                
+gcc-mingw-w64-x86-64                            
+gcc-mingw-w64-x86-64-posix                      
+gcc-mingw-w64-x86-64-posix-runtime              
+gcc-mingw-w64-x86-64-win32                      
+gcc-mingw-w64-x86-64-win32-runtime              
+libz-mingw-w64                                  
+mingw-w64-common                                
+mingw-w64-i686-dev                              
+mingw-w64-x86-64-dev                            
+
+
+options to make:
+AMD64=1 -- build 64bit executable
+LTO=1 -- perform link time optimizations
+
+example:
+make AMD64=1 LTO=1 -j8 # build 64bit exe with link time optimizations in 8 threads
+
