@@ -228,6 +228,7 @@ void zx_task(UBYTE operation) // zx task, tracks when there is need to send new 
 
 			if ( zx_realkbd[10] )
 			{
+				sega_parsing();
 				for (UBYTE i=0; i<5; i++)
 				{
 					 UBYTE tmp;

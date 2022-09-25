@@ -12,10 +12,76 @@
 #include "spi.h"
 #include "atx.h"
 #include "rtc.h"
+#include "joystick.h"
+
+ISR(TIMER0_COMP_vect){
+	static BYTE scankbd=12;
+	
+	switch(scankbd){
+		case 13:
+			scankbd=0;
+			jkey_state = 0;
+			jkey_state |= (~JOYSTICK_PIN) & 0b00011111;			// arrows
+			
+			if( ( gamepad_type & JOY_WITH_KBD ) == 0 )
+			{
+			 jkey_state |= ((~PINA) & 0b10000000) >> 2;			// EJOY_C
+			}
+			
+			TCCR0 = 0b00111101;
+			PORTC = 0b11011110;
+			OCR0=TCNT0+1;
+		break;
+		case 1:
+			jkey_state |= ((~JOYSTICK_PIN) & 0b00010000) << 2;	// EJOY_A
+			
+			if( ( gamepad_type & JOY_WITH_KBD ) == 0 )
+			{
+				jkey_state |= (~PINA) & 0b10000000;					// EJOY_START
+			}
+			
+			PORTC = 0b11011111;
+			
+			if(gamepad_type & JOY_SEGA_8KEY)
+			{//пропускаем опрос дополнительных кнопок
+				scankbd = 6;
+			}	
+			OCR0=TCNT0+1;
+		break;
+		case 2:
+			PORTC = 0b11011110;
+			OCR0=TCNT0+1;
+		break;
+		case 3:
+			PORTC = 0b11011111;
+			OCR0=TCNT0+1;
+		break;
+		case 4:
+			PORTC = 0b11011110;
+			OCR0=TCNT0+1;
+		break;
+		case 5:
+			PORTC = 0b11011111;
+			OCR0=TCNT0+1;
+		break;
+		case 6:
+			jkey_state |= ((UWORD)((~JOYSTICK_PIN) & 0b00001111)) << 8;
+			PORTC = 0b11011110;
+			OCR0=TCNT0+1;
+			break;
+		case 7:
+			zx_realkbd[10] = 4;
+			PORTC = 0b11011111;
+			TCCR0 = 0b00111101;
+		default:
+			OCR0=TCNT0+255;
+		break;
+	}
+	scankbd++;
+}
 
 ISR(TIMER2_OVF_vect)
 {
-	static UBYTE counter=0x00;
 	static BYTE dir=0x01;
 	static BYTE ocr=0x00;
 	static BYTE scankbd=0;
@@ -79,6 +145,11 @@ ISR(TIMER2_OVF_vect)
 	{
 		//not pressed
 		atx_counter = 0;
+	}
+	
+	if( gamepad_type != JOY_SWITCHS )// JOY_SWITCHS )
+	{
+		return;
 	}
 
 	if ( scankbd==0 )

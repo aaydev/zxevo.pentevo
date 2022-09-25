@@ -80,7 +80,7 @@ void hardware_init(void)
 	DDRD  = 0b00100000; // RTS out
 
 
-	PORTC = 0b11011111;
+	PORTC = 0b11011110;
 	DDRC  = 0b00000000; // PWRGOOD input, other pulled up
 
 	PORTB = 0b11000001;
@@ -197,8 +197,8 @@ start:
 	TCCR2 = 0b01110011; // FOC2=0, {WGM21,WGM20}=01, {COM21,COM20}=11, {CS22,CS21,CS20}=011
 	                    // clk/64 clocking,
 	                    // 1/512 overflow rate, total 11.059/32768 = 337.5 Hz interrupt rate
-	TIFR = (1<<TOV2);
-	TIMSK = (1<<TOIE2);
+	TIFR = (1<<TOV2)|(1<<OCF0);
+	TIMSK = (1<<TOIE2)|(1<<OCIE0);
 
 
 	//init some counters and registers
@@ -235,7 +235,8 @@ start:
 #ifdef LOGENABLE
 	to_log("zx_init OK\r\n");
 #endif
-
+	//инит прерывания джойстика
+	joystick_init();
 	sei(); // globally go interrupting
 
 	//set led on keyboard

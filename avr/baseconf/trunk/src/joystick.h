@@ -17,7 +17,20 @@
  * - 5-7: 0.
  */
 
+#define JOY_SWITCHS		0b00000000 
+#define JOY_SEGA_8KEY	0b00000001
+#define JOY_SEGA_12KEY	0b00000010
+#define JOY_WITH_KBD	0b00000100
+#define JOY_NEED_DETECT	0b10000000
+
+extern volatile unsigned char gamepad_type;
+extern volatile UWORD jkey_state;
+
 /** Kempstone joystick task. */
 void joystick_task(void);
+
+void joystick_init(void);
+
+void sega_parsing(void);
 
 #endif //__JOYSTICK_H__
