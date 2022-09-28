@@ -28,7 +28,7 @@ ISR(TIMER0_COMP_vect){
 			 jkey_state |= (~PINA) & 0b00100000;			// EJOY_C
 			}
 			
-			TCCR0 = 0b00111101;
+			TCCR0 = 0b00111100;
 			SEGA_SYNC_DOWN();
 			OCR0=TCNT0+1;
 		break;
