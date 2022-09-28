@@ -25,11 +25,11 @@ ISR(TIMER0_COMP_vect){
 			
 			if( ( gamepad_type & JOY_WITH_KBD ) == 0 )
 			{
-			 jkey_state |= ((~PINA) & 0b10000000) >> 2;			// EJOY_C
+			 jkey_state |= (~PINA) & 0b00100000;			// EJOY_C
 			}
 			
 			TCCR0 = 0b00111101;
-			PORTC = 0b11011110;
+			SEGA_SYNC_DOWN();
 			OCR0=TCNT0+1;
 		break;
 		case 1:
@@ -37,41 +37,41 @@ ISR(TIMER0_COMP_vect){
 			
 			if( ( gamepad_type & JOY_WITH_KBD ) == 0 )
 			{
-				jkey_state |= (~PINA) & 0b10000000;					// EJOY_START
+				jkey_state |= ((~PINA) & 0b00100000) << 2;					// EJOY_START
 			}
 			
-			PORTC = 0b11011111;
+			SEGA_SYNC_UP();
 			
 			if(gamepad_type & JOY_SEGA_8KEY)
-			{//пропускаем опрос дополнительных кнопок
+			{//РїСЂРѕРїСѓСЃРєР°РµРј РѕРїСЂРѕСЃ РґРѕРїРѕР»РЅРёС‚РµР»СЊРЅС‹С… РєРЅРѕРїРѕРє
 				scankbd = 6;
 			}	
 			OCR0=TCNT0+1;
 		break;
 		case 2:
-			PORTC = 0b11011110;
+			SEGA_SYNC_DOWN();
 			OCR0=TCNT0+1;
 		break;
 		case 3:
-			PORTC = 0b11011111;
+			SEGA_SYNC_UP();
 			OCR0=TCNT0+1;
 		break;
 		case 4:
-			PORTC = 0b11011110;
+			SEGA_SYNC_DOWN();
 			OCR0=TCNT0+1;
 		break;
 		case 5:
-			PORTC = 0b11011111;
+			SEGA_SYNC_UP();
 			OCR0=TCNT0+1;
 		break;
 		case 6:
 			jkey_state |= ((UWORD)((~JOYSTICK_PIN) & 0b00001111)) << 8;
-			PORTC = 0b11011110;
+			SEGA_SYNC_DOWN();
 			OCR0=TCNT0+1;
 			break;
 		case 7:
 			zx_realkbd[10] = 4;
-			PORTC = 0b11011111;
+			SEGA_SYNC_UP();
 			TCCR0 = 0b00111101;
 		default:
 			OCR0=TCNT0+255;

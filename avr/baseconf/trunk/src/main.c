@@ -80,7 +80,7 @@ void hardware_init(void)
 	DDRD  = 0b00100000; // RTS out
 
 
-	PORTC = 0b11011110;
+	PORTC = 0b11011111;
 	DDRC  = 0b00000000; // PWRGOOD input, other pulled up
 
 	PORTB = 0b11000001;
@@ -235,8 +235,9 @@ start:
 #ifdef LOGENABLE
 	to_log("zx_init OK\r\n");
 #endif
-	//инит прерывания джойстика
+	//РёРЅРёС‚ РїСЂРµСЂС‹РІР°РЅРёСЏ РґР¶РѕР№СЃС‚РёРєР°
 	joystick_init();
+	
 	sei(); // globally go interrupting
 
 	//set led on keyboard

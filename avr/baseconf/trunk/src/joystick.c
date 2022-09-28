@@ -55,12 +55,13 @@ volatile UWORD jkey_state = 0x0000;
 void joystick_init(void){
 	UBYTE joy_state;
 	
-	PORTC = 0b11011111;
-	DDRC  = 0b00000001;
-	//первый фронт клолка
+	SEGA_SYNC_UP();
+	DDRA  = 0b00000100;
+	
+	//РїРµСЂРІС‹Р№ С„СЂРѕРЅС‚ РєР»РѕР»РєР°
 	_delay_us(J_WAIT);
-	//как минимум один из left/right должен быть в 1
-	//и как минимум один из up/down должен быть в 1
+	//РєР°Рє РјРёРЅРёРјСѓРј РѕРґРёРЅ РёР· left/right РґРѕР»Р¶РµРЅ Р±С‹С‚СЊ РІ 1
+	//Рё РєР°Рє РјРёРЅРёРјСѓРј РѕРґРёРЅ РёР· up/down РґРѕР»Р¶РµРЅ Р±С‹С‚СЊ РІ 1
 	joy_state = JOYSTICK_PIN;
 	gamepad_type = JOY_SWITCHS;
 	if( (joy_state & ( JOY_PIN_L_X|JOY_PIN_R_M ) ) != 0 )
@@ -72,11 +73,11 @@ void joystick_init(void){
 	}
 	if( gamepad_type != JOY_SWITCHS )
 	{
-		PORTC = 0b11011110;
-		//первый спад клока
+		SEGA_SYNC_DOWN();
+		//РїРµСЂРІС‹Р№ СЃРїР°Рґ РєР»РѕРєР°
 		_delay_us(J_WAIT);
-		//как минимум один из left/right должен быть в 0
-		//и как минимум один из up/down должен быть в 1
+		//РєР°Рє РјРёРЅРёРјСѓРј РѕРґРёРЅ РёР· left/right РґРѕР»Р¶РµРЅ Р±С‹С‚СЊ РІ 0
+		//Рё РєР°Рє РјРёРЅРёРјСѓРј РѕРґРёРЅ РёР· up/down РґРѕР»Р¶РµРЅ Р±С‹С‚СЊ РІ 1
 		gamepad_type = JOY_SWITCHS;
 		joy_state = JOYSTICK_PIN;
 		if( (joy_state & ( JOY_PIN_L_X|JOY_PIN_R_M ) ) != ( JOY_PIN_L_X|JOY_PIN_R_M ) )
@@ -87,22 +88,22 @@ void joystick_init(void){
 			}
 		}
 		
-		PORTC = 0b11011111;
+		SEGA_SYNC_UP();
 	}
 	
 	if( gamepad_type != JOY_SWITCHS )
 	{
-		// sega-pad есть, определим 8 или 12 кнопок
+		// sega-pad РµСЃС‚СЊ, РѕРїСЂРµРґРµР»РёРј 8 РёР»Рё 12 РєРЅРѕРїРѕРє
 		_delay_us(J_WAIT);
-		PORTC = 0b11011110;
-		// второй спад клока
+		SEGA_SYNC_DOWN();
+		// РІС‚РѕСЂРѕР№ СЃРїР°Рґ РєР»РѕРєР°
 		_delay_us(J_WAIT);
-		PORTC = 0b11011111;
+		SEGA_SYNC_UP();
 		_delay_us(J_WAIT);
-		PORTC = 0b11011110;
-		// третий спад клока
-		// определим 8 или 12 кнопок у джоя
-		// left/right/up/down должы быть в 0
+		SEGA_SYNC_DOWN();
+		// С‚СЂРµС‚РёР№ СЃРїР°Рґ РєР»РѕРєР°
+		// РѕРїСЂРµРґРµР»РёРј 8 РёР»Рё 12 РєРЅРѕРїРѕРє Сѓ РґР¶РѕСЏ
+		// left/right/up/down РґРѕР»Р¶С‹ Р±С‹С‚СЊ РІ 0
 		_delay_us(J_WAIT);
 		if( ( JOYSTICK_PIN & ( JOY_PIN_D_Y|JOY_PIN_U_Z|JOY_PIN_L_X|JOY_PIN_R_M ) ) == 0 )
 		{
@@ -112,23 +113,25 @@ void joystick_init(void){
 		{
 			gamepad_type = JOY_SEGA_8KEY;
 		}
-		PORTC = 0b11011111;
+		SEGA_SYNC_UP();
 	}
 	
 	if( gamepad_type & JOY_SEGA_12KEY )
-	{// для 12 кнопок закончим цикл клока
+	{// РґР»СЏ 12 РєРЅРѕРїРѕРє Р·Р°РєРѕРЅС‡РёРј С†РёРєР» РєР»РѕРєР°
 		_delay_us(J_WAIT);
-		PORTC = 0b11011110;
+		SEGA_SYNC_DOWN();
 		_delay_us(J_WAIT);
-		PORTC = 0b11011111;
+		SEGA_SYNC_UP();
 	}
 	
 	if( gamepad_type != JOY_SWITCHS )
-	{//запустим прерывание, если есть sega-pad
-		PORTC = 0b11011111;
-		DDRC  = 0b00000001;
+	{//Р·Р°РїСѓСЃС‚РёРј РїСЂРµСЂС‹РІР°РЅРёРµ, РµСЃР»Рё РµСЃС‚СЊ sega-pad
 		OCR0 = TCNT0 + 255;
 		TCCR0 = 0b00111101;
+	}
+	else
+	{
+		DDRA  = 0b00000000;
 	}
 }
 
@@ -139,7 +142,7 @@ void sega_parsing(void){
 	static UBYTE jkey_mode = 0x00;
 	
 	if( jkey_state_old == jkey_state )
-	{//изменений нет, выходим
+	{//РёР·РјРµРЅРµРЅРёР№ РЅРµС‚, РІС‹С…РѕРґРёРј
 		return;
 	}
 	

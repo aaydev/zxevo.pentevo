@@ -23,6 +23,9 @@
 #define JOY_WITH_KBD	0b00000100
 #define JOY_NEED_DETECT	0b10000000
 
+#define SEGA_SYNC_UP() PORTA = 0b11111111
+#define SEGA_SYNC_DOWN() PORTA = 0b11111011
+
 extern volatile unsigned char gamepad_type;
 extern volatile UWORD jkey_state;
 
