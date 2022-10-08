@@ -1,5 +1,5 @@
 
-; LAST UPDATE: 15.01.2022 savelij
+; LAST UPDATE: 06.10.2022 savelij
 
 	TITLE "mounter.a80 ROM_RST83"
 
@@ -42,7 +42,7 @@ LOADIMAGE	LD IYL,INTERNAL
 		LD (EXT_TYPE),A
 		LD HL,FILE_SRC
 		LD DE,NAME_RAMDISK
-		LD BC,0X20
+		LD BC,0x20
 		LDIR
 		POP HL
 		CP _TAP
@@ -55,7 +55,7 @@ LOADIMAGE	LD IYL,INTERNAL
 ILD_IMG1	PUSH AF
 		LD BC,WIN_P5
 		OUT (C),A
-		LD A,0X20
+		LD A,0x20
 		LD HL,CPU5
 		CALL READ_FILE
 		JR C,ILD_IMG2
@@ -71,8 +71,8 @@ ILD_IMG2	POP AF
 		SUB _TAP
 		RET Z					; если TAP то на выход
 ; для TRD образа генерация таблицы секторов/дорожек
-		EVOPORT WIN_P5,RAM_DATARAMD		; нужна страница откуда начинается загруженный образ
-ILD_IMG3	LD HL,(CPU5+0X8E1)			; первый свободный трек сектор
+	EVOPORT WIN_P5,RAM_DATARAMD			; нужна страница откуда начинается загруженный образ
+ILD_IMG3	LD HL,(CPU5+0x8E1)			; первый свободный трек сектор
 		LD A,L
 		LD L,H
 		LD H,0
@@ -82,29 +82,29 @@ ILD_IMG3	LD HL,(CPU5+0X8E1)			; первый свободный трек сектор
 		ADD HL,HL
 		OR L
 		LD L,A					; количество занятых секторов с директорией
-		LD DE,(CPU5+0X8E5)			; количество свободных секторов
+		LD DE,(CPU5+0x8E5)			; количество свободных секторов
 		ADD HL,DE
 		ADD HL,HL
 		ADD HL,HL
 		ADD HL,HL
 		ADD HL,HL				; H=количество дорожек
 		LD A,H
-		CP 0XA0
+		CP 0xA0
 		JR NC,ELT3
-ELT4		LD A,0XA0
+ELT4		LD A,0xA0
 ELT3		EX AF,AF'
-		EVOPORT WIN_P5,RAM_RAMDISK		; нужна страница начала рамдиска, где будет таблица описателей
+	EVOPORT WIN_P5,RAM_RAMDISK			; нужна страница начала рамдиска, где будет таблица описателей
 		LD HL,CPU5
 		PUSH HL
 		LD DE,CPU5+1
-		LD BC,0X3FFF
+		LD BC,0x3FFF
 		LD (HL),L
 		LDIR					; очистили страницу
 		POP DE					; адрес начала страницы
 		LD HL,0					; смещение в блоках и страницах
 		EX AF,AF'
 ELT2		EX AF,AF'
-		LD BC,0X1000				; счетчик номеров секторов и их номера
+		LD BC,0x1000				; счетчик номеров секторов и их номера
 		LD A,L
 		RRCA
 		RRCA
@@ -123,13 +123,13 @@ ELT1		INC C
 		DJNZ ELT1				; вносим в таблицу все номера секторов с размерами
 		LD D,HIGH (CPU5)			; вернули указатель в начало
 		INC E					; для следующей дорожки
-		LD BC,0X40
+		LD BC,0x40
 		ADD HL,BC				; переход к следующей дорожке
 		EX AF,AF'
 		DEC A
 		JR NZ,ELT2				; повторяем для всех дорожек
 ; общий выход из загрузки с возвратом стандартной страницы в окне проецирования 1
-ELOAD_IMAGE	LD HL,CPU5+0X3FFF
+ELOAD_IMAGE	LD HL,CPU5+0x3FFF
 		LD (HL),"R"
 		DEC H
 		LD (HL),"D"
@@ -146,32 +146,33 @@ ELOAD_IMAGE	LD HL,CPU5+0X3FFF
 		RET
 
 ELT5		POP AF
-		EVOPORT WIN_P5,RAM_RAMDISK
+	EVOPORT WIN_P5,RAM_RAMDISK
 		JR ELOAD_IMAGE
 
 ; инфа для создания 9 сектора нового диска
 DSKINFO		DB 0					; +0xE1 номер первого свободного сектора
 		DB 1					; +0xE2 номер первого свободного трека
-		DB 0X16					; +0xE3 тип дискеты
+		DB 0x16					; +0xE3 тип дискеты
 		DB 0					; +0xE4 количество файлов на дискете
 SECFREE		DW 2544					; +0xE5 количество свободных секторов
-		DB 0X10					; +0xE7 идентификационный код TRDOS
+		DB 0x10					; +0xE7 идентификационный код TRDOS
 		DW 0					; +0xE8 2 байта 0
-		DUPL 9,0X20				; +0xEA 9 байт 0x20
+		DUPL 9,0x20				; +0xEA 9 байт 0x20
 		DB 0					; +0xF3 1 байт 0
 		DB 0					; +0xF4 количество удаленных файлов
 		DB "RAMDISKO"				; +0xF5 имя дискеты
 DSK_END
 
 ; загрузка SCL образа
-LOAD_SCL	EVOPORT WIN_P5,RAM_DATARAMD
-		EVOPORT WIN_P3,RAM_MOUNTER
+LOAD_SCL
+	EVOPORT WIN_P5,RAM_DATARAMD
+	EVOPORT WIN_P3,RAM_MOUNTER
 		LD A,RAM_DATARAMD
 LOAD_IMAGE4	PUSH AF
 		LD BC,WIN_P5
 		OUT (C),A
-		LD HL,CPU5+0X1000
-		LD A,0X18
+		LD HL,CPU5+0x1000
+		LD A,0x18
 		CALL READ_FILE
 		PUSH AF					; сохранили флаг окончания загрузки на случай окончания образа
 		LD HL,CPU5
@@ -180,9 +181,9 @@ LOAD_IMAGE4	PUSH AF
 		LD D,H
 		LD E,L
 		INC DE
-		LD BC,0XFFF
+		LD BC,0xFFF
 		LDIR					; зачистка области первой дорожки для формирования каталога диска
-		LD HL,CPU5+0X1008			; адрес количества файлов в SCL образе
+		LD HL,CPU5+0x1008			; адрес количества файлов в SCL образе
 		LD A,(HL)				; взяли количество файлов как счетчик
 		INC HL					; перешли на первый описатель файла
 		EXX
@@ -192,7 +193,7 @@ LOAD_IMAGE4	PUSH AF
 		EXX
 		POP DE					; вернули адрес начала каталога диска
 LOAD_IMAGE3	EX AF,AF'
-		LD BC,0X0D
+		LD BC,0x0D
 		LDIR					; перенесли 13 байт тела описателя
 		LD A,(HL)				; забрали размер файла в секторах
 		LDI					; перенесли еще байт
@@ -208,7 +209,7 @@ LOAD_IMAGE3	EX AF,AF'
 		ADD HL,HL
 		ADD HL,HL
 		INC H
-		AND 0X0F
+		AND 0x0F
 		LD L,A
 		EX (SP),HL
 		POP BC					; восстановили текщий номер сектора
@@ -223,7 +224,7 @@ LOAD_IMAGE3	EX AF,AF'
 		JR NZ,LOAD_IMAGE3			; если файлы не кончились продолжаем
 		PUSH HL					; сохранили адрес начала данных
 		LD HL,DSKINFO
-		LD DE,CPU5+0X8E1
+		LD DE,CPU5+0x8E1
 		LD BC,DSK_END-DSKINFO
 		LDIR
 		EXX
@@ -231,7 +232,7 @@ LOAD_IMAGE3	EX AF,AF'
 		EX DE,HL
 		AND A
 		SBC HL,DE
-		LD (CPU5+0X8E5),HL			; количество свободных секторов
+		LD (CPU5+0x8E5),HL			; количество свободных секторов
 		EX DE,HL
 		LD A,L
 		ADD HL,HL
@@ -239,11 +240,11 @@ LOAD_IMAGE3	EX AF,AF'
 		ADD HL,HL
 		ADD HL,HL
 		INC H
-		AND 0X0F
+		AND 0x0F
 		LD L,A
-		LD (CPU5+0X8E1),HL			; первый свободный трек и сектор
+		LD (CPU5+0x8E1),HL			; первый свободный трек и сектор
 		LD A,B
-		LD (CPU5+0X8E4),A			; количество файлов на диске
+		LD (CPU5+0x8E4),A			; количество файлов на диске
 		EXX
 		POP DE					; восстановление адреса начала данных
 		LD HL,CPU6				; конец окна проецирования
@@ -251,7 +252,7 @@ LOAD_IMAGE3	EX AF,AF'
 		SBC HL,DE				; получили количество байт для сдвига
 		LD B,H
 		LD C,L
-		LD HL,CPU5+0X1000			; начало данных на рамдиске
+		LD HL,CPU5+0x1000			; начало данных на рамдиске
 		EX DE,HL
 		LDIR					; сдвинули, после переноса DE=адрес куда далее грузить
 		LD A,D
@@ -263,7 +264,7 @@ LOAD_IMAGE3	EX AF,AF'
 		SRL A
 		LD IXL,A
 		CALL READ_FILE
-		LD DE,0X8000
+		LD DE,0x8000
 		EX DE,HL
 LOAD_IMAGE7	AND A
 		SBC HL,DE				; получили сколько байт осталось до конца окна
@@ -286,7 +287,7 @@ LOAD_IMAGE6	LD DE,CPU5
 		EX AF,AF'
 		JP C,ILD_IMG2
 		EX DE,HL
-		LD A,0X1F
+		LD A,0x1F
 		CALL READ_FILE
 		JP C,ILD_IMG2
 LOAD_IMAGE5	LD HL,CPU3+BUF_TEMPSEC
@@ -308,14 +309,14 @@ LOAD_IMAGE5	LD HL,CPU3+BUF_TEMPSEC
 ; загрузка FDI
 LOAD_FDI	LD A,RAM_RAMDISK			; страница начала рамдиска
 		PUSH AF					; сохранили на стеке
-		EVOPORT WIN_P5,RAM_RAMDISK
-		EVOPORT WIN_P3,RAM_MOUNTER
+	EVOPORT WIN_P5,RAM_RAMDISK
+	EVOPORT WIN_P3,RAM_MOUNTER
 		LD HL,FDI_TABLE_CYL
 		LD DE,FDI_TABLE_CYL+1
-		LD BC,0X3FFF
+		LD BC,0x3FFF
 		LD (HL),0
 		LDIR					; очистка страницы с описателями дорожек
-		LD IXH,0XFF
+		LD IXH,0xFF
 		CALL LOAD1SECFDI			; принудительная загрузка первого сектора
 		LD A,(CPU3+6)				; взяли количество сторон
 		DEC A
@@ -323,14 +324,14 @@ LOAD_FDI	LD A,RAM_RAMDISK			; страница начала рамдиска
 		JR Z,LOADFDI1
 		ADD A,A					; если сторон 2, то умножили количество дорожек на 2
 LOADFDI1	LD C,A					; количество дорожек
-		LD HL,(CPU3+0X0A)
+		LD HL,(CPU3+0x0A)
 		LD (START_DATA),HL
 		LD DE,CPU5				; адрес буфера начала описателей дорожек
-		LD HL,CPU3+0X0F				; адрес начала выборки описателей дорожек в FDI заголовке
+		LD HL,CPU3+0x0F				; адрес начала выборки описателей дорожек в FDI заголовке
 LOADFDI3	BIT 1,H
 		CALL NZ,LOAD1SECFDI			; если вышли за пределы сектора меняем указатель и грузим следующий сектор в буфер
 		LD A,(HL)				; биты 8-15 смещения дорожки от начала
-		AND 0X3F				; взяли для 8-13 биты-смещение в блоках в странице
+		AND 0x3F				; взяли для 8-13 биты-смещение в блоках в странице
 		LD (DE),A				; уложили смещение в блоках в странице
 		LD A,(HL)				; взяли биты 14-15
 		INC HL					; следующий байт FDI заголовка
@@ -345,9 +346,9 @@ LOADFDI3	BIT 1,H
 		RLA
 		LD (DE),A				; укладка битов смещения номера страницы 
 		INC D
-		REPT 4
+	REPT 4
 		INC HL
-		ENDM
+	ENDM
 		BIT 1,H
 		CALL NZ,LOAD1SECFDI			; если вышли за пределы сектора меняем указатель и грузим следующий сектор в буфер
 		LD B,(HL)				; взяли количество секторов на дорожке
@@ -379,11 +380,11 @@ LOADFDI4	INC HL
 		LD (HL),8
 LOADFDI2	EX DE,HL
 		INC D
-		REPT 5
+	REPT 5
 		INC HL
-		ENDM
+	ENDM
 		DJNZ LOADFDI4				; возвращаемся для продолжения, пока сектора дорожки не кончатся
-		LD D,0X40
+		LD D,0x40
 		INC E
 		DEC C
 		JR NZ,LOADFDI3				; возвращаемся для продолжения пока не кончатся дорожки
@@ -422,7 +423,7 @@ LOADFDI7	ADD HL,DE
 		LD (OSTAT_SECT),HL			; сколько байт перенести из хвоста сектора в буфере в начало страницы
 		LD B,H
 		LD C,L
-		LD HL,0X200
+		LD HL,0x200
 		SBC HL,BC
 		LD (NACH_SECT),HL			; сколько байт перенести из начала сектора в буфере в конец страницы
 		POP HL					; восстановили сдрес начала секторов, далее загрузка всех секторов в память
@@ -442,7 +443,7 @@ LOADFDI5	POP AF
 		EX AF,AF'
 		JP C,ELT5
 		EX DE,HL
-		LD A,0X1F
+		LD A,0x1F
 		CALL READ_FILE
 		JP C,ELT5
 		PUSH HL
@@ -457,20 +458,21 @@ LOADFDI5	POP AF
 		JR LOADFDI5
 
 LOADFDI_ERR	POP AF
-		EVOPORT WIN_P5,RAM_RAMDISK
+	EVOPORT WIN_P5,RAM_RAMDISK
 		CALL FORMAT_RAMDISK
 		LD IX,LDFDIERROR
 		SCF
 		RET
 
-FORMAT_RAMDISK	EVOPORT WIN_P5,RAM_DATARAMD
+FORMAT_RAMDISK
+	EVOPORT WIN_P5,RAM_DATARAMD
 		LD HL,CPU5
 		LD DE,CPU5+1
-		LD BC,0XFFF
+		LD BC,0xFFF
 		LD (HL),L
 		LDIR
 		LD HL,DSKINFO
-		LD DE,CPU5+0X8E1
+		LD DE,CPU5+0x8E1
 		LD BC,DSK_END-DSKINFO
 		LDIR
 		JP ILD_IMG3
@@ -495,7 +497,7 @@ LOAD1SECFDI	PUSH HL
 OPEN_MOUNT	LD A,(RREG_A)
 OPEN_MOUNT_INT	LD (MOUNT_SYM),A			; номер монтирумого диска
 		LD IYL,INTERNAL
-		EVOPORT WIN_P5,RAM_MOUNTER		; включили страницу с описателями примонтированных файлов
+	EVOPORT WIN_P5,RAM_MOUNTER			; включили страницу с описателями примонтированных файлов
 		LD A,(MOUNT_SYM)			; номер монтирумого диска
 		ADD A,HIGH (BUF_PATHMOUNT+CPU5)
 		LD D,A
@@ -504,7 +506,7 @@ OPEN_MOUNT_INT	LD (MOUNT_SYM),A			; номер монтирумого диска
 		ADD A,HIGH (TEK_BUFPATH+CPU5)+4
 		LD H,A
 		LD L,E					; HL=адрес пути на текущем устройстве
-		LD BC,0X100
+		LD BC,0x100
 		PUSH DE
 		LDIR					; перенесли путь
 		CALL READ_DIR				; прочитали описатель монтируемого файла
@@ -515,7 +517,7 @@ OPENMOUNT05	LD A,(DE)
 		AND A
 		JR NZ,OPENMOUNT05
 		DEC DE
-		LD BC,0X8FF
+		LD BC,0x8FF
 OPENMOUNT01	LDI
 		LD A,(HL)
 		CP "!"
@@ -552,7 +554,7 @@ OPENMOUNT04	XOR A
 		LD IXH,D
 		LD IXL,E				; IX=адрес описателя примонтированного файла
 		LD (IX+_MOUNT_Mount_Num),B		; номер монтируемого дисковода
-		LD BC,0X20
+		LD BC,0x20
 		LDIR
 		INC A
 		LD H,%11110111
@@ -566,7 +568,7 @@ OPENMOUNT1	RLC H
 		CPL
 		OR L
 		CALL WR_VIRT_BITS
-		EVOPORT WIN_P5,RAM_MOUNTER		; включили страницу с описателями примонтированных файлов
+	EVOPORT WIN_P5,RAM_MOUNTER			; включили страницу с описателями примонтированных файлов
 		POP HL
 ; HL=адрес описателя монтируемого файла
 IOPEN_MOUNT	LD DE,FILE_EXT
@@ -673,20 +675,20 @@ RDWR_MOUNT	LD A,(RREG_A)
 		LD IXL,A
 		LD IXH,HIGH (MOUNT_DRIVES)		; IX=описатель дисководов A-D
 		LD IYL,INTERNAL
-		EVOPORT WIN_P5,RAM_FATVARS
+	EVOPORT WIN_P5,RAM_FATVARS
 		LD A,(SETDVOL)
 		ADD A,HIGH (CPU5+BUF_ALLVOL)+4
 		LD D,A
 		LD E,0
 		LD HL,BUF_TEKVOL
-		LD BC,0X100
+		LD BC,0x100
 		LDIR
 		LD A,(IX+_MOUNT_Vol_Num)
 		ADD A,HIGH (CPU5+BUF_ALLVOL)+4
 		LD H,A
 		LD L,0
 		LD DE,BUF_TEKVOL
-		LD BC,0X100
+		LD BC,0x100
 		LDIR
 		EVOPORT WIN_P5,RAM_MOUNTER
 		LD HL,(GO_DEV)
@@ -712,7 +714,7 @@ RDWRMOUNT1	SRL H
 		RR L
 		RRCA
 		JR NC,RDWRMOUNT1			; HL=номер кластера
-; 0XA00 секторов (256 байт) -> 0X500 секторов (512 байт)
+; 0xA00 секторов (256 байт) -> 0x500 секторов (512 байт)
 ; кластер=1 сектор	1280/8 байт	шаг=8
 ; кластер=2 сектора	640/4 байт	шаг=4
 ; кластер=4 сектора	320/2 байт	шаг=2
@@ -783,19 +785,19 @@ RDWRMOUNT5	CALL LOADLST				; чтение сектора в буфер
 		ADD HL,BC				; адрес буфера в окне 1
 		CALL LDIR_SEC
 		LD A,(RREG_A)				; чтение или запись
-		AND 0X80
+		AND 0x80
 		CALL NZ,LSTSAVE
 		LD HL,RREG_H
 		INC (HL)
 		LD L,(IX+_MOUNT_Adr_Sel_Drv)
 		LD H,(IX+_MOUNT_Adr_Sel_Drv+1)
 		LD (GO_DEV),HL
-		EVOPORT WIN_P5,RAM_FATVARS
+	EVOPORT WIN_P5,RAM_FATVARS
 		LD A,(SETDVOL)
 		ADD A,HIGH (CPU5+BUF_ALLVOL)+4
 		LD H,A
 		LD DE,BUF_TEKVOL
-		LD BC,0X100
+		LD BC,0x100
 		LD L,C
 		LDIR
 		LD (NumSec2Buf + 2),HL
@@ -807,15 +809,15 @@ LDIR_SEC	EX DE,HL				; адрес буфера сохранили в DE
 		ADD HL,BC				; изменили адрес чтения/записи
 		EX DE,HL				; HL=адрес буфера, DE=адрес в основной памяти
 		LD A,(RREG_A-CPU5)			; чтение или запись
-		AND 0X80
+		AND 0x80
 		JR Z,LDIRSEC6
 		EX DE,HL				; для записи меняем напраление переноса
-LDIRSEC6	LD BC,0X100
+LDIRSEC6	LD BC,0x100
 		LDIR
 		LD HL,CPU5
 		ADD HL,SP
 		LD SP,HL				; вернули адрес стека в окно 2
-		ATMPORT WIN_A3,0X7F			; убрали возможную зависимость в окне 3 от порта 7FFD
+	ATMPORT WIN_A3,0x7F				; убрали возможную зависимость в окне 3 от порта 7FFD
 		LD B,HIGH (WIN_A6)
 		OUT (C),A				; убрали возможную зависимость в окне 2 от порта 7FFD
 		XOR A
@@ -830,7 +832,7 @@ FIND_MOUNTED	LD A,(KOLDVOL)
 		AND A
 		JR NZ,FINDMNTD09
 		LD IX,MOUNT_DRIVES
-		LD DE,0X40
+		LD DE,0x40
 		LD B,4
 FINDMNTD10	LD (IX+_MOUNT_Name),D
 		ADD IX,DE
@@ -841,7 +843,7 @@ FINDMNTD09	LD A,(SETDVOL)
 		LD (SAVE_TEK_VOL),A			; сохранили текущее устройство
 		CALL SAVE_FNDVOL			; сохранили переменные текущего устройства
 		LD H,CMOS_BYTE_01
-		ROMCALL READCMOS,ROM_RST82
+	ROMCALL READCMOS,ROM_RST82
 		LD A,L
 		AND M_AUTOMOUNT				; определение нужно ли искать файл IMAGE.MNT
 		JP Z,FINDMNTD01
@@ -864,7 +866,7 @@ FINDMNTD09	LD A,(SETDVOL)
 		JP C,FINDMNTD01				; файл IMAGE.MNT не найден
 ; файл найден
 		CALL OPEN_FILE				; открываем файл
-		LD HL,FILE_SRC+0X1F
+		LD HL,FILE_SRC+0x1F
 		LD A,(HL)
 		DEC HL
 		OR (HL)
@@ -882,7 +884,7 @@ FINDMNTD09	LD A,(SETDVOL)
 		LD HL,OFFSET_BUFSYM+CPU6
 		PUSH HL
 		CALL READ_FILE				; прочитали 1 сектор из файла
-		EVOPORT WIN_P5,RAM_MOUNTER
+	EVOPORT WIN_P5,RAM_MOUNTER
 		POP HL
 		POP BC
 		ADD HL,BC
@@ -901,7 +903,7 @@ FINDMNTD04	LD A,(HL)
 		JR C,FINDMNTD06				; должна быть только символ от "A"
 		CP 'z'+1
 		JR NC,FINDMNTD06			; до "Z"
-		AND 0XDF				; перевели букву устройства в верхний регистр, если нужно
+		AND 0xDF				; перевели букву устройства в верхний регистр, если нужно
 FINDMNTD06	SUB "E"					; FAT устройства начинаются с буквы "E"
 		JR C,FINDMNTD02
 		EXX
@@ -928,7 +930,7 @@ FINDMNTD07	LD A,(HL)
 		JR C,FINDMNTD08
 		CP 'z'+1
 		JR NC,FINDMNTD08
-		AND 0XDF				; переводи в верхний регистр, если нужно
+		AND 0xDF				; переводи в верхний регистр, если нужно
 FINDMNTD08	SUB "A"
 		JR C,FINDMNTD02
 		CP 4
@@ -972,22 +974,23 @@ FINDMNTD02	LD A,(HL)
 		POP DE
 		JR FINDMNTD04
 
-FINDMNTD01	EVOPORT WIN_P5,RAM_MOUNTER
-		LD BC,0X400
+FINDMNTD01
+	EVOPORT WIN_P5,RAM_MOUNTER
+		LD BC,0x400
 		LD IX,MOUNT_DRIVES			; буфер описателей монтируемых файлов
 FINDMNTD2	PUSH BC
 		CALL FINDMNTD0				; ищем указанный файл для монтирования
 		JR NC,FINDMNT5
 		LD (IX+_MOUNT_Name),0			; если файл не найден, то принудительно демонтируем образ
-FINDMNT5	LD BC,0X40
+FINDMNT5	LD BC,0x40
 		ADD IX,BC				; следующий описатель монтируемого файла
 		POP BC
 		DJNZ FINDMNTD2
 		LD A,IYH
-		AND 0XF0				; старшие 4 бита примонтированные файлы
+		AND 0xF0				; старшие 4 бита примонтированные файлы
 		LD D,A
 		LD A,(CPU2+VIRT_BITS)
-		AND 0X0F				; младшие 4 бита реальный и виртуальные приводы
+		AND 0x0F				; младшие 4 бита реальный и виртуальные приводы
 		OR D					; совместили для записи обратно
 		CALL WR_VIRT_BITS
 		LD A,(SAVE_TEK_VOL)
@@ -1002,7 +1005,7 @@ FINDMNT5	LD BC,0X40
 FINDMNTD0	CALL FINDMNTD1
 		EX AF,AF'
 		LD A,IXL
-		AND 0XC0
+		AND 0xC0
 		RLCA
 		RLCA					; номер текущего монтируемого дисковода
 		INC A
@@ -1025,12 +1028,12 @@ FINDMNTD0	CALL FINDMNTD1
 
 ; сохранение текущего пути
 STORE_PATH	PUSH AF
-		EVOPORT WIN_P5,RAM_MOUNTER
+	EVOPORT WIN_P5,RAM_MOUNTER
 		LD A,(SETDVOL)				; номер текущего устройства
 		ADD A,HIGH (TEK_BUFPATH+CPU5)+4		; +старший байт адреса пути
 		LD H,A
 		LD DE,BUF_256
-		LD BC,0X100
+		LD BC,0x100
 		LD L,C
 		LDIR
 STOREPATH1	POP AF
@@ -1038,12 +1041,12 @@ STOREPATH1	POP AF
 
 ; восстановление текущего пути
 RESTORE_PATH	PUSH AF
-		EVOPORT WIN_P5,RAM_MOUNTER
+	EVOPORT WIN_P5,RAM_MOUNTER
 		LD A,(SETDVOL)				; номер текущего устройства
 		ADD A,HIGH (TEK_BUFPATH+CPU5)+4		; +старший байт адреса пути
 		LD D,A
 		LD HL,BUF_256
-		LD BC,0X100
+		LD BC,0x100
 		LD E,C
 		LDIR
 RESTOREPATH1	POP AF
@@ -1073,7 +1076,7 @@ FINDMNTD1	LD A,IXL
 		LD HL,(RootDIRCluster + 2)
 		LD (CurrentDIRCluster + 2),HL		; перешли в корень устройства
 		CALL INIRTSC				; инициализация его переменных
-		EVOPORT WIN_P5,RAM_MOUNTER
+	EVOPORT WIN_P5,RAM_MOUNTER
 		POP HL
 		CALL FNDBUF				; распаковка текстовой строки
 FINDMNTD13	PUSH HL
@@ -1081,11 +1084,11 @@ FINDMNTD13	PUSH HL
 		CALL FINDMNTD3				; поиск в текущей директории
 		POP DE
 		JP C,RESTORE_PATH			; восстановили текущий путь
-		LD BC,0X0B
+		LD BC,0x0B
 		ADD HL,BC
 		LD A,(HL)
 		SBC HL,BC
-		AND 0X10
+		AND 0x10
 		JR Z,FINDMNTD23				; если это файл найден, то он найден
 		PUSH DE
 		CALL ENTER_DIR				; иначе входим в директорию
@@ -1105,7 +1108,7 @@ FINDMNTD23	LD A,IXL
 		LD D,IXH				; DE=куда описатель переносить
 		LD (IX+_MOUNT_Mount_Num),A		; номер монтируемого дисковода
 		PUSH HL
-		LD BC,0X20
+		LD BC,0x20
 		LDIR
 		POP HL
 		PUSH IY
@@ -1129,21 +1132,23 @@ FINDMNTD3	PUSH HL
 ; получение описателя файла загруженного в рамдиск
 REST_NAMELOAD	LD HL,NAME_RAMDISK-CPU6
 		LD DE,(RREG_L)
-		LD BC,0X20
+		LD BC,0x20
 		JP LDIR_BYTES
 
 ;STOR_NAMELOAD	LD HL,(RREG_L)
 ;		LD DE,NAME_RAMDISK-CPU6
-;		LD BC,0X20
+;		LD BC,0x20
 ;		JP LDIR_BYTES
 
-GET_MOUNTED	EVOPORT WIN_P5,RAM_MOUNTER
+GET_MOUNTED
+	EVOPORT WIN_P5,RAM_MOUNTER
 		LD HL,MOUNT_DRIVES-CPU6
 		LD DE,(RREG_L)
-		LD BC,0X100
+		LD BC,0x100
 		JP LDIR_BYTES
 
-CMP_DRIVE	EVOPORT WIN_P5,RAM_MOUNTER
+CMP_DRIVE
+	EVOPORT WIN_P5,RAM_MOUNTER
 		LD A,(RREG_A)
 		AND 3
 		RLCA
@@ -1161,7 +1166,8 @@ CMP_DRIVE1	PUSH AF
 		RET
 
 ; демонтирование образа
-CLOSEMOUNT	EVOPORT WIN_P5,RAM_MOUNTER
+CLOSEMOUNT
+	EVOPORT WIN_P5,RAM_MOUNTER
 		LD A,(RREG_A)
 		LD B,A
 		RRCA
@@ -1185,7 +1191,7 @@ CLOSEMOUNT	EVOPORT WIN_P5,RAM_MOUNTER
 
 ; распаковщик пути к файлу 
 ; HL = адрес текстовой строки
-FNDBUF		LD BC,0X0802
+FNDBUF		LD BC,0x0802
 		LD DE,FB_EXT
 FNDBUF4		LD A,(HL)
 		INC HL
@@ -1229,7 +1235,7 @@ GET_VIRT_BITS	LD HL,MOUNT_DRIVES
 		JR Z,.L1
 		SET 4,E
 .L1		RR E
-		LD A,0X40
+		LD A,0x40
 		ADD A,L
 		LD L,A
 		JR NZ,.L2
@@ -1248,35 +1254,36 @@ GET_VIRT_BITS	LD HL,MOUNT_DRIVES
 ; копирование установок виртуал/реал для EVO-DOS 
 WR_VIRT_BITS	PUSH BC
 		PUSH HL
-	IFDEF DOS_FE
-		LD L,A
-		AND 0X0F			; примонтированные диски
 		LD H,A
-		LD A,L
-		RRCA
-		RRCA
-		RRCA
-		RRCA
-		AND 0X0F			; рамдиск
-		OR H
-		LD (B_PORT_VIRT),A
-		LD A,L
-	ENDIF
-		LD (CPU2+VIRT_BITS),A		; внутренняя переменая
+		LD (CPU2 + VIRT_BITS),A		; внутренняя переменная
 		LD (RREG_A),A			; возвращаемое значение в регистре A
-		EX AF,AF'
+		AND %00001111			; примонтированные диски
+		LD L,A
+		LD A,H
+		AND %11110000
+		RRCA
+		RRCA
+		RRCA
+		RRCA
+		OR L
+		LD (B_PORT_VIRT),A
 	EVOPORT WIN_P2,RAM_EVODOS
-		PUSH BC
-		EX AF,AF'
-		LD (CPU2+COPY_VIRT_BITS),A	; копия переменной для эмуля
+		LD A,H
+		LD (CPU2 + COPY_VIRT_BITS),A	; копия переменной флагов для эмуля
 		LD A,VIRT_REAL_DRIVE
 		LD BC,CMOSD_SET_ADR
 		OUT (C),A
 		LD BC,CMOSD_RD_WR
-		IN A,(C)
-		AND 3
-		LD (CPU2+VIRT_DRIVE),A
-		POP BC
+		IN L,(C)
+		LD A,L
+		AND %00000011
+		LD (CPU2 + VIRT_DRIVE),A	; номер виртуального диска из CMOS
+		LD A,L
+		AND %00001100
+		RRCA
+		RRCA
+		LD (CPU2 + REAL_DRIVE),A	; номер реального диска из CMOS
+		LD BC,WIN_P2
 		XOR A
 		OUT (C),A
 		POP HL
@@ -1284,8 +1291,8 @@ WR_VIRT_BITS	PUSH BC
 		RET
 
 	IF 0
-;[монтирование рамдиска]
-;MOUNT_RAMDISK	CALL GET_VIRTREAL
+; монтирование рамдиска
+; MOUNT_RAMDISK	CALL GET_VIRTREAL
 ;		AND 3
 ;		JR SET_RAMDISK.L1
 
@@ -1297,7 +1304,7 @@ SET_RAMDISK	LD A,(RREG_A)
 		CP 4
 		JR C,.L1
 		LD A,(CPU2+VIRT_BITS)
-		AND 0X0F
+		AND 0x0F
 		JR WR_VIRT_BITS
 
 .L1		INC A
@@ -1307,7 +1314,7 @@ SET_RAMDISK	LD A,(RREG_A)
 		DJNZ .L2
 		LD L,A
 		LD A,(CPU2+VIRT_BITS)
-		AND 0X0F
+		AND 0x0F
 		OR L
 		JP WR_VIRT_BITS
 	ENDIF
@@ -1357,5 +1364,5 @@ SET_VIRT	LD A,(RREG_A)
 
 GET_VIRTREAL	LD H,VIRT_REAL_DRIVE
 	ROMCALL READCMOS,ROM_RST82
-		AND 0X0F
+		AND 0x0F
 		RET

@@ -1,118 +1,119 @@
 
-; LAST UPDATE: 15.01.2022 savelij
+; LAST UPDATE: 05.10.2022 savelij
 
 		TITLE "menu_execute.a80"
 
-;[ЗАГРУЗКА С ЛЕНТЫ]
+; загрузка с ленты
 TAPELOAD	LD H,CMOS_BYTE_00
 		CALL READCMOS
 		AND M_EMUL_TAPE
 		JP NZ,EMULTAPLOAD
 		LD IX,TAPE_LDT
-		RST8 _WINW
-TAPELOAD1	CALL MEMSET			;ВЫСТАВИЛИ РЕЖИМЫ ПАМЯТИ И ТУРБЫ
+	RST8 _WINW
+TAPELOAD1	CALL MEMSET			; выставили режимы памяти и турбы
 		LD HL,BAS4TAPE
-		LD DE,0X5C3A
+		LD DE,0x5C3A
 		LD BC,EBAS4TAPE-BAS4TAPE
-		LDIR				;ПЕРЕМЕННЫЕ БАСИКА СДЕЛАЛИ FOR ONLY TAPE
+		LDIR				; переменные басика сделали FOR ONLY TAPE
 		LD HL,ERROR_TAPE
 		PUSH HL
-		LD (0X5C3D),SP			;ПЕРЕХВАТ ОШИБКИ ЕСЛИ ЕСТЬ ЖЕЛАНИЕ ВЕРНУТЬСЯ
-		LD HL,0XFF58
-		LD SP,HL			;ВЫСТАВИЛИ СТЕК А ЛЯ БЕЙСИК 48
-		LD DE,0X3E08
-		LD BC,0XA8
+		LD (0x5C3D),SP			; перехват ошибки если есть желание вернуться
+		LD HL,0xFF58
+		LD SP,HL			; выставили стек а ля бейсик 48
+		LD DE,0x3E08
+		LD BC,0xA8
 		EX DE,HL
-		LDIR				;ПОЛОЖИЛИ ШРИФТ UDG
-		LD HL,0X3E00
+		LDIR				; положили шрифт UDG
+		LD HL,0x3E00
 		PUSH HL
-		LD HL,0X1303
+		LD HL,0x1303
 		PUSH HL
-		LD HL,0X1B76
-		PUSH HL				;ЗАПОЛНИЛИ ДНО ПЕРЕСТАВЛЕННОГО СТЕКА
-		LD IX,0X5CD1			;УСТАНОВИЛИ ДЛЯ ЗАГРУЗКИ С ЛЕНТЫ
-		JP 0X073E			;ПЕРЕХОД НА ЗАГРУЗКУ С ЛЕНТЫ
+		LD HL,0x1B76
+		PUSH HL				; заполнили дно переставленного стека
+		LD IX,0x5CD1			; установили для загрузки с ленты
+		JP 0x073E			; переход на загрузку с ленты
 
-;[ПЕРЕХВАТ ОШИБКИ ИЛИ БРЕКА ДЛЯ ВОЗВРАТА]
+; перехват ошибки или брека для возврата
 ERROR_TAPE	LD HL,BAS_VAR
-		LD DE,0X5C00
+		LD DE,0x5C00
 		LD BC,EBAS_VAR-BAS_VAR
-		LDIR				;ВЕРНУЛИ ТЫРДОСНЫЕ ПЕРЕМЕННЫЕ НА МЕСТО
+		LDIR				; вернули тырдосные переменные на место
 		XOR A
-		LD (0X5C3D),BC			;СНЯЛИ ПЕРЕХВАТЧИК ОШИБОК
-		OUT (0XFE),A
+		LD (0x5C3D),BC			; сняли перехватчик ошибок
+		OUT (0xFE),A
 		DEC A
 		LD (gFenv),A
-		CALL GLUDIN			;ПОГУДЕЛИ В АУ ЧТО БЫЛА ОШИБКА
+		CALL GLUDIN			; погудели в ау что была ошибка
 		LD A,1
 		LD (gFenv),A
-		JP RESTART			;ПЕРЕЗАПУСК HE GLUK
+		JP RESTART			; перезапуск HE GLUK
 
-;[СОЗДАНИЕ РАМ ДИСКА НА 640К]
+; создание рам диска на 640К
 RAM_640		LD HL,RESTART
 		PUSH HL
 CREATE_TRDRAM
-		LD HL,636*4			;RAM DISK НА 640 КИЛОБАЙТ
-		LD (SECFREE),HL			;ВЫСТАВИЛИ ПЕРЕМЕННУЮ КОЛИЧЕСТВА СЕКТОРОВ НА RAM DISK
+		LD HL,636*4			; RAM DISK на 640 килобайт
+		LD (SECFREE),HL			; выставили переменную количества секторов на RAM DISK
 		DI
 
 	IFNDEF TESTEMUFDD
 ; test
-		PEC_ON M_SHADOW_BF
+	PEC_ON M_SHADOW_BF
 		LD A,RAM_RAMDISK+1
 		LD BC,WIN_P2
 		OUT (C),A
-		LD HL,0X8000
+		LD HL,0x8000
 		LD D,H
 		LD E,L
 		INC DE
-		LD BC,0X0FFF
+		LD BC,0x0FFF
 		LD (HL),L
-		LDIR				;ОЧИСТИЛИ СТРАНИЦУ TR-DOS ДИРЕКТОРИИ
+		LDIR				; очистили страницу TR-DOS директории
 		LD HL,DSKINFO
-		LD DE,0X88E1
+		LD DE,0x88E1
 		LD C,DSK_END-DSKINFO
-		LDIR				;ПЕРЕНЕСЛИ ШАБЛОН ДЛЯ 9 СЕКТОРА ДИРЫ
-		LD A,ZXSTD_CPU2;0XFD
+		LDIR				; перенесли шаблон для 9 сектора диры
+		LD A,ZXSTD_CPU2
 		LD BC,WIN_P2
 		OUT (C),A
-		PEC_OFF M_SHADOW_BF
+	PEC_OFF M_SHADOW_BF
 ; test
 	ENDIF
 
 		JP CREATE_TRD640
 
-;[СБРОС NEOGS]
-RESETNGS	LD A,0X80
-		OUT (0X33),A
+; сброс NEOGS
+RESETNGS	LD A,C_GRST
+		OUT (GSCTR),A
 		JP RESTART
 
-;[FILE NOT FOUND]
+; file not found
 FILE_NONE	LD IX,FILENONE
-		RST8 _WINW
+	RST8 _WINW
 		JP STUPID1
 
-;[ПРОВЕРКА ВИРТУАЛЬНОГО ПРИВОДА]
+; проверка виртуального привода
 CMP_VIRTUAL	LD H,VIRT_REAL_DRIVE
 		CALL READCMOS
 		LD A,(DRV_SYM)
-		LD D,A				;НОМЕР ТЕКУЩЕГО РЕАЛЬНОГО ДИСКОВОДА
+		LD D,A				; номер текущего реального дисковода
 		LD A,L
 		RRCA
 		RRCA
-		AND 3				;НОМЕР РЕАЛЬНОГО ДИСКОВОДА ИЗ CMOS
+		AND 3				; номер реального дисковода из CMOS
 		CP D
 		JR NZ,PRT_NONETRDOS
 		LD IX,ERR_VIRTUAL
 		JR PRT_NONETRDOS1
 
 PRT_NONETRDOS	LD IX,NONETRDOS
-PRT_NONETRDOS1	RST8 _WINW
+PRT_NONETRDOS1
+	RST8 _WINW
 		JR STUPID1
 
-;[ВЫВОД ПОМОЩИ]
+; вывод помощи
 VIEW_HELP	LD IX,WIN_HELP
-		RST8 _WINW
+	RST8 _WINW
 VIEWHELP1	CALL PRINTTIME
 		EI
 		HALT
@@ -123,7 +124,7 @@ VIEWHELP1	CALL PRINTTIME
 		JR STUPID1
 
 LDFDI_ERROR	LD IX,LDFDIERROR
-		RST8 _WINW
+	RST8 _WINW
 		JR STUPID1
 
 _STUPID		LD IX,MSTUPID
@@ -136,14 +137,14 @@ TEK_SP		EQU $-2
 		EI
 		CALL RESET_VG
 		CALL EXIT4ERROR
-;		LD A,0XFF
+;		LD A,0xFF
 ;		LD (gFenv),A
 ;		CALL GLUDIN			;HL
 ;		LD A,1
 ;		LD (gFenv),A
 		JP RESTART
 
-;[ПЕРЕХОДИЛКА В БАСИК128]
+; переходилка в басик 128
 BAS128		CALL SYSTEM
 		CALL MEMSET
 		DI
@@ -152,91 +153,92 @@ BAS128		CALL SYSTEM
 		CALL SET_7FFD
 		RST 0
 
-;[СБРОС УКАЗАТЕЛЯ ЗАГРУЗЧИКА TAPE]
-INIT_LOADTAPE	PEC_ON M_SHADOW_BF
+; сброс указателя загрузчика TAPE
+INIT_LOADTAPE
+	PEC_ON M_SHADOW_BF
 		LD BC,WIN_P2
 		XOR A
 		OUT (C),A
-		LD HL,0X8000
+		LD HL,0x8000
 		LD (HL),A
 		INC L
 		LD (HL),A
 		INC L
 		LD (HL),A
 		LD B,HIGH (WIN_A2)
-		LD A,0X7D
+		LD A,0x7D
 		OUT (C),A
-		PEC_OFF M_SHADOW_BF
+	PEC_OFF M_SHADOW_BF
 		RET
 
-;[ПЕРЕХОДИЛКА В БАСИК48]
+; переходилка в басик 48
 BAS48		CALL SYSTEM
 		CALL MEMSET
 		CALL INIT_LOADTAPE
-		LD A,0X30
+		LD A,0x30
 		CALL SET_7FFD
 		RST 0
 
-;[ПЕРЕХОДИЛКА В ТЫРДОС]
+; переходилка в тырдос
 DOS128		CALL SYSTEM
 		CALL MEMSET
 		LD IX,0
 		JP DOSIX
 
-;МЕНЮХА ЗАЧИСТКИ СТРАНИЦ, ФОРМАТИРОВАНИЯ РАМДИСКА И ДИСКЕТНЫЙ КОПИР
+; менюха зачистки страниц, форматирования рамдиска и дискетный копир
 _KILLS		LD IX,MKILLS
-		RST8 _WINW
+	RST8 _WINW
 		JP _RULILKA
 
-;[СБРОС В BASIC 48 СО СТАНДАРТНОЙ ПРОШИВКОЙ ПРИ ВЫКЛЮЧЕННОМ ТУРБО РЕЖИМЕ]
+; сброс в basic 48 со стандартной прошивкой при выключенном турбо режиме
 BAS48STD	DI
 		CALL SET_EMU_TAPE
 		LD BC,PENT_CONF
-		LD A,0X14
+		LD A,0x14
 		OUT (C),A
 		LD BC,CONF_128
-		LD A,0X30
+		LD A,0x30
 		OUT (C),A
-		PEC_ON M_SHADOW_BF
-		ATMPORT WIN_A0,0X3F
-		EVOPORT WIN_P0,0
+	PEC_ON M_SHADOW_BF
+	ATMPORT WIN_A0,0x3F
+	EVOPORT WIN_P0,0
 		LD HL,0
 		LD (HL),H
 		INC L
 		LD (HL),H
 		INC L
 		LD (HL),H
-		ATMPORT WIN_A0,ROM_BAS48_STD
-		PEC_OFF M_SHADOW_BF
+	ATMPORT WIN_A0,ROM_BAS48_STD
+	PEC_OFF M_SHADOW_BF
 		JP 0
 
-;[СБРОС В BASIC 128 СО СТАНДАРТНОЙ ПРОШИВКОЙ ПРИ ВЫКЛЮЧЕННОМ ТУРБО РЕЖИМЕ]
+; сброс в basic 128 со стандартной прошивкой при выключенном турбо режиме
 BAS128STD	DI
 		CALL SET_EMU_TAPE
 		LD BC,PENT_CONF
-		LD A,0X14
+		LD A,0x14
 		OUT (C),A
-		PEC_ON M_SHADOW_BF
-		ATMPORT WIN_A0,0X3F
-		EVOPORT WIN_P0,0
+	PEC_ON M_SHADOW_BF
+	ATMPORT WIN_A0,0x3F
+	EVOPORT WIN_P0,0
 		LD HL,0
 		LD (HL),H
 		INC L
 		LD (HL),H
 		INC L
 		LD (HL),H
-		ATMPORT WIN_A0,ROM_BAS48_128
+	ATMPORT WIN_A0,ROM_BAS48_128
 		LD BC,CONF_128
 		XOR A
 		OUT (C),A
-		ATMPORT WIN_A0,ROM_BAS128_STD
-		PEC_OFF M_SHADOW_BF
+	ATMPORT WIN_A0,ROM_BAS128_STD
+	PEC_OFF M_SHADOW_BF
 		JP 0
 
-;[HDD BOOT]
+; HDD BOOT
 HDD_BOOT	LD HL,ADR_CAT
 		PUSH HL
-		RST8 _COM_DEV,_COMHDDN,_DEV_INIT
+	RST8 _COM_DEV,_COMHDDN,_DEV_INIT
 		LD A,H
 		POP HL
 		AND A
@@ -251,20 +253,20 @@ HDDBOOT4	PUSH HL
 		RET
 
 HDDBOOT1	LD IX,HDDBOOT_ERROR
-		RST8 _WINW
+	RST8 _WINW
 		JP STUPID1
 
-HDDBOOT2	LD HL,0X6000			;ГРУЗИТЬ БУДЕМ КАК И БЫЛ АДРЕС
-		PUSH HL				;ПОСЛЕ ЗАГРУЗКИ ЗАПУСКАЕМ ЗАГРУЖЕННОЕ
+HDDBOOT2	LD HL,0x6000			; грузить будем как и был адрес
+		PUSH HL				; после загрузки запускаем загруженное
 		LD BC,0
 		LD DE,2
-		LD A,0X30
-		RST8 _COM_DEV,_COMHDDN,_DEV_READ
+		LD A,0x30
+	RST8 _COM_DEV,_COMHDDN,_DEV_READ
 		RET
 
-		LD DE,2				;ГРУЗИМ НАЧИНАЯ С СЕКТОРА 2 ИБО LBA
-		LD BC,0XFF00+PN_1F6
-		LD A,0XE0			;ВЫБРАЛИ МАСТЕР И LBA РЕЖИМ
+		LD DE,2				; грузим начиная с сектора 2 ибо LBA
+		LD BC,0xFF00+PN_1F6
+		LD A,0xE0			; выбрали мастер и lba режим
 		OUT (C),A
 		LD C,PN_1F5
 		OUT (C),D
@@ -273,15 +275,15 @@ HDDBOOT2	LD HL,0X6000			;ГРУЗИТЬ БУДЕМ КАК И БЫЛ АДРЕС
 		LD C,PN_1F3
 		OUT (C),E
 		LD C,PN_1F2
-		LD A,0X30			;ГРУЗИМ СЕКТОРОВ КАК И БЫЛО 
+		LD A,0x30			; грузим секторов как и было
 		OUT (C),A
-		EX AF,AF'			;СПРЯТАЛИ КОЛИЧЕСТВО СЕКТОРОВ ЗАГРУЗКИ
+		EX AF,AF'			; спрятали количество секторов загрузки
 		LD C,PN_1F7
-		LD A,0X20
-		OUT (C),A			;КОМАНДА ЧТЕНИЯ
+		LD A,0x20
+		OUT (C),A			; команда чтения
 		LD C,PN_1F7
 HDDRD1_		IN A,(C)
-		AND 0X88
+		AND 0x88
 		CP 8
 		JR NZ,HDDRD1_
 		EX AF,AF'
@@ -300,7 +302,7 @@ READSC1_	IN E,(C)
 		JR NZ,READSC1_
 		LD C,PN_1F7
 HDDRD3_		IN A,(C)
-		AND 0X80
+		AND 0x80
 		JR NZ,HDDRD3_
 		EX AF,AF'
 		DEC A
@@ -312,7 +314,7 @@ EHDDBOOT2
 
 HDDRDLN	EQU $-HDDREAD
 
-;[CD BOOT]
+; CD BOOT
 CDBOOT	XOR A
 	CALL CLS
 	CALL MEMSET
@@ -320,15 +322,17 @@ CDBOOT	XOR A
 	EI
 	JP CDBOOTGO
 
-UMOUNTIMAGE	RST8 _MOUNTER,_GET_VIRT_BITS
-		AND 0X0F
+UMOUNTIMAGE
+	RST8 _MOUNTER,_GET_VIRT_BITS
+		AND 0x0F
 		JP Z,RESTART
 		LD IX,WDISMOUNT
-		RST8 _WINW
-		JP _RULILKA			;ВОЗВРАЩАЕМСЯ К ОБЩЕМУ УПРАВЛЕНИЮ
+	RST8 _WINW
+		JP _RULILKA			; возвращаемся к общему управлению
 
 DISMOUNT_A	XOR A
-DISMOUNT_DRV	RST8 _MOUNTER,_CLOSEMOUNT
+DISMOUNT_DRV
+	RST8 _MOUNTER,_CLOSEMOUNT
 		JP RESTART
 
 DISMOUNT_B	LD A,1
@@ -340,59 +344,58 @@ DISMOUNT_C	LD A,2
 DISMOUNT_D	LD A,3
 		JR DISMOUNT_DRV
 
-;[СБРОС CMOS]
-RESET_CMOS	RST8 _CMOS_RW,_CLEAR_CMOS
+; сброс CMOS
+RESET_CMOS
+	RST8 _CMOS_RW,_CLEAR_CMOS
 		CALL SET_MODES
 		JP RESTART
 
-;[УСТАНОВКА ЗАДЕРЖКИ ДО ОПРЕДЕЛЕНИЯ HDD]
+; установка задержки до определения HDD
 HDDTIMEOUT	LD H,HDD_TIMEOUT
 		CALL READCMOS
 		LD E,A
-		AND 0X0F
+		AND 0x0F
 		INC A
 		CP 10
 		JR C,HDDTIMEOUT1
 		XOR A
 HDDTIMEOUT1	LD D,A
 		LD A,E
-		AND 0XF0
+		AND 0xF0
 		OR D
 		LD L,A
 		CALL WRITECMOS
-		AND 0X0F
+		AND 0x0F
 		ADD A,'0'
 		LD (TXT_HDDTIMEOUT),A
 		JR REPRINT_MENU
 
-	IF 0
-;[УСТАНОВКА ЗАДЕРЖКИ ЗАПУСКА SCREENSAVER]
+; установка задержки запуска screensaver
 SCRSAVTIMEOUT	LD H,HDD_TIMEOUT
 		CALL READCMOS
 		LD E,A
-		AND 0XF0
-		ADD A,0X10
-		CP 0XA0
+		AND 0xF0
+		ADD A,0x10
+		CP 0xA0
 		JR C,.L0
 		XOR A
 .L0		LD D,A
 		LD A,E
-		AND 0X0F
+		AND 0x0F
 		OR D
 		LD L,A
 		CALL WRITECMOS
-		AND 0XF0
+		AND 0xF0
 		RRCA
 		RRCA
 		RRCA
 		RRCA
-		LD (TIMEOUTSCRSAV),A
+		LD (SCRSAV.TIMEOUT),A
 		ADD A,'0'
 		LD (TXT_SCRSAVDELAY),A
 		JR REPRINT_MENU
-	ENDIF
 
-;[УСТАНОВКА РАЗРЕШЕНИЯ/ЗАПРЕЩЕНИЯ ОЗВУЧКИ КЛАВИАТУРЫ]
+; установка разрешения/запрещения озвучки клавиатуры
 SOUND_KEYS	LD C,M_SOUNDKEYS
 		LD HL,SNDKEYS_STAT
 SET_MENU	PUSH HL
@@ -405,36 +408,36 @@ SET_MENU1	CALL READCMOS
 		POP HL
 		CALL SET_ONOFF
 REPRINT_MENU	LD HL,SETUPERTXT
-		RST8 _PRINT_MESSAGE
+	RST8 _PRINT_MESSAGE
 		CALL REST_COLCURS
-		RST8 _COM_DEV,_CONTROL_SD
+	RST8 _COM_DEV,_CONTROL_SD
 		JP _RULILKA
 
-;[УСТАНОВКА РАЗРЕШЕНИЯ/ЗАПРЕЩЕНИЯ ДОСТУПА К SD КАРТЕ NEOGS]
+; установка разрешения/запрещения доступа к SD карте NEOGS
 ACS_SDNGS	LD C,M_ACCESSSDG
 		LD HL,ACCSSDG_STAT
 		JR SET_MENU
 
-;[УСТАНОВКА ВЫБОРА ДРАЙВЕРА ПРИНТЕРА]
+; установка выбора драйвера принтера
 AYPRN_SETUP	LD C,M_TYPE_FONT
 		LD HL,ETXT_AYPRINTER
 		JR SET_MENU
 
-;[ВКЛЮЧЕНИЕ/ВЫКЛЮЧЕНИЕ АВТОСТАРТА TAP ФАЙЛА ПРИ ВЫБОРЕ В FILE BROWSER]
+; включение/выключение автостарта TAP файла при выборе в FILE BROWSER
 AUTO_TAPE	LD C,M_AUTO_TAPE
 		LD HL,TXT_AUTOTAPE
 		PUSH HL
 		LD H,CMOS_BYTE_00
 		JR SET_MENU1
 
-;для резидента HONEY COMANDER
+; для резидента HONEY COMANDER
 	IFDEF REZIDENT
-;включение/выключение резидента
+; включение/выключение резидента
 REZID_SETUP	LD C,M_REZIDENT
 		LD HL,TXT_REZIDENT
 		JR SET_MENU
 
-;включение/выключения порчи резидента при запуске
+; включение/выключения порчи резидента при запуске
 KILL_REZID	LD C,M_KILL_REZIDENT
 		LD HL,TXT_KILLREZID
 		PUSH HL
@@ -442,7 +445,7 @@ KILL_REZID	LD C,M_KILL_REZIDENT
 		JR SET_MENU1
 	ENDIF;REZIDENT
 
-;[УСТАНОВКА ПЕРЕД ВЫВОДОМ МЕНЮ SETUP]
+; установка перед выводом меню SETUP
 SETUPM		LD IX,SETUPER
 		LD H,CMOS_BYTE_01
 		CALL READCMOS
@@ -462,26 +465,27 @@ SETUPM		LD IX,SETUPER
 		LD H,HDD_TIMEOUT
 		CALL READCMOS
 		LD D,A
-		AND 0X0F
+		AND 0x0F
 		ADD A,'0'
 		LD (TXT_HDDTIMEOUT),A
 		LD A,D
-		AND 0XF0
+		AND 0xF0
 		RRCA
 		RRCA
 		RRCA
 		RRCA
 		ADD A,'0'
-		RST8 _WINW
+		LD (TXT_SCRSAVDELAY),A
+	RST8 _WINW
 		JP _RULILKA
 
-;[ATM CP/M]
+; ATM CP/M
 ATM_CPM		EI
 		HALT
 		DI
-		PEC_ON M_SHADOW_BF
+	PEC_ON M_SHADOW_BF
 		LD HL,CPM_PAGES
-		LD DE,0X3F
+		LD DE,0x3F
 ATM_CPM1	LD BC,CONF_128
 		OUT (C),D
 		LD BC,LOW (WIN_A3)
@@ -491,34 +495,34 @@ ATM_CPM2	OUTI
 		LD B,A
 		JR NZ,ATM_CPM2
 		LD A,D
-		XOR 0X10
+		XOR 0x10
 		LD D,A
 		JR NZ,ATM_CPM1
-		LD SP,0X8000
-		LD BC,0X177
+		LD SP,0x8000
+		LD BC,0x177
 		LD A,6
 		OUT (C),A
 		LD BC,FDD_EMU_PORT
 		XOR A
 		OUT (C),A
-		PEC_OFF M_SHADOW_BF
-		JP 0X000C
+	PEC_OFF M_SHADOW_BF
+		JP 0x000C
 
-CPM_PAGES	DB 3!0X7F,2!0X7F,4!0X7F,0!0X7F
-		DB 3!0X7F,2!0X7F,5!0X7F,ROM_ATMCPM
+CPM_PAGES	DB 3!0x7F,2!0x7F,4!0x7F,0!0x7F
+		DB 3!0x7F,2!0x7F,5!0x7F,ROM_ATMCPM
 
-;[УСТАНОВКА РАЗРЕШЕНИЯ/ЗАПРЕЩЕНИЯ ЭМУЛЯЦИИ ЛЕНТЫ]
+; установка разрешения/запрещения эмуляции ленты
 SET_EMU_TAPE	LD H,CMOS_BYTE_00
 		CALL READCMOS
 		AND M_EMUL_TAPE
 		RET Z
-		LD BC,BREAK_LOW_WR
+		LD BC,BREAK_LOW
 		LD A,LOW (ADRBRK_EMUTAP)
 		OUT (C),A
-		LD B,HIGH (BREAK_HIGH_WR)
+		LD B,HIGH (BREAK_HIGH)
 		LD A,HIGH (ADRBRK_EMUTAP)
 		OUT (C),A
-		PEC_ON M_BREAK_BF
+	PEC_ON M_BREAK_BF
 		RET
 
 		include sdcardboot.a80
@@ -529,40 +533,40 @@ SONGLN		CALL START_SONGLN
 START_SONGLN	DI
 		PUSH IX
 		PUSH IY
-		LD A,0X11
+		LD A,0x11
 		CALL SET_7FFD
-		LD A,0X10
+		LD A,0x10
 		CALL SET_EFF7
-		LD HL,0X4000
-		LD DE,0XE000
-		LD BC,0X1B00
+		LD HL,0x4000
+		LD DE,0xE000
+		LD BC,0x1B00
 		LDIR
-		LD HL,0XD000
-		LD DE,0XD001
-		LD BC,0X1000
+		LD HL,0xD000
+		LD DE,0xD001
+		LD BC,0x1000
 		LD (HL),0
 		LDIR
 SONGLN1		XOR A
-		IN A,(0XFE)
+		IN A,(0xFE)
 		CPL
-		AND 0X1F
+		AND 0x1F
 		JR NZ,SONGLN1
-		PEC_ON M_SHADOW_BF
-		EVOPORT WIN_A0,ROM_RST82
+	PEC_ON M_SHADOW_BF
+	EVOPORT WIN_A0,ROM_RST82
 		CALL UNP_SONGLN
-		EVOPORT WIN_A0,ROM_BAS48|0X80
-		PEC_OFF M_SHADOW_BF
-		CALL 0XC000
-		LD HL,0XE000
-		LD DE,0X4000
-		LD BC,0X1B00
+	EVOPORT WIN_A0,ROM_BAS48|0x80
+	PEC_OFF M_SHADOW_BF
+		CALL 0xC000
+		LD HL,0xE000
+		LD DE,0x4000
+		LD BC,0x1B00
 		LDIR
-		LD HL,0XC000
-		LD DE,0XC001
-		LD BC,0X3FFF
+		LD HL,0xC000
+		LD DE,0xC001
+		LD BC,0x3FFF
 		LD (HL),0
 		LDIR
-		LD A,0X10
+		LD A,0x10
 		CALL SET_7FFD
 		XOR A
 		CALL SET_EFF7

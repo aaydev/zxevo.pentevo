@@ -1,33 +1,41 @@
 
-; LAST UPDATE: 15.12.2021 savelij
+; LAST UPDATE: 06.10.2022 savelij
+
+; ((out&0ffff)==37f7)&&((val&0ff)==1)
+; ((out&0ffff)==77f7)&&((val&0ff)==1)
+; ((out&0ffff)==0b7f7)&&((val&0ff)==1)
+; ((out&0ffff)==0f7f7)&&((val&0ff)==1)
+; ((M(5CF4)==2)&&(M(5CF5)==1B))
+; (((M(5CF4)==2)&&(M(5CF5)==1B))&&(SP<4000))
+; ((OUT&0FFFF)==1F)|((OUT&0FFFF)==3F)|((OUT&0FFFF)==7F)
 
 		include ../../macros.a80
 		include ../../global_vars.a80
 		include ../../define.a80
 		include ../../evodos_vars.a80
 
-STACK		EQU 0X0DFF
+STACK		EQU 0x0DFF
 
 OLD_IF		EQU STACK-WORD*2
 OLD_AF		EQU STACK-WORD
 
 ; команда выхода и переход на обработчик
 JP_EMU		MACRO ADDRESS
-		DUPL ADDRESS-$,0;XFF
+		DUPL ADDRESS-$,0
 		OUT (EXIT_PORT),A
 		JP ADR_ADDRESS
 		ENDM
 
 ; генерация адресов для таблицы
 LABEL_GEN	MACRO ADDRESS
-_ADDRESS	EQU ($-TABLE_VIRT)/4
-		DW ADDRESS, ADR_ADDRESS.WORK
+_ADDRESS	EQU ($ - TABLE_VIRT) / 4
+		DW ADDRESS,ADR_ADDRESS.WORK
 		ENDM
 
 ; переход на обработчик с кодом адреса
 EMU_JUMP	MACRO ADDRESS
 ADR_ADDRESS	EQU $
-		LD (OLD_AF+1),A
+		LD (OLD_AF + 1),A
 		LD A,_ADDRESS
 		JP WORKER
 
@@ -35,408 +43,338 @@ ADR_ADDRESS	EQU $
 		ENDM
 
 		ORG 0
-		DUPL 0X0038-$,0;XFF
+		DUPL 0x0038 - $,0
 		EI
 		RET
 
-		DUPL 0X006F-$,0;XFF
+		DUPL 0x006F - $,0
 		JP (HL)
 
-	JP_EMU 0X02BE				; OUT	   (0XFF), A
+	JP_EMU 0x02BE				; OUT	   (0xFF), A
 
-		DUPL 0X801-$,0
-; таблица адресов перехвата и вызыватора обработчиков
+		DUPL 0x0801 - $,0
+;таблица адресов перехвата и вызыватора обработчиков
 TABLE_VIRT
-	LABEL_GEN 0X02BE			; OUT	   (0XFF), A
-	LABEL_GEN 0X1E3A			; OUT	   (0X3F), A
-	LABEL_GEN 0X1FDD			; IN	A, (0X1F)
-	LABEL_GEN 0X1FF3			; OUT	   (0XFF), A
-	LABEL_GEN 0X2000			; OUT	   (0X1F), A
-	LABEL_GEN 0X2076			; IN	A, (0X1F)
-	LABEL_GEN 0X2085			; OUT	   (0X3F), A
-	LABEL_GEN 0X208D			; OUT	   (0X5F), A
-	LABEL_GEN 0X2093			; OUT	   (0X1F), A
-	LABEL_GEN 0X2099			; IN	A, (0X1F)
-	LABEL_GEN 0X20B1			; IN	A, (0XFF)
-	LABEL_GEN 0X20B8			; OUT	   (C),	   D
-	LABEL_GEN 0X2740			; IN	A, (0X1F)
-	LABEL_GEN 0X2748			; OUT	   (0X7F), A
-	LABEL_GEN 0X2A53			; OUT	   (C),    A
-	LABEL_GEN 0X2A71			; OUT	   (0XFF), A MAGIC
-	LABEL_GEN 0X2A77			; IN	A, (0X1F)    MAGIC
-	LABEL_GEN 0X2AD9			; OUT      (OXFF), A MAGIC
-	LABEL_GEN 0X2B25			; IN	A, (0X5F)    MAGIC
-	LABEL_GEN 0X2C07			; IN	A, (0X5F)    MAGIC
-	LABEL_GEN 0X2CD8			; IN	A, (0X5F)    MAGIC
-	LABEL_GEN 0X2D75			; OUT	   (0X5F), A MAGIC
-	LABEL_GEN 0X2D80			; OUT	   (0X1F), A MAGIC
-	LABEL_GEN 0X2D87			; IN	A, (0X1F)    MAGIC
-	LABEL_GEN 0X2F0C			; OUT	   (0XFF), A MAGIC
-	LABEL_GEN 0X2F1D			; OUT	   (0X5F), A MAGIC
-	LABEL_GEN 0X2F28			; OUT	   (0X1F), A MAGIC
-	LABEL_GEN 0X2F2F			; IN	A, (0X1F)    MAGIC
-	LABEL_GEN 0X2F3C			; OUT	   (0XFF), A MAGIC
-	LABEL_GEN 0X2F4D			; OUT	   (0XFF), A MAGIC
-	LABEL_GEN 0X2F50			; OUT	   (0X7F), A MAGIC
-	LABEL_GEN 0X2F57			; OUT	   (0X1F), A MAGIC
-	LABEL_GEN 0X2F59			; IN	A, (0XFF)
-	LABEL_GEN 0X2FB1			; OUT	   (0XFF), A
-	LABEL_GEN 0X2FC3			; OUT	   (0X1F), A
-	LABEL_GEN 0X3C30			; IN	A, (0X1F)
-	LABEL_GEN 0X3D4D			; OUT	   (0XFF), A
-	LABEL_GEN 0X3D9A			; OUT	   (0X1F), A
-	LABEL_GEN 0X3DA6			; IN	A, (0XFF)
-	LABEL_GEN 0X3DB5			; IN	A, (0X1F)
-	LABEL_GEN 0X3DBA			; IN	A, (0X1F)
-	LABEL_GEN 0X3DD5			; OUT	   (0XFF), A
-	LABEL_GEN 0X3E30			; IN	A, (0X1F)
-	LABEL_GEN 0X3E3A			; IN	A, (0X1F)
-	LABEL_GEN 0X3E44			; OUT	   (0X7F), A
-	LABEL_GEN 0X3E4C			; OUT	   (0X7F), A
-	LABEL_GEN 0X3E50			; IN	A, (0X3F)
-	LABEL_GEN 0X3E78			; IN	A, (0X3F)
-	LABEL_GEN 0X3E7E			; OUT	   (0X3F), A
-	LABEL_GEN 0X3E87			; IN	A, (0X3F)
-	LABEL_GEN 0X3E95			; OUT	   (0X3F), A
-	LABEL_GEN 0X3EB5			; IN	A, (0X1F)
-	LABEL_GEN 0X3EBC			; IN	A, (0X3F)
-	LABEL_GEN 0X3EC9			; OUT	   (0X1F), A
-	LABEL_GEN 0X3ECE			; IN	A, (0XFF)
-	LABEL_GEN 0X3EDF			; OUT	   (0X1F), A
-	LABEL_GEN 0X3EF3			; IN	H, (C)
-	LABEL_GEN 0X3EF5			; IN	A, (0XFF)
-	LABEL_GEN 0X3EFE			; IN	A, (0X7F)
-	LABEL_GEN 0X3F1B			; OUT	   (0X5F), A
-	LABEL_GEN 0X3F25			; OUT	   (0X1F), A
-	LABEL_GEN 0X3F33			; IN	A, (0X1F)
-	LABEL_GEN 0X3F4D			; OUT	   (0X1F), A
-	LABEL_GEN 0X3F55			; IN	A, (0X3F)
-	LABEL_GEN 0X3F5A			; IX	A, (0X5F)
-	LABEL_GEN 0X3F69			; IN	A, (0X3F)
-	LABEL_GEN 0X3F72			; IN	A, (0X5F)
-	LABEL_GEN 0X3FBC			; IN	A, (0XFF)
-	LABEL_GEN 0X3FCA			; IN	A, (0XFF)
-	LABEL_GEN 0X3FD1			; OUTI
-	LABEL_GEN 0X3FD7			; IN	A, (0XFF)
-	LABEL_GEN 0X3FE5			; IN	A, (0XFF)
-	LABEL_GEN 0X3FEC			; INI
-	LABEL_GEN 0X3FF0			; OUT	   (C),	   A
-	LABEL_GEN 0X3FF3			; IN	A, (C)
+	LABEL_GEN 0x02BE			; OUT	   (0xFF), A
+	LABEL_GEN 0x1E3A			; OUT	   (0x3F), A
+	LABEL_GEN 0x1FDD			; IN	A, (0x1F)
+	LABEL_GEN 0x1FF3			; OUT	   (0xFF), A
+	LABEL_GEN 0x2000			; OUT	   (0x1F), A
+	LABEL_GEN 0x2076			; IN	A, (0x1F)
+	LABEL_GEN 0x2085			; OUT	   (0x3F), A
+	LABEL_GEN 0x208D			; OUT	   (0x5F), A
+	LABEL_GEN 0x2093			; OUT	   (0x1F), A
+	LABEL_GEN 0x2099			; IN	A, (0x1F)
+	LABEL_GEN 0x20B1			; IN	A, (0xFF)
+	LABEL_GEN 0x20B8			; OUT	   (C),	   D
+	LABEL_GEN 0x2740			; IN	A, (0x1F)
+	LABEL_GEN 0x2748			; OUT	   (0x7F), A
+	LABEL_GEN 0x2A53			; OUT	   (C),    A
+	LABEL_GEN 0x2A71			; OUT	   (0xFF), A MAGIC
+	LABEL_GEN 0x2A77			; IN	A, (0x1F)    MAGIC
+	LABEL_GEN 0x2AD9			; OUT      (OxFF), A MAGIC
+	LABEL_GEN 0x2B25			; IN	A, (0x5F)    MAGIC
+	LABEL_GEN 0x2C07			; IN	A, (0x5F)    MAGIC
+	LABEL_GEN 0x2CD8			; IN	A, (0x5F)    MAGIC
+	LABEL_GEN 0x2D75			; OUT	   (0x5F), A MAGIC
+	LABEL_GEN 0x2D80			; OUT	   (0x1F), A MAGIC
+	LABEL_GEN 0x2D87			; IN	A, (0x1F)    MAGIC
+	LABEL_GEN 0x2F0C			; OUT	   (0xFF), A MAGIC
+	LABEL_GEN 0x2F1D			; OUT	   (0x5F), A MAGIC
+	LABEL_GEN 0x2F28			; OUT	   (0x1F), A MAGIC
+	LABEL_GEN 0x2F2F			; IN	A, (0x1F)    MAGIC
+	LABEL_GEN 0x2F3C			; OUT	   (0xFF), A MAGIC
+	LABEL_GEN 0x2F4D			; OUT	   (0xFF), A MAGIC
+	LABEL_GEN 0x2F50			; OUT	   (0x7F), A MAGIC
+	LABEL_GEN 0x2F57			; OUT	   (0x1F), A MAGIC
+	LABEL_GEN 0x2F59			; IN	A, (0xFF)
+	LABEL_GEN 0x2FB1			; OUT	   (0xFF), A
+	LABEL_GEN 0x2FC3			; OUT	   (0x1F), A
+	LABEL_GEN 0x3C30			; IN	A, (0x1F)
+	LABEL_GEN 0x3D4D			; OUT	   (0xFF), A
+	LABEL_GEN 0x3D9A			; OUT	   (0x1F), A
+	LABEL_GEN 0x3DA6			; IN	A, (0xFF)
+	LABEL_GEN 0x3DB5			; IN	A, (0x1F)
+	LABEL_GEN 0x3DBA			; IN	A, (0x1F)
+	LABEL_GEN 0x3DD5			; OUT	   (0xFF), A
+	LABEL_GEN 0x3E30			; IN	A, (0x1F)
+	LABEL_GEN 0x3E3A			; IN	A, (0x1F)
+	LABEL_GEN 0x3E44			; OUT	   (0x7F), A
+	LABEL_GEN 0x3E4C			; OUT	   (0x7F), A
+	LABEL_GEN 0x3E50			; IN	A, (0x3F)
+	LABEL_GEN 0x3E78			; IN	A, (0x3F)
+	LABEL_GEN 0x3E7E			; OUT	   (0x3F), A
+	LABEL_GEN 0x3E87			; IN	A, (0x3F)
+	LABEL_GEN 0x3E95			; OUT	   (0x3F), A
+	LABEL_GEN 0x3EB5			; IN	A, (0x1F)
+	LABEL_GEN 0x3EBC			; IN	A, (0x3F)
+	LABEL_GEN 0x3EC9			; OUT	   (0x1F), A
+	LABEL_GEN 0x3ECE			; IN	A, (0xFF)
+	LABEL_GEN 0x3EDF			; OUT	   (0x1F), A
+	LABEL_GEN 0x3EF3			; IN	H, (C)
+	LABEL_GEN 0x3EF5			; IN	A, (0xFF)
+	LABEL_GEN 0x3EFE			; IN	A, (0x7F)
+	LABEL_GEN 0x3F1B			; OUT	   (0x5F), A
+	LABEL_GEN 0x3F25			; OUT	   (0x1F), A
+	LABEL_GEN 0x3F33			; IN	A, (0x1F)
+	LABEL_GEN 0x3F4D			; OUT	   (0x1F), A
+	LABEL_GEN 0x3F55			; IN	A, (0x3F)
+	LABEL_GEN 0x3F5A			; Ix	A, (0x5F)
+	LABEL_GEN 0x3F69			; IN	A, (0x3F)
+	LABEL_GEN 0x3F72			; IN	A, (0x5F)
+	LABEL_GEN 0x3FBC			; IN	A, (0xFF)
+	LABEL_GEN 0x3FCA			; IN	A, (0xFF)
+	LABEL_GEN 0x3FD1			; OUTI
+	LABEL_GEN 0x3FD7			; IN	A, (0xFF)
+	LABEL_GEN 0x3FE5			; IN	A, (0xFF)
+	LABEL_GEN 0x3FEC			; INI
+	LABEL_GEN 0x3FF0			; OUT	   (C),	   A
+	LABEL_GEN 0x3FF3			; IN	A, (C)
 
 ; вызываторы перехвата
-; OUT (0XFF),A
-	EMU_JUMP 0X02BE
+	EMU_JUMP 0x02BE				; OUT (0xFF),A
 		JP OUT_FF
 
-; OUT (0X3F),A
-	EMU_JUMP 0X1E3A
+	EMU_JUMP 0x1E3A				; OUT (0x3F),A
 		JP OUT_3F
 
-; IN A,(0X1F)
-	EMU_JUMP 0X1FDD
+	EMU_JUMP 0x1FDD				; IN A,(0x1F)
 		JP IN_1F
 
-; OUT (0XFF),A
-	EMU_JUMP 0X1FF3
+	EMU_JUMP 0x1FF3				; OUT (0xFF),A
 		JP OUT_FF
 
-; OUT (0X1F),A
-	EMU_JUMP 0X2000
+	EMU_JUMP 0x2000				; OUT (0x1F),A
 		JP OUT_1F
 
-; IN A,(0X1F)
-	EMU_JUMP 0X2076
+	EMU_JUMP 0x2076				; IN A,(0x1F)
 		JP IN_1F
 
-; OUT (0X3F),A
-	EMU_JUMP 0X2085
+	EMU_JUMP 0x2085				; OUT (0x3F),A
 		JP OUT_3F
 
-; OUT (0X5F),A
-	EMU_JUMP 0X208D
+	EMU_JUMP 0x208D				; OUT (0x5F),A
 		JP OUT_5F
 
-; OUT (0X1F),A
-	EMU_JUMP 0X2093
+	EMU_JUMP 0x2093				; OUT (0x1F),A
 		JP OUT_1F
 
-; IN A,(0X1F)
-	EMU_JUMP 0X2099
+	EMU_JUMP 0x2099				; IN A,(0x1F)
 		JP IN_1F
 
-; IN A,(0XFF)
-	EMU_JUMP 0X20B1
+	EMU_JUMP 0x20B1				; IN A,(0xFF)
 		JP IN_FF
 
-; OUT (C),D
-	EMU_JUMP 0X20B8
+	EMU_JUMP 0x20B8				; OUT (C),D
 		JP OUT_C_D
 
-; IN A,(0X1F)
-	EMU_JUMP 0X2740
+	EMU_JUMP 0x2740				; IN A,(0x1F)
 		JP IN_1F
 
-; OUT (0X7F),A
-	EMU_JUMP 0X2748
+	EMU_JUMP 0x2748				; OUT (0x7F),A
 		JP OUT_7F
 
-; OUT (C),A
-	EMU_JUMP 0X2A53
+	EMU_JUMP 0x2A53				; OUT (C),A
 		JP OUT_C_A
 
-; OUT (0XFF),A
-	EMU_JUMP 0X2A71
+	EMU_JUMP 0x2A71				; OUT (0xFF),A
 		JP OUT_FF
 
-; IN A,(0X1F)
-	EMU_JUMP 0X2A77
+	EMU_JUMP 0x2A77				; IN A,(0x1F)
 		JP IN_1F
 
-; OUT (0XFF),A
-	EMU_JUMP 0X2AD9
+	EMU_JUMP 0x2AD9				; OUT (0xFF),A
 		JP OUT_FF
 
-; IN A,(0X5F)
-	EMU_JUMP 0X2B25
+	EMU_JUMP 0x2B25				; IN A,(0x5F)
 		JP IN_5F
 
-; IN A,(0X5F)
-	EMU_JUMP 0X2C07
+		DUPL 0x09FF - $,0
+		DW 0xFFFF
+
+	EMU_JUMP 0x2C07				;IN A,(0x5F)
 		JP IN_5F
 
-; IN A,(0X5F)
-	EMU_JUMP 0X2CD8
+	EMU_JUMP 0x2CD8				; IN A,(0x5F)
 		JP IN_5F
 
-; OUT (0X5F),A
-	EMU_JUMP 0X2D75
+	EMU_JUMP 0x2D75				; OUT (0x5F),A
 		JP OUT_5F
 
-; OUT (0X1F),A
-	EMU_JUMP 0X2D80
+	EMU_JUMP 0x2D80				; OUT (0x1F),A
 		JP OUT_1F
 
-; IN A,(0X1F)
-	EMU_JUMP 0X2D87
+	EMU_JUMP 0x2D87				; IN A,(0x1F)
 		JP IN_1F
 
-; OUT (0XFF),A
-	EMU_JUMP 0X2F0C
+	EMU_JUMP 0x2F0C				; OUT (0xFF),A
 		JP OUT_FF
 
-; OUT (0X5F),A
-	EMU_JUMP 0X2F1D
+	EMU_JUMP 0x2F1D				; OUT (0x5F),A
 		JP OUT_5F
 
-; OUT (0X1F),A
-	EMU_JUMP 0X2F28
+	EMU_JUMP 0x2F28				; OUT (0x1F),A
 		JP OUT_1F
 
-; IN A,(0X1F)
-	EMU_JUMP 0X2F2F
+	EMU_JUMP 0x2F2F				; IN A,(0x1F)
 		JP IN_1F
 
-; OUT (0XFF),A
-	EMU_JUMP 0X2F3C
+	EMU_JUMP 0x2F3C				; OUT (0xFF),A
 		JP OUT_FF
 
-; OUT (0XFF),A
-	EMU_JUMP 0X2F4D
+	EMU_JUMP 0x2F4D				; OUT (0xFF),A
 		JP OUT_FF
 
-; OUT (0X7F),A
-	EMU_JUMP 0X2F50
+	EMU_JUMP 0x2F50				; OUT (0x7F),A
 		JP OUT_7F
 
-; OUT (0X1F),A
-	EMU_JUMP 0X2F57
+	EMU_JUMP 0x2F57				; OUT (0x1F),A
 		JP OUT_1F
 
-; IN A,(0XFF)
-	EMU_JUMP 0X2F59
+	EMU_JUMP 0x2F59				; IN A,(0xFF)
 		CALL IN_FF
-		LD HL,EXIT_0X2F59
+		LD HL,EXIT_0x2F59
 		LD (ADR_EXIT),HL
 		JP UPDATE_AF
 
-; OUT (0XFF),A
-	EMU_JUMP 0X2FB1
+	EMU_JUMP 0x2FB1				; OUT (0xFF),A
 		JP OUT_FF
 
-; OUT (0X1F),A
-	EMU_JUMP 0X2FC3
+	EMU_JUMP 0x2FC3				; OUT (0x1F),A
 		JP OUT_1F
 
-; IN A,(0X1F)
-	EMU_JUMP 0X3C30
+	EMU_JUMP 0x3C30				; IN A,(0x1F)
 		JP IN_1F
 
-; OUT (0XFF),A
-	EMU_JUMP 0X3D4D
+	EMU_JUMP 0x3D4D				; OUT (0xFF),A
 		JP OUT_FF
 
-; OUT (0X1F),A
-	EMU_JUMP 0X3D9A
+	EMU_JUMP 0x3D9A				; OUT (0x1F),A
 		JP OUT_1F
 
-; IN A,(0XFF)
-	EMU_JUMP 0X3DA6
+	EMU_JUMP 0x3DA6				; IN A,(0xFF)
 		JP IN_FF
 
-; IN A,(0X1F)
-	EMU_JUMP 0X3DB5
+	EMU_JUMP 0x3DB5				; IN A,(0x1F)
 		JP IN_1F
 
-; IN A,(0X1F)
-	EMU_JUMP 0X3DBA
+	EMU_JUMP 0x3DBA				; IN A,(0x1F)
 		JP IN_1F
 
-; OUT (0XFF),A
-	EMU_JUMP 0X3DD5
+	EMU_JUMP 0x3DD5				; OUT (0xFF),A
 		JP OUT_FF
 
-; IN A,(0X1F)
-	EMU_JUMP 0X3E30
+	EMU_JUMP 0x3E30				; IN A,(0x1F)
 		JP IN_1F
 
-; IN A,(0X1F)
-	EMU_JUMP 0X3E3A
+	EMU_JUMP 0x3E3A				; IN A,(0x1F)
 		JP IN_1F
 
-; OUT (0X7F),A
-	EMU_JUMP 0X3E44
+	EMU_JUMP 0x3E44				; OUT (0x7F),A
 		JP OUT_7F
 
-; OUT (0X7F),A
-	EMU_JUMP 0X3E4C
+	EMU_JUMP 0x3E4C				; OUT (0x7F),A
 		JP OUT_7F
 
-; IN A,(0X3F)
-	EMU_JUMP 0X3E50
+	EMU_JUMP 0x3E50				; IN A,(0x3F)
 		JP IN_3F
 
-; IN A,(0X3F)
-	EMU_JUMP 0X3E78
+	EMU_JUMP 0x3E78				; IN A,(0x3F)
 		JP IN_3F
 
-; OUT (0X3F),A
-	EMU_JUMP 0X3E7E
+	EMU_JUMP 0x3E7E				; OUT (0x3F),A
 		JP OUT_3F
 
-; IN A,(0X3F)
-	EMU_JUMP 0X3E87
+	EMU_JUMP 0x3E87				; IN A,(0x3F)
 		JP IN_3F
 
-; OUT (0X3F),A
-	EMU_JUMP 0X3E95
+	EMU_JUMP 0x3E95				; OUT (0x3F),A
 		JP OUT_3F
 
-; IN A,(0X1F)
-	EMU_JUMP 0X3EB5
+	EMU_JUMP 0x3EB5				; IN A,(0x1F)
 		JP IN_1F
 
-; IN A,(0X3F)
-	EMU_JUMP 0X3EBC
+	EMU_JUMP 0x3EBC				; IN A,(0x3F)
 		JP IN_3F
 
-; OUT (0X1F),A
-	EMU_JUMP 0X3EC9
+	EMU_JUMP 0x3EC9				; OUT (0x1F),A
 		JP OUT_1F
 
-; IN A,(0XFF)
-	EMU_JUMP 0X3ECE
+	EMU_JUMP 0x3ECE				; IN A,(0xFF)
 		JP IN_FF
 
-; OUT (0X1F),A
-	EMU_JUMP 0X3EDF
+	EMU_JUMP 0x3EDF				; OUT (0x1F),A
 		JP OUT_1F
 
-; IN H,(C)
-	EMU_JUMP 0X3EF3
+	EMU_JUMP 0x3EF3				; IN H,(C)
 		JP IN_H_C
 
-; IN A,(0XFF)
-	EMU_JUMP 0X3EF5
+	EMU_JUMP 0x3EF5				; IN A,(0xFF)
 		CALL IN_FF
-		LD HL,EXIT_0X3EF5
+		LD HL,EXIT_0x3EF5
 		LD (ADR_EXIT),HL
-UPDATE_AF	LD A,(OLD_AF+1)
-		AND 0XC0
+UPDATE_AF	LD A,(OLD_AF + 1)
+		AND 0xC0
 		PUSH AF
 		POP HL
 		LD (OLD_AF),HL
 		RET
 
-; IN A,(0X7F)
-	EMU_JUMP 0X3EFE
-		CALL INFF_BIT6
+	EMU_JUMP 0x3EFE				; IN A,(0x7F)
+		CALL OUT_1F.INFF_BIT6
 		JP IN_7F
 
-; OUT (0X5F),A
-	EMU_JUMP 0X3F1B
+	EMU_JUMP 0x3F1B				; OUT (0x5F),A
 		JP OUT_5F
 
-; OUT (0X1F),A
-	EMU_JUMP 0X3F25
+	EMU_JUMP 0x3F25				; OUT (0x1F),A
 		JP OUT_1F
 
-; IN A,(0X1F)
-	EMU_JUMP 0X3F33
+	EMU_JUMP 0x3F33				; IN A,(0x1F)
 		JP IN_1F
 
-; OUT (0X1F),A
-	EMU_JUMP 0X3F4D
+	EMU_JUMP 0x3F4D				; OUT (0x1F),A
 		JP OUT_1F
 
-; IN A,(0X3F)
-	EMU_JUMP 0X3F55
+	EMU_JUMP 0x3F55				; IN A,(0x3F)
 		JP IN_3F
 
-; IN A,(0X5F)
-	EMU_JUMP 0X3F5A
+	EMU_JUMP 0x3F5A				; IN A,(0x5F)
 		JP IN_5F
 
-; IN A,(0X3F)
-	EMU_JUMP 0X3F69
+	EMU_JUMP 0x3F69				; IN A,(0x3F)
 		JP IN_3F
 
-; IN A,(0X5F)
-	EMU_JUMP 0X3F72
+	EMU_JUMP 0x3F72				; IN A,(0x5F)
 		JP IN_5F
 
-; IN A,(0XFF)	;запись сектора
-	EMU_JUMP 0X3FBC
+	EMU_JUMP 0x3FBC				; IN A,(0xFF)	; запись сектора
 		JP WRITE_SECTOR
 
-; IN A,(0XFF)	;запись сектора
-	EMU_JUMP 0X3FCA
+	EMU_JUMP 0x3FCA				; IN A,(0xFF)	; запись сектора
 		JP WRITE_SECTOR
 
-; OUTI		;запись сектора
-	EMU_JUMP 0X3FD1
+	EMU_JUMP 0x3FD1				; OUTI		; запись сектора
 		JP WRITE_SECTOR
 
-; IN A,(0XFF)	;чтение сектора
-	EMU_JUMP 0X3FD7
+;	EMU_JUMP 0x3FD7				; IN A,(0xFF)	; чтение сектора
+;		JP READ_SECTOR
+	EMU_JUMP 0x3FD7				; ожидание готовности чтения
+		JP WAIT_READ
+
+	EMU_JUMP 0x3FE5				; IN A,(0xFF)	; чтение сектора
 		JP READ_SECTOR
 
-; IN A,(0XFF)	;чтение сектора
-	EMU_JUMP 0X3FE5
-		JP READ_SECTOR
-
-; INI		;чтение сектора
-	EMU_JUMP 0X3FEC
+	EMU_JUMP 0x3FEC				; INI		; чтение сектора
 		JP IN_INI
 
-; OUT (C),A
-	EMU_JUMP 0X3FF0
+	EMU_JUMP 0x3FF0				; OUT (C),A
 		LD BC,(OLD_BC)
 		LD A,(OLD_AF+1)
 		LD D,A
 		JP WR_C_D
 
-; IN A,(C)
-	EMU_JUMP 0X3FF3
+	EMU_JUMP 0x3FF3				; IN A,(C)
 		LD BC,(OLD_BC)
 		IN A,(C)
 		PUSH AF
@@ -445,10 +383,10 @@ UPDATE_AF	LD A,(OLD_AF+1)
 		RET
 
 ; стек и обработчики
-		DUPL STACK-$,0
+		DUPL STACK - $,0
 		DW INT_BREAK
 
-		DUPL STACK+0X41-$,0
+		DUPL STACK + 0x41 - $,0
 INT_BREAK	PUSH AF
 		PUSH HL
 		PUSH DE
@@ -456,7 +394,7 @@ INT_BREAK	PUSH AF
 		AND A
 		JR NZ,IB1
 		LD HL,(OLD_IF)
-		LD L,0XFF
+		LD L,0xFF
 		LD E,(HL)
 		INC HL
 		LD D,(HL)
@@ -478,22 +416,22 @@ IB1		PUSH BC
 		CALL WRITE_CPU12
 		LD A,(OLD_PORT_BF)
 		OUT (PEVO_CONF),A
-		LD A,(OLD_IF+1)
+		LD A,(OLD_IF + 1)
 		LD I,A
 		LD HL,(OLD_AF)
 		PUSH HL
 		POP AF
 		LD HL,(OLD_SP)
-		LD DE,0X2A71			; адрес возврата из обработчика прерывания внешней проги через OUT (0xFF),A
+		LD DE,0x2A71		; адрес возврата из обработчика прерывания внешней проги через OUT (0xFF),A
 		DEC HL
 		LD (HL),D
 		DEC HL
 		LD (HL),E
 		DEC HL
 		EX DE,HL
-		LD HL,OLD_IF+1
+		LD HL,OLD_IF + 1
 		LD H,(HL)
-		LD L,0XFF
+		LD L,0xFF
 		LD C,(HL)
 		INC HL
 		LD B,(HL)
@@ -505,9 +443,9 @@ IB1		PUSH BC
 		LD HL,(OLD_HL)
 		LD DE,(OLD_DE)
 		LD BC,(OLD_BC)
-		LD A,(WR_FF)			; байтик для возврата через команду OUT (0xFF),A
+		LD A,(WR_FF)		; байтик для возврата через команду OUT (0xFF),A
 		EI
-		JP 0X2A53
+		JP 0x2A53
 
 INT_RET		LD SP,0
 INT_SP		EQU $-2
@@ -527,7 +465,7 @@ INT_SP		EQU $-2
 ; выход из обработчика
 EXIT_PAGE_FE	LD A,(OLD_PORT_BF)
 		OUT (PEVO_CONF),A		; восстановление порта 0xBF
-		LD A,(OLD_IF+1)
+		LD A,(OLD_IF + 1)
 		LD I,A
 		LD HL,(OLD_AF)
 		PUSH HL
@@ -543,7 +481,7 @@ OLD_SP		EQU $-2
 		JP 0
 ADR_EXIT	EQU $-2		
 
-		DUPL STACK+0X101-$,0
+		DUPL STACK + 0x101 - $,0
 ; вход в обработчик
 WORKER		LD (NUM_ADR),A
 		LD (OLD_SP),SP
@@ -586,264 +524,292 @@ NUM_ADR		EQU $-2
 		JP (HL)
 
 ; чтение/запись примонтированного диска
-MOUNT_RW	LD HL,0X4000
+MOUNT_RW	DI
+		LD HL,0x4000
 		ADD HL,SP
 		LD SP,HL
 		LD BC,WIN_A1
-		LD A,0X40
+		LD A,0x40
 		OUT (C),A
 		LD B,HIGH (WIN_P1)
 		LD A,RAM_EVODOS
 		OUT (C),A
 		LD A,(RDWR_MODE)
-		AND 0X80
+		AND 0x80
 		LD L,A
 		LD A,(WR_FF)
 		AND 3
 		OR L
 		BIT 7,A
 		PUSH AF
-		LD HL,0X2A77
+		LD HL,0x2A77
 		PUSH HL
 		LD HL,MNT_RW
 		PUSH HL
-		JP Z,0X2A53
+		JP Z,0x2A53
 		LD HL,(OLD_HL)
-		LD DE,0X100
+		LD DE,MNT_SECTOR
 		CALL COPY_BLOCK
 		LD (OLD_HL),HL
-		JP 0X2A53
+		JP 0x2A53
 
-	PHASE $+0X4000
+	PHASE $ + 0x4000
+
 MNT_RW		LD L,A
-		LD A,(PORT_3F+0X4000)		; взяли номер трека
+		LD A,(PORT_3F + 0x4000)		; взяли номер трека
 		ADD A,A				; сторон 2
 		LD D,A
-		LD A,(WR_FF+0X4000)
-		AND 0X10			; проверка какая сторона диска
+		LD A,(WR_FF + 0x4000)
+		AND 0x10			; проверка какая сторона диска
 		JR NZ,WRRDSECM1
 		INC D				; для стороны 1
-WRRDSECM1	LD A,(PORT_5F+0X4000)		; взяли номер сектора
+WRRDSECM1	LD A,(PORT_5F + 0x4000)		; взяли номер сектора
 		LD E,A				; D-трек, E-сектор
 		LD A,L
-		LD HL,0X4100
+		LD HL,MNT_SECTOR + 0x4000
 	RST8 _MOUNTER,_RDWR_MOUNT
-		JP 0X3D2F
+		JP 0x3D2F
 
-	PHASE $-0X4000
-RET_MNT_RW	LD HL,-0X4000
+	DEPHASE
+
+RET_MNT_RW
+		LD HL,-0x4000
 		ADD HL,SP
 		LD SP,HL
 		CALL WRITE_CPU12
+		LD HL,(OLD_IF)
+		PUSH HL
 		POP AF
+		JP PO,.DI_MODE			; прерывания разрешены?
+		CP 0x3F
+		JR Z,.DI_MODE
+		EI
+.DI_MODE	POP AF
 		RET NZ
-		LD HL,0X100
+		LD HL,MNT_SECTOR
 		LD DE,(OLD_HL)
 		CALL COPY_BLOCK
 		LD (OLD_HL),DE
 		RET
 
 ; инфа для создания 9 сектора нового диска
-DSKINFO		DB 0				; +0XE1-номер первого свободного сектора
-		DB 1				; +0XE2-номер первого свободного трека
-		DB 0X16				; +0XE3-тип дискеты
-		DB 0				; +0XE4-количество файлов на дискете
-SECFREE		DW 2544				; +0XE5-количество свободных секторов
-		DB 0X10				; +0XE7-идентификационный код TRDOS
-		DW 0				; +0XE8-2 байта 0
-		DUPL 9," "			; +0XEA-9 байт 0X20
-		DB 0				; +0XF3-1 байт 0
-		DB 0				; +0XF4-количество удаленных файлов
-		DB "RAMDISKO"			; +0XF5-имя дискеты
+DSKINFO		DB 0				; + 0xE1 - номер первого свободного сектора
+		DB 1				; + 0xE2 - номер первого свободного трека
+		DB 0x16				; + 0xE3 - тип дискеты
+		DB 0				; + 0xE4 - количество файлов на дискете
+SECFREE		DW 2544				; + 0xE5 - количество свободных секторов
+		DB 0x10				; + 0xE7 - идентификационный код TRDOS
+		DW 0				; + 0xE8 - 2 байта 0
+		DUPL 9," "			; + 0xEA - 9 байт 0x20
+		DB 0				; + 0xF3 - 1 байт 0
+		DB 0				; + 0xF4 - количество удаленных файлов
+		DB "RAMDISKO"			; + 0xF5 - имя дискеты
 DSK_END
 
-		DUPL 0X1000-$,0
-VARS1
+		DUPL LOW (-$),0
+MNT_SECTOR
 
 ; адреса перехвата
-	JP_EMU 0X1E3A				; OUT	   (0X3F), A
-	JP_EMU 0X1FDD				; IN	A, (0X1F)
-	JP_EMU 0X1FF3				; OUT	   (0XFF), A
-	JP_EMU 0X2000				; OUT	   (0X1F), A
-	JP_EMU 0X2076				; IN	A, (0X1F)
-	JP_EMU 0X2085				; OUT	   (0X3F), A
-	JP_EMU 0X208D				; OUT	   (0X5F), A
-	JP_EMU 0X2093				; OUT	   (0X1F), A
-	JP_EMU 0X2099				; IN	A, (0X1F)
-	JP_EMU 0X20B1				; IN	A, (0XFF)
-	JP_EMU 0X20B8				; OUT	   (C),    D
-	JP_EMU 0X2740				; IN	A, (0X1F)
-	JP_EMU 0X2748				; OUT	   (0X7F), A
-	JP_EMU 0X2A53				; OUT	   (C),    A
+	JP_EMU 0x1E3A				; OUT	   (0x3F), A
+	JP_EMU 0x1FDD				; IN	A, (0x1F)
+	JP_EMU 0x1FF3				; OUT	   (0xFF), A
+	JP_EMU 0x2000				; OUT	   (0x1F), A
+	JP_EMU 0x2076				; IN	A, (0x1F)
+	JP_EMU 0x2085				; OUT	   (0x3F), A
+	JP_EMU 0x208D				; OUT	   (0x5F), A
+	JP_EMU 0x2093				; OUT	   (0x1F), A
+	JP_EMU 0x2099				; IN	A, (0x1F)
+	JP_EMU 0x20B1				; IN	A, (0xFF)
+	JP_EMU 0x20B8				; OUT	   (C),    D
+	JP_EMU 0x2740				; IN	A, (0x1F)
+	JP_EMU 0x2748				; OUT	   (0x7F), A
+	JP_EMU 0x2A53				; OUT	   (C),    A
 
 ; первая команда в обработчике MAGIC для возврата в пагу FE
-		DUPL 0X2A73-$,0			; OUT	   (0XFF), A
+;	JP_EMU 0x2A71				; OUT	   (0xFF), A
+		DUPL 0x2A71 - $,0
+		OUT (EXIT_PORT),A
 		JP INT_RET			; возвращение из обработчика INT
 
-		DUPL 0X2A79-$,0			; IN	A, (0X1F)
+;	JP_EMU 0x2A77				; IN	A, (0x1F)
+		DUPL 0x2A77 - $,0
+		OUT (EXIT_PORT),A
 		JP RET_MNT_RW			; возвращение после вызова RST 8
 
-	JP_EMU 0X2AD9				; OUT	   (0XFF), A
-	JP_EMU 0X2B25				; IN	A, (0X5F)
-	JP_EMU 0X2C07				; IN	A, (0X5F)
-	JP_EMU 0X2CD8				; IN	A, (0X5F)
-	JP_EMU 0X2D75				; OUT	   (0X5F), A
-	JP_EMU 0X2D80				; OUT	   (0X1F), A
-	JP_EMU 0X2D87				; IN	A, (0X1F)
-	JP_EMU 0X2F0C				; OUT	   (0XFF), A
-	JP_EMU 0X2F1D				; OUT	   (0X5F), A
+	JP_EMU 0x2AD9				; OUT	   (0xFF), A
+	JP_EMU 0x2B25				; IN	A, (0x5F)
+	JP_EMU 0x2C07				; IN	A, (0x5F)
+	JP_EMU 0x2CD8				; IN	A, (0x5F)
+	JP_EMU 0x2D75				; OUT	   (0x5F), A
+	JP_EMU 0x2D80				; OUT	   (0x1F), A
+	JP_EMU 0x2D87				; IN	A, (0x1F)
+	JP_EMU 0x2F0C				; OUT	   (0xFF), A
+	JP_EMU 0x2F1D				; OUT	   (0x5F), A
 
-		DUPL 0X2F24-$,0			; для адреса 0X2F4D
-		JP ADR_0X2F4D
+		DUPL 0x2F24 - $,0		; для адреса 0x2F4D
+		JP ADR_0x2F4D
 
-	JP_EMU 0X2F28				; OUT	   (0X1F), A
-	JP_EMU 0X2F2F				; IN	A, (0X1F)
-	JP_EMU 0X2F3C				; OUT	   (0XFF), A
+	JP_EMU 0x2F28				; OUT	   (0x1F), A
+	JP_EMU 0x2F2F				; IN	A, (0x1F)
+	JP_EMU 0x2F3C				; OUT	   (0xFF), A
 
-		DUPL 0X2F4D-$,0			; OUT	   (0XFF), A
+		DUPL 0x2F4D - $,0		; OUT	   (0xFF), A
 		OUT (EXIT_PORT),A
-		DB 0X18				; JR 0X2F24
+		DB 0x18				; JR 0x2F24
 
-	JP_EMU 0X2F50				; OUT	   (0X7F), A
+	JP_EMU 0x2F50				; OUT	   (0x7F), A
 
-		DUPL 0X2F57-$,0			; OUT	   (0X1F), A
+		DUPL 0x2F57 - $,0		; OUT	   (0x1F), A
 		OUT (EXIT_PORT),A
-		JR JUMP_0X2F57
+		JR JUMP_0x2F57
 
-		JR JUMP_0X2F59			; IN	A, (0XFF)
+		JR JUMP_0x2F59			; IN	A, (0xFF)
 
-EXIT_0X2F59	OUT (EXIT_PORT),A
-JUMP_0X2F59	JP ADR_0X2F59
+EXIT_0x2F59	OUT (EXIT_PORT),A
+JUMP_0x2F59	JP ADR_0x2F59
 
-JUMP_0X2F57	JP ADR_0X2F57
+JUMP_0x2F57	JP ADR_0x2F57
 
-	JP_EMU 0X2FB1				; OUT	   (0XFF), A
-	JP_EMU 0X2FC3				; OUT	   (0X1F), A
+	JP_EMU 0x2FB1				; OUT	   (0xFF), A
+	JP_EMU 0x2FC3				; OUT	   (0x1F), A
 
-		DUPL 0X32A2-$,0
+		DUPL 0x32A2 - $,0
 ; обработчики чтения/записи портов
-; запись "A" в порт 0X1F
-OUT_1F		LD A,(OLD_AF+1)
+; запись "A" в порт 0x1F
+OUT_1F		LD A,(OLD_AF + 1)
 		LD (WR_1F),A
-		CP 0X10
-		JR NC,OUT_1F_10
-; 00-0F команда восстановления
-		XOR A
-		LD (PORT_3F),A
-		JR INFF_BIT6
 
-OUT_1F_10	CP 0X20
-		JR NC,OUT_1F_20
+		AND %11110000
+		RRCA
+		RRCA
+		RRCA
+		ADD A,LOW (.TABL_CMD)
+		LD L,A
+		ADC A,HIGH (.TABL_CMD)
+		SUB L
+		LD H,A
+		LD A,(HL)
+		INC HL
+		LD H,(HL)
+		LD L,A
+		JP (HL)
+
+.TABL_CMD	DW .CMD_00
+		DW .CMD_10
+		DW .CMD_20
+		DW .CMD_30
+		DW .CMD_40
+		DW .CMD_50
+		DW .CMD_60
+		DW .CMD_70
+		DW .CMD_80
+		DW .CMD_90
+		DW .CMD_A0
+		DW .CMD_B0
+		DW .CMD_C0
+		DW .CMD_D0
+		DW .CMD_E0
+		DW .CMD_F0
+
+; 00-0F команда восстановления
+.CMD_00		XOR A
+		LD (PORT_3F),A
+		JR .INFF_BIT6
+
 ; 10-1F команда поиска
-		LD A,(PORT_7F)
+.CMD_10		LD A,(PORT_7F)
 		LD (PORT_3F),A
 		CALL DISK_NONE
-		LD A,0X80
-		JR C,INFF_BIT6_1
-INFF_BIT6	XOR A
-INFF_BIT6_1	LD (RD_1F),A
-		LD A,0XBF
+		LD A,0x80
+		JR C,.INFF_BIT6_1
+.INFF_BIT6	XOR A
+.INFF_BIT6_1	LD (RD_1F),A
+		LD A,0xBF
 		LD (RD_FF),A
 		RET
 
-OUT_1F_20	CP 0X40
-		JR NC,OUT_1F_40
 ; 20-3F команда шаг в предыдущем направлении
-		LD A,(PORT_3F)
-NAPRAVL		NOP
+.CMD_20
+.CMD_30		LD A,(PORT_3F)
+.NAPRAVL	INC A
 		LD (PORT_3F),A
-		JR INFF_BIT6
+		JR .INFF_BIT6
 
-OUT_1F_40	CP 0X60
-		JR NC,OUT_1F_60
 ; 40-5F команда шаг вперед
-		LD A,(PORT_3F)
+.CMD_40
+.CMD_50		LD A,(PORT_3F)
 		INC A
 		LD (PORT_3F),A
-		LD A,0X3C			; INC A
-		LD (NAPRAVL),A
-		JR INFF_BIT6
+		LD A,0x3C			; INC A
+		LD (.NAPRAVL),A
+		JR .INFF_BIT6
 
-OUT_1F_60	CP 0X80
-		JR NC,OUT_1F_80
 ; 60-7F команда шаг назад
-		LD A,(PORT_3F)
+.CMD_60
+.CMD_70		LD A,(PORT_3F)
 		DEC A
 		LD (PORT_3F),A
-		LD A,0X3D			; DEC A
-		LD (NAPRAVL),A
-		JR INFF_BIT6
+		LD A,0x3D			; DEC A
+		LD (.NAPRAVL),A
+		;JR .INFF_BIT6
 
-OUT_1F_80	CP 0XA0
-		JR NC,OUT_1F_A0
 ; 80-9F команда чтение сектора
-		JR INFF_BIT6;7
+.CMD_80
+.CMD_90		;JR .INFF_BIT6
 
-OUT_1F_A0	CP 0XC0
-		JR NC,OUT_1F_D0
 ; A0-BF команда запись сектора
-		JR INFF_BIT6
+.CMD_A0
+.CMD_B0		;JR .INFF_BIT6
 
-INFF_BIT7	XOR A
-		LD (RD_1F),A
-		LD A,0X7F
-		LD (RD_FF),A
-		RET
-
-OUT_1F_D0	CP 0XD0
-		JR NC,OUT_1F_E0
 ; C0-CF чтение адреса
-		JR INFF_BIT6;7
+.CMD_C0		JR .INFF_BIT6
 
-OUT_1F_E0	CP 0XE0
-		JR NC,OUT_1F_F0
 ; D0-DF принудительное прерывание
-		LD A,0XBF
+.CMD_D0		LD A,0xBF
 		LD (RD_FF),A
 		RET
 
-OUT_1F_F0	CP 0XF0
-		JR C,INFF_BIT6
 ; E0-EF чтение дорожки
-		JR INFF_BIT6
+.CMD_E0
+.CMD_F0		JR .INFF_BIT6
 
-; запись "A" в порт 0X3F
-OUT_3F		LD A,(OLD_AF+1)
+; запись "A" в порт 0x3F
+OUT_3F		LD A,(OLD_AF + 1)
 		LD (PORT_3F),A
 		RET
 
-; запись "A" в порт 0X5F
-OUT_5F		LD A,(OLD_AF+1)
+; запись "A" в порт 0x5F
+OUT_5F		LD A,(OLD_AF + 1)
 		LD (PORT_5F),A
 		RET
 
-; запись "A" в порт 0X7F
-OUT_7F		LD A,(OLD_AF+1)
+; запись "A" в порт 0x7F
+OUT_7F		LD A,(OLD_AF + 1)
 		LD (PORT_7F),A
 		RET
 
-; запись "A" в порт 0XFF
-OUT_FF		LD A,(OLD_AF+1)
+; запись "A" в порт 0xFF
+OUT_FF		LD A,(OLD_AF + 1)
 		LD (WR_FF),A
 		LD D,A
-		LD BC,0X00FF
+		LD BC,0x00FF
 		JR WR_C_D
 
 ; запись "A" в порт (C)
-OUT_C_A	 	LD A,(OLD_AF+1)
+OUT_C_A	 	LD A,(OLD_AF + 1)
 WRCA1		LD D,A
 		LD BC,(OLD_BC)			; если порт не TR-DOS
 		LD A,C
 ; определение в какой порт запись	
-		CP 0X1F
+		CP 0x1F
 		JP Z,OUT_1F
-		CP 0X3F
+		CP 0x3F
 		JR Z,OUT_3F
-		CP 0X5F
+		CP 0x5F
 		JR Z,OUT_5F
-		CP 0X7F
+		CP 0x7F
 		JR Z,OUT_7F
-		CP 0XFF
+		CP 0xFF
 		JR Z,OUT_FF
 		CP LOW (WIN_A0)
 		JR Z,WRCA3
@@ -882,7 +848,7 @@ WRCA2		LD E,B
 		JP WRITE_CPU12
 
 ; запись "D" в порт (C)
-OUT_C_D		LD A,(OLD_DE+1)
+OUT_C_D		LD A,(OLD_DE + 1)
 		JR WRCA1
 
 ; передача байта, команда OUTI
@@ -896,91 +862,101 @@ OUT_OUTI	LD HL,(BUFF_SECT)
 		LD (BUFF_SECT),HL
 		RET
 
-; чтение порта 0X1F
+; чтение порта 0x1F
 IN_1F		LD A,(WR_1F)
-		AND 0XF0
-		CP 0X10
-		JR C,RD1F1
-		CP 0X20
-		JR C,RD1F3
-		CP 0XD0
-		JR Z,RD1F1
+		AND %11110000
+		CP 0x10
+		JR C,.L1
+		CP 0x20
+		JR C,.L3
+		CP 0x80
+		JR C,.L5
+		CP 0xD0
+		JR Z,.L7
 		XOR A
-		JR RD1F2
+		JR .L2
 
-RD1F3		LD A,(INDEX)
+.L7		LD A,0x80
+		JR .L2
+
+.L5		LD A,(PORT_3F)
+		AND A
+		JR NZ,.L1
+		LD A,%00100100
+		JR .L6
+
+.L3		LD A,(.INDEX)
 		XOR %00000100
-		JR RD1F4
+		JR .L4
 
-RD1F1		LD A,0X24
-INDEX		EQU $-1
-RD1F4		XOR %00000010
-		LD (INDEX),A
-RD1F2		LD (RD_1F),A
-		LD (OLD_AF+1),A
+.L1		LD A,%00100100
+.INDEX		EQU $-1
+.L4		XOR %00000010
+.L6		LD (.INDEX),A
+.L2		LD (RD_1F),A
+		LD (OLD_AF + 1),A
 		RET
 
-; чтение порта 0X3F
+; чтение порта 0x3F
 IN_3F		LD A,(PORT_3F)
-		LD (OLD_AF+1),A
+		LD (OLD_AF + 1),A
 		RET
 
-; чтение порта 0X5F
+; чтение порта 0x5F
 IN_5F		LD A,(PORT_5F)
-		LD (OLD_AF+1),A
+		LD (OLD_AF + 1),A
 		RET
 
-; чтение порта 0X7F
+; чтение порта 0x7F
 IN_7F		LD A,(PORT_7F)
-		LD (OLD_AF+1),A
+		LD (OLD_AF + 1),A
 		RET
 
-; чтение порта 0XFF
+; чтение порта 0xFF
 IN_FF		LD A,(RD_FF)
-		LD (OLD_AF+1),A
+		LD (OLD_AF + 1),A
 		RET
 
 ; чтение в "H" из (С)
 IN_H_C		LD A,(OLD_BC)
 ; определение из какого порта чтение
-		CP 0X1F
+		CP 0x1F
 		JR NZ,RDHC2
 		LD A,(RD_1F)
-		LD (OLD_HL+1),A
+		LD (OLD_HL + 1),A
 		RET
 
-RDHC2		CP 0X3F
+RDHC2		CP 0x3F
 		JR NZ,RDHC3
 		LD A,(PORT_3F)
-		LD (OLD_HL+1),A
+		LD (OLD_HL + 1),A
 		RET
 	
-RDHC3		CP 0X5F
+RDHC3		CP 0x5F
 		JR NZ,RDHC4
 		LD A,(PORT_5F)
-		LD (OLD_HL+1),A
+		LD (OLD_HL + 1),A
 		RET
 	
-RDHC4		CP 0X7F
+RDHC4		CP 0x7F
 		JR NZ,RDHC5
 		LD A,(PORT_7F)
 		LD (OLD_HL+1),A
 		RET
 	
-RDHC5		CP 0XFF
+RDHC5		CP 0xFF
 		JR NZ,RDHC6
 		LD A,(RD_FF)
-		LD (OLD_HL+1),A
+		LD (OLD_HL + 1),A
 		RET
 
 RDHC6		LD BC,(OLD_BC)
 		IN A,(C)
-		LD (OLD_HL+1),A
+		LD (OLD_HL + 1),A
 		RET
 
 ; чтение INI
-IN_INI
-		LD HL,(OLD_HL)
+IN_INI		LD HL,(OLD_HL)
 		LD A,H
 		CP 0x40
 		JR C,.L1
@@ -989,69 +965,119 @@ IN_INI
 		LD (HL),A
 .L1
 ; временно, для анрыла
-		LD A,0xD3
-		LD (0x3FD7),A
+;		LD A,0xD3
+;		LD (0x3FD7),A
 ; временно, для анрыла
-		LD HL,0X2A53
+		LD HL,0x2A53
 		LD (ADR_EXIT),HL
-		JP INFF_BIT6
+		JP OUT_1F.INFF_BIT6
 
-;[чтение сектора или портов]
+WAIT_READ	LD A,(WR_1F)
+		AND 0xF0
+		CP 0x80
+		JP C,OUT_1F.INFF_BIT6
+		CP 0xC0
+		JR NC,READ_SECTOR.L1
+		CALL READ_CPU12			; сохранение текущей конфигурации окон проецирования 1,2
+		CALL SEARCH_SECTOR		; проверяем наличие сектора
+		PUSH AF
+		CALL WRITE_CPU12		; восстановление конфигурации окон проецирования 1,2
+		POP AF
+		JR NC,READ_SECTOR_1
+; сектора нет, не дождетесь
+		LD A,0x3C
+		JP OUT_1F.INFF_BIT6_1
+
+; чтение сектора или портов
 READ_SECTOR	LD A,(WR_1F)
-		AND 0X0F0
-		CP 0X80
-		JP C,INFF_BIT6
-		CP 0XC0
-		JR NZ,READ_SECTOR_1
-		LD A,(PORT_3F)
+		AND 0xF0
+		CP 0x80
+		JP C,OUT_1F.INFF_BIT6
+		CP 0xC0
+		JR C,READ_SECTOR_1
+.L1		LD A,(PORT_3F)
 		LD HL,(OLD_HL)
-		LD (HL),A			;номер дорожки
+		LD (HL),A			; номер дорожки
 		INC HL
-		LD (HL),0			;номер стороны
+		LD (HL),0			; номер стороны
 		INC HL
 		LD A,(PORT_5F)
-		LD (HL),A			;номер сектора
+		LD (HL),A			; номер сектора
 		INC HL
-		LD (HL),0			;размер сектора
+		LD (HL),0			; размер сектора
 		INC HL
-		LD (HL),0			;байт CRC
+		LD (HL),0			; байт CRC
 		INC HL
-		LD (HL),0			;байт CRC
+		LD (HL),0			; байт CRC
 		INC HL
 		LD (OLD_HL),HL
-		LD HL,OLD_BC+1
+		LD HL,OLD_BC + 1
 		LD A,(HL)
-		SUB 6				;REG B - 6
+		SUB 6				; REG B - 6
 		LD (HL),A
-		LD HL,0X2A53
+		LD HL,0x2A53
 		LD (ADR_EXIT),HL
-		JP INFF_BIT6
+		JP OUT_1F.INFF_BIT6
 
 ; чтение сектора
 READ_SECTOR_1	XOR A
 		JR WRITE_SECTOR_1
 
 ; запись сектора
-WRITE_SECTOR	LD A,0XFF
+WRITE_SECTOR	LD A,0xFF
 WRITE_SECTOR_1	LD (RDWR_MODE),A
 		LD A,1
 		LD (FLAG_RW_BREAK),A
 		LD HL,(OLD_IF)
 		PUSH HL
 		POP AF
-		JP PO,DI_MODE			; прерывания разрешены?
-		CP 0X3F
-		JR Z,DI_MODE
+		JP PO,.DI_MODE			; прерывания разрешены?
+		CP 0x3F
+		JR Z,.DI_MODE
 		HALT				; разрешены, ждем обработчик прерывания
-DI_MODE		CALL READ_CPU12			; сохранение текущей конфигурации окон проецирования 1,2
+.DI_MODE	CALL READ_CPU12			; сохранение текущей конфигурации окон проецирования 1,2
 		CALL W_WR_RD_SECT
 		XOR A
 		LD (FLAG_RW_BREAK),A
-		LD HL,0X8090
+		LD HL,0x8090
 		LD (OLD_AF),HL			; эмуляция флага успешного чтения/записи сектора
-		LD HL,0X2A53
+		LD HL,0x2A53
 		LD (ADR_EXIT),HL
 		JP WRITE_CPU12			; восстановление конфигурации окон проецирования 1,2
+
+SEARCH_SECTOR	LD BC,WIN_A1
+		LD A,0x40
+		OUT (C),A
+		LD B,HIGH (WIN_P1)
+		LD A,RAM_RAMDISK
+		OUT (C),A			; страница заголовков рамдиска
+		LD A,(PORT_3F)			; взяли номер трека
+		ADD A,A				; сторон 2
+		LD C,A
+		LD A,(WR_FF)
+		AND 0x10			; проверка какая сторона диска
+		JR NZ,.L2
+		INC C				; для стороны 1
+.L2		LD B,HIGH (CPU1) + 2		; адрес начала инфы о секторах на дорожке
+		LD HL,(PORT_5F)			; взяли номер сектора
+		LD H,0
+.L1		LD A,(BC)
+		LD D,A				; взяли номер сектора
+		INC B
+		LD A,(BC)
+		LD E,A				; взяли размер сектора
+		INC B
+		LD A,D
+		AND A
+		SCF
+		RET Z				; ошибка, сектор не найден
+		LD A,L
+		CP D
+		RET Z				; сектор найден
+		LD A,E
+		ADD A,H
+		LD H,A
+		JR .L1
 
 ; чтение или запись сектора рамдиска
 W_WR_RD_SECT	LD A,(WR_FF)
@@ -1065,39 +1091,10 @@ W_WR_RD_SECT	LD A,(WR_FF)
 		LD A,(COPY_VIRT_BITS)
 		AND B
 		JP NZ,MOUNT_RW			; работа с примонтированным образом
-		LD BC,WIN_A1
-		LD A,0X40
-		OUT (C),A
-		LD B,HIGH (WIN_P1)
-		LD A,RAM_RAMDISK
-		OUT (C),A			; страница заголовков рамдиска
-		LD A,(PORT_3F)			; взяли номер трека
-		ADD A,A				; сторон 2
-		LD C,A
-		LD A,(WR_FF)
-		AND 0X10			; проверка какая сторона диска
-		JR NZ,WWRRD1
-		INC C				; для стороны 1
-WWRRD1		LD B,HIGH (CPU1)+2		; адрес начала инфы о секторах на дорожке
-		LD A,(PORT_5F)			; взяли номер сектора
-		LD L,A
-		LD H,0
-WWRRD3		LD A,(BC)
-		LD D,A				; взяли номер сектора
-		INC B
-		LD A,(BC)
-		LD E,A				; взяли размер сектора
-		INC B
-;		LD A,D
-;		AND A
-;		JR Z,WWRRD_ERR
-		LD A,L
-		CP D
-		JR Z,WWRRD2
-		LD A,E
-		ADD A,H
-		LD H,A
-		JR WWRRD3
+		CALL SEARCH_SECTOR
+		JR NC,WWRRD2
+		LD A,0x10
+		JP IN_1F.L2
 
 WWRRD2		LD A,E
 		RRCA
@@ -1105,21 +1102,21 @@ WWRRD2		LD A,E
 		LD L,0
 		LD E,L
 		SRL H
-		RR L				; HL=смещение в блоках до найденного сектора
+		RR L				; HL = смещение в блоках до найденного сектора
 		LD B,HIGH (CPU1)
 		LD A,(BC)
 		LD D,A
-		ADD HL,DE			; HL=смещение от начала страницы в блоках
+		ADD HL,DE			; HL = смещение от начала страницы в блоках
 		INC B
 		LD A,(BC)
 		LD C,A				; смещение в страницах от начала рамдиска
 		LD A,H
 		CP HIGH (CPU1)
 		JR C,WWRRD5
-		SUB 0X40
+		SUB 0x40
 		LD H,A
 		INC C
-; HL=смещение в странице до начала сектора
+; HL = смещение в странице до начала сектора
 WWRRD5		LD A,C				; смещение до номера страницы, где указанный сектор начинается
 		ADD A,RAM_DATARAMD		; прибавили номер начала рамдиск и +1. в 0 странице рамдиска описатели секторов
 		LD (RDWR_PAGE),A		; сохранили номер вычисленной страницы
@@ -1131,12 +1128,12 @@ WWRRD5		LD A,C				; смещение до номера страницы, где указанный сектор начинается
 SP_RAMD9	LD A,D				; проверка границы откуда/куда копировать
 		CP HIGH (CPU2)
 		PUSH DE
-		LD DE,CPU1+HIGH (WIN_P1)
+		LD DE,CPU1 + HIGH (WIN_P1)
 		LD BC,WIN_A1			; если верхние 32кб озу, то нужно включить в 1 окне проецирования
 		JR NC,SP_RAMD1
-		LD DE,CPU2+HIGH (WIN_P2)
+		LD DE,CPU2 + HIGH (WIN_P2)
 		LD B,HIGH (WIN_A2)		; если нижние 32кб озу, то нужно включить во 2 окне проецирования
-SP_RAMD1	LD A,0X40
+SP_RAMD1	LD A,0x40
 		OUT (C),A
 		LD B,E
 		LD A,(RDWR_PAGE)		; номер вычисленной страницы озу
@@ -1173,14 +1170,14 @@ IN_ROM1		LD A,D
 		JR NC,IN_ROM3
 		LD A,(SECTOR_SIZE)
 		AND A
-		LD BC,0X80
+		LD BC,0x80
 		JR Z,IN_ROM2
-		LD BC,0X100
+		LD BC,0x100
 		JR IN_ROM2
 
 IN_ROM3		CP HIGH (CPU2)			; проверка перехода границы страниц
 		JP NC,SP_RAMD3			; если выше то сразу копируем
-		CP HIGH (CPU2)-1
+		CP HIGH (CPU2) - 1
 		JP C,SP_RAMD3			; если ниже так же сразу копируем
 		LD A,E
 		AND A				; если сектор полностью укладывется до границы, то сразу копируем
@@ -1201,7 +1198,7 @@ SP_RAMD4	NEG
 		LD C,LOW (WIN_A0)
 		OUT (C),A
 		LD B,HIGH (WIN_A1)
-		LD A,0X40
+		LD A,0x40
 		OUT (C),A
 		LD B,HIGH (WIN_P1)
 		LD A,(RDWR_PAGE)
@@ -1210,12 +1207,12 @@ SP_RAMD4	NEG
 		AND A
 		JR Z,SP_RAMD5
 		LD A,D				; для записи
-		SUB 0X40			; изменили адрес куда копировать на другое окно проецирования
+		SUB 0x40			; изменили адрес куда копировать на другое окно проецирования
 		LD D,A
 		JR SP_RAMD6
 
 SP_RAMD5	LD A,H				; для чтения
-		SUB 0X40			; изменили адрес куда копировать на другое окно проецирования 
+		SUB 0x40			; изменили адрес куда копировать на другое окно проецирования 
 		LD H,A
 SP_RAMD6	POP AF
 		LD C,A				; сколько осталось скопировать байт
@@ -1247,7 +1244,7 @@ SP_RAMD8_	DEC A
 		AND A
 		JR Z,SP_RAMD0
 		EX DE,HL
-SP_RAMD0	LD A,0X3F
+SP_RAMD0	LD A,0x3F
 		AND H
 		LD H,A
 		JP SP_RAMD9
@@ -1267,7 +1264,7 @@ CMP_RAM_DISK	CALL READ_CPU12
 		LD BC,WIN_P1
 		LD A,RAM_RAMDISK
 		OUT (C),A
-		LD HL,CPU1+0X3FFF
+		LD HL,CPU1 + 0x3FFF
 		LD D,(HL)
 		DEC H
 		LD E,(HL)			; взяли байты для проверки маркера
@@ -1282,15 +1279,15 @@ CREATE_TRDTABL	LD BC,WIN_P1
 		OUT (C),A
 		LD HL,CPU1
 		PUSH HL
-		LD DE,CPU1+1
-		LD BC,0X3FFF
+		LD DE,CPU1 + 1
+		LD BC,0x3FFF
 		LD (HL),L
 		LDIR				; очистили страницу
 		POP DE				; адрес начала страницы
 		LD HL,0				; смещение в блоках и страницах
-		LD A,0XA0
+		LD A,0xA0
 ELT2		PUSH AF
-		LD BC,0X1000			; счетчик номеров секторов и их номера
+		LD BC,0x1000			; счетчик номеров секторов и их номера
 		LD A,L
 		RRCA
 		RRCA
@@ -1309,12 +1306,12 @@ ELT1		INC C
 		DJNZ ELT1			; вносим в таблицу все номера секторов с размерами
 		LD D,HIGH (CPU1)		; вернули указатель в начало
 		INC E				; для следующей дорожки
-		LD BC,0X40
+		LD BC,0x40
 		ADD HL,BC			; переход к следующей дорожке
 		POP AF
 		DEC A
 		JR NZ,ELT2			; повторяем для всех дорожек
-		LD HL,CPU1+0X3FFF
+		LD HL,CPU1 + 0x3FFF
 		LD (HL),"R"			; вносим маркер рамдиска
 		DEC H
 		LD (HL),"D"
@@ -1322,13 +1319,13 @@ ELT1		INC C
 		LD A,RAM_DATARAMD
 		OUT (C),A
 		LD HL,CPU1
-		LD DE,CPU1+1
-		LD BC,0X0FFF
+		LD DE,CPU1 + 1
+		LD BC,0x0FFF
 		LD (HL),L
 		LDIR
 		LD HL,DSKINFO
-		LD DE,CPU1+0X8E1
-		LD BC,DSK_END-DSKINFO
+		LD DE,CPU1 + 0x08E1
+		LD BC,DSK_END - DSKINFO
 		LDIR
 ; восстановление конфигурации окон проецирования 1,2
 WRITE_CPU12	LD BC,(BB_CPU1)
@@ -1378,13 +1375,13 @@ READ_CPU12	LD BC,RD_RAMNROM
 		ADD HL,HL
 		LD B,HIGH (RD_1WINA1)
 		IN A,(C)
-		CP 0XC0
-		JR NC,RWCPU1
+		CP 0xC0
+		JR NC,.L1
 		LD E,A
 		LD D,HIGH (WIN_P1)
-		JR RWCPU2
+		JR .L2
 
-RWCPU1		RLCA
+.L1		RLCA
 		RLCA
 		SLA L
 		RRA
@@ -1392,16 +1389,16 @@ RWCPU1		RLCA
 		RRA
 		LD E,A
 		LD D,HIGH (WIN_A1)
-RWCPU2		LD (BB_CPU1),DE
+.L2		LD (BB_CPU1),DE
 		INC B
 		IN A,(C)
-		CP 0XC0
-		JR NC,RWCPU3
+		CP 0xC0
+		JR NC,.L3
 		LD E,A
 		LD D,HIGH (WIN_P2)
-		JR RWCPU4
+		JR .L4
 
-RWCPU3		RLCA
+.L3		RLCA
 		RLCA
 		SLA L
 		RRA
@@ -1409,7 +1406,7 @@ RWCPU3		RLCA
 		RRA
 		LD E,A
 		LD D,HIGH (WIN_A2)
-RWCPU4		LD (BB_CPU2),DE
+.L4		LD (BB_CPU2),DE
 		RET
 
 ; проверка наличия виртуального диска
@@ -1417,12 +1414,12 @@ DISK_NONE	PUSH HL
 		PUSH BC
 		CALL READ_CPU12
 		LD BC,WIN_A1
-		LD A,0X40
+		LD A,0x40
 		OUT (C),A
 		LD B,HIGH (WIN_P1)
 		LD A,RAM_RAMDISK
 		OUT (C),A
-		LD HL,CPU1+0X3FFF
+		LD HL,CPU1 + 0x3FFF
 		LD A,(HL)
 		DEC H
 		CP "R"
@@ -1441,7 +1438,7 @@ DISK_NONE1	PUSH AF
 		RET
 
 ; на входе: H-адрес ячейки
-; 	   L-прочитанное значение
+;	    L-прочитанное значение
 READCMOS	PUSH BC
 		LD BC,CMOSD_SET_ADR
 		OUT (C),H
@@ -1452,91 +1449,96 @@ READCMOS	PUSH BC
 		AND A
 		RET
 
-		JP_EMU 0X3C30			; IN	A, (0X1F)
+	JP_EMU 0x3C30				; IN	A, (0x1F)
 
-		DUPL 0X3D2F-$,0;XFF
+		DUPL 0x3D2F - $,0
 		NOP
 		RET
 
-	JP_EMU 0X3D4D				; OUT	   (0XFF), A
-	JP_EMU 0X3D9A				; OUT	   (0X1F), A
-	JP_EMU 0X3DA6				; IN	A, (0XFF)
-	JP_EMU 0X3DB5				; IN	A, (0X1F)
-	JP_EMU 0X3DBA				; IN	A, (0X1F)
-	JP_EMU 0X3DD5				; OUT	   (0XFF), A
-	JP_EMU 0X3E30				; IN	A, (0X1F)
-	JP_EMU 0X3E3A				; IN	A, (0X1F)
-	JP_EMU 0X3E44				; OUT	   (0X7F), A
+	JP_EMU 0x3D4D				; OUT	   (0xFF), A
+	JP_EMU 0x3D9A				; OUT	   (0x1F), A
+	JP_EMU 0x3DA6				; IN	A, (0xFF)
+	JP_EMU 0x3DB5				; IN	A, (0x1F)
+	JP_EMU 0x3DBA				; IN	A, (0x1F)
+	JP_EMU 0x3DD5				; OUT	   (0xFF), A
+	JP_EMU 0x3E30				; IN	A, (0x1F)
+	JP_EMU 0x3E3A				; IN	A, (0x1F)
+	JP_EMU 0x3E44				; OUT	   (0x7F), A
 
-		DUPL 0X3E49-$,0;XFF
-		JP ADR_0X3E4C			; для адреса 0X3E4C
+		DUPL 0x3E49 - $,0
+		JP ADR_0x3E4C			; для адреса 0x3E4C
 
-		DUPL 0X3E4C-$,0;XFF		; OUT	   (0X7F), A
+;		JP_EMU 0x3E4C			; OUT	   (0x7F), A
+		DUPL 0x3E4C - $,0
 		OUT (EXIT_PORT),A
-		JR 0X3E49
+		JR 0x3E49
 
-	JP_EMU 0X3E50				; IN	A, (0X3F)
-	JP_EMU 0X3E78				; IN	A, (0X3F)
-	JP_EMU 0X3E7E				; OUT	   (0X3F), A
-	JP_EMU 0X3E87				; IN	A, (0X3F)
-	JP_EMU 0X3E95				; OUT	   (0X3F), A
-	JP_EMU 0X3EB5				; IN	A, (0X1F)
-	JP_EMU 0X3EBC				; IN	A, (0X3F)
-	JP_EMU 0X3EC9				; OUT	   (0X1F), A
-	JP_EMU 0X3ECE				; IN	A, (0XFF)
-	JP_EMU 0X3EDF				; OUT	   (0X1F), A
+	JP_EMU 0x3E50				; IN	A, (0x3F)
+	JP_EMU 0x3E78				; IN	A, (0x3F)
+	JP_EMU 0x3E7E				; OUT	   (0x3F), A
+	JP_EMU 0x3E87				; IN	A, (0x3F)
+	JP_EMU 0x3E95				; OUT	   (0x3F), A
+	JP_EMU 0x3EB5				; IN	A, (0x1F)
+	JP_EMU 0x3EBC				; IN	A, (0x3F)
+	JP_EMU 0x3EC9				; OUT	   (0x1F), A
+	JP_EMU 0x3ECE				; IN	A, (0xFF)
+	JP_EMU 0x3EDF				; OUT	   (0x1F), A
 
-		DUPL 0X3EF3-$,0;XFF		; IN	H, (C)
+		DUPL 0x3EF3 - $,0		; IN	H, (C)
 		OUT (EXIT_PORT),A
-		JR JUMP_0X3EF3
+		JR JUMP_0x3EF3
 
-		JR JUMP_0X3EF5			; IN	A, (0XFF)
+		JR JUMP_0x3EF5			; IN	A, (0xFF)
 
-EXIT_0X3EF5	OUT (EXIT_PORT),A
-JUMP_0X3EF5	JP ADR_0X3EF5
+EXIT_0x3EF5	OUT (EXIT_PORT),A
+JUMP_0x3EF5	JP ADR_0x3EF5
 
-;	JP_EMU 0X3EF5				; IN	A, (0XFF)
-	JP_EMU 0X3EFE				; IN	A, (0X7F)
-JUMP_0X3EF3	JP ADR_0X3EF3
+;	JP_EMU 0x3EF5				; IN	A, (0xFF)
+	JP_EMU 0x3EFE				; IN	A, (0x7F)
 
-	JP_EMU 0X3F1B				; OUT	   (0X5F), A
-	JP_EMU 0X3F25				; OUT	   (0X1F), A
-	JP_EMU 0X3F33				; IN	A, (0X1F)
+JUMP_0x3EF3	JP ADR_0x3EF3
 
-		DUPL 0X3F40-$,0			; для адреса 0x3EF3
-		JP ADR_0X3EF3
+		JP_EMU 0x3F1B			; OUT	   (0x5F), A
+		JP_EMU 0x3F25			; OUT	   (0x1F), A
+		JP_EMU 0x3F33			; IN	A, (0x1F)
 
-	JP_EMU 0X3F4D				; OUT	   (0X1F), A
-	JP_EMU 0X3F55				; IN	A, (0X3F)
-	JP_EMU 0X3F5A				; IN	A, (0X5F)
-	JP_EMU 0X3F69				; IN	A, (0X3F)
-	JP_EMU 0X3F72				; IN	A, (0X5F)
+		DUPL 0x3F40 - $,0		; для адреса 0x3EF3
+		JP ADR_0x3EF3
 
-	JP_EMU 0X3FBC				; IN	A, (0XFF)	;запись сектора
+	JP_EMU 0x3F4D				; OUT	   (0x1F), A
+	JP_EMU 0x3F55				; IN	A, (0x3F)
+	JP_EMU 0x3F5A				; IN	A, (0x5F)
+	JP_EMU 0x3F69				; IN	A, (0x3F)
+	JP_EMU 0x3F72				; IN	A, (0x5F)
 
-		DUPL 0X3FC7-$,0
-JUMP_0X3FF0	JP ADR_0X3FF0
+	JP_EMU 0x3FBC				; IN	A, (0xFF)	;запись сектора
 
-	JP_EMU 0X3FCA				; IN	A, (0XFF)	;запись сектора
-	JP_EMU 0X3FD1				; OUTI			;запись сектора
+		DUPL 0x3FC7 - $,0
+JUMP_0x3FF0	JP ADR_0x3FF0
 
-	JP_EMU 0X3FD7				; IN	A, (0XFF)	;чтение сектора
+	JP_EMU 0x3FCA				; IN	A, (0xFF)	;запись сектора
+	JP_EMU 0x3FD1				; OUTI			;запись сектора
 
-JUMP_0X3FEC	JP ADR_0X3FEC
-JUMP_0X3FF3	JP ADR_0X3FF3
+	JP_EMU 0x3FD7				; IN	A, (0xFF)	;чтение сектора
 
-	JP_EMU 0X3FE5				; IN	A, (0XFF)	;чтение сектора
+JUMP_0x3FEC	JP ADR_0x3FEC
+JUMP_0x3FF3	JP ADR_0x3FF3
 
-		DUPL 0X3FEC-$,0			; INI			;чтение сектора
+	JP_EMU 0x3FE5				; IN	A, (0xFF)	;чтение сектора
+
+;	JP_EMU 0x3FEC				; INI			;чтение сектора
+		DUPL 0x3FEC - $,0
 		OUT (EXIT_PORT),A
-		JR JUMP_0X3FEC
+		JR JUMP_0x3FEC
 
-		OUT (EXIT_PORT),A		; OUT	   (C), A
-		DB 0X18				; JR 0X3FC7
+;		DUPL 0x3FF0 - $,0		; OUT	   (C), A
+		OUT (EXIT_PORT),A
+		DB 0x18				; JR 0x3FC7
 
-		OUT (EXIT_PORT),A		; IN	A, (C)
-		JP JUMP_0X3FF3
+;		DUPL 0x3FF5 - $,0		; IN	A, (C)
+		OUT (EXIT_PORT),A
+		JP JUMP_0x3FF3
 
-		DUPL 0X3FF8-$,0
+		DUPL 0x3FF8 - $,0
 		DB "EVOSFE"
 		DW DATA_VERS

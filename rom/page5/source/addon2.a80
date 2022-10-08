@@ -1,55 +1,60 @@
 
-;LAST UPDATE: 06.07.2019 savelij
+; LAST UPDATE: 24.09.2022 savelij
 
 	TITLE "addon2.a80 ROM_RST80"
 
 		PHASE CPU0
 		JP $
 
-		DUPL 0X0008-$,0XFF
+		DUPL 0x0008 - $,0xFF
 		JP $
 
-		DUPL 0X0010-$,0XFF
+		DUPL 0x0010 - $,0xFF
 		JP $
 
-		DUPL ADR_SEL_ROM-$,0XFF
-		OUT (C),A			;0014
+		DUPL ADR_SEL_ROM - $,0xFF
+		OUT (C),A
 		NOP
 		RET
 
-		DUPL 0X0018-$,0XFF
+		DUPL 0x0018 - $,0xFF
 		JP $
 
-		DUPL 0X0020-$,0XFF
+		DUPL 0x0020 - $,0xFF
 		JP $
 
-		DUPL 0X0028-$,0XFF
+		DUPL 0x0028 - $,0xFF
 		JP $
 
-		DUPL 0X0030-$,0XFF
+		DUPL 0x0030 - $,0xFF
 		JP CALL2PAGE
 
-		DUPL 0X0038-$,0XFF		;0038
+		DUPL 0x0038 - $,0xFF
 		EI
 		RET
 
-		DUPL 0X003E-$,0XFF
+		DUPL 0x003E - $,0xFF
 		EI
 		RET
 
-		DUPL 0X0080-$,0XFF
+		DUPL 0x0080 - $,0xFF
 		binclude ../../dec40.bin
 
-		DUPL 0X00FF-$,0XFF
-		DW 0X0038
+		DUPL 0x00FF - $,0xFF
+		DW 0x0038
+
+UNPACK_STS      EVOPORT WIN_P3,RAM_STS
+                LD HL,STS_PACK
+                LD DE,CPU3
+                JP UNPACK
 
 UNP_MICRO_BOOT	LD HL,MICRO_BOOT
-		LD DE,DRV_VAR+0X300
-		CALL UNPACK			;РАСПАКОВАЛИ FAT BOOT
+		LD DE,DRV_VAR + 0x300
+		CALL UNPACK			; распаковали FAT BOOT
 		LD HL,BUF_TEKVOL
 		LD DE,(RREG_L)
-		LD BC,0X100
-		LDIR				;СКОПИРОВАЛИ ПЕРЕМЕННЫЕ FAT ДРАЙВЕРА ВЫБРАННОГО РАЗДЕЛА
+		LD BC,0x100
+		LDIR				; скопировали переменные FAT драйвера выбранного раздела
 		RET
 
 		include fontread.a80
@@ -59,9 +64,11 @@ MICRO_BOOT	binclude ../../fat_boot/micro_boot_fat_pack.rom
 CP866_FONT	binclude 866_code_pack.bin
 ATM_FONT	binclude atm_code_pack.bin
 
-FREE_ADDON2	EQU 0X3FF6-$
+STS_PACK	binclude ../../sts/sts_pack.rom
 
-		DUPL FREE_ADDON2,0XFF
-		DW FREE_ADDON2			;РАЗМЕР СВОБОДНОГО МЕСТА
+FREE_ADDON2	EQU 0x3FF6 - $
+
+		DUPL FREE_ADDON2,0xFF
+		DW FREE_ADDON2			; размер свободного места
 		DB "ADDON2"
 		DW DATA_VERS

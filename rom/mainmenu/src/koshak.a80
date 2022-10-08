@@ -1,8 +1,8 @@
 
-;LAST UPDATE: 12.11.2014 savelij
+; LAST UPDATE: 07.09.2022 savelij
 
-K_P_P		EQU 0X50BD			;АДРЕС ВЫВОДА МОНОХРОМА
-K_P_A		EQU 0X5ABD			;АДРЕС ВЫВОДА АТРИБУТОВ
+K_P_P		EQU 0X50BD			; адрес вывода монохрома
+K_P_A		EQU 0X5ABD			; адрес вывода атрибутов
 
 DRAW_KOSHAK	PUSH AF
 		ADD A,A
@@ -44,7 +44,7 @@ DRAWK1		LD A,(HL)
 		LD D,A
 		DEC C
 		JR NZ,DRAWK2
-		LD HL,0X4747			;ЦВЕТ КОШАКА
+		LD HL,0X4747			; цвет кошака
 		LD (K_P_A),HL
 		LD (K_P_A+1),HL
 		LD (K_P_A+0X20),HL
@@ -60,7 +60,7 @@ CP_TIME_KOSHAK	PUSH AF
 		LD A,(WAITINGL)
 		INC A
 		LD (WAITINGL),A
-		CP 0X0C				;СЧЕТЧИК ЗАДЕРЖКИ ПЕРЕРИСОВКИ КОШАКА
+		CP 0X0C				; счетчик задержки перерисовки кошака
 		JR C,CPTK1
 		XOR A
 		LD (WAITINGL),A
@@ -68,14 +68,14 @@ CP_TIME_KOSHAK	PUSH AF
 		INC A
 		LD (NUMKOSHAK),A
 		CALL DRAW_KOSHAK
-		CP 9				;МАКСИМАЛЬНЫЙ НОМЕР СПРАЙТА КОШАКА
+		CP 9				; максимальный номер спрайта кошака
 		JR C,CPTK1
 		XOR A
 		LD (NUMKOSHAK),A
 ;		LD HL,ZEVOK
 ;		INC (HL)
 		CALL DRAW_KOSHAK
-		RES 3,(IY+55)			;ЗАПРЕТ АНИМАЦИИ КОШАКА
+		RES 3,(IY+55)			; запрет анимации кошака
 		JR CPTK4
 
 CPTK2		LD HL,(WAITINGH)
@@ -84,7 +84,7 @@ CPTK2		LD HL,(WAITINGH)
 		LD A,H
 		AND 2
 		JR Z,CPTK1;5
-CPTK3		SET 3,(IY+55)			;СЧЕТЧИК ДОСЧИТАЛ,РАЗРЕШЕНИЕ АНИМАЦИИ КОШАКА
+CPTK3		SET 3,(IY+55)			; счетчик досчитал, разрешение анимации кошака
 CPTK4		LD HL,0
 		LD (WAITINGH),HL
 ;CPTK5		LD A,(ZEVOK)
@@ -98,8 +98,8 @@ CPTK1		POP AF
 		RET
 
 RESTORE_KOSHAK	RES 3,(IY+55)
-;		XOR A
-;		LD (ZEVOK),A
+		XOR A
+		LD (ZEVOK),A
 		LD A,(NUMKOSHAK)
 		AND A
 		RET Z

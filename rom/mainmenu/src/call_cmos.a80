@@ -1,5 +1,5 @@
 
-;LAST UPDATE: 03.09.2017 savelij
+; LAST UPDATE: 08.09.2022 savelij
 
 X4DUMP		EQU 0X0C
 Y4DUMP		EQU 0X05
@@ -477,7 +477,8 @@ READCMOS	DI
 
 ;€ ‚•Ž„…: H-€„…‘ Ÿ—…‰Šˆ
 ;	   L-—’Ž ’“„€ ‡€ˆ‘€’œ
-WRITECMOS	RST8 _CMOS_RW,_WRITE_CMOS
+WRITECMOS
+	RST8 _CMOS_RW,_WRITE_CMOS
 		RET
 
 ;—’…ˆ… ‚…‘ˆˆ FPGA ˆ‹ˆ BOOTLOADER, …‘‹ˆ ’Ž …’…‚€
@@ -568,6 +569,7 @@ PRINTTIME	LD A,(ERS_FLAGS)
 		LD BC,TXT_TIME			;—’…ˆ… ˆ …Ž€‡Ž‚€ˆ… ‚…Œ…ˆ
 		LD H,4
 		CALL READCMOS			;Ž—ˆ’€‹ˆ —€‘›
+		LD (SCRSAV.CURR+2),A
 		CALL BYTE2TXT			;‘ŠŽ‚…’ˆ‹ˆ —€‘› ‘ “Š‹€„ŠŽ‰ ‚ “”…
 		LD A,(BC)
 		XOR ':'-' '			;ŠŽ‚…‘ˆŸ Œˆƒ€ž™…ƒŽ „‚Ž…’Ž—ˆŸ
@@ -575,6 +577,7 @@ PRINTTIME	LD A,(ERS_FLAGS)
 		INC BC
 		LD H,2
 		CALL READCMOS			;Ž—ˆ’€‹ˆ Œˆ“’›
+		LD (SCRSAV.CURR+1),A
 		CALL BYTE2TXT			;‘ŠŽ‚…’ˆ‹ˆ —€‘› ‘ “Š‹€„ŠŽ‰ ‚ “”…
 		LD A,(BC)
 		XOR ':'-' '			;ŠŽ‚…‘ˆŸ Œˆƒ€ž™…ƒŽ „‚Ž…’Ž—ˆŸ
@@ -582,6 +585,7 @@ PRINTTIME	LD A,(ERS_FLAGS)
 		INC BC
 		LD H,0
 		CALL READCMOS			;Ž—ˆ’€‹ˆ ‘…Š“„›
+		LD (SCRSAV.CURR),A
 		CALL BYTE2TXT
 		LD BC,TXT_DATA			;„€‹…… —’…ˆ… ˆ …Ž€‡Ž‚€ˆ… „€’›
 		LD H,7
@@ -596,7 +600,7 @@ PRINTTIME	LD A,(ERS_FLAGS)
 		CALL READCMOS
 		CALL BYTE2TXT
 		LD HL,BUFF_TIME			;…—€’…Œ ‚…ŒŸ ˆ‡ “”…€
-		RST8 _PRINT_MESSAGE
+	RST8 _PRINT_MESSAGE
 		EXX
 
 VIDEOMODE	DI
@@ -637,7 +641,7 @@ VMODE1		LDI
 		LDI
 		LDI
 		LD HL,TXT_VMODE			;…—€’…Œ ’…Š“™ˆ‰ ‚ˆ„…Ž …†ˆŒ
-		RST8 _PRINT_MESSAGE
+	RST8 _PRINT_MESSAGE
 		RET
 
 ;……‚Ž„ "A" ‚ „…‘Ÿ’ˆ—Š“ ˆ ‚ ’…Š‘’
@@ -679,16 +683,53 @@ BYTE2TXT	LD L,A
 		INC BC
 		RET
 
-TXTMODE_ON	PEC_ON M_SHADOW_BF
+TXTMODE_ON
+	PEC_ON M_SHADOW_BF
 		LD BC,0XFF77
 		LD A,0XA6
 		CALL SET_C_A
-		PEC_OFF M_SHADOW_BF
+	PEC_OFF M_SHADOW_BF
 		RET
 
-TXTMODE_OFF	PEC_ON M_SHADOW_BF
+TXTMODE_OFF
+	PEC_ON M_SHADOW_BF
 		LD BC,0XFF77
 		LD A,0XA3
 		CALL SET_C_A
-		PEC_OFF M_SHADOW_BF
+	PEC_OFF M_SHADOW_BF
+		RET
+
+CHECK_SCREENSAVER
+		LD A,(SCRSAV.TIMEOUT)
+		AND A
+		RET Z
+		PUSH AF
+		LD HL,SCRSAV.CURR
+		LD DE,(SCRSAV.START)
+		LD BC,(SCRSAV.START+2)
+		CALL BCDEHLM
+		POP AF
+		CP D
+		RET NZ
+		LD A,B
+		OR E
+		RET NZ
+		CALL START_SONGLN
+
+RESET_SCREENSAVER
+		LD DE,SCRSAV.START
+		LD H,0
+		CALL READCMOS
+		LD (DE),A
+		INC DE
+		LD H,2
+		CALL READCMOS
+		LD (DE),A
+		INC DE
+		LD H,4
+		CALL READCMOS
+		LD (DE),A
+		INC DE
+		XOR A
+		LD (DE),A
 		RET

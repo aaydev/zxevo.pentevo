@@ -1,12 +1,12 @@
 
-; LAST UPDATE: 01.08.2021 savelij
+; LAST UPDATE: 04.10.2022 savelij
 
 ; последовательность для RST 8
 ; старый стек	HL AF BC RF ADR_RET DE	->
 ; -> новый стек	HL(номер паги и порт BF) DE(RAMNROM И DOS7FFD) BC' DE' HL' IX IY AF' ->
 ; -> чтение конфига
 
-REG_R_CORRECT	EQU 0X0D
+REG_R_CORRECT	EQU 0x0D
 
 CODE_NMIRST
 		PHASE 0
@@ -21,10 +21,10 @@ CODE_NMIRST
 FOR_RET		NOP
 		JP RAMSEL1
 
-OUT_NMI		OUT (0XBE),A
+OUT_NMI		OUT (0xBE),A
 		RETN
 
-		DUPL 0X0038-$,0XFF
+		DUPL 0x0038-$,0xFF
 IM_EI_RET	EI
 		RET
 
@@ -32,7 +32,7 @@ VIRT_BITS	DB 0				; биты 7-4 примонтированные диски,
 						; биты 3-2 номер реального диска
 						; биты 1-0 номер виртуального диска
 
-		DUPL 0X0066-$,0XFF
+		DUPL 0x0066-$,0xFF
 		NOP
 		NOP
 ADR_MAGIC	JP NMI_SERVICE
@@ -40,137 +40,137 @@ ADR_NMI_JUMP	EQU $-2
 
 		PHASE $+CPU6
 ; считанная конфигурация портов для RST 8
-R_BF		DB 0XFF
-R_77		DB 0XFF
-R_EFF7		DB 0XFF
-R_7FFD		DB 0XFF
-R_DOS7FFD	DB 0XFF
-R_RAMNROM	DB 0XFF
-R_1WINA3	DB 0XFF
-R_1WINA2	DB 0XFF
-R_1WINA1	DB 0XFF
-R_1WINA0	DB 0XFF
-R_0WINA3	DB 0XFF
-R_0WINA2	DB 0XFF
-R_0WINA1	DB 0XFF
-R_0WINA0	DB 0XFF
+R_BF		DB 0xFF
+R_77		DB 0xFF
+R_EFF7		DB 0xFF
+R_7FFD		DB 0xFF
+R_DOS7FFD	DB 0xFF
+R_RAMNROM	DB 0xFF
+R_1WINA3	DB 0xFF
+R_1WINA2	DB 0xFF
+R_1WINA1	DB 0xFF
+R_1WINA0	DB 0xFF
+R_0WINA3	DB 0xFF
+R_0WINA2	DB 0xFF
+R_0WINA1	DB 0xFF
+R_0WINA0	DB 0xFF
 
 ; считанная конфигурация портов для NMI
-N_BF		DB 0XFF
-N_77		DB 0XFF
-N_EFF7		DB 0XFF
-N_7FFD		DB 0XFF
-N_DOS7FFD	DB 0XFF
-N_RAMNROM	DB 0XFF
-N_1WINA3	DB 0XFF
-N_1WINA2	DB 0XFF
-N_1WINA1	DB 0XFF
-N_1WINA0	DB 0XFF
-N_0WINA3	DB 0XFF
-N_0WINA2	DB 0XFF
-N_0WINA1	DB 0XFF
-N_0WINA0	DB 0XFF
-N_TEK_PALS	DUPL 0X10,0XFF
+N_BF		DB 0xFF
+N_77		DB 0xFF
+N_EFF7		DB 0xFF
+N_7FFD		DB 0xFF
+N_DOS7FFD	DB 0xFF
+N_RAMNROM	DB 0xFF
+N_1WINA3	DB 0xFF
+N_1WINA2	DB 0xFF
+N_1WINA1	DB 0xFF
+N_1WINA0	DB 0xFF
+N_0WINA3	DB 0xFF
+N_0WINA2	DB 0xFF
+N_0WINA1	DB 0xFF
+N_0WINA0	DB 0xFF
+N_TEK_PALS	DUPL 0x10,0xFF
 
 ; сохраненные регистры при вызове RST 8
-RREG_FI		DB 0XFF
-RREG_I		DB 0XFF				; IF
-RREG_FF		DB 0XFF
-RREG_AA		DB 0XFF				; AF'
-RREG_IYL	DB 0XFF
-RREG_IYH	DB 0XFF				; IY
-RREG_IXL	DB 0XFF
-RREG_IXH	DB 0XFF				; IX
-RREG_LL		DB 0XFF
-RREG_HH		DB 0XFF				; HL'
-RREG_EE		DB 0XFF
-RREG_DD		DB 0XFF				; DE'
-RREG_CC		DB 0XFF
-RREG_BB		DB 0XFF				; BC'
-RDOS7FFD	DB 0XFF				; биты DOS7FFD перед вызовом
-RRAMNROM	DB 0XFF				; биты RAMNROM перед вызовом
-RPBF_CALL	DB 0XFF				; содержимое порта BF перед вызовом
-RPAGE_CALL	DB 0XFF				; номер страницы откуда пришли
-RREG_E		DB 0XFF
-RREG_D		DB 0XFF				; DE
-RADRRET_L	DB 0XFF
-RADRRET_H	DB 0XFF				; ADR_RET
-REI_DI		DB 0XFF
-R_R		DB 0XFF				; RF
-RREG_C		DB 0XFF
-RREG_B		DB 0XFF				; BC
-RREG_F		DB 0XFF
-RREG_A		DB 0XFF				; AF
-RREG_L		DB 0XFF
-RREG_H		DB 0XFF				; HL
-RST8_SAVE_SP	DW 0XFF
+RREG_FI		DB 0xFF
+RREG_I		DB 0xFF				; IF
+RREG_FF		DB 0xFF
+RREG_AA		DB 0xFF				; AF'
+RREG_IYL	DB 0xFF
+RREG_IYH	DB 0xFF				; IY
+RREG_IXL	DB 0xFF
+RREG_IXH	DB 0xFF				; IX
+RREG_LL		DB 0xFF
+RREG_HH		DB 0xFF				; HL'
+RREG_EE		DB 0xFF
+RREG_DD		DB 0xFF				; DE'
+RREG_CC		DB 0xFF
+RREG_BB		DB 0xFF				; BC'
+RDOS7FFD	DB 0xFF				; биты DOS7FFD перед вызовом
+RRAMNROM	DB 0xFF				; биты RAMNROM перед вызовом
+RPBF_CALL	DB 0xFF				; содержимое порта BF перед вызовом
+RPAGE_CALL	DB 0xFF				; номер страницы откуда пришли
+RREG_E		DB 0xFF
+RREG_D		DB 0xFF				; DE
+RADRRET_L	DB 0xFF
+RADRRET_H	DB 0xFF				; ADR_RET
+REI_DI		DB 0xFF
+R_R		DB 0xFF				; RF
+RREG_C		DB 0xFF
+RREG_B		DB 0xFF				; BC
+RREG_F		DB 0xFF
+RREG_A		DB 0xFF				; AF
+RREG_L		DB 0xFF
+RREG_H		DB 0xFF				; HL
+RST8_SAVE_SP	DW 0xFF
 
 ; сохраненные регистры при вызове NMI
 ; ADR_RET AF' IY IX BC' DE' HL' BC DE RF IF AF HL
-NADRRET_L	DB 0XFF				; ADR RET
-NADRRET_H	DB 0XFF
-NREG_FF		DB 0XFF				; AF'
-NREG_AA		DB 0XFF
-NREG_IYL	DB 0XFF				; IY
-NREG_IYH	DB 0XFF
-NREG_IXL	DB 0XFF				; IX
-NREG_IXH	DB 0XFF
-NREG_CC		DB 0XFF				; BC'
-NREG_BB		DB 0XFF			
-NREG_EE		DB 0XFF				; DE'
-NREG_DD		DB 0XFF
-NREG_LL		DB 0XFF				; HL'
-NREG_HH		DB 0XFF
-NREG_C		DB 0XFF				; BC
-NREG_B		DB 0XFF
-NREG_E		DB 0XFF				; DE
-NREG_D		DB 0XFF
-NREG_EI_DI_2	DB 0XFF				; RF
-NREG_R		DB 0XFF
-NREG_EI_DI_1	DB 0XFF				; IF
-NREG_I		DB 0XFF
-NREG_F		DB 0XFF				; AF
-NREG_A		DB 0XFF
-NREG_L		DB 0XFF				; HL
-NREG_H		DB 0XFF
-NMI_SAVE_SP	DW 0XFF				; адрес сохранения стека программы прерванной по NMI
-NUM_IM		DB 0XFF				; режим прерываний: 0-IM 1, 1-IM 2
-INT_MODE	DB 0XFF				; прерывания 0-запрешены, 1-разрешены
-INTERNAL_SP	DW 0XFF				; адрес хранения стека при работе сервисов
+NADRRET_L	DB 0xFF				; ADR RET
+NADRRET_H	DB 0xFF
+NREG_FF		DB 0xFF				; AF'
+NREG_AA		DB 0xFF
+NREG_IYL	DB 0xFF				; IY
+NREG_IYH	DB 0xFF
+NREG_IXL	DB 0xFF				; IX
+NREG_IXH	DB 0xFF
+NREG_CC		DB 0xFF				; BC'
+NREG_BB		DB 0xFF			
+NREG_EE		DB 0xFF				; DE'
+NREG_DD		DB 0xFF
+NREG_LL		DB 0xFF				; HL'
+NREG_HH		DB 0xFF
+NREG_C		DB 0xFF				; BC
+NREG_B		DB 0xFF
+NREG_E		DB 0xFF				; DE
+NREG_D		DB 0xFF
+NREG_EI_DI_2	DB 0xFF				; RF
+NREG_R		DB 0xFF
+NREG_EI_DI_1	DB 0xFF				; IF
+NREG_I		DB 0xFF
+NREG_F		DB 0xFF				; AF
+NREG_A		DB 0xFF
+NREG_L		DB 0xFF				; HL
+NREG_H		DB 0xFF
+NMI_SAVE_SP	DW 0xFF				; адрес сохранения стека программы прерванной по NMI
+NUM_IM		DB 0xFF				; режим прерываний: 0-IM 1, 1-IM 2
+INT_MODE	DB 0xFF				; прерывания 0-запрешены, 1-разрешены
+INTERNAL_SP	DW 0xFF				; адрес хранения стека при работе сервисов
 
-B0_CPU0		DB 0XFF				; байт для порта 0 окна 0 мапера
-P0_CPU0		DB 0XFF				; старший байт адреса порта порта для 0 окна 0 мапера
-B0_CPU1		DB 0XFF				; байт для порта 1 окна 0 мапера
-P0_CPU1		DB 0XFF				; старший байт адреса порта порта для 1 окна 0 мапера
-B0_CPU2		DB 0XFF				; байт для порта 2 окна 0 мапера
-P0_CPU2		DB 0XFF				; старший байт адреса порта порта для 2 окна 0 мапера
-B0_CPU3		DB 0XFF				; байт для порта 3 окна 0 мапера
-P0_CPU3		DB 0XFF				; старший байт адреса порта порта для 3 окна 0 мапера
-B1_CPU0		DB 0XFF				; байт для порта 0 окна 0 мапера
-P1_CPU0		DB 0XFF				; старший байт адреса порта порта для 0 окна 0 мапера
-B1_CPU1		DB 0XFF				; байт для порта 1 окна 0 мапера
-P1_CPU1		DB 0XFF				; старший байт адреса порта порта для 1 окна 0 мапера
-B1_CPU2		DB 0XFF				; байт для порта 2 окна 0 мапера
-P1_CPU2		DB 0XFF				; старший байт адреса порта порта для 2 окна 0 мапера
-B1_CPU3		DB 0XFF				; байт для порта 3 окна 0 мапера
-P1_CPU3		DB 0XFF				; старший байт адреса порта порта для 3 окна 0 мапера
-B_PORT77	DB 0XFF				; байт для вывода в порт ХХ77
-P_PORT77	DB 0XFF				; старший байт адреса порта ХХ77
+B0_CPU0		DB 0xFF				; байт для порта 0 окна 0 мапера
+P0_CPU0		DB 0xFF				; старший байт адреса порта порта для 0 окна 0 мапера
+B0_CPU1		DB 0xFF				; байт для порта 1 окна 0 мапера
+P0_CPU1		DB 0xFF				; старший байт адреса порта порта для 1 окна 0 мапера
+B0_CPU2		DB 0xFF				; байт для порта 2 окна 0 мапера
+P0_CPU2		DB 0xFF				; старший байт адреса порта порта для 2 окна 0 мапера
+B0_CPU3		DB 0xFF				; байт для порта 3 окна 0 мапера
+P0_CPU3		DB 0xFF				; старший байт адреса порта порта для 3 окна 0 мапера
+B1_CPU0		DB 0xFF				; байт для порта 0 окна 0 мапера
+P1_CPU0		DB 0xFF				; старший байт адреса порта порта для 0 окна 0 мапера
+B1_CPU1		DB 0xFF				; байт для порта 1 окна 0 мапера
+P1_CPU1		DB 0xFF				; старший байт адреса порта порта для 1 окна 0 мапера
+B1_CPU2		DB 0xFF				; байт для порта 2 окна 0 мапера
+P1_CPU2		DB 0xFF				; старший байт адреса порта порта для 2 окна 0 мапера
+B1_CPU3		DB 0xFF				; байт для порта 3 окна 0 мапера
+P1_CPU3		DB 0xFF				; старший байт адреса порта порта для 3 окна 0 мапера
+B_PORT77	DB 0xFF				; байт для вывода в порт ХХ77
+P_PORT77	DB 0xFF				; старший байт адреса порта ХХ77
 B_PORT_VIRT	DB 0xFF				; текущее состояние порта виртульных дисководов
 
-F_INTEXT_DRV	DB 0XFF				; флаги при внешних/внутренних вызовах драйверов
-TMP_NUMHDD	DB 0XFF
-NUMSEC_LBA48	DQ 0XFFFFFFFFFFFFFFFF		; номер сектора для чтения/записи
+F_INTEXT_DRV	DB 0xFF				; флаги при внешних/внутренних вызовах драйверов
+TMP_NUMHDD	DB 0xFF
+NUMSEC_LBA48	DQ 0xFFFFFFFFFFFFFFFF		; номер сектора для чтения/записи
 VARS_TXT_DEC	DB "281474976710655\0"		; число до 48 бит
 
 		PHASE $ & 0x3FFF
-		DUPL HIGH ($)*0X100+0XFF-$,0XFF
+		DUPL HIGH ($)*0x100+0xFF-$,0xFF
 		DW IM_EI_RET
 
-		DUPL HIGH ($)*0X100+0X80-$,0XFF
+		DUPL HIGH ($)*0x100+0x80-$,0xFF
 STACK_RST
 
-		DUPL (HIGH ($)+1)*0X100-$,0XFF
+		DUPL (HIGH ($)+1)*0x100-$,0xFF
 STACK_NMI
 
 		JP NMI_EXIT_DBG
@@ -194,7 +194,7 @@ RAMSEL1
 		PUSH AF				; IF
 		LD HL,OUT_NMI
 		LD (ADR_NMI_JUMP),HL
-		LD A,0XC9
+		LD A,0xC9
 		LD (FOR_RET),A
 		XOR A
 		LD I,A
@@ -216,23 +216,23 @@ RAMSEL1
 		LD SP,STACK_RST
 		LD A,(R_77-CPU6)
 		AND 7
-		OR 0XA0;8			; выключение турбо 14 мгц
-		LD BC,0XFF77
+		OR 0xA0;8			; выключение турбо 14 мгц
+		LD BC,0xFF77
 		OUT (C),A
-		PEC_OFF M_SHADOW_BF
+	PEC_OFF M_SHADOW_BF
 		LD BC,PENT_CONF
 		LD A,(R_EFF7-CPU6)
 		AND %11101111
 		OUT (C),A			; включение турбо 7 мгц
-		PEC_ON M_SHADOW_BF
+	PEC_ON M_SHADOW_BF
 		LD A,(R_7FFD-CPU6)
-		AND 0X10
+		AND 0x10
 		LD HL,R_0WINA0-CPU6
 		JR Z,RAMSEL3
 		LD HL,R_1WINA0-CPU6
 RAMSEL3		LD A,(RPAGE_CALL-CPU6)
 		LD (HL),A
-		ATMPORT WIN_A3,0X40
+	ATMPORT WIN_A3,0x40
 		LD BC,WIN_P6
 		XOR A
 		OUT (C),A
@@ -250,14 +250,14 @@ P4_EXIT_RST8	LD HL,NMI_SERVICE
 		LD (ADR_NMI_JUMP),HL
 		XOR A
 		LD (FOR_RET),A
-		PEC_OFF M_SHADOW_BF
+	PEC_OFF M_SHADOW_BF
 		LD BC,PENT_CONF
 		LD A,(R_EFF7-CPU6)
 		OUT (C),A
-		PEC_ON M_SHADOW_BF
+	PEC_ON M_SHADOW_BF
 		LD C,LOW (WIN_A5)
 		LD A,(R_7FFD-CPU6)
-		AND 0X10
+		AND 0x10
 		LD HL,B0_CPU1-CPU2
 		JR Z,RENS11
 		LD HL,B1_CPU1-CPU2
@@ -274,16 +274,18 @@ RENS12		EX AF,AF'
 		EX AF,AF'
 		DEC A
 		JR NZ,RENS12
+	IFDEF DOS_FE
 		LD BC,FDD_EMU_PORT
 		LD A,(B_PORT_VIRT & 0x3FFF)
 		OUT (C),A
+	ENDIF
 		LD HL,RST8_SAVE_SP-(RREG_H-RPAGE_CALL)-CPU6
 		LD DE,(RST8_SAVE_SP-CPU6)
 		LD BC,RREG_H-RPAGE_CALL
 		LDIR
 		LD BC,(B_PORT77-CPU6)
 		LD A,C
-		LD C,0X77
+		LD C,0x77
 		OUT (C),A
 		LD SP,RREG_FI-CPU6
 		POP AF
@@ -303,7 +305,7 @@ RENS12		EX AF,AF'
 		PUSH BC
 		LD C,LOW (WIN_A0)
 		LD A,(R_7FFD-CPU6)
-		AND 0X10
+		AND 0x10
 		LD DE,(B0_CPU0-CPU6)
 		JR Z,RENS13
 		LD DE,(B1_CPU0-CPU6)
@@ -332,7 +334,7 @@ NMI_SERVICE	LD (NMI_SAVE_SP-CPU6),SP	; сохранение стека
 		PUSH IY				; сохранили IY
 		EX AF,AF'
 		PUSH AF				; сохранили альт AF
-		LD A,0X80-REG_R_CORRECT
+		LD A,0x80-REG_R_CORRECT
 		LD HL,NREG_R-CPU6
 		SLA (HL)
 		RLA
@@ -358,7 +360,7 @@ NMISERV005	PUSH DE
 		LD SP,STACK_NMI
 		LD HL,OUT_NMI
 		LD (ADR_NMI_JUMP),HL
-		LD A,0XC9
+		LD A,0xC9
 		LD (FOR_RET),A			; RET для переключения страниц ROM/RAM
 		LD HL,N_BF-CPU6			; адрес сохранения прочитанных регистров конфигурации
 		IN A,(PEVO_CONF)
@@ -382,15 +384,15 @@ NMISERV002
 NMISERV001	XOR A
 		LD I,A				; обработчик прерывания переставилии для адреса 00FF
 		CALL GET_NUM_IM
-		PEC_OFF M_SHADOW_BF
+	PEC_OFF M_SHADOW_BF
 		LD A,(N_EFF7-CPU2)
 		AND %11101111
 		LD BC,PENT_CONF
 		OUT (C),A
-		PEC_ON M_SHADOW_BF
+	PEC_ON M_SHADOW_BF
 		LD A,(N_77-CPU2)
 		AND %11110111
-		LD BC,0XFF77
+		LD BC,0xFF77
 		OUT (C),A			; установка 7.0Mhz для NMI сервиса
 
 		PUSH DE
@@ -398,7 +400,7 @@ NMISERV001	XOR A
 		XOR A
 		OUT (C),A			; включили последнюю страницу озу
 		LD B,HIGH (WIN_A3)
-		LD A,0X40
+		LD A,0x40
 		OUT (C),A			; сняли зависимость 3 окна от порта 7FFD
 		LD DE,CPU6
 		ADD HL,DE
@@ -411,41 +413,41 @@ NMISERV001	XOR A
 		OUT (C),A
 		POP HL
 		LD (NUM_IM),HL
-;PEREHVAT	DUPL 3,0
-;		LD A,(DEBUG_ONOFF)
-;		AND A
-;		JR NZ,IN_DEBUG
+PEREHVAT	DUPL 3,0
+		LD A,(DEBUG_ONOFF)
+		AND A
+		JR NZ,IN_DEBUG
 		LD HL,CONTINUE_MAGIC
 		PUSH HL
 		JP OUT_NMI
 
-;IN_DEBUG	XOR A
-;		IN A,(0XFE)
-;		CPL
-;		AND 0X1F
-;		JR NZ,IN_DEBUG
-;		LD B,HIGH (WIN_P0)
-;		LD A,PAGE_STS
-;		OUT (C),A
-;		LD HL,DEBUGGER
-;		PUSH HL
-;		JP OUT_NMI
+IN_DEBUG	XOR A
+		IN A,(0xFE)
+		CPL
+		AND 0x1F
+		JR NZ,IN_DEBUG
+		LD B,HIGH (WIN_P0)
+		LD A,RAM_STS
+		OUT (C),A
+		LD HL,DEBUGGER
+		PUSH HL
+		JP OUT_NMI
 
 ; выход из магика
 EXITNMISERVICE	LD HL,ADR_MAGIC
-		LD (HL),0XC9			; заглушка на MAGIC
+		LD (HL),0xC9			; заглушка на MAGIC
 		IN A,(PEVO_CONF)
 		OR M_NMI_BF
 		OUT (PEVO_CONF),A
-		AND M_NMI_BF!0XFF
+		AND M_NMI_BF!0xFF
 		OUT (PEVO_CONF),A
 		HALT				; ждем срабатывания MAGIC 
 FALSE_NMI	LD HL,ADR_MAGIC
-		LD (HL),0XC3			; разрешение обработчика MAGIC перед выходом
+		LD (HL),0xC3			; разрешение обработчика MAGIC перед выходом
 
 		LD C,LOW (WIN_A0)
 		LD A,(N_7FFD-CPU6)
-		AND 0X10
+		AND 0x10
 		LD HL,B0_CPU0-CPU6
 		JR Z,ENS11
 		LD HL,B1_CPU0-CPU6
@@ -456,7 +458,7 @@ ENS12		EX AF,AF'
 		LD D,(HL)			; старший байт адреса порта
 		INC HL
 		LD A,D
-		OR 0X3F
+		OR 0x3F
 		LD B,A
 		BIT 3,D
 		JR NZ,ENS15
@@ -470,17 +472,19 @@ ENS15		OUT (C),E
 		EX AF,AF'
 		DEC A
 		JR NZ,ENS12
+	IFDEF DOS_FE
 		LD BC,FDD_EMU_PORT
 		LD A,(B_PORT_VIRT & 0x3FFF)
 		OUT (C),A
-		PEC_OFF M_SHADOW_BF
+	ENDIF
+	PEC_OFF M_SHADOW_BF
 		LD BC,PENT_CONF
 		LD A,(N_EFF7-CPU6)
 		OUT (C),A
-		PEC_ON M_SHADOW_BF
+	PEC_ON M_SHADOW_BF
 		LD BC,(B_PORT77-CPU6)
 		LD A,C
-		LD C,0X77
+		LD C,0x77
 		OUT (C),A
 		LD A,(N_BF-CPU6)
 		OUT (PEVO_CONF),A
@@ -512,7 +516,7 @@ ENS15		OUT (C),E
 		POP AF
 		JP PO,ENMISERV1
 		EI
-ENMISERV1	LD A,0X80+3-REG_R_CORRECT
+ENMISERV1	LD A,0x80+3-REG_R_CORRECT
 		LD HL,NREG_R-CPU6
 		SLA (HL)
 		RLA
@@ -524,14 +528,14 @@ ENMISERV1	LD A,0X80+3-REG_R_CORRECT
 		POP AF
 		POP HL
 		LD SP,(NMI_SAVE_SP-CPU6)
-		OUT (0XBE),A
+		OUT (0xBE),A
 		RETN
 
 LDIR__BYTES	LD HL,CPU6
 		ADD HL,SP
 		LD SP,HL
 		LD A,(R_7FFD-CPU6)
-		AND 0X10
+		AND 0x10
 		LD HL,B0_CPU1-CPU2
 		JR Z,LDIR_BYTES5
 		LD HL,B1_CPU1-CPU2
@@ -543,7 +547,7 @@ LDIR_BYTES3	EX AF,AF'
 		LD D,(HL)			; старший байт адреса порта
 		INC HL
 		LD A,D
-		OR 0X3F
+		OR 0x3F
 		LD B,A
 		BIT 3,D
 		JR NZ,LDIR_BYTES4
@@ -574,9 +578,9 @@ NUM_IM2		LD A,1
 
 GET_NUM_IM	PUSH HL
 		LD D,B				; INT ON/OFF
-		LD HL,0X0038
-		LD (HL),0XAF
-		LD L,0XFF
+		LD HL,0x0038
+		LD (HL),0xAF
+		LD L,0xFF
 		LD (HL),LOW (NUM_IM2)
 		INC HL
 		LD (HL),HIGH (NUM_IM2)
@@ -584,9 +588,9 @@ GET_NUM_IM	PUSH HL
 		HALT
 		DI
 		LD E,A				; 0-IM 1, 1-IM 2
-		LD HL,0X0038
-		LD (HL),0XFB
-		LD L,0XFF
+		LD HL,0x0038
+		LD (HL),0xFB
+		LD L,0xFF
 		LD (HL),LOW (IM_EI_RET)
 		INC HL
 		LD (HL),HIGH (IM_EI_RET)
@@ -607,12 +611,12 @@ CALL2PAGE	EX (SP),HL
 		LD (ADRCALL),BC
 		LD BC,RD_7FFD
 		IN A,(C)
-		AND 0X10
+		AND 0x10
 		LD BC,RD_0WINA0
 		JR Z,CALL2PAGE1
 		LD BC,RD_1WINA0
 CALL2PAGE1	IN A,(C)
-		AND 0X3F
+		AND 0x3F
 		LD BC,STEK_PAGES
 TEKPAGE		EQU $-2
 		LD (BC),A
@@ -665,7 +669,7 @@ DEBUGGER1	LD HL,RESTART_MAIN
 		SET B_DBG_ACTIV,(HL)
 DEBUGGER2	LD HL,CONTINUE_PROG
 		LD DE,NADRRET_L
-		EVOPORT WIN_P3,RAM_STS		; включили страницу с установленным STS
+	EVOPORT WIN_P3,RAM_STS			; включили страницу с установленным STS
 		LD BC,N_BF
 		LD A,(N_77)
 		EX AF,AF'
@@ -676,7 +680,8 @@ DEBUGGER2	LD HL,CONTINUE_PROG
 EXIT_DEBUG	LD HL,CPU6+DEBUG_ONOFF
 		RES B_DBG_ACTIV,(HL)
 ; выход из отладчика минуя основное меню NMI
-NO_EXIT_DEBUG	EVOPORT WIN_A0,ROM_RST82
+NO_EXIT_DEBUG
+	EVOPORT WIN_A0,ROM_RST82
 		LD HL,CPU6+DEBUG_ONOFF
 		LD A,M_TRACE_DBG
 		AND (HL)
@@ -688,7 +693,7 @@ NO_EXIT_DEBUG	EVOPORT WIN_A0,ROM_RST82
 ; вход в отладчик минуя основное меню NMI
 DBG2MAINMENU	LD HL,CPU6+DEBUG_ONOFF
 		RES B_DBG_ACTIV,(HL)
-		EVOPORT WIN_A0,ROM_RST83
+	EVOPORT WIN_A0,ROM_RST83
 		LD A,M_TRACE_DBG
 		AND (HL)
 		JP NZ,CONTMAGIC3
@@ -696,21 +701,22 @@ DBG2MAINMENU	LD HL,CPU6+DEBUG_ONOFF
 
 ; возврат из NMI для отладчика. не восстанавливается:
 ; палитра, фонт, видеорежим
-NMI_EXIT_DBG	EVOPORT WIN_A0,ROM_RST82
-		ROMCALL RESTORE_AY,ROM_RST83	; восстановление рагистров AY
+NMI_EXIT_DBG
+	EVOPORT WIN_A0,ROM_RST82
+	ROMCALL RESTORE_AY,ROM_RST83		; восстановление рагистров AY
 		LD HL,ADR_MAGIC
-		LD (HL),0XC9			; заглушка на MAGIC
+		LD (HL),0xC9			; заглушка на MAGIC
 		IN A,(PEVO_CONF)
 		OR M_NMI_BF
 		OUT (PEVO_CONF),A
-		AND M_NMI_BF!0XFF
+		AND M_NMI_BF!0xFF
 		OUT (PEVO_CONF),A
 		HALT				; ждем срабатывания MAGIC 
 		LD HL,ADR_MAGIC
-		LD (HL),0XC3			; разрешение обработчика MAGIC перед выходом
+		LD (HL),0xC3			; разрешение обработчика MAGIC перед выходом
 		LD C,LOW (WIN_A0)
 		LD A,(N_7FFD-CPU6)
-		AND 0X10
+		AND 0x10
 		LD HL,B0_CPU0-CPU6
 		JR Z,ENSDBG11
 		LD HL,B1_CPU0-CPU6
@@ -721,7 +727,7 @@ ENSDBG12	EX AF,AF'
 		LD D,(HL)			; старший байт адреса порта
 		INC HL
 		LD A,D
-		OR 0X3F
+		OR 0x3F
 		LD B,A
 		BIT 3,D
 		JR NZ,ENSDBG15
@@ -735,14 +741,14 @@ ENSDBG15	OUT (C),E
 		EX AF,AF'
 		DEC A
 		JR NZ,ENSDBG12
-		PEC_OFF M_SHADOW_BF
+	PEC_OFF M_SHADOW_BF
 		LD BC,PENT_CONF
 		LD A,(N_EFF7-CPU6)
 		OUT (C),A
-		PEC_ON M_SHADOW_BF
+	PEC_ON M_SHADOW_BF
 ;		LD BC,(B_PORT77-CPU6)
 ;		LD A,C
-;		LD C,0X77
+;		LD C,0x77
 ;		OUT (C),A
 		LD A,(N_BF-CPU6)
 		OUT (PEVO_CONF),A
@@ -768,7 +774,7 @@ ENSDBG15	OUT (C),E
 		POP AF
 		JP PO,ENMIDBGSERV1
 		EI
-ENMIDBGSERV1	LD A,0X80+3-REG_R_CORRECT
+ENMIDBGSERV1	LD A,0x80+3-REG_R_CORRECT
 		LD HL,NREG_R-CPU6
 		SLA (HL)
 		RLA
@@ -780,13 +786,13 @@ ENMIDBGSERV1	LD A,0X80+3-REG_R_CORRECT
 		POP AF
 		POP HL
 		LD SP,(NMI_SAVE_SP-CPU6)
-		OUT (0XBE),A
+		OUT (0xBE),A
 		RETN
 
 SET_CPU3	PUSH BC
 		LD BC,WIN_A3
 		EX AF,AF'
-		LD A,0X40
+		LD A,0x40
 		OUT (C),A
 		EX AF,AF'
 		LD B,HIGH (WIN_P3)
@@ -842,34 +848,34 @@ TO_USBDRV	EX AF,AF'
 
 ; переменные для USB драйвера
 vars
-.bFlags		DW 0XFF
-.xferLen	DB 0XFF
-.data0		DB 0XFF
-.data1		DB 0XFF
-.cmd		DB 0XFF
-.intr		DB 0XFF
-.result		DB 0XFF
-.remainder	DB 0XFF
-.dataX		DB 0XFF
-.bufLen		DB 0XFF
-.addr		DB 0XFF
-.timeout	DB 0XFF
+.bFlags		DW 0xFF
+.xferLen	DB 0xFF
+.data0		DB 0xFF
+.data1		DB 0xFF
+.cmd		DB 0xFF
+.intr		DB 0xFF
+.result		DB 0xFF
+.remainder	DB 0xFF
+.dataX		DB 0xFF
+.bufLen		DB 0xFF
+.addr		DB 0xFF
+.timeout	DB 0xFF
 
-.SL_OUT		DB 0XFF dup (8)
-.DBUF		DB 0XFF dup (64)
-.T_OUT		DB 0XFF dup (32)
+.SL_OUT		DB 0xFF dup (8)
+.DBUF		DB 0xFF dup (64)
+.T_OUT		DB 0xFF dup (32)
 
 uDev		pUSBDEV
 usbstack	PKG
 
-STEK_PAGES	DUPL 0X10,0XFF			; 10 стек страниц вызывов в ROM
-RST_FLAGS	DB 0XFF				; 1
-TXT_COLOR	DB 0XFF				; 1
-COORD_XY	DW 0XFF				; 2
-COLBUF		DUPL 0X50,0XFF			; 50 буфер сохранения строки цвета с экрана
-MOUSE_BUFF	DUPL 0X10,0XFF			; 10 буфер сохранения части экрана под курсором мыши
-PRESSEDKEY	DW 0XFFFF			; 2 адрес списка горячих клавиш после вывода окна
-FLAGS		DB 0XFF				; 1 системные флаги
+STEK_PAGES	DUPL 0x10,0xFF			; 10 стек страниц вызывов в ROM
+RST_FLAGS	DB 0xFF				; 1
+TXT_COLOR	DB 0xFF				; 1
+COORD_XY	DW 0xFF				; 2
+COLBUF		DUPL 0x50,0xFF			; 50 буфер сохранения строки цвета с экрана
+MOUSE_BUFF	DUPL 0x10,0xFF			; 10 буфер сохранения части экрана под курсором мыши
+PRESSEDKEY	DW 0xFFFF			; 2 адрес списка горячих клавиш после вывода окна
+FLAGS		DB 0xFF				; 1 системные флаги
  BITMASK VIDEO_MODE,	7			; BIT 7-=1-TXT, =0-ZX SCREEN MODE
 						; BIT 6
 						; BIT 5
@@ -878,85 +884,85 @@ FLAGS		DB 0XFF				; 1 системные флаги
  BITMASK CLOCK_PRESENT,	2			; BIT 2-=1-часы найдены, =0-нет
  BITMASK MOUSE_PRESENT,	1			; BIT 1-=1-мышь есть, =0-нет
  BITMASK CURSOR_NUM,	0			; BIT 0-какой курсор рисовать, для мигания
-NEXTBYTERST8	DB 0XFF				; 1 следующий байт после вызова RST 8, код для вызова драйвера
-OLD_STACK	DW 0XFFFF			; 2
-ADR_INT		DW 0XFFFF			; 2
-ADR_PALITRA	DW 0XFFFF			; 2
-XNEW		DB 0XFF				; 1
-ADRSTR_Y	DB 0XFF				; 1
-ADRSTR_X	DB 0XFF				; 1
-TXNEW		DB 0XFF				; 1
-TADRSTR_Y	DB 0XFF				; 1
-TADRSTR_X	DB 0XFF				; 1
-NO_INW		DB 0XFF				; 1
-COLOR4SYM	DB 0XFF				; 1
-PAGE4READ	DB 0XFF				; 1
-PAGE4SCR	DB 0XFF				; 1
+NEXTBYTERST8	DB 0xFF				; 1 следующий байт после вызова RST 8, код для вызова драйвера
+OLD_STACK	DW 0xFFFF			; 2
+ADR_INT		DW 0xFFFF			; 2
+ADR_PALITRA	DW 0xFFFF			; 2
+XNEW		DB 0xFF				; 1
+ADRSTR_Y	DB 0xFF				; 1
+ADRSTR_X	DB 0xFF				; 1
+TXNEW		DB 0xFF				; 1
+TADRSTR_Y	DB 0xFF				; 1
+TADRSTR_X	DB 0xFF				; 1
+NO_INW		DB 0xFF				; 1
+COLOR4SYM	DB 0xFF				; 1
+PAGE4READ	DB 0xFF				; 1
+PAGE4SCR	DB 0xFF				; 1
 DAT_MAIN_MENU	DUPL 3,0			; 3
 DAT_SETUP_MENU	DUPL 3,0			; 3
 DAT_FILEBROWS	DUPL 5,0			; 5
 DAT_MOUNT	DUPL 3,0			; 3
-WIN_DEV		DUPL 0X30,0			; 30
-COL_CURSOR	DW 0XFFFF			; 2
-_MORG		DB 0XFF				; 1
-ARXY		DW 0XFFFF			; 2
-ADR_REST	DW 0XFFFF			; 2
-MOUPOS		DW 0XFFFF			; 2
-TEK_MODES	DB 0XFF				; 1
-CMP_FONT_FLAG	DB 0XFF				; 1
-BUFF4TXT	DUPL 0X2B,0XFF			; 2B
-EXT4FOUND	DUPL 0X10*3+1,0XFF		; 10*3+1
-CMOS4CRC16	DUPL ECMOS_DEFAULT-CMOS_DEFAULT,0XFF
-KSTATE0		DB 0XFF				; 1 |
+WIN_DEV		DUPL 0x30,0			; 30
+COL_CURSOR	DW 0xFFFF			; 2
+_MORG		DB 0xFF				; 1
+ARXY		DW 0xFFFF			; 2
+ADR_REST	DW 0xFFFF			; 2
+MOUPOS		DW 0xFFFF			; 2
+TEK_MODES	DB 0xFF				; 1
+CMP_FONT_FLAG	DB 0xFF				; 1
+BUFF4TXT	DUPL 0x2B,0xFF			; 2B
+EXT4FOUND	DUPL 0x10*3+1,0xFF		; 10*3+1
+CMOS4CRC16	DUPL ECMOS_DEFAULT-CMOS_DEFAULT,0xFF
+KSTATE0		DB 0xFF				; 1 |
 KSTATE1		DB 0				; 1 |
 KSTATE2		DB 0				; 1 |
 KSTATE3		DB 0				; 1 |
-KSTATE4		DB 0XFF				; 1 |    аналог
+KSTATE4		DB 0xFF				; 1 |    аналог
 KSTATE5		DB 0				; 1 |    BASIC
 KSTATE6		DB 0				; 1 |    переменных
 KSTATE7		DB 0				; 1 |    опроса
 LAST_K		DB 0				; 1 |    клавиатуры
-REPDEL		DB 0X10				; 1 |
+REPDEL		DB 0x10				; 1 |
 REPPER		DB 1				; 1 |
 FLAGS_KEY	DB 0				; 1 |
-FLAGS_KEY1	DB 0X10				; 1 |
-MOUNT_SYM	DB 0XFF				; 1 номер монтирумого диска
-EXT_TYPE	DB 0XFF				; 1
-OST_HWOST	DW 0XFFFF			; 2
-KUDA_HWOST	DW 0XFFFF			; 2
-SCROLL_MODE	DB 0XFF				; 1
-NEXT4PAGE	DW 0XFFFF			; 2
-OSTAT_SECT	DW 0XFFFF			; 2
-NACH_SECT	DW 0XFFFF			; 2
-START_DATA	DW 0XFFFF			; 2
-AY_REGS		DUPL 0X0E,0XFF			; D
-TEKBUFTSC	DW 0XFFFF			; 2
-TEK_TEXT	DW 0XFFFF			; 2
-TURBO_MODE	DUPL 5,0XFF			; 5
-MEMORY_MODE	DUPL 4,0XFF			; 3
+FLAGS_KEY1	DB 0x10				; 1 |
+MOUNT_SYM	DB 0xFF				; 1 номер монтирумого диска
+EXT_TYPE	DB 0xFF				; 1
+OST_HWOST	DW 0xFFFF			; 2
+KUDA_HWOST	DW 0xFFFF			; 2
+SCROLL_MODE	DB 0xFF				; 1
+NEXT4PAGE	DW 0xFFFF			; 2
+OSTAT_SECT	DW 0xFFFF			; 2
+NACH_SECT	DW 0xFFFF			; 2
+START_DATA	DW 0xFFFF			; 2
+AY_REGS		DUPL 0x0E,0xFF			; D
+TEKBUFTSC	DW 0xFFFF			; 2
+TEK_TEXT	DW 0xFFFF			; 2
+TURBO_MODE	DUPL 5,0xFF			; 5
+MEMORY_MODE	DUPL 4,0xFF			; 3
 ; для резидента HONEY COMANDER
 	IFDEF REZIDENT
-REZIDENT_MODE	DUPL 4,0XFF			; 4
-TXT_KILLREZID	DUPL 4,0XFF			; 4
+REZIDENT_MODE	DUPL 4,0xFF			; 4
+TXT_KILLREZID	DUPL 4,0xFF			; 4
 	ENDIF;REZIDENT
-BUFF_TIME	DB 0X16,0X00,0X48,0X17,CYAN<<3+BLUE+0XC0
-TXT_TIME	DB "00:00:00",0X16,0X01,0X48
-TXT_DATA	DB "00.00.00",0X17,0XFF,0
+BUFF_TIME	DB 0x16,0x00,0x48,0x17,CYAN<<3+BLUE+0xC0
+TXT_TIME	DB "00:00:00",0x16,0x01,0x48
+TXT_DATA	DB "00.00.00",0x17,0xFF,0
 EBUFF_TIME
-NAME_RAMDISK	DUPL 0X20,0
-FILE_DEST	DUPL 0X20,0XFF			; 20 описатель открытого файла (куда)
-FB_EXT		DUPL 0X0B,0XFF			; B буфер 8.3 для поиска имени
-SAVE_IY		DW 0XFFFF			; 2 внутренее сохранение регистров для дальнейшего использования
-ADR_MASK_EXT	DW 0XFFFF			; 2 адрес расширений файлов для поиска
-ADR_SKLAD	DW 0XFFFF			; 2 адрес складирования найденного
-ADR_SKLAD_NAME	DW 0XFFFF			; 2
-MAKS_ADR	DB 0XFF				; 1 старший байт максимального адреса буфера складирования
-KOL_FOUNDED	DW 0XFFFF			; 2 количество найденных описателей
-OUT_NAME_FILE	DB 0X17,0XFF,0X16,0,0,0
+NAME_RAMDISK	DUPL 0x20,0
+FILE_DEST	DUPL 0x20,0xFF			; 20 описатель открытого файла (куда)
+FB_EXT		DUPL 0x0B,0xFF			; B буфер 8.3 для поиска имени
+SAVE_IY		DW 0xFFFF			; 2 внутренее сохранение регистров для дальнейшего использования
+ADR_MASK_EXT	DW 0xFFFF			; 2 адрес расширений файлов для поиска
+ADR_SKLAD	DW 0xFFFF			; 2 адрес складирования найденного
+ADR_SKLAD_NAME	DW 0xFFFF			; 2
+MAKS_ADR	DB 0xFF				; 1 старший байт максимального адреса буфера складирования
+KOL_FOUNDED	DW 0xFFFF			; 2 количество найденных описателей
+OUT_NAME_FILE	DB 0x17,0xFF,0x16,0,0,0
 OUT_NAME_FILET	EQU $-3
-BUF_FILEITEM	DUPL 0X20,0XFF			; 20
-EXTERN_PAL	DUPL 0X10,0XFF			; 10
+BUF_FILEITEM	DUPL 0x20,0xFF			; 20
+EXTERN_PAL	DUPL 0x10,0xFF			; 10
 ENMI_SERVICE
-HDDTIMEOUT	EQU EXTERN_PAL+0X10		; 1
+HDDTIMEOUT	EQU EXTERN_PAL+0x10		; 1
 
 		DEPHASE
