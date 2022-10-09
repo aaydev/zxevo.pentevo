@@ -1,5 +1,5 @@
 
-; LAST UPDATE: 08.10.2022 savelij
+; LAST UPDATE: 09.10.2022 savelij
 
 		TITLE "virtual.a80"
 
@@ -391,7 +391,7 @@ W_IN1F		LD A,(WR_1F)
 		AND A
 		JR NZ,.L1
 		LD A,%00100100
-		JR .INDEX
+		JR .L6
 
 .L3		LD A,(.INDEX)
 		XOR %00000100
@@ -400,7 +400,7 @@ W_IN1F		LD A,(WR_1F)
 .L1		LD A,0x24
 .INDEX		EQU $-1
 .L4		XOR %00000010
-		LD (.INDEX),A
+.L6		LD (.INDEX),A
 .L2		LD (RD_1F),A
 		LD (REG_A),A
 		RET

@@ -357,10 +357,8 @@ UPDATE_AF	LD A,(OLD_AF + 1)
 	EMU_JUMP 0x3FD1				; OUTI		; запись сектора
 		JP WRITE_SECTOR
 
-;	EMU_JUMP 0x3FD7				; IN A,(0xFF)	; чтение сектора
-;		JP READ_SECTOR
-	EMU_JUMP 0x3FD7				; ожидание готовности чтения
-		JP WAIT_READ
+	EMU_JUMP 0x3FD7				; IN A,(0xFF)	; чтение сектора
+		JP READ_SECTOR
 
 	EMU_JUMP 0x3FE5				; IN A,(0xFF)	; чтение сектора
 		JP READ_SECTOR
@@ -422,7 +420,7 @@ IB1		PUSH BC
 		PUSH HL
 		POP AF
 		LD HL,(OLD_SP)
-		LD DE,0x2A71		; адрес возврата из обработчика прерывания внешней проги через OUT (0xFF),A
+		LD DE,0x2A71			; адрес возврата из обработчика прерывания внешней проги через OUT (0xFF),A
 		DEC HL
 		LD (HL),D
 		DEC HL
@@ -443,7 +441,7 @@ IB1		PUSH BC
 		LD HL,(OLD_HL)
 		LD DE,(OLD_DE)
 		LD BC,(OLD_BC)
-		LD A,(WR_FF)		; байтик для возврата через команду OUT (0xFF),A
+		LD A,(WR_FF)			; байтик для возврата через команду OUT (0xFF),A
 		EI
 		JP 0x2A53
 
@@ -751,15 +749,14 @@ OUT_1F		LD A,(OLD_AF + 1)
 		LD (PORT_3F),A
 		LD A,0x3D			; DEC A
 		LD (.NAPRAVL),A
-		;JR .INFF_BIT6
 
 ; 80-9F команда чтение сектора
 .CMD_80
-.CMD_90		;JR .INFF_BIT6
+.CMD_90
 
 ; A0-BF команда запись сектора
 .CMD_A0
-.CMD_B0		;JR .INFF_BIT6
+.CMD_B0
 
 ; C0-CF чтение адреса
 .CMD_C0		JR .INFF_BIT6
@@ -876,8 +873,8 @@ IN_1F		LD A,(WR_1F)
 		XOR A
 		JR .L2
 
-.L7		LD A,0x80
-		JR .L2
+.L7             LD A,0x80
+                JR .L2
 
 .L5		LD A,(PORT_3F)
 		AND A
@@ -921,36 +918,36 @@ IN_FF		LD A,(RD_FF)
 IN_H_C		LD A,(OLD_BC)
 ; определение из какого порта чтение
 		CP 0x1F
-		JR NZ,RDHC2
+		JR NZ,.L2
 		LD A,(RD_1F)
 		LD (OLD_HL + 1),A
 		RET
 
-RDHC2		CP 0x3F
-		JR NZ,RDHC3
+.L2		CP 0x3F
+		JR NZ,.L3
 		LD A,(PORT_3F)
 		LD (OLD_HL + 1),A
 		RET
-	
-RDHC3		CP 0x5F
-		JR NZ,RDHC4
+
+.L3		CP 0x5F
+		JR NZ,.L4
 		LD A,(PORT_5F)
 		LD (OLD_HL + 1),A
 		RET
-	
-RDHC4		CP 0x7F
-		JR NZ,RDHC5
+
+.L4		CP 0x7F
+		JR NZ,.L5
 		LD A,(PORT_7F)
 		LD (OLD_HL+1),A
 		RET
-	
-RDHC5		CP 0xFF
-		JR NZ,RDHC6
+
+.L5		CP 0xFF
+		JR NZ,.L6
 		LD A,(RD_FF)
 		LD (OLD_HL + 1),A
 		RET
 
-RDHC6		LD BC,(OLD_BC)
+.L6		LD BC,(OLD_BC)
 		IN A,(C)
 		LD (OLD_HL + 1),A
 		RET
@@ -972,29 +969,13 @@ IN_INI		LD HL,(OLD_HL)
 		LD (ADR_EXIT),HL
 		JP OUT_1F.INFF_BIT6
 
-WAIT_READ	LD A,(WR_1F)
-		AND 0xF0
-		CP 0x80
-		JP C,OUT_1F.INFF_BIT6
-		CP 0xC0
-		JR NC,READ_SECTOR.L1
-		CALL READ_CPU12			; сохранение текущей конфигурации окон проецирования 1,2
-		CALL SEARCH_SECTOR		; проверяем наличие сектора
-		PUSH AF
-		CALL WRITE_CPU12		; восстановление конфигурации окон проецирования 1,2
-		POP AF
-		JR NC,READ_SECTOR_1
-; сектора нет, не дождетесь
-		LD A,0x3C
-		JP OUT_1F.INFF_BIT6_1
-
 ; чтение сектора или портов
 READ_SECTOR	LD A,(WR_1F)
 		AND 0xF0
 		CP 0x80
 		JP C,OUT_1F.INFF_BIT6
 		CP 0xC0
-		JR C,READ_SECTOR_1
+		JR NZ,READ_SECTOR_1
 .L1		LD A,(PORT_3F)
 		LD HL,(OLD_HL)
 		LD (HL),A			; номер дорожки
@@ -1045,7 +1026,7 @@ WRITE_SECTOR_1	LD (RDWR_MODE),A
 		LD (ADR_EXIT),HL
 		JP WRITE_CPU12			; восстановление конфигурации окон проецирования 1,2
 
-SEARCH_SECTOR	LD BC,WIN_A1
+FIND_SECTOR	LD BC,WIN_A1
 		LD A,0x40
 		OUT (C),A
 		LD B,HIGH (WIN_P1)
@@ -1091,12 +1072,14 @@ W_WR_RD_SECT	LD A,(WR_FF)
 		LD A,(COPY_VIRT_BITS)
 		AND B
 		JP NZ,MOUNT_RW			; работа с примонтированным образом
-		CALL SEARCH_SECTOR
-		JR NC,WWRRD2
+		CALL FIND_SECTOR
+		JR NC,.L2
+; сектор не найден, на выход
 		LD A,0x10
 		JP IN_1F.L2
 
-WWRRD2		LD A,E
+; сектор на найден, читаем/пишем
+.L2		LD A,E
 		RRCA
 		LD (SECTOR_SIZE),A		; размер найденного сектора
 		LD L,0
@@ -1112,12 +1095,12 @@ WWRRD2		LD A,E
 		LD C,A				; смещение в страницах от начала рамдиска
 		LD A,H
 		CP HIGH (CPU1)
-		JR C,WWRRD5
+		JR C,.L5
 		SUB 0x40
 		LD H,A
 		INC C
 ; HL = смещение в странице до начала сектора
-WWRRD5		LD A,C				; смещение до номера страницы, где указанный сектор начинается
+.L5		LD A,C				; смещение до номера страницы, где указанный сектор начинается
 		ADD A,RAM_DATARAMD		; прибавили номер начала рамдиск и +1. в 0 странице рамдиска описатели секторов
 		LD (RDWR_PAGE),A		; сохранили номер вычисленной страницы
 		LD DE,(OLD_HL)
@@ -1125,15 +1108,15 @@ WWRRD5		LD A,C				; смещение до номера страницы, где указанный сектор начинается
 		LD A,C
 		LD C,LOW (WIN_A0)
 		OUT (C),A			; вернули стандартную 5 страницу
-SP_RAMD9	LD A,D				; проверка границы откуда/куда копировать
+.S9		LD A,D				; проверка границы откуда/куда копировать
 		CP HIGH (CPU2)
 		PUSH DE
 		LD DE,CPU1 + HIGH (WIN_P1)
 		LD BC,WIN_A1			; если верхние 32кб озу, то нужно включить в 1 окне проецирования
-		JR NC,SP_RAMD1
+		JR NC,.S1
 		LD DE,CPU2 + HIGH (WIN_P2)
 		LD B,HIGH (WIN_A2)		; если нижние 32кб озу, то нужно включить во 2 окне проецирования
-SP_RAMD1	LD A,0x40
+.S1		LD A,0x40
 		OUT (C),A
 		LD B,E
 		LD A,(RDWR_PAGE)		; номер вычисленной страницы озу
@@ -1145,49 +1128,49 @@ SP_RAMD1	LD A,0x40
 		LD H,A
 		LD A,(RDWR_MODE)
 		AND A
-		JR NZ,IN_ROM1
+		JR NZ,.I1
 		LD A,D
 		INC A
-		JR NZ,IN_ROM1
+		JR NZ,.I1
 		LD A,E
 		AND A
-		JR Z,IN_ROM1
-IN_ROM4		NEG
+		JR Z,.I1
+		NEG
 		LD C,A
 		LD B,0
 		LDIR
 		NEG
 		LD C,A
-IN_ROM2		EX DE,HL
+.I2		EX DE,HL
 		ADD HL,BC
 		EX DE,HL
 		ADD HL,BC
 		LD A,(SECTOR_SIZE)
-		JP SP_RAMD8_
+		JP .S8_
 
-IN_ROM1		LD A,D
+.I1		LD A,D
 		CP HIGH (CPU1)
-		JR NC,IN_ROM3
+		JR NC,.I3
 		LD A,(SECTOR_SIZE)
 		AND A
 		LD BC,0x80
-		JR Z,IN_ROM2
+		JR Z,.I2
 		LD BC,0x100
-		JR IN_ROM2
+		JR .I2
 
-IN_ROM3		CP HIGH (CPU2)			; проверка перехода границы страниц
-		JP NC,SP_RAMD3			; если выше то сразу копируем
+.I3		CP HIGH (CPU2)			; проверка перехода границы страниц
+		JP NC,.S3			; если выше то сразу копируем
 		CP HIGH (CPU2) - 1
-		JP C,SP_RAMD3			; если ниже так же сразу копируем
+		JP C,.S3			; если ниже так же сразу копируем
 		LD A,E
 		AND A				; если сектор полностью укладывется до границы, то сразу копируем
-		JR Z,SP_RAMD3			; иначе принудительно копируем в два приема
+		JR Z,.S3			; иначе принудительно копируем в два приема
 		LD A,(RDWR_MODE)		; чтение или запись?
 		AND A
 		LD A,E				; младший байт адрес в блоке
-		JR Z,SP_RAMD4
+		JR Z,.S4
 		EX DE,HL			; для записи меняем направление
-SP_RAMD4	NEG
+.S4		NEG
 		LD C,A				; копируем остаток до конца блока
 		LD B,0
 		LDIR
@@ -1205,49 +1188,49 @@ SP_RAMD4	NEG
 		OUT (C),A			; вычисленную страницу включаем в 1 окне проецирования
 		LD A,(RDWR_MODE)		; чтение или запись
 		AND A
-		JR Z,SP_RAMD5
+		JR Z,.S5
 		LD A,D				; для записи
 		SUB 0x40			; изменили адрес куда копировать на другое окно проецирования
 		LD D,A
-		JR SP_RAMD6
+		JR .S6
 
-SP_RAMD5	LD A,H				; для чтения
+.S5		LD A,H				; для чтения
 		SUB 0x40			; изменили адрес куда копировать на другое окно проецирования 
 		LD H,A
-SP_RAMD6	POP AF
+.S6		POP AF
 		LD C,A				; сколько осталось скопировать байт
 		LD B,0
 		LDIR
 		LD A,(SECTOR_SIZE)
-		JR SP_RAMD8_
+		JR .S8_
 
-SP_RAMD3	LD A,(RDWR_MODE)		; чтение или запись
+.S3		LD A,(RDWR_MODE)		; чтение или запись
 		AND A
-		JR Z,SP_RAMD7
+		JR Z,.S7
 		EX DE,HL			; для записи меняем направление
-SP_RAMD7	LD A,(SECTOR_SIZE)
+.S7		LD A,(SECTOR_SIZE)
 		AND A
-		JR NZ,SP_RAMD8
+		JR NZ,.S8
 		CALL COPYHBLOCK			; для сектора размером 128 байт копируем половину и выходим
-ECOPY_BLOCK	LD A,(RDWR_MODE)
+.ECOPY_BLOCK	LD A,(RDWR_MODE)
 		AND A
-		JR Z,ECOPY_BLOCK1
+		JR Z,.ECOPY_BLOCK1
 		EX DE,HL
-ECOPY_BLOCK1	LD (OLD_HL),DE
+.ECOPY_BLOCK1	LD (OLD_HL),DE
 		RET
 
-SP_RAMD8	CALL COPY_BLOCK			; для сектора 256 байт копируем весь и выходим
-SP_RAMD8_	DEC A
-		JR Z,ECOPY_BLOCK
+.S8		CALL COPY_BLOCK			; для сектора 256 байт копируем весь и выходим
+.S8_		DEC A
+		JR Z,.ECOPY_BLOCK
 		LD (SECTOR_SIZE),A
 		LD A,(RDWR_MODE)
 		AND A
-		JR Z,SP_RAMD0
+		JR Z,.S0
 		EX DE,HL
-SP_RAMD0	LD A,0x3F
+.S0		LD A,0x3F
 		AND H
 		LD H,A
-		JP SP_RAMD9
+		JP .S9
 
 COPY_BLOCK
 	REPT 128
