@@ -359,6 +359,8 @@ UPDATE_AF	LD A,(OLD_AF + 1)
 
 	EMU_JUMP 0x3FD7				; IN A,(0xFF)	; чтение сектора
 		JP READ_SECTOR
+;	EMU_JUMP 0x3FD7				; ожидание готовности чтения
+;		JP WAIT_READ
 
 	EMU_JUMP 0x3FE5				; IN A,(0xFF)	; чтение сектора
 		JP READ_SECTOR
@@ -960,14 +962,29 @@ IN_INI		LD HL,(OLD_HL)
 		DEC HL
 		LD A,(RD_1F)
 		LD (HL),A
-.L1
 ; временно, для анрыла
 ;		LD A,0xD3
 ;		LD (0x3FD7),A
 ; временно, для анрыла
-		LD HL,0x2A53
+.L1		LD HL,0x2A53
 		LD (ADR_EXIT),HL
 		JP OUT_1F.INFF_BIT6
+
+WAIT_READ	LD A,(WR_1F)
+		AND 0xF0
+		CP 0x80
+		JP C,OUT_1F.INFF_BIT6
+		CP 0xC0
+		JR NC,READ_SECTOR.L1
+		CALL READ_CPU12			; сохранение текущей конфигурации окон проецирования 1,2
+		CALL FIND_SECTOR		; проверяем наличие сектора
+		PUSH AF
+		CALL WRITE_CPU12		; восстановление конфигурации окон проецирования 1,2
+		POP AF
+		JR NC,READ_SECTOR_1
+; сектора нет, не дождетесь
+		LD A,0x3C
+		JP OUT_1F.INFF_BIT6_1
 
 ; чтение сектора или портов
 READ_SECTOR	LD A,(WR_1F)
@@ -975,7 +992,7 @@ READ_SECTOR	LD A,(WR_1F)
 		CP 0x80
 		JP C,OUT_1F.INFF_BIT6
 		CP 0xC0
-		JR NZ,READ_SECTOR_1
+		JR C,READ_SECTOR_1
 .L1		LD A,(PORT_3F)
 		LD HL,(OLD_HL)
 		LD (HL),A			; номер дорожки
@@ -1026,6 +1043,7 @@ WRITE_SECTOR_1	LD (RDWR_MODE),A
 		LD (ADR_EXIT),HL
 		JP WRITE_CPU12			; восстановление конфигурации окон проецирования 1,2
 
+; поиск сектора в таблице
 FIND_SECTOR	LD BC,WIN_A1
 		LD A,0x40
 		OUT (C),A
