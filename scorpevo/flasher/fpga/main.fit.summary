@@ -1,0 +1,11 @@
+Fitter Status : Successful - Mon Nov 14 18:42:05 2011
+Quartus II Version : 9.0 Build 132 02/25/2009 SJ Full Version
+Revision Name : main
+Top-level Entity Name : main
+Family : ACEX1K
+Device : EP1K50QC208-3
+Timing Models : Final
+Total logic elements : 241 / 2,880 ( 8 % )
+Total pins : 147 / 147 ( 100 % )
+Total memory bits : 15,360 / 40,960 ( 38 % )
+Total PLLs : 0

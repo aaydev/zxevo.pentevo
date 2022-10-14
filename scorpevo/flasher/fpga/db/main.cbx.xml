@@ -1,0 +1,9 @@
+<?xml version="1.0" ?>
+<LOG_ROOT>
+	<PROJECT NAME="main">
+		<CBX_INST_ENTRY INSTANCE_NAME="|main|lpm_add_sub:Add2" CBX_FILE_NAME="add_sub_plh.tdf"/>
+		<CBX_INST_ENTRY INSTANCE_NAME="|main|lpm_add_sub:Add5" CBX_FILE_NAME="add_sub_1nh.tdf"/>
+		<CBX_INST_ENTRY INSTANCE_NAME="|main|lpm_add_sub:Add6" CBX_FILE_NAME="add_sub_3ih.tdf"/>
+		<CBX_INST_ENTRY INSTANCE_NAME="|main|lpm_add_sub:Add9" CBX_FILE_NAME="add_sub_1nh.tdf"/>
+	</PROJECT>
+</LOG_ROOT>

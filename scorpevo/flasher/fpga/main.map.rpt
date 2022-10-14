@@ -1,0 +1,790 @@
+Analysis & Synthesis report for main
+Mon Nov 14 18:41:58 2011
+Quartus II Version 9.0 Build 132 02/25/2009 SJ Full Version
+
+
+---------------------
+; Table of Contents ;
+---------------------
+  1. Legal Notice
+  2. Analysis & Synthesis Summary
+  3. Analysis & Synthesis Settings
+  4. Analysis & Synthesis Source Files Read
+  5. Analysis & Synthesis Resource Usage Summary
+  6. Analysis & Synthesis Resource Utilization by Entity
+  7. Analysis & Synthesis RAM Summary
+  8. Registers Removed During Synthesis
+  9. General Register Statistics
+ 10. Inverted Register Statistics
+ 11. Source assignments for lpm_counter:hcharcount_rtl_0
+ 12. Source assignments for lpm_counter:voffset_rtl_1
+ 13. Source assignments for lpm_add_sub:Add2|addcore:adder
+ 14. Source assignments for lpm_add_sub:Add5|addcore:adder
+ 15. Source assignments for lpm_add_sub:Add6|addcore:adder
+ 16. Source assignments for lpm_add_sub:Add9|addcore:adder
+ 17. Parameter Settings for User Entity Instance: lpm_ram_dp0:scr_mem|lpm_ram_dp:lpm_ram_dp_component
+ 18. Parameter Settings for User Entity Instance: lpm_rom0:chargen|lpm_rom:lpm_rom_component
+ 19. Parameter Settings for Inferred Entity Instance: lpm_counter:hcharcount_rtl_0
+ 20. Parameter Settings for Inferred Entity Instance: lpm_counter:voffset_rtl_1
+ 21. Parameter Settings for Inferred Entity Instance: lpm_add_sub:Add2
+ 22. Parameter Settings for Inferred Entity Instance: lpm_add_sub:Add5
+ 23. Parameter Settings for Inferred Entity Instance: lpm_add_sub:Add6
+ 24. Parameter Settings for Inferred Entity Instance: lpm_add_sub:Add9
+ 25. Analysis & Synthesis Messages
+ 26. Analysis & Synthesis Suppressed Messages
+
+
+
+----------------
+; Legal Notice ;
+----------------
+Copyright (C) 1991-2009 Altera Corporation
+Your use of Altera Corporation's design tools, logic functions 
+and other software and tools, and its AMPP partner logic 
+functions, and any output files from any of the foregoing 
+(including device programming or simulation files), and any 
+associated documentation or information are expressly subject 
+to the terms and conditions of the Altera Program License 
+Subscription Agreement, Altera MegaCore Function License 
+Agreement, or other applicable license agreement, including, 
+without limitation, that your use is for the sole purpose of 
+programming logic devices manufactured by Altera and sold by 
+Altera or its authorized distributors.  Please refer to the 
+applicable agreement for further details.
+
+
+
++------------------------------------------------------------------------+
+; Analysis & Synthesis Summary                                           ;
++-----------------------------+------------------------------------------+
+; Analysis & Synthesis Status ; Successful - Mon Nov 14 18:41:58 2011    ;
+; Quartus II Version          ; 9.0 Build 132 02/25/2009 SJ Full Version ;
+; Revision Name               ; main                                     ;
+; Top-level Entity Name       ; main                                     ;
+; Family                      ; ACEX1K                                   ;
+; Total logic elements        ; 240                                      ;
+; Total pins                  ; 147                                      ;
+; Total memory bits           ; 15,360                                   ;
+; Total PLLs                  ; 0                                        ;
++-----------------------------+------------------------------------------+
+
+
++------------------------------------------------------------------------------------------------+
+; Analysis & Synthesis Settings                                                                  ;
++----------------------------------------------------------------+---------------+---------------+
+; Option                                                         ; Setting       ; Default Value ;
++----------------------------------------------------------------+---------------+---------------+
+; Device                                                         ; EP1K50QC208-3 ;               ;
+; Top-level entity name                                          ; main          ; main          ;
+; Family name                                                    ; ACEX1K        ; Stratix       ;
+; Use smart compilation                                          ; Off           ; Off           ;
+; Create Debugging Nodes for IP Cores                            ; Off           ; Off           ;
+; Preserve fewer node names                                      ; On            ; On            ;
+; Disable OpenCore Plus hardware evaluation                      ; Off           ; Off           ;
+; Verilog Version                                                ; Verilog_2001  ; Verilog_2001  ;
+; VHDL Version                                                   ; VHDL93        ; VHDL93        ;
+; State Machine Processing                                       ; Auto          ; Auto          ;
+; Safe State Machine                                             ; Off           ; Off           ;
+; Extract Verilog State Machines                                 ; On            ; On            ;
+; Extract VHDL State Machines                                    ; On            ; On            ;
+; Ignore Verilog initial constructs                              ; Off           ; Off           ;
+; Iteration limit for constant Verilog loops                     ; 5000          ; 5000          ;
+; Iteration limit for non-constant Verilog loops                 ; 250           ; 250           ;
+; Add Pass-Through Logic to Inferred RAMs                        ; On            ; On            ;
+; Parallel Synthesis                                             ; Off           ; Off           ;
+; NOT Gate Push-Back                                             ; On            ; On            ;
+; Power-Up Don't Care                                            ; On            ; On            ;
+; Remove Redundant Logic Cells                                   ; Off           ; Off           ;
+; Remove Duplicate Registers                                     ; On            ; On            ;
+; Ignore CARRY Buffers                                           ; Off           ; Off           ;
+; Ignore CASCADE Buffers                                         ; Off           ; Off           ;
+; Ignore GLOBAL Buffers                                          ; Off           ; Off           ;
+; Ignore ROW GLOBAL Buffers                                      ; Off           ; Off           ;
+; Ignore LCELL Buffers                                           ; Off           ; Off           ;
+; Ignore SOFT Buffers                                            ; On            ; On            ;
+; Limit AHDL Integers to 32 Bits                                 ; Off           ; Off           ;
+; Auto Implement in ROM                                          ; Off           ; Off           ;
+; Optimization Technique                                         ; Area          ; Area          ;
+; Carry Chain Length                                             ; 32            ; 32            ;
+; Cascade Chain Length                                           ; 2             ; 2             ;
+; Auto Carry Chains                                              ; On            ; On            ;
+; Auto Open-Drain Pins                                           ; On            ; On            ;
+; Auto ROM Replacement                                           ; On            ; On            ;
+; Auto RAM Replacement                                           ; On            ; On            ;
+; Auto Clock Enable Replacement                                  ; On            ; On            ;
+; Strict RAM Replacement                                         ; Off           ; Off           ;
+; Auto Resource Sharing                                          ; Off           ; Off           ;
+; Allow Any RAM Size For Recognition                             ; Off           ; Off           ;
+; Allow Any ROM Size For Recognition                             ; Off           ; Off           ;
+; Use LogicLock Constraints during Resource Balancing            ; On            ; On            ;
+; Ignore translate_off and synthesis_off directives              ; Off           ; Off           ;
+; Show Parameter Settings Tables in Synthesis Report             ; On            ; On            ;
+; HDL message level                                              ; Level2        ; Level2        ;
+; Suppress Register Optimization Related Messages                ; Off           ; Off           ;
+; Number of Removed Registers Reported in Synthesis Report       ; 100           ; 100           ;
+; Number of Inverted Registers Reported in Synthesis Report      ; 100           ; 100           ;
+; Block Design Naming                                            ; Auto          ; Auto          ;
+; Synthesis Effort                                               ; Auto          ; Auto          ;
+; Allows Asynchronous Clear Usage For Shift Register Replacement ; On            ; On            ;
+; Analysis & Synthesis Message Level                             ; Medium        ; Medium        ;
++----------------------------------------------------------------+---------------+---------------+
+
+
++------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
+; Analysis & Synthesis Source Files Read                                                                                                                                             ;
++----------------------------------+-----------------+----------------------------------------+--------------------------------------------------------------------------------------+
+; File Name with User-Entered Path ; Used in Netlist ; File Type                              ; File Name with Absolute Path                                                         ;
++----------------------------------+-----------------+----------------------------------------+--------------------------------------------------------------------------------------+
+; main.v                           ; yes             ; User Verilog HDL File                  ; C:/Documents and Settings/Ewgeny7/Рабочий стол/ScorpEvo_6/flasher/fpga/main.v        ;
+; lpm_ram_dp0.v                    ; yes             ; User Verilog HDL File                  ; C:/Documents and Settings/Ewgeny7/Рабочий стол/ScorpEvo_6/flasher/fpga/lpm_ram_dp0.v ;
+; lpm_rom0.v                       ; yes             ; User Verilog HDL File                  ; C:/Documents and Settings/Ewgeny7/Рабочий стол/ScorpEvo_6/flasher/fpga/lpm_rom0.v    ;
+; lpm_ram_dp.tdf                   ; yes             ; Megafunction                           ; f:/altera/90/quartus/libraries/megafunctions/lpm_ram_dp.tdf                          ;
+; altdpram.inc                     ; yes             ; Megafunction                           ; f:/altera/90/quartus/libraries/megafunctions/altdpram.inc                            ;
+; lpm_mux.inc                      ; yes             ; Megafunction                           ; f:/altera/90/quartus/libraries/megafunctions/lpm_mux.inc                             ;
+; lpm_decode.inc                   ; yes             ; Megafunction                           ; f:/altera/90/quartus/libraries/megafunctions/lpm_decode.inc                          ;
+; aglobal90.inc                    ; yes             ; Megafunction                           ; f:/altera/90/quartus/libraries/megafunctions/aglobal90.inc                           ;
+; altdpram.tdf                     ; yes             ; Megafunction                           ; f:/altera/90/quartus/libraries/megafunctions/altdpram.tdf                            ;
+; memmodes.inc                     ; yes             ; Megafunction                           ; f:/altera/90/quartus/libraries/others/maxplus2/memmodes.inc                          ;
+; a_hdffe.inc                      ; yes             ; Megafunction                           ; f:/altera/90/quartus/libraries/megafunctions/a_hdffe.inc                             ;
+; a_rdenreg.inc                    ; yes             ; Megafunction                           ; f:/altera/90/quartus/libraries/megafunctions/a_rdenreg.inc                           ;
+; altqpram.inc                     ; yes             ; Megafunction                           ; f:/altera/90/quartus/libraries/megafunctions/altqpram.inc                            ;
+; alt_le_rden_reg.inc              ; yes             ; Megafunction                           ; f:/altera/90/quartus/libraries/megafunctions/alt_le_rden_reg.inc                     ;
+; altsyncram.inc                   ; yes             ; Megafunction                           ; f:/altera/90/quartus/libraries/megafunctions/altsyncram.inc                          ;
+; lpm_rom.tdf                      ; yes             ; Megafunction                           ; f:/altera/90/quartus/libraries/megafunctions/lpm_rom.tdf                             ;
+; altrom.inc                       ; yes             ; Megafunction                           ; f:/altera/90/quartus/libraries/megafunctions/altrom.inc                              ;
+; altrom.tdf                       ; yes             ; Megafunction                           ; f:/altera/90/quartus/libraries/megafunctions/altrom.tdf                              ;
+; ZX_FONT.HEX                      ; yes             ; Auto-Found Memory Initialization File  ; C:/Documents and Settings/Ewgeny7/Рабочий стол/ScorpEvo_6/flasher/fpga/ZX_FONT.HEX   ;
+; lpm_counter.tdf                  ; yes             ; Megafunction                           ; f:/altera/90/quartus/libraries/megafunctions/lpm_counter.tdf                         ;
+; lpm_constant.inc                 ; yes             ; Megafunction                           ; f:/altera/90/quartus/libraries/megafunctions/lpm_constant.inc                        ;
+; lpm_add_sub.inc                  ; yes             ; Megafunction                           ; f:/altera/90/quartus/libraries/megafunctions/lpm_add_sub.inc                         ;
+; cmpconst.inc                     ; yes             ; Megafunction                           ; f:/altera/90/quartus/libraries/megafunctions/cmpconst.inc                            ;
+; lpm_compare.inc                  ; yes             ; Megafunction                           ; f:/altera/90/quartus/libraries/megafunctions/lpm_compare.inc                         ;
+; lpm_counter.inc                  ; yes             ; Megafunction                           ; f:/altera/90/quartus/libraries/megafunctions/lpm_counter.inc                         ;
+; dffeea.inc                       ; yes             ; Megafunction                           ; f:/altera/90/quartus/libraries/megafunctions/dffeea.inc                              ;
+; alt_synch_counter.inc            ; yes             ; Megafunction                           ; f:/altera/90/quartus/libraries/megafunctions/alt_synch_counter.inc                   ;
+; alt_synch_counter_f.inc          ; yes             ; Megafunction                           ; f:/altera/90/quartus/libraries/megafunctions/alt_synch_counter_f.inc                 ;
+; alt_counter_f10ke.inc            ; yes             ; Megafunction                           ; f:/altera/90/quartus/libraries/megafunctions/alt_counter_f10ke.inc                   ;
+; alt_counter_stratix.inc          ; yes             ; Megafunction                           ; f:/altera/90/quartus/libraries/megafunctions/alt_counter_stratix.inc                 ;
+; alt_counter_f10ke.tdf            ; yes             ; Megafunction                           ; f:/altera/90/quartus/libraries/megafunctions/alt_counter_f10ke.tdf                   ;
+; flex10ke_lcell.inc               ; yes             ; Megafunction                           ; f:/altera/90/quartus/libraries/megafunctions/flex10ke_lcell.inc                      ;
+; lpm_add_sub.tdf                  ; yes             ; Megafunction                           ; f:/altera/90/quartus/libraries/megafunctions/lpm_add_sub.tdf                         ;
+; addcore.inc                      ; yes             ; Megafunction                           ; f:/altera/90/quartus/libraries/megafunctions/addcore.inc                             ;
+; look_add.inc                     ; yes             ; Megafunction                           ; f:/altera/90/quartus/libraries/megafunctions/look_add.inc                            ;
+; bypassff.inc                     ; yes             ; Megafunction                           ; f:/altera/90/quartus/libraries/megafunctions/bypassff.inc                            ;
+; altshift.inc                     ; yes             ; Megafunction                           ; f:/altera/90/quartus/libraries/megafunctions/altshift.inc                            ;
+; alt_stratix_add_sub.inc          ; yes             ; Megafunction                           ; f:/altera/90/quartus/libraries/megafunctions/alt_stratix_add_sub.inc                 ;
+; alt_mercury_add_sub.inc          ; yes             ; Megafunction                           ; f:/altera/90/quartus/libraries/megafunctions/alt_mercury_add_sub.inc                 ;
+; addcore.tdf                      ; yes             ; Megafunction                           ; f:/altera/90/quartus/libraries/megafunctions/addcore.tdf                             ;
+; a_csnbuffer.inc                  ; yes             ; Megafunction                           ; f:/altera/90/quartus/libraries/megafunctions/a_csnbuffer.inc                         ;
+; a_csnbuffer.tdf                  ; yes             ; Megafunction                           ; f:/altera/90/quartus/libraries/megafunctions/a_csnbuffer.tdf                         ;
+; altshift.tdf                     ; yes             ; Megafunction                           ; f:/altera/90/quartus/libraries/megafunctions/altshift.tdf                            ;
++----------------------------------+-----------------+----------------------------------------+--------------------------------------------------------------------------------------+
+
+
++---------------------------------------------+
+; Analysis & Synthesis Resource Usage Summary ;
++-----------------------------------+---------+
+; Resource                          ; Usage   ;
++-----------------------------------+---------+
+; Total logic elements              ; 240     ;
+; Total combinational functions     ; 175     ;
+;     -- Total 4-input functions    ; 57      ;
+;     -- Total 3-input functions    ; 35      ;
+;     -- Total 2-input functions    ; 42      ;
+;     -- Total 1-input functions    ; 41      ;
+;     -- Total 0-input functions    ; 0       ;
+; Total registers                   ; 125     ;
+; Total logic cells in carry chains ; 45      ;
+; I/O pins                          ; 147     ;
+; Total memory bits                 ; 15360   ;
+; Maximum fan-out node              ; fclk    ;
+; Maximum fan-out                   ; 106     ;
+; Total fan-out                     ; 1074    ;
+; Average fan-out                   ; 2.67    ;
++-----------------------------------+---------+
+
+
++-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
+; Analysis & Synthesis Resource Utilization by Entity                                                                                                                                                                                                                     ;
++-----------------------------------------+-------------+--------------+-------------+------+--------------+-------------------+------------------+-----------------+------------+-------------------------------------------------------------------------+--------------+
+; Compilation Hierarchy Node              ; Logic Cells ; LC Registers ; Memory Bits ; Pins ; LUT-Only LCs ; Register-Only LCs ; LUT/Register LCs ; Carry Chain LCs ; Packed LCs ; Full Hierarchy Name                                                     ; Library Name ;
++-----------------------------------------+-------------+--------------+-------------+------+--------------+-------------------+------------------+-----------------+------------+-------------------------------------------------------------------------+--------------+
+; |main                                   ; 240 (193)   ; 125          ; 15360       ; 147  ; 115 (79)     ; 65 (65)           ; 60 (49)          ; 45 (2)          ; 0 (0)      ; |main                                                                   ; work         ;
+;    |lpm_add_sub:Add2|                   ; 8 (0)       ; 0            ; 0           ; 0    ; 8 (0)        ; 0 (0)             ; 0 (0)            ; 8 (0)           ; 0 (0)      ; |main|lpm_add_sub:Add2                                                  ; work         ;
+;       |addcore:adder|                   ; 8 (1)       ; 0            ; 0           ; 0    ; 8 (1)        ; 0 (0)             ; 0 (0)            ; 8 (1)           ; 0 (0)      ; |main|lpm_add_sub:Add2|addcore:adder                                    ; work         ;
+;          |a_csnbuffer:result_node|      ; 7 (7)       ; 0            ; 0           ; 0    ; 7 (7)        ; 0 (0)             ; 0 (0)            ; 7 (7)           ; 0 (0)      ; |main|lpm_add_sub:Add2|addcore:adder|a_csnbuffer:result_node            ; work         ;
+;    |lpm_add_sub:Add5|                   ; 10 (0)      ; 0            ; 0           ; 0    ; 10 (0)       ; 0 (0)             ; 0 (0)            ; 10 (0)          ; 0 (0)      ; |main|lpm_add_sub:Add5                                                  ; work         ;
+;       |addcore:adder|                   ; 10 (1)      ; 0            ; 0           ; 0    ; 10 (1)       ; 0 (0)             ; 0 (0)            ; 10 (1)          ; 0 (0)      ; |main|lpm_add_sub:Add5|addcore:adder                                    ; work         ;
+;          |a_csnbuffer:result_node|      ; 9 (9)       ; 0            ; 0           ; 0    ; 9 (9)        ; 0 (0)             ; 0 (0)            ; 9 (9)           ; 0 (0)      ; |main|lpm_add_sub:Add5|addcore:adder|a_csnbuffer:result_node            ; work         ;
+;    |lpm_add_sub:Add6|                   ; 5 (0)       ; 0            ; 0           ; 0    ; 5 (0)        ; 0 (0)             ; 0 (0)            ; 5 (0)           ; 0 (0)      ; |main|lpm_add_sub:Add6                                                  ; work         ;
+;       |addcore:adder|                   ; 5 (1)       ; 0            ; 0           ; 0    ; 5 (1)        ; 0 (0)             ; 0 (0)            ; 5 (1)           ; 0 (0)      ; |main|lpm_add_sub:Add6|addcore:adder                                    ; work         ;
+;          |a_csnbuffer:result_node|      ; 4 (4)       ; 0            ; 0           ; 0    ; 4 (4)        ; 0 (0)             ; 0 (0)            ; 4 (4)           ; 0 (0)      ; |main|lpm_add_sub:Add6|addcore:adder|a_csnbuffer:result_node            ; work         ;
+;    |lpm_add_sub:Add9|                   ; 9 (0)       ; 0            ; 0           ; 0    ; 9 (0)        ; 0 (0)             ; 0 (0)            ; 9 (0)           ; 0 (0)      ; |main|lpm_add_sub:Add9                                                  ; work         ;
+;       |addcore:adder|                   ; 9 (1)       ; 0            ; 0           ; 0    ; 9 (1)        ; 0 (0)             ; 0 (0)            ; 9 (1)           ; 0 (0)      ; |main|lpm_add_sub:Add9|addcore:adder                                    ; work         ;
+;          |a_csnbuffer:result_node|      ; 8 (8)       ; 0            ; 0           ; 0    ; 8 (8)        ; 0 (0)             ; 0 (0)            ; 8 (8)           ; 0 (0)      ; |main|lpm_add_sub:Add9|addcore:adder|a_csnbuffer:result_node            ; work         ;
+;    |lpm_counter:hcharcount_rtl_0|       ; 7 (0)       ; 6            ; 0           ; 0    ; 1 (0)        ; 0 (0)             ; 6 (0)            ; 6 (0)           ; 0 (0)      ; |main|lpm_counter:hcharcount_rtl_0                                      ; work         ;
+;       |alt_counter_f10ke:wysi_counter|  ; 7 (7)       ; 6            ; 0           ; 0    ; 1 (1)        ; 0 (0)             ; 6 (6)            ; 6 (6)           ; 0 (0)      ; |main|lpm_counter:hcharcount_rtl_0|alt_counter_f10ke:wysi_counter       ; work         ;
+;    |lpm_counter:voffset_rtl_1|          ; 8 (0)       ; 5            ; 0           ; 0    ; 3 (0)        ; 0 (0)             ; 5 (0)            ; 5 (0)           ; 0 (0)      ; |main|lpm_counter:voffset_rtl_1                                         ; work         ;
+;       |alt_counter_f10ke:wysi_counter|  ; 8 (8)       ; 5            ; 0           ; 0    ; 3 (3)        ; 0 (0)             ; 5 (5)            ; 5 (5)           ; 0 (0)      ; |main|lpm_counter:voffset_rtl_1|alt_counter_f10ke:wysi_counter          ; work         ;
+;    |lpm_ram_dp0:scr_mem|                ; 0 (0)       ; 0            ; 7168        ; 0    ; 0 (0)        ; 0 (0)             ; 0 (0)            ; 0 (0)           ; 0 (0)      ; |main|lpm_ram_dp0:scr_mem                                               ; work         ;
+;       |lpm_ram_dp:lpm_ram_dp_component| ; 0 (0)       ; 0            ; 7168        ; 0    ; 0 (0)        ; 0 (0)             ; 0 (0)            ; 0 (0)           ; 0 (0)      ; |main|lpm_ram_dp0:scr_mem|lpm_ram_dp:lpm_ram_dp_component               ; work         ;
+;          |altdpram:sram|                ; 0 (0)       ; 0            ; 7168        ; 0    ; 0 (0)        ; 0 (0)             ; 0 (0)            ; 0 (0)           ; 0 (0)      ; |main|lpm_ram_dp0:scr_mem|lpm_ram_dp:lpm_ram_dp_component|altdpram:sram ; work         ;
+;    |lpm_rom0:chargen|                   ; 0 (0)       ; 0            ; 8192        ; 0    ; 0 (0)        ; 0 (0)             ; 0 (0)            ; 0 (0)           ; 0 (0)      ; |main|lpm_rom0:chargen                                                  ; work         ;
+;       |lpm_rom:lpm_rom_component|       ; 0 (0)       ; 0            ; 8192        ; 0    ; 0 (0)        ; 0 (0)             ; 0 (0)            ; 0 (0)           ; 0 (0)      ; |main|lpm_rom0:chargen|lpm_rom:lpm_rom_component                        ; work         ;
+;          |altrom:srom|                  ; 0 (0)       ; 0            ; 8192        ; 0    ; 0 (0)        ; 0 (0)             ; 0 (0)            ; 0 (0)           ; 0 (0)      ; |main|lpm_rom0:chargen|lpm_rom:lpm_rom_component|altrom:srom            ; work         ;
++-----------------------------------------+-------------+--------------+-------------+------+--------------+-------------------+------------------+-----------------+------------+-------------------------------------------------------------------------+--------------+
+Note: For table entries with two numbers listed, the numbers in parentheses indicate the number of resources of the given type used by the specific entity alone. The numbers listed outside of parentheses indicate the total resources of the given type used by the specific entity and all of its sub-entities in the hierarchy.
+
+
++------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
+; Analysis & Synthesis RAM Summary                                                                                                                                       ;
++---------------------------------------------------------------------------+-----------+--------------+--------------+--------------+--------------+------+-------------+
+; Name                                                                      ; Mode      ; Port A Depth ; Port A Width ; Port B Depth ; Port B Width ; Size ; MIF         ;
++---------------------------------------------------------------------------+-----------+--------------+--------------+--------------+--------------+------+-------------+
+; lpm_ram_dp0:scr_mem|lpm_ram_dp:lpm_ram_dp_component|altdpram:sram|content ; Dual Port ; 1024         ; 7            ; 1024         ; 7            ; 7168 ; none        ;
+; lpm_rom0:chargen|lpm_rom:lpm_rom_component|altrom:srom|content            ; ROM       ; 1024         ; 8            ; --           ; --           ; 8192 ; ZX_FONT.HEX ;
++---------------------------------------------------------------------------+-----------+--------------+--------------+--------------+--------------+------+-------------+
+
+
++--------------------------------------------------------------------------------+
+; Registers Removed During Synthesis                                             ;
++---------------------------------------+----------------------------------------+
+; Register name                         ; Reason for Removal                     ;
++---------------------------------------+----------------------------------------+
+; voffset[0..1]                         ; Stuck at GND due to stuck port data_in ;
+; Total Number of Removed Registers = 2 ;                                        ;
++---------------------------------------+----------------------------------------+
+
+
++------------------------------------------------------+
+; General Register Statistics                          ;
++----------------------------------------------+-------+
+; Statistic                                    ; Value ;
++----------------------------------------------+-------+
+; Total registers                              ; 125   ;
+; Number of registers using Synchronous Clear  ; 11    ;
+; Number of registers using Synchronous Load   ; 0     ;
+; Number of registers using Asynchronous Clear ; 3     ;
+; Number of registers using Asynchronous Load  ; 0     ;
+; Number of registers using Clock Enable       ; 101   ;
+; Number of registers using Preset             ; 0     ;
++----------------------------------------------+-------+
+
+
++--------------------------------------------------+
+; Inverted Register Statistics                     ;
++----------------------------------------+---------+
+; Inverted Register                      ; Fan out ;
++----------------------------------------+---------+
+; bitptr[1]                              ; 6       ;
+; bitptr[0]                              ; 5       ;
+; bitptr[2]                              ; 3       ;
+; Total number of inverted registers = 3 ;         ;
++----------------------------------------+---------+
+
+
++-----------------------------------------------------+
+; Source assignments for lpm_counter:hcharcount_rtl_0 ;
++---------------------------+-------+------+----------+
+; Assignment                ; Value ; From ; To       ;
++---------------------------+-------+------+----------+
+; SUPPRESS_DA_RULE_INTERNAL ; a101  ; -    ; -        ;
+; SUPPRESS_DA_RULE_INTERNAL ; s102  ; -    ; -        ;
+; SUPPRESS_DA_RULE_INTERNAL ; s103  ; -    ; -        ;
++---------------------------+-------+------+----------+
+
+
++--------------------------------------------------+
+; Source assignments for lpm_counter:voffset_rtl_1 ;
++---------------------------+-------+------+-------+
+; Assignment                ; Value ; From ; To    ;
++---------------------------+-------+------+-------+
+; SUPPRESS_DA_RULE_INTERNAL ; a101  ; -    ; -     ;
+; SUPPRESS_DA_RULE_INTERNAL ; s102  ; -    ; -     ;
+; SUPPRESS_DA_RULE_INTERNAL ; s103  ; -    ; -     ;
++---------------------------+-------+------+-------+
+
+
++-------------------------------------------------------+
+; Source assignments for lpm_add_sub:Add2|addcore:adder ;
++---------------------------+-------+------+------------+
+; Assignment                ; Value ; From ; To         ;
++---------------------------+-------+------+------------+
+; SUPPRESS_DA_RULE_INTERNAL ; A103  ; -    ; -          ;
++---------------------------+-------+------+------------+
+
+
++-------------------------------------------------------+
+; Source assignments for lpm_add_sub:Add5|addcore:adder ;
++---------------------------+-------+------+------------+
+; Assignment                ; Value ; From ; To         ;
++---------------------------+-------+------+------------+
+; SUPPRESS_DA_RULE_INTERNAL ; A103  ; -    ; -          ;
++---------------------------+-------+------+------------+
+
+
++-------------------------------------------------------+
+; Source assignments for lpm_add_sub:Add6|addcore:adder ;
++---------------------------+-------+------+------------+
+; Assignment                ; Value ; From ; To         ;
++---------------------------+-------+------+------------+
+; SUPPRESS_DA_RULE_INTERNAL ; A103  ; -    ; -          ;
++---------------------------+-------+------+------------+
+
+
++-------------------------------------------------------+
+; Source assignments for lpm_add_sub:Add9|addcore:adder ;
++---------------------------+-------+------+------------+
+; Assignment                ; Value ; From ; To         ;
++---------------------------+-------+------+------------+
+; SUPPRESS_DA_RULE_INTERNAL ; A103  ; -    ; -          ;
++---------------------------+-------+------+------------+
+
+
++--------------------------------------------------------------------------------------------------+
+; Parameter Settings for User Entity Instance: lpm_ram_dp0:scr_mem|lpm_ram_dp:lpm_ram_dp_component ;
++------------------------+--------------+----------------------------------------------------------+
+; Parameter Name         ; Value        ; Type                                                     ;
++------------------------+--------------+----------------------------------------------------------+
+; WIDTH_BYTEENA          ; 1            ; Untyped                                                  ;
+; LPM_WIDTH              ; 7            ; Signed Integer                                           ;
+; LPM_WIDTHAD            ; 10           ; Signed Integer                                           ;
+; LPM_NUMWORDS           ; 1024         ; Untyped                                                  ;
+; LPM_INDATA             ; UNREGISTERED ; Untyped                                                  ;
+; LPM_RDADDRESS_CONTROL  ; UNREGISTERED ; Untyped                                                  ;
+; LPM_WRADDRESS_CONTROL  ; UNREGISTERED ; Untyped                                                  ;
+; LPM_OUTDATA            ; UNREGISTERED ; Untyped                                                  ;
+; LPM_FILE               ; UNUSED       ; Untyped                                                  ;
+; USE_EAB                ; ON           ; Untyped                                                  ;
+; DEVICE_FAMILY          ; ACEX1K       ; Untyped                                                  ;
+; AUTO_CARRY_CHAINS      ; ON           ; AUTO_CARRY                                               ;
+; IGNORE_CARRY_BUFFERS   ; OFF          ; IGNORE_CARRY                                             ;
+; AUTO_CASCADE_CHAINS    ; ON           ; AUTO_CASCADE                                             ;
+; IGNORE_CASCADE_BUFFERS ; OFF          ; IGNORE_CASCADE                                           ;
++------------------------+--------------+----------------------------------------------------------+
+Note: In order to hide this table in the UI and the text report file, please set the "Show Parameter Settings Tables in Synthesis Report" option in "Analysis and Synthesis Settings -> More Settings" to "Off".
+
+
++-----------------------------------------------------------------------------------------+
+; Parameter Settings for User Entity Instance: lpm_rom0:chargen|lpm_rom:lpm_rom_component ;
++------------------------+--------------+-------------------------------------------------+
+; Parameter Name         ; Value        ; Type                                            ;
++------------------------+--------------+-------------------------------------------------+
+; LPM_WIDTH              ; 8            ; Signed Integer                                  ;
+; LPM_WIDTHAD            ; 10           ; Signed Integer                                  ;
+; LPM_NUMWORDS           ; 1024         ; Untyped                                         ;
+; LPM_ADDRESS_CONTROL    ; UNREGISTERED ; Untyped                                         ;
+; LPM_OUTDATA            ; UNREGISTERED ; Untyped                                         ;
+; LPM_FILE               ; ZX_FONT.HEX  ; Untyped                                         ;
+; DEVICE_FAMILY          ; ACEX1K       ; Untyped                                         ;
+; AUTO_CARRY_CHAINS      ; ON           ; AUTO_CARRY                                      ;
+; IGNORE_CARRY_BUFFERS   ; OFF          ; IGNORE_CARRY                                    ;
+; AUTO_CASCADE_CHAINS    ; ON           ; AUTO_CASCADE                                    ;
+; IGNORE_CASCADE_BUFFERS ; OFF          ; IGNORE_CASCADE                                  ;
++------------------------+--------------+-------------------------------------------------+
+Note: In order to hide this table in the UI and the text report file, please set the "Show Parameter Settings Tables in Synthesis Report" option in "Analysis and Synthesis Settings -> More Settings" to "Off".
+
+
++-------------------------------------------------------------------------------+
+; Parameter Settings for Inferred Entity Instance: lpm_counter:hcharcount_rtl_0 ;
++------------------------+-------------------+----------------------------------+
+; Parameter Name         ; Value             ; Type                             ;
++------------------------+-------------------+----------------------------------+
+; AUTO_CARRY_CHAINS      ; ON                ; AUTO_CARRY                       ;
+; IGNORE_CARRY_BUFFERS   ; OFF               ; IGNORE_CARRY                     ;
+; AUTO_CASCADE_CHAINS    ; ON                ; AUTO_CASCADE                     ;
+; IGNORE_CASCADE_BUFFERS ; OFF               ; IGNORE_CASCADE                   ;
+; LPM_WIDTH              ; 6                 ; Untyped                          ;
+; LPM_DIRECTION          ; UP                ; Untyped                          ;
+; LPM_MODULUS            ; 0                 ; Untyped                          ;
+; LPM_AVALUE             ; UNUSED            ; Untyped                          ;
+; LPM_SVALUE             ; UNUSED            ; Untyped                          ;
+; LPM_PORT_UPDOWN        ; PORT_CONNECTIVITY ; Untyped                          ;
+; DEVICE_FAMILY          ; ACEX1K            ; Untyped                          ;
+; CARRY_CHAIN            ; MANUAL            ; Untyped                          ;
+; CARRY_CHAIN_LENGTH     ; 48                ; CARRY_CHAIN_LENGTH               ;
+; NOT_GATE_PUSH_BACK     ; ON                ; NOT_GATE_PUSH_BACK               ;
+; CARRY_CNT_EN           ; SMART             ; Untyped                          ;
+; LABWIDE_SCLR           ; ON                ; Untyped                          ;
+; USE_NEW_VERSION        ; TRUE              ; Untyped                          ;
+; CBXI_PARAMETER         ; NOTHING           ; Untyped                          ;
++------------------------+-------------------+----------------------------------+
+Note: In order to hide this table in the UI and the text report file, please set the "Show Parameter Settings Tables in Synthesis Report" option in "Analysis and Synthesis Settings -> More Settings" to "Off".
+
+
++----------------------------------------------------------------------------+
+; Parameter Settings for Inferred Entity Instance: lpm_counter:voffset_rtl_1 ;
++------------------------+-------------------+-------------------------------+
+; Parameter Name         ; Value             ; Type                          ;
++------------------------+-------------------+-------------------------------+
+; AUTO_CARRY_CHAINS      ; ON                ; AUTO_CARRY                    ;
+; IGNORE_CARRY_BUFFERS   ; OFF               ; IGNORE_CARRY                  ;
+; AUTO_CASCADE_CHAINS    ; ON                ; AUTO_CASCADE                  ;
+; IGNORE_CASCADE_BUFFERS ; OFF               ; IGNORE_CASCADE                ;
+; LPM_WIDTH              ; 5                 ; Untyped                       ;
+; LPM_DIRECTION          ; UP                ; Untyped                       ;
+; LPM_MODULUS            ; 0                 ; Untyped                       ;
+; LPM_AVALUE             ; UNUSED            ; Untyped                       ;
+; LPM_SVALUE             ; UNUSED            ; Untyped                       ;
+; LPM_PORT_UPDOWN        ; PORT_CONNECTIVITY ; Untyped                       ;
+; DEVICE_FAMILY          ; ACEX1K            ; Untyped                       ;
+; CARRY_CHAIN            ; MANUAL            ; Untyped                       ;
+; CARRY_CHAIN_LENGTH     ; 48                ; CARRY_CHAIN_LENGTH            ;
+; NOT_GATE_PUSH_BACK     ; ON                ; NOT_GATE_PUSH_BACK            ;
+; CARRY_CNT_EN           ; SMART             ; Untyped                       ;
+; LABWIDE_SCLR           ; ON                ; Untyped                       ;
+; USE_NEW_VERSION        ; TRUE              ; Untyped                       ;
+; CBXI_PARAMETER         ; NOTHING           ; Untyped                       ;
++------------------------+-------------------+-------------------------------+
+Note: In order to hide this table in the UI and the text report file, please set the "Show Parameter Settings Tables in Synthesis Report" option in "Analysis and Synthesis Settings -> More Settings" to "Off".
+
+
++-------------------------------------------------------------------+
+; Parameter Settings for Inferred Entity Instance: lpm_add_sub:Add2 ;
++------------------------+-------------+----------------------------+
+; Parameter Name         ; Value       ; Type                       ;
++------------------------+-------------+----------------------------+
+; LPM_WIDTH              ; 9           ; Untyped                    ;
+; LPM_REPRESENTATION     ; UNSIGNED    ; Untyped                    ;
+; LPM_DIRECTION          ; ADD         ; Untyped                    ;
+; ONE_INPUT_IS_CONSTANT  ; YES         ; Untyped                    ;
+; LPM_PIPELINE           ; 0           ; Untyped                    ;
+; MAXIMIZE_SPEED         ; 5           ; Untyped                    ;
+; REGISTERED_AT_END      ; 0           ; Untyped                    ;
+; OPTIMIZE_FOR_SPEED     ; 1           ; Untyped                    ;
+; USE_CS_BUFFERS         ; 1           ; Untyped                    ;
+; CARRY_CHAIN            ; MANUAL      ; Untyped                    ;
+; CARRY_CHAIN_LENGTH     ; 48          ; CARRY_CHAIN_LENGTH         ;
+; DEVICE_FAMILY          ; ACEX1K      ; Untyped                    ;
+; USE_WYS                ; OFF         ; Untyped                    ;
+; STYLE                  ; FAST        ; Untyped                    ;
+; CBXI_PARAMETER         ; add_sub_plh ; Untyped                    ;
+; AUTO_CARRY_CHAINS      ; ON          ; AUTO_CARRY                 ;
+; IGNORE_CARRY_BUFFERS   ; OFF         ; IGNORE_CARRY               ;
+; AUTO_CASCADE_CHAINS    ; ON          ; AUTO_CASCADE               ;
+; IGNORE_CASCADE_BUFFERS ; OFF         ; IGNORE_CASCADE             ;
++------------------------+-------------+----------------------------+
+Note: In order to hide this table in the UI and the text report file, please set the "Show Parameter Settings Tables in Synthesis Report" option in "Analysis and Synthesis Settings -> More Settings" to "Off".
+
+
++-------------------------------------------------------------------+
+; Parameter Settings for Inferred Entity Instance: lpm_add_sub:Add5 ;
++------------------------+-------------+----------------------------+
+; Parameter Name         ; Value       ; Type                       ;
++------------------------+-------------+----------------------------+
+; LPM_WIDTH              ; 10          ; Untyped                    ;
+; LPM_REPRESENTATION     ; UNSIGNED    ; Untyped                    ;
+; LPM_DIRECTION          ; ADD         ; Untyped                    ;
+; ONE_INPUT_IS_CONSTANT  ; YES         ; Untyped                    ;
+; LPM_PIPELINE           ; 0           ; Untyped                    ;
+; MAXIMIZE_SPEED         ; 5           ; Untyped                    ;
+; REGISTERED_AT_END      ; 0           ; Untyped                    ;
+; OPTIMIZE_FOR_SPEED     ; 1           ; Untyped                    ;
+; USE_CS_BUFFERS         ; 1           ; Untyped                    ;
+; CARRY_CHAIN            ; MANUAL      ; Untyped                    ;
+; CARRY_CHAIN_LENGTH     ; 48          ; CARRY_CHAIN_LENGTH         ;
+; DEVICE_FAMILY          ; ACEX1K      ; Untyped                    ;
+; USE_WYS                ; OFF         ; Untyped                    ;
+; STYLE                  ; FAST        ; Untyped                    ;
+; CBXI_PARAMETER         ; add_sub_1nh ; Untyped                    ;
+; AUTO_CARRY_CHAINS      ; ON          ; AUTO_CARRY                 ;
+; IGNORE_CARRY_BUFFERS   ; OFF         ; IGNORE_CARRY               ;
+; AUTO_CASCADE_CHAINS    ; ON          ; AUTO_CASCADE               ;
+; IGNORE_CASCADE_BUFFERS ; OFF         ; IGNORE_CASCADE             ;
++------------------------+-------------+----------------------------+
+Note: In order to hide this table in the UI and the text report file, please set the "Show Parameter Settings Tables in Synthesis Report" option in "Analysis and Synthesis Settings -> More Settings" to "Off".
+
+
++-------------------------------------------------------------------+
+; Parameter Settings for Inferred Entity Instance: lpm_add_sub:Add6 ;
++------------------------+-------------+----------------------------+
+; Parameter Name         ; Value       ; Type                       ;
++------------------------+-------------+----------------------------+
+; LPM_WIDTH              ; 7           ; Untyped                    ;
+; LPM_REPRESENTATION     ; UNSIGNED    ; Untyped                    ;
+; LPM_DIRECTION          ; ADD         ; Untyped                    ;
+; ONE_INPUT_IS_CONSTANT  ; NO          ; Untyped                    ;
+; LPM_PIPELINE           ; 0           ; Untyped                    ;
+; MAXIMIZE_SPEED         ; 5           ; Untyped                    ;
+; REGISTERED_AT_END      ; 0           ; Untyped                    ;
+; OPTIMIZE_FOR_SPEED     ; 1           ; Untyped                    ;
+; USE_CS_BUFFERS         ; 1           ; Untyped                    ;
+; CARRY_CHAIN            ; MANUAL      ; Untyped                    ;
+; CARRY_CHAIN_LENGTH     ; 48          ; CARRY_CHAIN_LENGTH         ;
+; DEVICE_FAMILY          ; ACEX1K      ; Untyped                    ;
+; USE_WYS                ; OFF         ; Untyped                    ;
+; STYLE                  ; FAST        ; Untyped                    ;
+; CBXI_PARAMETER         ; add_sub_3ih ; Untyped                    ;
+; AUTO_CARRY_CHAINS      ; ON          ; AUTO_CARRY                 ;
+; IGNORE_CARRY_BUFFERS   ; OFF         ; IGNORE_CARRY               ;
+; AUTO_CASCADE_CHAINS    ; ON          ; AUTO_CASCADE               ;
+; IGNORE_CASCADE_BUFFERS ; OFF         ; IGNORE_CASCADE             ;
++------------------------+-------------+----------------------------+
+Note: In order to hide this table in the UI and the text report file, please set the "Show Parameter Settings Tables in Synthesis Report" option in "Analysis and Synthesis Settings -> More Settings" to "Off".
+
+
++-------------------------------------------------------------------+
+; Parameter Settings for Inferred Entity Instance: lpm_add_sub:Add9 ;
++------------------------+-------------+----------------------------+
+; Parameter Name         ; Value       ; Type                       ;
++------------------------+-------------+----------------------------+
+; LPM_WIDTH              ; 10          ; Untyped                    ;
+; LPM_REPRESENTATION     ; UNSIGNED    ; Untyped                    ;
+; LPM_DIRECTION          ; ADD         ; Untyped                    ;
+; ONE_INPUT_IS_CONSTANT  ; YES         ; Untyped                    ;
+; LPM_PIPELINE           ; 0           ; Untyped                    ;
+; MAXIMIZE_SPEED         ; 5           ; Untyped                    ;
+; REGISTERED_AT_END      ; 0           ; Untyped                    ;
+; OPTIMIZE_FOR_SPEED     ; 1           ; Untyped                    ;
+; USE_CS_BUFFERS         ; 1           ; Untyped                    ;
+; CARRY_CHAIN            ; MANUAL      ; Untyped                    ;
+; CARRY_CHAIN_LENGTH     ; 48          ; CARRY_CHAIN_LENGTH         ;
+; DEVICE_FAMILY          ; ACEX1K      ; Untyped                    ;
+; USE_WYS                ; OFF         ; Untyped                    ;
+; STYLE                  ; FAST        ; Untyped                    ;
+; CBXI_PARAMETER         ; add_sub_1nh ; Untyped                    ;
+; AUTO_CARRY_CHAINS      ; ON          ; AUTO_CARRY                 ;
+; IGNORE_CARRY_BUFFERS   ; OFF         ; IGNORE_CARRY               ;
+; AUTO_CASCADE_CHAINS    ; ON          ; AUTO_CASCADE               ;
+; IGNORE_CASCADE_BUFFERS ; OFF         ; IGNORE_CASCADE             ;
++------------------------+-------------+----------------------------+
+Note: In order to hide this table in the UI and the text report file, please set the "Show Parameter Settings Tables in Synthesis Report" option in "Analysis and Synthesis Settings -> More Settings" to "Off".
+
+
++-------------------------------+
+; Analysis & Synthesis Messages ;
++-------------------------------+
+Info: *******************************************************************
+Info: Running Quartus II Analysis & Synthesis
+    Info: Version 9.0 Build 132 02/25/2009 SJ Full Version
+    Info: Processing started: Mon Nov 14 18:41:53 2011
+Info: Command: quartus_map --read_settings_files=on --write_settings_files=off fpga -c main
+Info: Found 1 design units, including 1 entities, in source file main.v
+    Info: Found entity 1: main
+Info: Found 1 design units, including 1 entities, in source file lpm_ram_dp0.v
+    Info: Found entity 1: lpm_ram_dp0
+Info: Found 1 design units, including 1 entities, in source file lpm_rom0.v
+    Info: Found entity 1: lpm_rom0
+Warning (10236): Verilog HDL Implicit Net warning at main.v(276): created implicit net for "vc0"
+Info: Elaborating entity "main" for the top level hierarchy
+Info: Elaborating entity "lpm_ram_dp0" for hierarchy "lpm_ram_dp0:scr_mem"
+Info: Elaborating entity "lpm_ram_dp" for hierarchy "lpm_ram_dp0:scr_mem|lpm_ram_dp:lpm_ram_dp_component"
+Info: Elaborated megafunction instantiation "lpm_ram_dp0:scr_mem|lpm_ram_dp:lpm_ram_dp_component"
+Info: Instantiated megafunction "lpm_ram_dp0:scr_mem|lpm_ram_dp:lpm_ram_dp_component" with the following parameter:
+    Info: Parameter "intended_device_family" = "ACEX1K"
+    Info: Parameter "lpm_indata" = "UNREGISTERED"
+    Info: Parameter "lpm_outdata" = "UNREGISTERED"
+    Info: Parameter "lpm_rdaddress_control" = "UNREGISTERED"
+    Info: Parameter "lpm_type" = "LPM_RAM_DP"
+    Info: Parameter "lpm_width" = "7"
+    Info: Parameter "lpm_widthad" = "10"
+    Info: Parameter "lpm_wraddress_control" = "UNREGISTERED"
+    Info: Parameter "rden_used" = "FALSE"
+    Info: Parameter "use_eab" = "ON"
+Info: Elaborating entity "altdpram" for hierarchy "lpm_ram_dp0:scr_mem|lpm_ram_dp:lpm_ram_dp_component|altdpram:sram"
+Critical Warning: Can't find Memory Initialization File or Hexadecimal (Intel-Format) File C:/Documents and Settings/Ewgeny7/Рабочий стол/ScorpEvo_6/flasher/fpga/none.mif -- setting all initial values to 0
+Info: Elaborated megafunction instantiation "lpm_ram_dp0:scr_mem|lpm_ram_dp:lpm_ram_dp_component|altdpram:sram", which is child of megafunction instantiation "lpm_ram_dp0:scr_mem|lpm_ram_dp:lpm_ram_dp_component"
+Info: Elaborating entity "lpm_rom0" for hierarchy "lpm_rom0:chargen"
+Info: Elaborating entity "lpm_rom" for hierarchy "lpm_rom0:chargen|lpm_rom:lpm_rom_component"
+Info: Elaborated megafunction instantiation "lpm_rom0:chargen|lpm_rom:lpm_rom_component"
+Info: Instantiated megafunction "lpm_rom0:chargen|lpm_rom:lpm_rom_component" with the following parameter:
+    Info: Parameter "intended_device_family" = "ACEX1K"
+    Info: Parameter "lpm_address_control" = "UNREGISTERED"
+    Info: Parameter "lpm_file" = "ZX_FONT.HEX"
+    Info: Parameter "lpm_outdata" = "UNREGISTERED"
+    Info: Parameter "lpm_type" = "LPM_ROM"
+    Info: Parameter "lpm_width" = "8"
+    Info: Parameter "lpm_widthad" = "10"
+Info: Elaborating entity "altrom" for hierarchy "lpm_rom0:chargen|lpm_rom:lpm_rom_component|altrom:srom"
+Warning: Byte addressed memory initialization file "ZX_FONT.HEX" was read in the word-addressed format
+Warning: Width of data items in "ZX_FONT.HEX" is greater than the memory width. Wrapping data items to subsequent addresses. Found 64 warnings, reporting 10
+    Warning: Data at line (2) of memory initialization file "ZX_FONT.HEX" is too wide to fit in one memory word. Wrapping data to subsequent addresses.
+    Warning: Data at line (3) of memory initialization file "ZX_FONT.HEX" is too wide to fit in one memory word. Wrapping data to subsequent addresses.
+    Warning: Data at line (4) of memory initialization file "ZX_FONT.HEX" is too wide to fit in one memory word. Wrapping data to subsequent addresses.
+    Warning: Data at line (5) of memory initialization file "ZX_FONT.HEX" is too wide to fit in one memory word. Wrapping data to subsequent addresses.
+    Warning: Data at line (6) of memory initialization file "ZX_FONT.HEX" is too wide to fit in one memory word. Wrapping data to subsequent addresses.
+    Warning: Data at line (7) of memory initialization file "ZX_FONT.HEX" is too wide to fit in one memory word. Wrapping data to subsequent addresses.
+    Warning: Data at line (8) of memory initialization file "ZX_FONT.HEX" is too wide to fit in one memory word. Wrapping data to subsequent addresses.
+    Warning: Data at line (9) of memory initialization file "ZX_FONT.HEX" is too wide to fit in one memory word. Wrapping data to subsequent addresses.
+    Warning: Data at line (10) of memory initialization file "ZX_FONT.HEX" is too wide to fit in one memory word. Wrapping data to subsequent addresses.
+    Warning: Data at line (11) of memory initialization file "ZX_FONT.HEX" is too wide to fit in one memory word. Wrapping data to subsequent addresses.
+Info: Elaborated megafunction instantiation "lpm_rom0:chargen|lpm_rom:lpm_rom_component|altrom:srom", which is child of megafunction instantiation "lpm_rom0:chargen|lpm_rom:lpm_rom_component"
+Info: Inferred 2 megafunctions from design logic
+    Info: Inferred lpm_counter megafunction (LPM_WIDTH=6) from the following logic: "hcharcount[0]~15"
+    Info: Inferred lpm_counter megafunction (LPM_WIDTH=5) from the following logic: "voffset[2]~12"
+Info: Inferred 4 megafunctions from design logic
+    Info: Inferred adder/subtractor megafunction ("lpm_add_sub") from the following logic: "Add2"
+    Info: Inferred adder/subtractor megafunction ("lpm_add_sub") from the following logic: "Add5"
+    Info: Inferred adder/subtractor megafunction ("lpm_add_sub") from the following logic: "Add6"
+    Info: Inferred adder/subtractor megafunction ("lpm_add_sub") from the following logic: "Add9"
+Info: Elaborated megafunction instantiation "lpm_counter:hcharcount_rtl_0"
+Info: Instantiated megafunction "lpm_counter:hcharcount_rtl_0" with the following parameter:
+    Info: Parameter "LPM_WIDTH" = "6"
+    Info: Parameter "LPM_DIRECTION" = "UP"
+    Info: Parameter "LPM_TYPE" = "LPM_COUNTER"
+Info: Elaborated megafunction instantiation "lpm_counter:hcharcount_rtl_0|alt_counter_f10ke:wysi_counter", which is child of megafunction instantiation "lpm_counter:hcharcount_rtl_0"
+Info: Elaborated megafunction instantiation "lpm_counter:voffset_rtl_1"
+Info: Instantiated megafunction "lpm_counter:voffset_rtl_1" with the following parameter:
+    Info: Parameter "LPM_WIDTH" = "5"
+    Info: Parameter "LPM_DIRECTION" = "UP"
+    Info: Parameter "LPM_TYPE" = "LPM_COUNTER"
+Info: Elaborated megafunction instantiation "lpm_counter:voffset_rtl_1|alt_counter_f10ke:wysi_counter", which is child of megafunction instantiation "lpm_counter:voffset_rtl_1"
+Info: Elaborated megafunction instantiation "lpm_add_sub:Add2"
+Info: Instantiated megafunction "lpm_add_sub:Add2" with the following parameter:
+    Info: Parameter "LPM_WIDTH" = "9"
+    Info: Parameter "LPM_DIRECTION" = "ADD"
+    Info: Parameter "LPM_REPRESENTATION" = "UNSIGNED"
+    Info: Parameter "ONE_INPUT_IS_CONSTANT" = "YES"
+Info: Elaborated megafunction instantiation "lpm_add_sub:Add2|addcore:adder", which is child of megafunction instantiation "lpm_add_sub:Add2"
+Info: Elaborated megafunction instantiation "lpm_add_sub:Add2|addcore:adder|a_csnbuffer:oflow_node", which is child of megafunction instantiation "lpm_add_sub:Add2"
+Info: Elaborated megafunction instantiation "lpm_add_sub:Add2|addcore:adder|a_csnbuffer:result_node", which is child of megafunction instantiation "lpm_add_sub:Add2"
+Info: Elaborated megafunction instantiation "lpm_add_sub:Add2|altshift:result_ext_latency_ffs", which is child of megafunction instantiation "lpm_add_sub:Add2"
+Info: Elaborated megafunction instantiation "lpm_add_sub:Add2|altshift:carry_ext_latency_ffs", which is child of megafunction instantiation "lpm_add_sub:Add2"
+Info: Elaborated megafunction instantiation "lpm_add_sub:Add5"
+Info: Instantiated megafunction "lpm_add_sub:Add5" with the following parameter:
+    Info: Parameter "LPM_WIDTH" = "10"
+    Info: Parameter "LPM_DIRECTION" = "ADD"
+    Info: Parameter "LPM_REPRESENTATION" = "UNSIGNED"
+    Info: Parameter "ONE_INPUT_IS_CONSTANT" = "YES"
+Info: Elaborated megafunction instantiation "lpm_add_sub:Add5|addcore:adder", which is child of megafunction instantiation "lpm_add_sub:Add5"
+Info: Elaborated megafunction instantiation "lpm_add_sub:Add5|addcore:adder|a_csnbuffer:oflow_node", which is child of megafunction instantiation "lpm_add_sub:Add5"
+Info: Elaborated megafunction instantiation "lpm_add_sub:Add5|addcore:adder|a_csnbuffer:result_node", which is child of megafunction instantiation "lpm_add_sub:Add5"
+Info: Elaborated megafunction instantiation "lpm_add_sub:Add5|altshift:result_ext_latency_ffs", which is child of megafunction instantiation "lpm_add_sub:Add5"
+Info: Elaborated megafunction instantiation "lpm_add_sub:Add6"
+Info: Instantiated megafunction "lpm_add_sub:Add6" with the following parameter:
+    Info: Parameter "LPM_WIDTH" = "7"
+    Info: Parameter "LPM_DIRECTION" = "ADD"
+    Info: Parameter "LPM_REPRESENTATION" = "UNSIGNED"
+    Info: Parameter "ONE_INPUT_IS_CONSTANT" = "NO"
+Info: Elaborated megafunction instantiation "lpm_add_sub:Add6|addcore:adder", which is child of megafunction instantiation "lpm_add_sub:Add6"
+Info: Elaborated megafunction instantiation "lpm_add_sub:Add6|addcore:adder|a_csnbuffer:oflow_node", which is child of megafunction instantiation "lpm_add_sub:Add6"
+Info: Elaborated megafunction instantiation "lpm_add_sub:Add6|addcore:adder|a_csnbuffer:result_node", which is child of megafunction instantiation "lpm_add_sub:Add6"
+Info: Elaborated megafunction instantiation "lpm_add_sub:Add6|altshift:result_ext_latency_ffs", which is child of megafunction instantiation "lpm_add_sub:Add6"
+Warning: Always-enabled tri-state buffer(s) removed
+    Warning: Converted the fanout from the always-enabled tri-state buffer "lpm_rom0:chargen|lpm_rom:lpm_rom_component|otri[6]" to the node "Mux0" into a wire
+    Warning: Converted the fanout from the always-enabled tri-state buffer "lpm_rom0:chargen|lpm_rom:lpm_rom_component|otri[7]" to the node "Mux0" into a wire
+    Warning: Converted the fanout from the always-enabled tri-state buffer "lpm_rom0:chargen|lpm_rom:lpm_rom_component|otri[0]" to the node "Mux0" into a wire
+    Warning: Converted the fanout from the always-enabled tri-state buffer "lpm_rom0:chargen|lpm_rom:lpm_rom_component|otri[5]" to the node "Mux0" into a wire
+    Warning: Converted the fanout from the always-enabled tri-state buffer "lpm_rom0:chargen|lpm_rom:lpm_rom_component|otri[3]" to the node "Mux0" into a wire
+    Warning: Converted the fanout from the always-enabled tri-state buffer "lpm_rom0:chargen|lpm_rom:lpm_rom_component|otri[2]" to the node "Mux0" into a wire
+    Warning: Converted the fanout from the always-enabled tri-state buffer "lpm_rom0:chargen|lpm_rom:lpm_rom_component|otri[4]" to the node "Mux0" into a wire
+    Warning: Converted the fanout from the always-enabled tri-state buffer "lpm_rom0:chargen|lpm_rom:lpm_rom_component|otri[1]" to the node "Mux0" into a wire
+Warning: Output pins are stuck at VCC or GND
+    Warning (13410): Pin "res" is stuck at VCC
+    Warning (13410): Pin "a[14]" is stuck at GND
+    Warning (13410): Pin "a[15]" is stuck at GND
+    Warning (13410): Pin "iorq1_n" is stuck at VCC
+    Warning (13410): Pin "iorq2_n" is stuck at VCC
+    Warning (13410): Pin "rwe_n" is stuck at VCC
+    Warning (13410): Pin "rucas_n" is stuck at VCC
+    Warning (13410): Pin "rlcas_n" is stuck at VCC
+    Warning (13410): Pin "rras0_n" is stuck at VCC
+    Warning (13410): Pin "rras1_n" is stuck at VCC
+    Warning (13410): Pin "ay_bdir" is stuck at GND
+    Warning (13410): Pin "ay_bc1" is stuck at GND
+    Warning (13410): Pin "ide_dir" is stuck at VCC
+    Warning (13410): Pin "ide_cs0_n" is stuck at VCC
+    Warning (13410): Pin "ide_cs1_n" is stuck at VCC
+    Warning (13410): Pin "ide_rs_n" is stuck at GND
+    Warning (13410): Pin "ide_rd_n" is stuck at VCC
+    Warning (13410): Pin "ide_wr_n" is stuck at VCC
+    Warning (13410): Pin "vg_cs_n" is stuck at VCC
+    Warning (13410): Pin "vg_res_n" is stuck at GND
+Info: Registers with preset signals will power-up high
+Warning: Design contains 76 input pin(s) that do not drive logic
+    Warning (15610): No output dependent on input pin "clkz_in"
+    Warning (15610): No output dependent on input pin "iorq_n"
+    Warning (15610): No output dependent on input pin "mreq_n"
+    Warning (15610): No output dependent on input pin "rd_n"
+    Warning (15610): No output dependent on input pin "wr_n"
+    Warning (15610): No output dependent on input pin "m1_n"
+    Warning (15610): No output dependent on input pin "rfsh_n"
+    Warning (15610): No output dependent on input pin "int_n"
+    Warning (15610): No output dependent on input pin "nmi_n"
+    Warning (15610): No output dependent on input pin "wait_n"
+    Warning (15610): No output dependent on input pin "iorqge1"
+    Warning (15610): No output dependent on input pin "iorqge2"
+    Warning (15610): No output dependent on input pin "rd[0]"
+    Warning (15610): No output dependent on input pin "rd[1]"
+    Warning (15610): No output dependent on input pin "rd[2]"
+    Warning (15610): No output dependent on input pin "rd[3]"
+    Warning (15610): No output dependent on input pin "rd[4]"
+    Warning (15610): No output dependent on input pin "rd[5]"
+    Warning (15610): No output dependent on input pin "rd[6]"
+    Warning (15610): No output dependent on input pin "rd[7]"
+    Warning (15610): No output dependent on input pin "rd[8]"
+    Warning (15610): No output dependent on input pin "rd[9]"
+    Warning (15610): No output dependent on input pin "rd[10]"
+    Warning (15610): No output dependent on input pin "rd[11]"
+    Warning (15610): No output dependent on input pin "rd[12]"
+    Warning (15610): No output dependent on input pin "rd[13]"
+    Warning (15610): No output dependent on input pin "rd[14]"
+    Warning (15610): No output dependent on input pin "rd[15]"
+    Warning (15610): No output dependent on input pin "ra[0]"
+    Warning (15610): No output dependent on input pin "ra[1]"
+    Warning (15610): No output dependent on input pin "ra[2]"
+    Warning (15610): No output dependent on input pin "ra[3]"
+    Warning (15610): No output dependent on input pin "ra[4]"
+    Warning (15610): No output dependent on input pin "ra[5]"
+    Warning (15610): No output dependent on input pin "ra[6]"
+    Warning (15610): No output dependent on input pin "ra[7]"
+    Warning (15610): No output dependent on input pin "ra[8]"
+    Warning (15610): No output dependent on input pin "ra[9]"
+    Warning (15610): No output dependent on input pin "ay_clk"
+    Warning (15610): No output dependent on input pin "ide_a[0]"
+    Warning (15610): No output dependent on input pin "ide_a[1]"
+    Warning (15610): No output dependent on input pin "ide_a[2]"
+    Warning (15610): No output dependent on input pin "ide_d[0]"
+    Warning (15610): No output dependent on input pin "ide_d[1]"
+    Warning (15610): No output dependent on input pin "ide_d[2]"
+    Warning (15610): No output dependent on input pin "ide_d[3]"
+    Warning (15610): No output dependent on input pin "ide_d[4]"
+    Warning (15610): No output dependent on input pin "ide_d[5]"
+    Warning (15610): No output dependent on input pin "ide_d[6]"
+    Warning (15610): No output dependent on input pin "ide_d[7]"
+    Warning (15610): No output dependent on input pin "ide_d[8]"
+    Warning (15610): No output dependent on input pin "ide_d[9]"
+    Warning (15610): No output dependent on input pin "ide_d[10]"
+    Warning (15610): No output dependent on input pin "ide_d[11]"
+    Warning (15610): No output dependent on input pin "ide_d[12]"
+    Warning (15610): No output dependent on input pin "ide_d[13]"
+    Warning (15610): No output dependent on input pin "ide_d[14]"
+    Warning (15610): No output dependent on input pin "ide_d[15]"
+    Warning (15610): No output dependent on input pin "ide_rdy"
+    Warning (15610): No output dependent on input pin "vg_clk"
+    Warning (15610): No output dependent on input pin "vg_hrdy"
+    Warning (15610): No output dependent on input pin "vg_rclk"
+    Warning (15610): No output dependent on input pin "vg_rawr"
+    Warning (15610): No output dependent on input pin "vg_a[0]"
+    Warning (15610): No output dependent on input pin "vg_a[1]"
+    Warning (15610): No output dependent on input pin "vg_wrd"
+    Warning (15610): No output dependent on input pin "vg_side"
+    Warning (15610): No output dependent on input pin "step"
+    Warning (15610): No output dependent on input pin "vg_sl"
+    Warning (15610): No output dependent on input pin "vg_sr"
+    Warning (15610): No output dependent on input pin "vg_tr43"
+    Warning (15610): No output dependent on input pin "rdat_b_n"
+    Warning (15610): No output dependent on input pin "vg_wf_de"
+    Warning (15610): No output dependent on input pin "vg_drq"
+    Warning (15610): No output dependent on input pin "vg_irq"
+    Warning (15610): No output dependent on input pin "vg_wd"
+Info: Implemented 402 device resources after synthesis - the final resource count might be different
+    Info: Implemented 82 input pins
+    Info: Implemented 57 output pins
+    Info: Implemented 8 bidirectional pins
+    Info: Implemented 240 logic cells
+    Info: Implemented 15 RAM segments
+Info: Generated suppressed messages file C:/Documents and Settings/Ewgeny7/Рабочий стол/ScorpEvo_6/flasher/fpga/main.map.smsg
+Info: Quartus II Analysis & Synthesis was successful. 0 errors, 121 warnings
+    Info: Peak virtual memory: 174 megabytes
+    Info: Processing ended: Mon Nov 14 18:41:58 2011
+    Info: Elapsed time: 00:00:05
+    Info: Total CPU time (on all processors): 00:00:02
+
+
++------------------------------------------+
+; Analysis & Synthesis Suppressed Messages ;
++------------------------------------------+
+The suppressed messages can be found in C:/Documents and Settings/Ewgeny7/Рабочий стол/ScorpEvo_6/flasher/fpga/main.map.smsg.
+
+

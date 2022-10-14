@@ -1,0 +1,96 @@
+--------------------------------------------------------------------------------------
+Timing Analyzer Summary
+--------------------------------------------------------------------------------------
+
+Type           : Worst-case tsu
+Slack          : N/A
+Required Time  : None
+Actual Time    : 6.500 ns
+From           : d[6]
+To             : outdata[6]
+From Clock     : --
+To Clock       : fclk
+Failed Paths   : 0
+
+Type           : Worst-case tco
+Slack          : N/A
+Required Time  : None
+Actual Time    : 20.200 ns
+From           : bitptr[1]
+To             : spidi
+From Clock     : spick
+To Clock       : --
+Failed Paths   : 0
+
+Type           : Worst-case tpd
+Slack          : N/A
+Required Time  : None
+Actual Time    : 19.000 ns
+From           : sddi
+To             : spidi
+From Clock     : --
+To Clock       : --
+Failed Paths   : 0
+
+Type           : Worst-case th
+Slack          : N/A
+Required Time  : None
+Actual Time    : -0.600 ns
+From           : spics_n
+To             : number[0]
+From Clock     : --
+To Clock       : spick
+Failed Paths   : 0
+
+Type           : Clock Setup: 'fclk'
+Slack          : -1.286 ns
+Required Time  : 28.00 MHz ( period = 35.714 ns )
+Actual Time    : 27.03 MHz ( period = 37.000 ns )
+From           : lpm_counter:hcharcount_rtl_0|alt_counter_f10ke:wysi_counter|counter_cell[5]
+To             : vred[1]~reg0
+From Clock     : fclk
+To Clock       : fclk
+Failed Paths   : 16
+
+Type           : Clock Setup: 'spick'
+Slack          : 176.344 ns
+Required Time  : 5.53 MHz ( period = 180.844 ns )
+Actual Time    : Restricted to 166.67 MHz ( period = 6.000 ns )
+From           : indata[4]
+To             : indata[5]
+From Clock     : spick
+To Clock       : spick
+Failed Paths   : 0
+
+Type           : Clock Hold: 'fclk'
+Slack          : 0.800 ns
+Required Time  : 28.00 MHz ( period = 35.714 ns )
+Actual Time    : N/A
+From           : lpm_counter:voffset_rtl_1|alt_counter_f10ke:wysi_counter|counter_cell[4]
+To             : lpm_counter:voffset_rtl_1|alt_counter_f10ke:wysi_counter|counter_cell[4]
+From Clock     : fclk
+To Clock       : fclk
+Failed Paths   : 0
+
+Type           : Clock Hold: 'spick'
+Slack          : 1.000 ns
+Required Time  : 5.53 MHz ( period = 180.844 ns )
+Actual Time    : N/A
+From           : bitptr[0]
+To             : bitptr[0]
+From Clock     : spick
+To Clock       : spick
+Failed Paths   : 0
+
+Type           : Total number of failed paths
+Slack          : 
+Required Time  : 
+Actual Time    : 
+From           : 
+To             : 
+From Clock     : 
+To Clock       : 
+Failed Paths   : 16
+
+--------------------------------------------------------------------------------------
+
