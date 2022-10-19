@@ -1,6 +1,12 @@
 
 echo off
 
+echo ###############
+echo ## BUILD STS ##
+echo ###############
+rem cd sts\sts6
+rem call build.bat
+
 echo ####################
 echo ## BUILD FAT BOOT ##
 echo ####################

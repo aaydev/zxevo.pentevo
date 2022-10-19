@@ -1,5 +1,5 @@
 
-; LAST UPDATE: 05.10.2022 savelij
+; LAST UPDATE: 17.10.2022 savelij
 
 PAGE
 		TITLE "main.a80"
@@ -223,7 +223,8 @@ MAINQMO		BIT 5,(IY+1)			; проверка нажатия кнопок клавиатуры
 		JP Z,MAINLOP			; продолжаем опрос управления
 		CALL 0x1F54			; проверка на BREAK
 		JP NC,RESTART			; если BREAK нажат перезапускаемся
-SELECT_KEY 	CALL RESTORE_KOSHAK		; нажато нечто на клаве, сброс счетчика кошака
+SELECT_KEY	CALL GLUDIN
+	 	CALL RESTORE_KOSHAK		; нажато нечто на клаве, сброс счетчика кошака
 		CALL RESET_SCREENSAVER
 		RES 5,(IY+1)			; на клавиатуре ничего не нажато
 		LD HL,LAST_K

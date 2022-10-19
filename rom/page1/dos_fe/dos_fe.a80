@@ -1,5 +1,5 @@
 
-; LAST UPDATE: 06.10.2022 savelij
+; LAST UPDATE: 18.10.2022 savelij
 
 ; ((out&0ffff)==37f7)&&((val&0ff)==1)
 ; ((out&0ffff)==77f7)&&((val&0ff)==1)
@@ -525,15 +525,6 @@ NUM_ADR		EQU $-2
 
 ; чтение/запись примонтированного диска
 MOUNT_RW	DI
-		LD HL,0x4000
-		ADD HL,SP
-		LD SP,HL
-		LD BC,WIN_A1
-		LD A,0x40
-		OUT (C),A
-		LD B,HIGH (WIN_P1)
-		LD A,RAM_EVODOS
-		OUT (C),A
 		LD A,(RDWR_MODE)
 		AND 0x80
 		LD L,A
@@ -546,11 +537,25 @@ MOUNT_RW	DI
 		PUSH HL
 		LD HL,MNT_RW
 		PUSH HL
-		JP Z,0x2A53
+		JR Z,.L1
+; копируем сектор который будем записывать на смонтированный образ
 		LD HL,(OLD_HL)
 		LD DE,MNT_SECTOR
 		CALL COPY_BLOCK
 		LD (OLD_HL),HL
+; переключаем паги для работы с маунтом
+.L1		PUSH AF
+		LD BC,WIN_A1
+		LD A,0x40
+		OUT (C),A
+		LD B,HIGH (WIN_P1)
+		LD A,RAM_EVODOS
+		OUT (C),A
+		POP AF
+; переставляем стек
+		LD HL,0x4000
+		ADD HL,SP
+		LD SP,HL
 		JP 0x2A53
 
 	PHASE $ + 0x4000
