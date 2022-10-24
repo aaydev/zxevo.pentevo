@@ -1,5 +1,5 @@
 
-; LAST UPDATE: 22.09.2022 savelij
+; LAST UPDATE: 22.10.2022 savelij
 
 	TITLE "addon1.a80 ROM_RST81"
 
@@ -13,7 +13,7 @@
 		JP $
 
 		DUPL ADR_SEL_ROM - $,0xFF
-		OUT (C),A			;0014
+		OUT (C),A			; 0014
 		NOP
 		RET
 
@@ -32,7 +32,7 @@
 		DUPL ADR_PERFECT - $,0xFF
 		DW PERFECTCOM
 
-		DUPL 0x0038 - $,0xFF		;0038
+		DUPL 0x0038 - $,0xFF		; 0038
 		EI
 		RET
 
@@ -164,9 +164,6 @@ INSTALLNMIRST2	LD HL,CPU3
 		XOR A
 		LD (CPU6 + DEBUG_ONOFF),A	; 0 - DEBUGGER OFF
 		LD (FLAGS_DRV),A		; сброс флагов драйверов
-	IF BUILD_DEBUG=1
-	ROMCALL UNPACK_STS,ROM_RST80
-	ENDIF
 		LD A,CMOS_BYTE_00
 		LD BC,CMOSD_SET_ADR
 		OUT (C),A
@@ -180,10 +177,13 @@ INSTALLNMIRST2	LD HL,CPU3
 		IN A,(C)
 		LD (CPU2 + VIRT_BITS),A		; при ините монтируем только рамдиск
 INSTALLNMIRST1
-	ROMCALL INIT_CMOS,ROM_RST82	; проверка и инициализация CMOS при ошибке CRC
+	IF BUILD_DEBUG=1
+	ROMCALL UNPACK_STS,ROM_RST80
+	ENDIF
+	ROMCALL INIT_CMOS,ROM_RST82		; проверка и инициализация CMOS при ошибке CRC
 		CALL SET4RESETFONT
 	IF 0;USB_ENABLE
-	EVOPORT WIN_P3,RAM_SCR_FONT	; страницы для драйвера
+	EVOPORT WIN_P3,RAM_SCR_FONT		; страницы для драйвера
 	EVOPORT WIN_A2,ROM_RST83
 		LD HL,USB_DRV + CPU2		; адрес драйвера
 		LD DE,OFFSET_USBDRV + CPU3	; адрес работы

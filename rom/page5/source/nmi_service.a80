@@ -1,5 +1,5 @@
 
-; LAST UPDATE: 04.10.2022 savelij
+; LAST UPDATE: 24.10.2022 savelij
 
 ; последовательность для RST 8
 ; старый стек	HL AF BC RF ADR_RET DE	->
@@ -9,6 +9,7 @@
 REG_R_CORRECT	EQU 0x0D
 
 CODE_NMIRST
+	
 		PHASE 0
 
 		JP CALL2PAGE			; вызов кода в другой странице ROM
@@ -160,11 +161,12 @@ B_PORT_VIRT	DB 0xFF				; текущее состояние порта виртульных дисководов
 
 F_INTEXT_DRV	DB 0xFF				; флаги при внешних/внутренних вызовах драйверов
 TMP_NUMHDD	DB 0xFF
+TMP_ADR_0068	DD 0xFFFFFFFF			; сохранение под перехватчиком NMI
 NUMSEC_LBA48	DQ 0xFFFFFFFFFFFFFFFF		; номер сектора для чтения/записи
 VARS_TXT_DEC	DB "281474976710655\0"		; число до 48 бит
 
 		PHASE $ & 0x3FFF
-		DUPL HIGH ($)*0x100+0xFF-$,0xFF
+		DUPL HIGH ($) * 0x100 + 0xFF - $,0xFF
 		DW IM_EI_RET
 
 		DUPL HIGH ($)*0x100+0x80-$,0xFF
@@ -192,6 +194,14 @@ RAMSEL1
 		PUSH AF				; AF'
 		LD A,I
 		PUSH AF				; IF
+
+; восстанавливаем память под переходом на обработчик NMI
+		LD HL,ADR_MAGIC
+		LD DE,TMP_ADR_0068 - CPU2
+		LDI
+		LDI
+		LDI
+
 		LD HL,OUT_NMI
 		LD (ADR_NMI_JUMP),HL
 		LD A,0xC9
@@ -246,7 +256,15 @@ RAMSEL3		LD A,(RPAGE_CALL-CPU6)
 		JP ADR_SEL_ROM
 
 ; выход из обработчика RST 8
-P4_EXIT_RST8	LD HL,NMI_SERVICE
+P4_EXIT_RST8
+; сохраняем память под переходом на обработчик NMI
+		LD HL,TMP_ADR_0068 - CPU2
+		LD DE,ADR_MAGIC
+		LDI
+		LDI
+		LDI
+
+		LD HL,NMI_SERVICE
 		LD (ADR_NMI_JUMP),HL
 		XOR A
 		LD (FOR_RET),A
@@ -341,6 +359,13 @@ NMI_SERVICE	LD (NMI_SAVE_SP-CPU6),SP	; сохранение стека
 		ADD A,(HL)
 		RRCA
 		LD (HL),A			; коррекция регистра R
+; сохраняем помять под переходом на обработчик NMI
+		LD HL,ADR_MAGIC
+		LD DE,TMP_ADR_0068 - CPU2
+		LDI
+		LDI
+		LDI
+
 		LD HL,(NMI_SAVE_SP-CPU6)
 		LD E,(HL)
 		INC HL
@@ -433,7 +458,7 @@ IN_DEBUG	XOR A
 		PUSH HL
 		JP OUT_NMI
 
-; выход из магика
+; выход из NMI
 EXITNMISERVICE	LD HL,ADR_MAGIC
 		LD (HL),0xC9			; заглушка на MAGIC
 		IN A,(PEVO_CONF)
@@ -442,8 +467,13 @@ EXITNMISERVICE	LD HL,ADR_MAGIC
 		AND M_NMI_BF!0xFF
 		OUT (PEVO_CONF),A
 		HALT				; ждем срабатывания MAGIC 
-FALSE_NMI	LD HL,ADR_MAGIC
-		LD (HL),0xC3			; разрешение обработчика MAGIC перед выходом
+FALSE_NMI
+; восстанавливаем память под переходом на обработчик NMI
+		LD HL,TMP_ADR_0068 - CPU2
+		LD DE,ADR_MAGIC
+		LDI
+		LDI
+		LDI
 
 		LD C,LOW (WIN_A0)
 		LD A,(N_7FFD-CPU6)

@@ -1,5 +1,5 @@
 
-; LAST UPDATE: 22.11.2021 savelij
+; LAST UPDATE: 22.10.2022 savelij
 
 PAGE	
 	TITLE "rst8service.a80 ROM_RST83"
@@ -39,88 +39,88 @@ TXTMODE_DEBUG	EQU 0
 H_FILES		EQU 60
 V_FILES		EQU 25
 
-MAGIC_COLOR	EQU BLUE<<3+WHITE+BR_INK
+MAGIC_COLOR	EQU BLUE << 3 + WHITE + BR_INK
 
-		PHASE 0
-		JP $				;0000
+	PHASE 0
+		JP $				; 0000
 
-		DUPL 0X0008-$,0XFF
-		JP $				;0008
+		DUPL 0x0008-$,0xFF
+		JP $				; 0008
 
-		DUPL 0X0010-$,0XFF
-		JP $				;0010
+		DUPL 0x0010-$,0xFF
+		JP $				; 0010
 
-		DUPL ADR_SEL_ROM-$,0XFF
-		OUT (C),A			;0014
+		DUPL ADR_SEL_ROM-$,0xFF
+		OUT (C),A			; 0014
 		NOP
 		RET
 
-		DUPL 0X0018-$,0XFF
-		JP $				;0018
+		DUPL 0x0018-$,0xFF
+		JP $				; 0018
 
-		DUPL 0X001C-$,0XFF
+		DUPL 0x001C-$,0xFF
 		JP RST8_DOS
 
-		DUPL 0X0020-$,0XFF
-		JP CALL2RAMPAGE			;0020
+		DUPL 0x0020-$,0xFF
+		JP CALL2RAMPAGE			; 0020
 
-		DUPL 0X0024-$,0XFF
-		JP RST8PAGE0			;0024
+		DUPL 0x0024-$,0xFF
+		JP RST8PAGE0			; 0024
 
-		DUPL 0X0028-$,0XFF
-		JP $				;0028
+		DUPL 0x0028-$,0xFF
+		JP $				; 0028
 
-		DUPL CONT_RST8-$,0XFF		;002C
+		DUPL CONT_RST8-$,0xFF		; 002C
 		JP NEXT_RST8
 
-;[ПЕРЕХОД В СТРАНИЦУ 4 С ВОЗВРАТОМ]
-		DUPL 0X0030-$,0XFF
-		JP CALL2PAGE			;0030
+; переход в страницу 4 с возвратом
+		DUPL 0x0030-$,0xFF
+		JP CALL2PAGE			; 0030
 
-;[ПРОДОЛЖЕНИЕ ОБРАБОТКИ НАЖАТИЯ MAGIC]
-		DUPL CONTINUE_MAGIC-$,0XFF	;0034
+; продолжение обработки нажатия MAGIC
+		DUPL CONTINUE_MAGIC-$,0xFF	; 0034
 		JP CONT_MAGIC
 
-		DUPL 0X0038-$,0XFF		;0038
-;		PUSH HL			;11
-;		LD HL,(ADR_INT)		;16
-;		EX (SP),HL		;19
-;		RET			;10=56
+		DUPL 0x0038-$,0xFF		; 0038
+;		PUSH HL				; 11
+;		LD HL,(ADR_INT)			; 16
+;		EX (SP),HL			; 19
+;		RET				; 10=56
 
-		EI			;4
-		RET			;10=14
+		EI				; 4
+		RET				; 10=14
 
-		DUPL 0X003E-$,0XFF
+		DUPL 0x003E-$,0xFF
 		EI
 		RET
 
-;[ВЫХОД ИЗ RST8]
-EXIT_RST8	LD BC,P4_EXIT_RST8		;АДРЕС ВОЗВРАТА В ПОСЛЕДНЕЙ СТРАНИЦЕ RAM
+; выход из RST8
+EXIT_RST8	LD BC,P4_EXIT_RST8		; адрес возврата в последней странице RAM
 		PUSH BC
 		LD BC,WIN_P0
 		XOR A
 		JP ADR_SEL_ROM
 
-;[ВХОД RST 8 ДЛЯ DOS]
+; вход RST 8 для DOS
 RST8_DOS	LD HL,ERST8_DOS
 		JP NEXT_RST
 
-;[ВЫХОД RST 8 ДЛЯ DOS]
+; выход RST 8 для DOS
 ERST8_DOS	LD BC,WIN_A0
 		LD A,6
 		JP ADR_SEL_ROM
 
-;[ОБРАБОТЧИК MAGIC]
-		DUPL 0X0066-$,0XFF
+; обработчик MAGIC
+		DUPL 0x0066-$,0xFF
 		NOP
 CONT_MAGIC	NOP
 		DI
 		LD HL,N_77
 		CALL CONVERT_BPORT
-		CALL STORE_AY			;СОХРАНЕНИЕ СОСТОЯНИЯ РЕГИСТРОВ И ЗАГЛУШЕНИЕ AY
+		CALL STORE_AY			; сохранение состояния регистров и заглушение AY
 		LD A,(CPU6+DEBUG_ONOFF)
 		BIT B_TRACE_DBG,A
-		JP NZ,DEBUGGER			;если активен отладчик, то переход на его запуск
+		JP NZ,DEBUGGER			; если активен отладчик, то переход на его запуск
 		LD A,(N_BF)
 		AND M_BREAK_BF
 		JP Z,CONT_MAGIC2
@@ -129,9 +129,9 @@ CONT_MAGIC	NOP
 		CP 5
 		JP NZ,CONT_MAGIC2
 		LD A,L
-		CP 0X6C
+		CP 0x6C
 		JP NC,CONT_MAGIC2
-		CP 0X67
+		CP 0x67
 		JP C,CONT_MAGIC2
 
 		CALL MAINPAGE3_TAP
@@ -141,78 +141,78 @@ CONT_MAGIC	NOP
 		LD (RREG_E),HL
 		LD HL,(NREG_F)
 		LD (RREG_F),HL
-		ROMCALL EMULOADTAP,ROM_RST82
+	ROMCALL EMULOADTAP,ROM_RST82
 		LD HL,(RREG_IXL)
 		LD (NREG_IXL),HL
 		LD HL,(RREG_E)
 		LD (NREG_E),HL
-		LD HL,0X56B
+		LD HL,0x56B
 		LD (NADRRET_L),HL
 		LD HL,(RREG_F)
 		LD (NREG_F),HL
 		JP CONTMAGIC3
 
-		DUPL 0X00FF-$,0XFF
-		DW 0X0038
+		DUPL 0x00FF-$,0xFF
+		DW 0x0038
 
-;[ТАБЛИЦА ПЕРЕХОДОВ ДЛЯ RST 8]
-CODE_TABL	DW AY_PRN_INIT_			;40
-		DW AY_PRN_A__			;41
-		DW AY_PRN_TOKEN_		;42
-		DW AY_PRN_SCR_			;43
-		DW TAPE_INIT_			;44
-		DW TAPE_EMUL_			;45
-		DW WINW_			;46
-		DW PRINT_MESSAGE_		;47
-		DW PRINT_A_			;48
-		DW SCRUP_			;49
-		DW SCRDN_			;4A
-		DW SET_MODE_			;4B
-		DW MATH				;4C
-		DW VERSION_			;4D
-		DW RESERVED			;4E
-		DW RESERVED			;4F
-		DW COM_DEV			;50
-		DW COM_FAT			;51
-		DW SORT_FINDFILES		;52
-		DW MOUNTER			;53
-		DW INST_FATBOOT_		;54
-		DW CMOS_RW_			;55
-		DW SETUP_PAL_			;56
-		DW SETUP_FONT_			;57
+; таблица переходов для RST 8
+CODE_TABL	DW AY_PRN_INIT_			; 40
+		DW AY_PRN_A__			; 41
+		DW AY_PRN_TOKEN_		; 42
+		DW AY_PRN_SCR_			; 43
+		DW TAPE_INIT_			; 44
+		DW TAPE_EMUL_			; 45
+		DW WINW_			; 46
+		DW PRINT_MESSAGE_		; 47
+		DW PRINT_A_			; 48
+		DW SCRUP_			; 49
+		DW SCRDN_			; 4A
+		DW SET_MODE_			; 4B
+		DW MATH				; 4C
+		DW VERSION_			; 4D
+		DW RESERVED			; 4E
+		DW RESERVED			; 4F
+		DW COM_DEV			; 50
+		DW COM_FAT			; 51
+		DW SORT_FINDFILES		; 52
+		DW MOUNTER			; 53
+		DW INST_FATBOOT_		; 54
+		DW CMOS_RW_			; 55
+		DW SETUP_PAL_			; 56
+		DW SETUP_FONT_			; 57
 ECODE_TABL
 
 ;===============
 
-;[ВХОД В ОСНОВНОЕ МЕНЮ MAGIC ЕСЛИ НЕ ПЕРЕХВАЧЕНО ОТЛАДЧИКОМ]
+; вход в основное меню MAGIC если не перехвачено отладчиком
 CONT_MAGIC2	LD BC,CONF_128
 ;		LD A,(N_7FFD)
-		READ_7FFD
-		AND ZX_SCREEN!0XFF
-		OUT (C),A			;ВКЛЮЧЕНИЕ ОТОБРАЖЕНИЯ ЭКРАНА 0
+	READ_7FFD
+		AND ZX_SCREEN!0xFF
+		OUT (C),A			; включение отображения экрана 0
 		LD A,(N_77)
-		CALL CMP_SCRMODE		;ПРОВЕРКА ВИДЕОРЕЖИМА ПРЕРВАННОЙ ПРОГРАММЫ
+		CALL CMP_SCRMODE		; проверка видеорежима прерванной программы
 		LD HL,EI_RET
-		LD (ADR_INT),HL			;ЗАГЛУШКА НА ПРЕРЫВАНИЯ
-		ROMCALL STORE_TXTMODE,ROM_RST82	;СОХРАНЕНИЕ ТЕКСТМОДНОГО ЭКРАНА
-		ROMCALL SCAN_FONT,ROM_RST80	;ЧТЕНИЕ ТЕКУЩЕГО ЗАГРУЖЕННОГО ШРИФТА
-		ROMCALL RD_SET_PAL,ROM_RST82	;СОХРАНЕНИЕ И УСТАНОВКА ПАЛИТРЫ ДЛЯ MAGIC
-;==========ВРЕМЯНКА
+		LD (ADR_INT),HL			; заглушка на прерывания
+	ROMCALL STORE_TXTMODE,ROM_RST82		; сохранение текстмодного экрана
+	ROMCALL SCAN_FONT,ROM_RST80		; чтение текущего загруженного шрифта
+	ROMCALL RD_SET_PAL,ROM_RST82		; сохранение и установка палитры для MAGIC
+;==========времянка
 	IF _CMP_FONT=1
-		CALL CMP_FONT			;ВРЕМЯНКА, ПРОВЕРКА СЧИТАННОГО ШРИФТА
+		CALL CMP_FONT			; времянка, проверка считанного шрифта
 		RLA
 		LD (CMP_FONT_FLAG),A
 	ENDIF
-;==========ВРЕМЯНКА
-		ROMCALL MAGIC_FONT,ROM_RST82	;УСТАНОВКА ВРЕМЕННОГО ШРИФТА ДЛЯ MAGIC РЕЖИМА
+;==========времянка
+	ROMCALL MAGIC_FONT,ROM_RST82		; установка временного шрифта для MAGIC режима
 CONT_MAGIC1	LD A,(CPU6+DEBUG_ONOFF)
 		BIT B_DBG_ACTIV,A
-		JP NZ,DEBUGGER			;если активен отладчик, то переход на его запуск
+		JP NZ,DEBUGGER			; если активен отладчик, то переход на его запуск
 		JP RESTART_NMI
 
 VERSION_	LD HL,VERSBIN >> 16
 		LD (RREG_C),HL
-		LD HL,VERSBIN & 0XFFFF
+		LD HL,VERSBIN & 0xFFFF
 		LD (RREG_E),HL
 	IFDEF DOS_FE
 		LD L,1				; требует прошивки zxevo_fw.bin из standalone_base_trdemu
@@ -232,59 +232,74 @@ VERSION_	LD HL,VERSBIN >> 16
 		OUT (C),H			; восстановили текщее значение порта
 		RET
 
-SETUP_FONT_	ROMCALL SETUP_FONT,ROM_RST81
+SETUP_FONT_
+	ROMCALL SETUP_FONT,ROM_RST81
 		RET
 
-SET_MAP_	ROMCALL 0X40,ROM_ERS
+SET_MAP_
+	ROMCALL 0x40,ROM_ERS
 		RET
 
-SETUP_PAL_	ROMCALL SETUP_PAL,ROM_RST82
+SETUP_PAL_
+	ROMCALL SETUP_PAL,ROM_RST82
 RESERVED	RET
 
-AY_PRN_INIT_	ROMCALL AY_PRN_INIT,ROM_RST82
+AY_PRN_INIT_
+	ROMCALL AY_PRN_INIT,ROM_RST82
 		RET
 
-AY_PRN_A__	ROMCALL AY_PRN_A_,ROM_RST82
+AY_PRN_A__
+	ROMCALL AY_PRN_A_,ROM_RST82
 		RET
 
-AY_PRN_TOKEN_	ROMCALL AY_PRN_TOKEN,ROM_RST82
+AY_PRN_TOKEN_
+	ROMCALL AY_PRN_TOKEN,ROM_RST82
 		RET
 
-AY_PRN_SCR_	ROMCALL AY_PRN_SCR,ROM_RST82
+AY_PRN_SCR_
+	ROMCALL AY_PRN_SCR,ROM_RST82
 		RET
 
-TAPE_INIT_	ROMCALL TAPE_INIT,ROM_RST82
+TAPE_INIT_
+	ROMCALL TAPE_INIT,ROM_RST82
 		RET
 
-TAPE_EMUL_	ROMCALL TAPE_EMUL,ROM_RST82
+TAPE_EMUL_
+	ROMCALL TAPE_EMUL,ROM_RST82
 		RET
 
-WINW_		ROMCALL WINW,ROM_RST82
+WINW_
+		ROMCALL WINW,ROM_RST82
 		RET
 
-PRINT_MESSAGE_	ROMCALL PRINT_MESSAGE,ROM_RST82
+PRINT_MESSAGE_
+	ROMCALL PRINT_MESSAGE,ROM_RST82
 		RET
 
-PRINT_A_	ROMCALL PRINT_A,ROM_RST82
+PRINT_A_
+	ROMCALL PRINT_A,ROM_RST82
 		RET
 
 SCRUP_		LD A,(RREG_A)
 		LD (SCROLL_MODE),A
-		ROMCALL SCRUP,ROM_RST82
+	ROMCALL SCRUP,ROM_RST82
 		RET
 
 SCRDN_		LD A,(RREG_A)
 		LD (SCROLL_MODE),A
-		ROMCALL SCRDN,ROM_RST82
+	ROMCALL SCRDN,ROM_RST82
 		RET
 
-SET_MODE_	ROMCALL SET_MODE,ROM_RST82
+SET_MODE_
+	ROMCALL SET_MODE,ROM_RST82
 		RET
 
-INST_FATBOOT_	ROMCALL UNP_MICRO_BOOT,ROM_RST80
+INST_FATBOOT_
+	ROMCALL UNP_MICRO_BOOT,ROM_RST80
 		RET
 
-CMOS_RW_	ROMCALL CMOS_RW,ROM_RST82
+CMOS_RW_
+	ROMCALL CMOS_RW,ROM_RST82
 		RET
 
 RST8PAGE0	LD HL,ERST8PAGE0
@@ -296,37 +311,38 @@ ERST8PAGE0	LD BC,WIN_A0
 
 SELECT_MAPPER	
 ;		LD A,(R_7FFD)
-		READ_7FFD
-		AND 0X10
+	READ_7FFD
+		AND 0x10
 		RET NZ
 		LD A,-8
 		ADD A,L
 		LD L,A
 		RET
 
-;[RESTART_NMI]
-RESTART_NMI	ROMCALL CLS_TXTMODE8,ROM_RST82	;ОЧИСТКА ТЕКСТМОДНОГО ЭКРАНА
-		EVOPORT WIN_A5,ROM_RST83	;ВКЛЮЧЕНИЕ ЭТОЙ СТРАНИЦЫ ROM ВО 2 ОКНО ПРОЕЦИРОВАНИЯ
+RESTART_NMI
+	ROMCALL CLS_TXTMODE8,ROM_RST82		; очистка текстмодного экрана
+	EVOPORT WIN_A5,ROM_RST83		; включение этой страницы ROM во 2 окно проецирования
 		LD HL,CPU5+TEXT_PORTREGS
-		ROMCALL PRTT_MSG,ROM_RST82	;ПЕЧАТЬ ТЕКСТА
-		ROMCALL PRT_PORTREGS,ROM_RST82	;ПЕЧАТЬ СОДЕРЖИМОГО ПОРТОВ СЧИТАННОЙ КОНФИГУРАЦИИ
-;==========ВРЕМЯНКА
+	ROMCALL PRTT_MSG,ROM_RST82		; печать текста
+	ROMCALL PRT_PORTREGS,ROM_RST82		; печать содержимого портов считанной конфигурации
+;==========времянка
 	IF _CMP_FONT=1
 		LD HL,CPU5+TXT_VERIFY_FONT
-		ROMCALL PRTT_MSG,ROM_RST82	;ПЕЧАТЬ ТЕКСТА О ПРОВЕРКЕ ШРИФТА
+	ROMCALL PRTT_MSG,ROM_RST82		; печать текста о проверке шрифта
 		LD A,(CMP_FONT_FLAG)
 		RRA
-		LD HL,CPU5+TXT_VERIFY_OK	;ТЕКСТ ЕСЛИ ВСЕ СОВПАЛО
+		LD HL,CPU5+TXT_VERIFY_OK	; текст если все совпало
 		JR NC,CONTMAGIC3_
-		LD HL,CPU5+TXT_VERIFY_ERR	;ТЕКСТ ЕСЛИ НЕ СОВПАЛО
-CONTMAGIC3_	ROMCALL PRTT_MSG,ROM_RST82	;ПЕЧАТЬ ОБ ОШИБКЕ
+		LD HL,CPU5+TXT_VERIFY_ERR	; текст если не совпало
+CONTMAGIC3_
+	ROMCALL PRTT_MSG,ROM_RST82		; печать об ошибке
 	ENDIF
-;==========ВРЕМЯНКА
-		EVOPORT WIN_A5,ROM_RST81	;ВКЛЮЧЕНИЕ ДОПОЛНЕНИЙ В 1 ОКНО ПРОЕЦИРОВАНИЯ
+;==========времянка
+	EVOPORT WIN_A5,ROM_RST81		; включение дополнений в 1 окно проецирования
 		LD IX,MAIN_MENU
-		ROMCALL SETUP4SEL,ROM_RST82
-		ROMCALL ITWINW,ROM_RST82		;ВЫВОД ОКНА НА ТЕКСТМОДНЫЙ ЭКРАН
-		ROMCALL ITSELECTOR,ROM_RST82
+	ROMCALL SETUP4SEL,ROM_RST82
+	ROMCALL ITWINW,ROM_RST82		; вывод окна на текстмодный экран
+	ROMCALL ITSELECTOR,ROM_RST82
 		AND A
 		JR Z,CONTMAGIC2
 		DEC A
@@ -334,21 +350,21 @@ CONTMAGIC3_	ROMCALL PRTT_MSG,ROM_RST82	;ПЕЧАТЬ ОБ ОШИБКЕ
 		DEC A
 		JR Z,CONTMAGIC3
 CONTMAGIC2	XOR A
-		IN A,(0XFE)
+		IN A,(0xFE)
 		CPL
-		AND 0X1F
-		JR NZ,CONTMAGIC2		;ЖДЕМ ОТПУСКАНИЯ КНОПОК КЛАВИАТУРЫ
-		ROMCALL RESTORE_TXTMODE,ROM_RST82	;ВОССТАНОВЛЕНИЕ ТЕКСТМОДНОГО ЭКРАНА
-		ROMCALL RESTORE_FONT,ROM_RST82	;ВОССТАНОВЛЕНИЕ ШРИФТА
-		ROMCALL RESTORE_PAL,ROM_RST82	;ВОССТАНОВЛЕНИЕ ПАЛИТРЫ
-CONTMAGIC3	CALL RESTORE_AY			;ВОССТАНОВЛЕНИЕ РАГИСТРОВ AY
+		AND 0x1F
+		JR NZ,CONTMAGIC2		; ждем отпускания кнопок клавиатуры
+	ROMCALL RESTORE_TXTMODE,ROM_RST82	; восстановление текстмодного экрана
+	ROMCALL RESTORE_FONT,ROM_RST82		; восстановление шрифта
+	ROMCALL RESTORE_PAL,ROM_RST82		; восстановление палитры
+CONTMAGIC3	CALL RESTORE_AY			; восстановление рагистров AY
 		LD BC,EXITNMISERVICE
 		PUSH BC
 		LD BC,WIN_P0
 		XOR A
 		JP ADR_SEL_ROM
 
-;[ПРОДОЛЖЕНИЕ ОБРАБОТКИ RST8]
+; продолжение обработки RST8
 NEXT_RST8	LD HL,EXIT_RST8
 NEXT_RST	PUSH HL
 		LD (INTERNAL_SP),SP
@@ -365,10 +381,10 @@ NEXT_RST1	LD B,(HL)
 		AND 8
 		LD A,B
 		JR Z,NEXT_RST2
-		OR 0XC0
+		OR 0xC0
 NEXT_RST2	LD (PAGE4READ),A
 		LD A,(NEXTBYTERST8)
-		AND 0X3F
+		AND 0x3F
 		LD L,A
 		LD H,0
 		ADD HL,HL
@@ -380,57 +396,57 @@ NEXT_RST2	LD (PAGE4READ),A
 		EX DE,HL
 		JP (HL)
 
-;[ПЕРЕКОНФИГУРАЦИЯ ОКОН ПРОЕЦИРОВАНИЯ]
-;СТРАНИЦА ПЕРЕМЕННЫХ В ОКНО 1, ОСНОВНАЯ ПАМЯТЬ В ЗАВИСИМОСТИ ОТ АДРЕСА В ОКНА 2 И 3
+; переконфигурация окон проецирования
+; страница переменных в окно 1, основная память в зависимости от адреса в окна 2 и 3
 RESETUP_WINS	EXX
 		LD BC,WIN_P5
 		XOR A
-		OUT (C),A			;СТРАНИЦА ПЕРЕМЕННЫХ В ОКНО 1
+		OUT (C),A			; страница переменных в окно 1
 		LD HL,CPU3
 		ADD HL,SP
-		LD SP,HL			;СТЕК ТОЖЕ В ОКНО 1
-		LD HL,B1_CPU0-CPU5		;ДЛЯ 0 МАППЕРА
+		LD SP,HL			; стек тоже в окно 1
+		LD HL,B1_CPU0-CPU5		; для 0 маппера
 		CALL SELECT_MAPPER
 RESETUPWINS1	EXX
-		LD BC,CPU6			;АДРЕС ЧТЕНИЯ/ЗАПИСИ НА 0X8000 ВЫШЕ
-		LD A,H				;ПРОВЕРКА СТАРШЕГО БАЙТА АДРЕСА
+		LD BC,CPU6			; адрес чтения/записи на 0x8000 выше
+		LD A,H				; проверка старшего байта адреса
 		EXX
-		CP 0X40
-		JR C,RESETUPWINS2		;УСТАНОВКА ДЛЯ ОКОН 0,1
+		CP 0x40
+		JR C,RESETUPWINS2		; установка для окон 0,1
 		INC HL
 		INC HL
 		EXX
-		LD BC,CPU5			;АДРЕС ЧТЕНИЯ/ЗАПИСИ НА 0X4000 ВЫШЕ
+		LD BC,CPU5			; адрес чтения/записи на 0x4000 выше
 		EXX
-		CP 0X80
-		JR C,RESETUPWINS2		;УСТАНОВКА ДЛЯ ОКОН 1,2
+		CP 0x80
+		JR C,RESETUPWINS2		; установка для окон 1,2
 		INC HL
 		INC HL
 		EXX
-		LD BC,CPU0			;АДРЕС ЧТЕНИЯ/ЗАПИСИ БЕЗ ИЗМЕНЕНИЙ
+		LD BC,CPU0			; адрес чтения/записи без изменений
 		EXX
-		CP 0XC0
-		JR C,RESETUPWINS2		;УСТАНОВКА ДЛЯ ОКОН 2,3
+		CP 0xC0
+		JR C,RESETUPWINS2		; установка для окон 2,3
 		INC HL
 		INC HL
 		EXX
-		LD BC,CPU3			;АДРЕС ЧТЕНИЯ/ЗАПИСИ НА 0X4000 НИЖЕ
+		LD BC,CPU3			; адрес чтения/записи на 0x4000 ниже
 		EXX
-		LD B,HIGH (WIN_A6)		;СТАРШИЙ БАЙТ АДРЕСА ПОРТА ОКНА 2
+		LD B,HIGH (WIN_A6)		; старший байт адреса порта окна 2
 		CALL RESETUPWINS4
-		LD DE,0XFFF8
-		ADD HL,DE			;АДРЕС ГДЕ КОНФИГ СТРАНИЦ ОСНОВНОЙ ПАМЯТИ ЛЕЖИТ
+		LD DE,0xFFF8
+		ADD HL,DE			; адрес где конфиг страниц основной памяти лежит
 		JR RESETUPWINS5
 
-RESETUPWINS2	LD B,HIGH (WIN_A6)		;СТАРШИЙ БАЙТ АДРЕСА ПОРТА ОКНА 2
+RESETUPWINS2	LD B,HIGH (WIN_A6)		; старший байт адреса порта окна 2
 		CALL RESETUPWINS4
-RESETUPWINS5	LD B,HIGH (WIN_A3)		;СТАРШИЙ БАЙТ АДРЕСА ПОРТА ОКНА 3
+RESETUPWINS5	LD B,HIGH (WIN_A3)		; старший байт адреса порта окна 3
 		CALL RESETUPWINS4
 		EXX
 		RET
 
-RESETUPWINS4	LD E,(HL)			;БАЙТ ДЛЯ ЗАПИСИ В ПОРТ
-		INC HL				;УКАЗАНИЕ НА БАЙТ АДРЕСА ПОРТА
+RESETUPWINS4	LD E,(HL)			; байт для записи в порт
+		INC HL				; указание на байт адреса порта
 		BIT 3,(HL)
 		JR NZ,RESETUPWINS3
 		SET 3,B
@@ -438,78 +454,78 @@ RESETUPWINS4	LD E,(HL)			;БАЙТ ДЛЯ ЗАПИСИ В ПОРТ
 		AND 3
 		RRCA
 		RRCA
-		OUT (C),A			;СНАЧАЛА ПИШЕМ В ПОРТ XFF7
+		OUT (C),A			; сначала пишем в порт xFF7
 		RES 3,B
 RESETUPWINS3	INC HL
-		OUT (C),E			;ТЕПЕРЬ ПИШЕМ В ПОРТ X7F7
+		OUT (C),E			; теперь пишем в порт x7F7
 		RET
 
-;[ЧТЕНИЕ БАЙТА ИЗ ОБЛАСТИ ПАМЯТИ ВЫЗВАШЕЙ ПРОГИ]
+; чтение байта из области памяти вызвашей проги
 P5_READ_BYTE	PUSH HL
 		PUSH DE
 		PUSH BC
 		PUSH AF
-		LD A,(RADRRET_H)		;СТАРШИЙ БАЙТ АДРЕСА ОТКУДА ЧИТАТЬ
-		CP 0X40
+		LD A,(RADRRET_H)		; старший байт адреса откуда читать
+		CP 0x40
 		JR NC,READBYTE_03
-;ЕСЛИ АДРЕС ЧТЕНИЯ НИЖЕ 0X4000
-		LD HL,B1_CPU0			;БАЙТЫ И АДРЕСА ПОРТОВ 0 МАППЕРА
+; если адрес чтения ниже 0x4000
+		LD HL,B1_CPU0			; байты и адреса портов 0 маппера
 		CALL SELECT_MAPPER
-READ_CPU0_01	LD D,(HL)			;БАЙТ ДЛЯ ЗАПИСИ В ПОРТ
+READ_CPU0_01	LD D,(HL)			; байт для записи в порт
 		INC HL
-		LD A,(HL)			;СТАРШИЙ БАЙТ АДРЕСА ПОРТА НУЖНОЙ СТРАНИЦЫ
+		LD A,(HL)			; старший байт адреса порта нужной страницы
 		AND HIGH (WIN_A5)
-		OR HIGH (WIN_P5)		;ПРЕОБРАЗОВАЛИ СТАРШИЙ БАЙТ АДРЕСА ДЛЯ ВКЛЮЧЕНИЯ В 1 ОКНЕ	
+		OR HIGH (WIN_P5)		; преобразовали старший байт адреса для включения в 1 окне
 		LD B,A
-		LD C,LOW (WIN_A0)		;BC=АДРЕС ПОРТА
+		LD C,LOW (WIN_A0)		; BC = адрес порта
 		LD A,(R_77)
-		LD E,0X3F
-		AND 0X10			;ОПРЕДЕЛЯЕМ DOS ИЛИ НЕ DOS
+		LD E,0x3F
+		AND 0x10			; определяем DOS или не DOS
 		JR Z,READ_CPU0_02
 		DEC E
 READ_CPU0_02	LD A,D
 		AND E
-		OUT (C),A			;ВКЛЮЧАЕМ ПАГУ BASIC ИЛИ DOS
-		LD DE,CPU5			;СМЕЩЕНИЕ ДО 1 ОКНА ПРОЕЦИРОВАНИЯ
-		LD HL,(RADRRET_L)		;АДРЕС ОТКУДА ЧИТАТЬ
-		ADD HL,DE			;ЧИТАТЬ ЧЕРЕЗ 1 ОКНО ПРОЕЦИРОВАНИЯ
-		LD A,(HL)			;ПРОЧИТАЛИ БАЙТ
-		SBC HL,DE			;ВЕРНУЛИ АДРЕС БАЙТА
-		INC HL				;УВЕЛИЧИЛИ АДРЕС ВОЗВРАТА
-		LD (RADRRET_L),HL		;ВЕРНУЛИ АДРЕС ВОЗВРАТА
+		OUT (C),A			; включаем пагу BASIC или DOS
+		LD DE,CPU5			; смещение до 1 окна проецирования
+		LD HL,(RADRRET_L)		; адрес откуда читать
+		ADD HL,DE			; читать через 1 окно проецирования
+		LD A,(HL)			; прочитали байт
+		SBC HL,DE			; вернули адрес байта
+		INC HL				; увеличили адрес возврата
+		LD (RADRRET_L),HL		; вернули адрес возврата
 		JR READBYTE_02
 
-;ЕСЛИ АДРЕС ЧТЕНИЯ ВЫШЕ 0X4000
-READBYTE_03	LD HL,B1_CPU0			;БАЙТЫ И АДРЕСА ПОРТОВ 0 МАППЕРА
+; если адрес чтения выше 0x4000
+READBYTE_03	LD HL,B1_CPU0			; байты и адреса портов 0 маппера
 		CALL SELECT_MAPPER
-READBYTE_01	LD A,(RADRRET_H)		;СТАРШИЙ БАЙТ АДРЕСА ОТКУДА ЧИТАТЬ
-		AND 0XC0
+READBYTE_01	LD A,(RADRRET_H)		; старший байт адреса откуда читать
+		AND 0xC0
 		LD C,A
 		RLCA
 		RLCA
 		RLCA
 		LD E,A
-		LD D,0			 	;DE=СМЕЩЕНИЕ В ТАБЛИЦЕ БАЙТА И СТАРШЕГО БАЙТА СТРАНИЦЫ ЧТЕНИЯ
+		LD D,0			 	; DE = смещение в таблице байта и старшего байта страницы чтения
 		ADD HL,DE
-		LD D,(HL)			;БАЙТ ДЛЯ ЗАПИСИ В ПОРТ
+		LD D,(HL)			; байт для записи в порт
 		INC HL
 		LD A,(HL)
 		AND HIGH (WIN_A5)
 		OR HIGH (WIN_P5)
 		LD B,A
-		LD C,LOW (WIN_A5)		;BC=АДРЕС ПОРТА ДЛЯ 1 ОКНА ПРОЕЦИРОВАНИЯ
-		LD HL,(RADRRET_L)		;АДРЕС ОТКУДА ЧИТАТЬ
-		OUT (C),D			;ВКЛЮЧИЛИ СТРАНИЦУ ДЛЯ ЧТЕНИЯ БАЙТА
-		LD E,L				;МЛАДШИЙ БАЙТ АДРЕСА ЧТЕНИЯ
+		LD C,LOW (WIN_A5)		; BC = адрес порта для 1 окна проецирования
+		LD HL,(RADRRET_L)		; адрес откуда читать
+		OUT (C),D			; включили страницу для чтения байта
+		LD E,L				; младший байт адреса чтения
 		LD A,H
 		AND HIGH (WIN_A5)
 		OR HIGH (CPU5)
-		LD D,A				;СТАРШИЙ БАЙТ АДРЕСА ЧТЕНИЯ
-		LD A,(DE)			;ПРОЧИТАЛИ БАЙТ
-		INC HL				;УВЕЛИЧИЛИ АДРЕС ВОЗВРАТА
-		LD (RADRRET_L),HL		;ВЕРНУЛИ АДРЕС ВОЗВРАТА
-READBYTE_02	LD (NEXTBYTERST8),A		;ПОЛОЖИЛИ ПРОЧИТАННЫЙ БАЙТ
-		CALL MAIN_MEM13			;ВЕРНУЛИ СТРАНИЦЫ В 1 И 3 ОКНО ПРОЕЦИРОВАНИЯ
+		LD D,A				; старший байт адреса чтения
+		LD A,(DE)			; прочитали байт
+		INC HL				; увеличили адрес возврата
+		LD (RADRRET_L),HL		; вернули адрес возврата
+READBYTE_02	LD (NEXTBYTERST8),A		; положили прочитанный байт
+		CALL MAIN_MEM13			; вернули страницы в 1 и 3 окно проецирования
 		POP AF
 		POP BC
 		POP DE
@@ -525,11 +541,11 @@ LDIR_BYTES	EXX
 		XOR A
 		JP ADR_SEL_ROM
 
-;[ВОССТАНОВЛЕНИE СТРАНИЦ В ОКНАХ ПРОЕЦИРОВАНИЯ 1 И 3]
-MAIN_MEM13	LD HL,B1_CPU1			;ДЛЯ 0 МАППЕРА
+; восстановлениe страниц в окнах проецирования 1 и 3
+MAIN_MEM13	LD HL,B1_CPU1			; для 0 маппера
 		CALL SELECT_MAPPER
-MAINMEM1	CALL MAINMEM3			;ВЕРНУЛИ ДЛЯ 1 ОКНА ПРОЕЦИРОВАНИЯ
-		INC HL				;ДАЛЕЕ ВОЗВРАЩАЕМ ДЛЯ 3 ОКНА ПРОЕЦИРОВАНИЯ
+MAINMEM1	CALL MAINMEM3			; вернули для 1 окна проецирования
+		INC HL				; далее возвращаем для 3 окна проецирования
 		INC HL
 		CALL MAINMEM3
 SET_7FFD	DEC HL
@@ -538,12 +554,12 @@ SET_7FFD	DEC HL
 		DEC HL
 		BIT 7,(HL)
 		RET Z
-		READ_7FFD
+	READ_7FFD
 		LD D,A
 		LD E,0
 		LD HL,PAGES_7FFD_ALL
 		JR NZ,SET7FFD1
-		AND 0XE0
+		AND 0xE0
 		RRCA
 		RRCA
 		LD E,A
@@ -565,15 +581,15 @@ PLUSIK := PLUSIK-1
 		ENDM
 		ENDM
 
-PAGES_7FFD_ALL	XXF7_7FFD 0XFF
-		XXF7_7FFD 0XEF
-		XXF7_7FFD 0XDF
-		XXF7_7FFD 0XCF
+PAGES_7FFD_ALL	XXF7_7FFD 0xFF
+		XXF7_7FFD 0xEF
+		XXF7_7FFD 0xDF
+		XXF7_7FFD 0xCF
 
-		XXF7_7FFD 0XF7
-		XXF7_7FFD 0XE7
-		XXF7_7FFD 0XD7
-		XXF7_7FFD 0XC7
+		XXF7_7FFD 0xF7
+		XXF7_7FFD 0xE7
+		XXF7_7FFD 0xD7
+		XXF7_7FFD 0xC7
 
 MAINPAGE3_TAP	LD HL,B1_CPU3
 		CALL SELECT_MAPPER
@@ -587,23 +603,23 @@ MAINMEM3	LD C,LOW (WIN_A0)
 		AND (HL)
 		LD A,E
 		JR Z,MAINMEM4
-		OR 0XC0
+		OR 0xC0
 MAINMEM4	LD E,A
 		LD A,(HL)
-		OR 0X3F
+		OR 0x3F
 		LD B,A
-		LD A,0X40
+		LD A,0x40
 		OUT (C),A
 		RES 3,B
 		INC HL
 		OUT (C),E
 INT_ONLY_RET	RET
 
-;[КОНВЕРСИЯ СЧИТАННЫХ ЗНАЧЕНИЙ ИЗ ПОРТОВ КОНФИГУРАЦИИ]
-;HL=АДРЕС ОТКУДА БРАТЬ СЧИТАННЫЕ ЗНАЧЕНИЯ ДЛЯ КОНВЕРСИИ
-;DE=БИТЫ 7,6 ДЛЯ ДЕКОДИРОВАНИЯ
-;BC=КУДА СКЛАДЫВАТЬ ДЕКОДИРОВАННОЕ
-;A=СЧИТАННОЕ ЗНАЧЕНИЕ ДЛЯ КОНВЕРСИИ ДЛЯ ПОРТА XX77
+; конверсия считанных значений из портов конфигурации
+; HL = адрес откуда брать считанные значения для конверсии
+; DE = биты 7,6 для декодирования
+; BC = куда складывать декодированное
+;  A = считанное значение для конверсии для порта xx77
 CONVERT_BPORT	LD A,(HL)
 		PUSH AF
 		INC HL
@@ -613,28 +629,28 @@ CONVERT_BPORT	LD A,(HL)
 		INC HL
 		LD D,(HL)
 		LD BC,8
-		LD A,C				;КОНВЕРТИТЬ 8 БАЙТ
+		LD A,C				; конвертить 8 байт
 		ADD HL,BC
 		LD BC,B0_CPU0
-		LD IYL,HIGH (WIN_A3)&0XF8
+		LD IYL,HIGH (WIN_A3)&0xF8
 CBPORT03	EX AF,AF'
 		LD A,(HL)
-		CP 0XC0
+		CP 0xC0
 		JR NC,CBPORT01
-;ЕСЛИ ЧИСЛО МЕНЕЕ, ТО ВОССТАНАВЛИВАТЬ В ПОРТЫ X7F7
-		LD (BC),A			;НОМЕР СТРАНИЦЫ ДЛЯ ЗАПИСИ В ПОРТ ПРИ ВОССТАНОВЛЕНИИ
+; если число менее, то восстанавливать в порты x7F7
+		LD (BC),A			; номер страницы для записи в порт при восстановлении
 		INC BC
 		LD A,IYL
-		ADD A,0X40
+		ADD A,0x40
 		LD IYL,A
-		AND 0XF0
+		AND 0xF0
 		SRL E
 		SRL D
-		LD (BC),A			;СТАРШИЙ БАЙТ АДРЕСА ПОРТА
+		LD (BC),A			; старший байт адреса порта
 		INC BC
 		JR CBPORT02
 
-;ЕСЛИ ЧИСЛО БОЛЬШЕ, ТО ВОССТАНАВЛИВАТЬ В ПОРТЫ XFF7
+; если число больше, то восстанавливать в порты xFF7
 CBPORT01	LD A,(HL)
 		RLCA
 		RLCA
@@ -642,42 +658,42 @@ CBPORT01	LD A,(HL)
 		RRA
 		SRL E
 		RRA
-		LD (BC),A			;НОМЕР СТРАНИЦЫ ДЛЯ ЗАПИСИ В ПОРТ ПРИ ВОССТАНОВЛЕНИИ
+		LD (BC),A			; номер страницы для записи в порт при восстановлении
 		INC BC
 		LD A,IYL
-		ADD A,0X40
+		ADD A,0x40
 		LD IYL,A
-		LD (BC),A			;СТАРШИЙ БАЙТ АДРЕСА ПОРТА
+		LD (BC),A			; старший байт адреса порта
 		INC BC
 CBPORT02	DEC HL
 		EX AF,AF'
 		DEC A
 		JR NZ,CBPORT03
 		POP HL
-		LD L,0XBC
+		LD L,0xBC
 		LD A,H
-		AND 0X0F
-		OR 0XA0
-		LD (BC),A			;БАЙТ ДЛЯ ЗАПИСИ В ПОРТ ПРИ ВОССТАНОВЛЕНИИ
+		AND 0x0F
+		OR 0xA0
+		LD (BC),A			; байт для записи в порт при восстановлении
 		INC BC
 		LD A,H
-		AND 0X80
+		AND 0x80
 		RRCA
 		OR L
 		LD L,A
 		LD A,H
-		AND 0X60
+		AND 0x60
 		RLCA
 		RLCA
 		RLCA
 		OR L
-		LD (BC),A			;СТАРШИЙ БАЙТ АДРЕСА ПОРТА
+		LD (BC),A			; старший байт адреса порта
 		RET
 
 READ_KEYS
 		RET
 
-;ДРАЙВЕРА
+; драйвера
 		include fat/mounter.a80
 		include fat/dev_drv.a80
 		include fat/ngs_sd_drv.a80
@@ -686,11 +702,10 @@ READ_KEYS
 		include fat/read_fat.a80
 		include fat/usb_drv.a80
 
-;[STORE_AY]
 STORE_AY	LD HL,AY_REGS
-		LD DE,0XFFC0
-		LD C,0XFD
-		LD A,0X0D
+		LD DE,0xFFC0
+		LD C,0xFD
+		LD A,0x0D
 STORE_AY1	LD B,D
 		OUT (C),A
 		LD B,E
@@ -699,7 +714,7 @@ STORE_AY1	LD B,D
 		JP P,STORE_AY1
 		DEC E
 		LD H,0
-		LD A,0X0D
+		LD A,0x0D
 STORE_AY2	LD B,D
 		OUT (C),A
 		LD B,E
@@ -708,11 +723,10 @@ STORE_AY2	LD B,D
 		JP P,STORE_AY2
 		RET
 
-;[RESTORE_AY]
 RESTORE_AY	LD HL,AY_REGS
-		LD DE,0XFFC0
-		LD C,0XFD
-		LD A,0X0D
+		LD DE,0xFFC0
+		LD C,0xFD
+		LD A,0x0D
 RESTORE_AY1	LD B,D
 		OUT (C),A
 		LD B,E
@@ -721,51 +735,52 @@ RESTORE_AY1	LD B,D
 		JP P,RESTORE_AY1
 		RET
 
-SYMS4SORT	DB ".!#$%&'()-0123456789@ABCDEFGHIJKLMNOPQRSTUVWXYZ^_`{}~",0X7F
+SYMS4SORT	DB ".!#$%&'()-0123456789@ABCDEFGHIJKLMNOPQRSTUVWXYZ^_`{}~",0x7F
 		DB "АБВГДЕЖЗИЙКЛМНОПРСТУФХЦЧШЩЪЫЬЭЮЯЁ",0
 
 X_OFFSET	EQU 63
 Y_OFFSET	EQU 2
-TEXT_PORTREGS	DB 0X17,MAGIC_COLOR
-		DB 0X16,Y_OFFSET+0X01,X_OFFSET+0,"SP=      PC="
-		DB 0X16,Y_OFFSET+0X02,X_OFFSET+0,"IR="
-		DB 0X16,Y_OFFSET+0X03,X_OFFSET+0,"AF=     AF'="
-		DB 0X16,Y_OFFSET+0X04,X_OFFSET+0,"BC=     BC'="
-		DB 0X16,Y_OFFSET+0X05,X_OFFSET+0,"DE=     DE'="
-		DB 0X16,Y_OFFSET+0X06,X_OFFSET+0,"HL=     HL'="
-		DB 0X16,Y_OFFSET+0X07,X_OFFSET+0,"IX=      IY="
-		DB 0X16,Y_OFFSET+0X08,X_OFFSET+0," INT      IM"
-		DB 0X16,Y_OFFSET+0X0A,X_OFFSET+0,"  MAP  0 1"
-		DB 0X16,Y_OFFSET+0X0B,X_OFFSET+0,"CPU3="
-		DB 0X16,Y_OFFSET+0X0C,X_OFFSET+0,"CPU2="
-		DB 0X16,Y_OFFSET+0X0D,X_OFFSET+0,"CPU1="
-		DB 0X16,Y_OFFSET+0X0E,X_OFFSET+0,"CPU0="
-		DB 0X16,Y_OFFSET+0X10,X_OFFSET+0,"7FFD="
-		DB 0X16,Y_OFFSET+0X11,X_OFFSET+0,"EFF7="
-		DB 0X16,Y_OFFSET+0X12,X_OFFSET+2,"77="
-		DB 0X16,Y_OFFSET+0X13,X_OFFSET+2,"BF="
-		DB 0X16,Y_OFFSET+0X15,X_OFFSET+0,"DOS ENABLE= "
-		DB 0X16,1,0X10,0X17,0X32," EVO Magic Service beta ",0
+TEXT_PORTREGS	DB 0x17,MAGIC_COLOR
+		DB 0x16,Y_OFFSET+0x01,X_OFFSET+0,"SP:      PC:"
+		DB 0x16,Y_OFFSET+0x02,X_OFFSET+0,"IR:"
+		DB 0x16,Y_OFFSET+0x03,X_OFFSET+0,"AF:     AF':"
+		DB 0x16,Y_OFFSET+0x04,X_OFFSET+0,"BC:     BC':"
+		DB 0x16,Y_OFFSET+0x05,X_OFFSET+0,"DE:     DE':"
+		DB 0x16,Y_OFFSET+0x06,X_OFFSET+0,"HL:     HL':"
+		DB 0x16,Y_OFFSET+0x07,X_OFFSET+0,"IX:      IY:"
+		DB 0x16,Y_OFFSET+0x08,X_OFFSET+0," INT      IM"
+		DB 0x16,Y_OFFSET+0x0A,X_OFFSET+0,"  MAP  0 1"
+		DB 0x16,Y_OFFSET+0x0B,X_OFFSET+0,"CPU3:"
+		DB 0x16,Y_OFFSET+0x0C,X_OFFSET+0,"CPU2:"
+		DB 0x16,Y_OFFSET+0x0D,X_OFFSET+0,"CPU1:"
+		DB 0x16,Y_OFFSET+0x0E,X_OFFSET+0,"CPU0:"
+		DB 0x16,Y_OFFSET+0x10,X_OFFSET+0,"7FFD:   FF:"
+		DB 0x16,Y_OFFSET+0x11,X_OFFSET+0,"EFF7:   7F:"
+		DB 0x16,Y_OFFSET+0x12,X_OFFSET+0,"  77:   5F:"
+		DB 0x16,Y_OFFSET+0x13,X_OFFSET+0,"  BF:   3F:"
+		DB 0x16,Y_OFFSET+0x14,X_OFFSET+0," DOS:   1F:"
+		DB 0x16,Y_OFFSET+0x15,X_OFFSET+0,"BREAK:"
+		DB 0x16,1,0x10,0x17,0x32," EVO Magic Service beta ",0
 
-TXT_VERIFY_FONT	DB 0X16,0X18,0,0X17,0X22,"  VERIFY READING FONT ",0
+TXT_VERIFY_FONT	DB 0x16,0x18,0,0x17,0x22,"  VERIFY READING FONT ",0
 TXT_VERIFY_OK	DB " OK    ",0
 TXT_VERIFY_ERR	DB "ERROR  ",0
 
-;[ПРОВЕРКА СЧИТАННОГО ФОНТА]
+; проверка считанного фонта
 	IF _CMP_FONT=1
 CMP_FONT	LD H,CMOS_BYTE_00
-		ROMCALL READCMOS,ROM_RST82
+	ROMCALL READCMOS,ROM_RST82
 		AND M_TYPE_FONT
 		LD HL,CP866_FONT
 		JR NZ,CMPFONT1
 		LD HL,ATM_FONT
 CMPFONT1	LD DE,CPU1+OFFSET_BUFSYM
 		PUSH DE
-		ROMCALL UNPACK,ROM_RST80
+	ROMCALL UNPACK,ROM_RST80
 		POP DE
 		INC D
-		LD BC,0X700
-		LD HL,CPU1+OFFSET_FNTSAVE+0X100
+		LD BC,0x700
+		LD HL,CPU1+OFFSET_FNTSAVE+0x100
 CMPFONT2	LD A,(DE)
 		INC DE
 		CP (HL)
@@ -777,7 +792,6 @@ CMPFONT2	LD A,(DE)
 		RET
 	ENDIF
 
-;[CMP_SCRMODE]
 CMP_SCRMODE	LD HL,FLAGS
 		RES B_VIDEO_MODE,(HL)
 		AND 7
@@ -786,27 +800,26 @@ CMP_SCRMODE	LD HL,FLAGS
 		SET B_VIDEO_MODE,(HL)
 		RET
 
-;[SD_CARD_LOST]
 SD_CARD_LOST	LD HL,FLAGS_DRV
 		LD A,B_NEW_SD
 		OR (HL)
 		LD (HL),A
-		PEC_ON M_SHADOW_BF
+	PEC_ON M_SHADOW_BF
 		CALL MAIN_MEM13
 		LD IX,SDCARD_LOST
-		ROMCALL IWINW,ROM_RST82
+	ROMCALL IWINW,ROM_RST82
 		JR $
 
 		include math.a80
 		include sortfiles.a80
 
-FREE_MAIN	EQU 0X3FF6-$
+FREE_MAIN	EQU 0x3FF6-$
 
-		DUPL FREE_MAIN,0XFF
-		DW FREE_MAIN			;РАЗМЕР СВОБОДНОГО МЕСТА
+		DUPL FREE_MAIN,0xFF
+		DW FREE_MAIN			; размер свободного места
 		DB "RST_08"
 		DW DATA_VERS
-		DEPHASE
+	DEPHASE
 
 		include addons.a80
 		include addon1.a80
