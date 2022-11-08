@@ -95,7 +95,7 @@ module video_palframe(
 
 	assign up_color = (hpix&vpix) ? {up_palsel,~up_pixel,up_pixel?up_ink:up_paper} : {3'd0,border[2:0]};
 
-	assign palette_color = up_ena ? {/*3'b100*/2'b10,up_color} : {/*5'd0*/4'd0,zxcolor};
+	assign palette_color = (up_ena&(modes_raster == 2'b11/*128K raster*/)) ? {/*3'b100*/2'b10,up_color} : {/*5'd0*/4'd0,zxcolor};
 
 
 	// palette
