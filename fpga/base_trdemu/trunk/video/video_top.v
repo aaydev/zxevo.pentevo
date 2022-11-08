@@ -393,6 +393,8 @@ module video_top(
 		.up_paldata(up_paldata),
 		.up_palwr  (up_palwr  ),
 
+		.modes_raster     (modes_raster     ),
+
 		.color(color),
 
 		.palcolor(palcolor) // palette readback

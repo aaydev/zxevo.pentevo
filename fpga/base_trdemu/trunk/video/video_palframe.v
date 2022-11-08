@@ -60,12 +60,17 @@ module video_palframe(
 
 	input  wire        pal444_ena,
 
-
+	input  wire [ 1:0] modes_raster, // 2'b00 - pentagon raster (71680 clocks)
+	                                 // 2'b01 - 60Hz raster
+	                                 // 2'b10 - 48k raster (69888 clocks)
+	                                 // 2'b11 - 128k raster (70908 clocks)
+	 
 
 	output wire [ 5:0] palcolor, // just for palette readback
 
 	output wire [ 5:0] color
 );
+
 	reg [11/*7*/:0] palette_read;	
 
 	wire [ 3:0] zxcolor;
@@ -101,7 +106,7 @@ module video_palframe(
 		if( atm_palwr || up_palwr )
 		begin : palette_write
 			reg [8:0] pal_addr;
-			pal_addr = atm_palwr ? { 5'd0, zxcolor } : { 3'b100, up_paladdr };
+			pal_addr = atm_palwr ? { 4'd0, zxcolor } : { 2'b10, up_paladdr };
 
 			palette[pal_addr] <= atm_palwr ?
 
@@ -113,7 +118,7 @@ module video_palframe(
 
 			                     }
 
-			                   : up_paldata;
+			                   : {up_paldata[7:5],up_paldata[5],up_paldata[4:2],up_paldata[2],up_paldata[1:0],up_paldata[0],up_paldata[0]};
 		end
 
 		palette_read <= palette[palette_color];
@@ -152,7 +157,7 @@ module video_palframe(
 
 	always @(posedge clk) if( vsync_start )
 
-		phase <= phase+2'b01;
+		if (modes_raster == 2'b10/*48K raster*/) phase <= phase+2'b01;
 
 
 	//wire plus1 = ctr_14[1] ^ ctr_h ^ ctr_v;
