@@ -1,5 +1,5 @@
 
-; LAST UPDATE: 04.10.2022 savelij
+; LAST UPDATE: 09.11.2022 savelij
 
 		include ../../macros.a80
 		include ../../define.a80
@@ -218,9 +218,7 @@ RSTKEYS2	LD H,CMOS_BYTE_00
 		LD A,0xFF
 		OUT (C),A
 ; для резидента HONEY COMANDER
-	IFDEF REZIDENT
 		CALL CMP_REZIDENT		; проверка резидента
-	ENDIF
 		LD BC,0xFEFF
 RSTKEYS1	LD A,B
 		IN A,(0xFE)
@@ -387,7 +385,6 @@ RES_REZIDENT	PUSH AF
 		RET
 
 ; для резидента HONEY COMANDER
-	IFDEF REZIDENT
 CMP_REZIDENT	LD H,CMOS_BYTE_01
 		CALL READCMOS
 		AND M_REZIDENT
@@ -425,7 +422,6 @@ CMP_REZIDENT	LD H,CMOS_BYTE_01
 		LD A,0xFF
 		OUT (C),A
 		RET
-	ENDIF
 
 BONUADR		binclude ../../mainmenu/cmosset_pack.rom
 

@@ -1,5 +1,5 @@
 
-; LAST UPDATE: 22.10.2022 savelij
+; LAST UPDATE: 13.11.2022 savelij
 
 PAGE	
 	TITLE "rst8service.a80 ROM_RST83"
@@ -357,7 +357,8 @@ CONTMAGIC2	XOR A
 	ROMCALL RESTORE_TXTMODE,ROM_RST82	; восстановление текстмодного экрана
 	ROMCALL RESTORE_FONT,ROM_RST82		; восстановление шрифта
 	ROMCALL RESTORE_PAL,ROM_RST82		; восстановление палитры
-CONTMAGIC3	CALL RESTORE_AY			; восстановление рагистров AY
+CONTMAGIC3
+;		CALL RESTORE_AY			; восстановление рагистров AY
 		LD BC,EXITNMISERVICE
 		PUSH BC
 		LD BC,WIN_P0
@@ -702,38 +703,53 @@ READ_KEYS
 		include fat/read_fat.a80
 		include fat/usb_drv.a80
 
-STORE_AY	LD HL,AY_REGS
-		LD DE,0xFFC0
-		LD C,0xFD
-		LD A,0x0D
-STORE_AY1	LD B,D
+STORE_AY	LD BC,0xFFFD
+		LD A,0xFE
 		OUT (C),A
-		LD B,E
-		INI
-		DEC A
-		JP P,STORE_AY1
-		DEC E
+;		LD HL,AY_REGS2
+		CALL .L1
+		LD BC,0xFFFD
+		LD A,0xFF
+		OUT (C),A
+;		LD HL,AY_REGS1
+.L1		LD DE,0xFFBF;C0
+;		LD A,0x0D
+;.L2		LD B,D
+;		OUT (C),A
+;		LD B,E
+;		INI
+;		DEC A
+;		JP P,.L2
+;		DEC E
 		LD H,0
 		LD A,0x0D
-STORE_AY2	LD B,D
+.L3		LD B,D
 		OUT (C),A
 		LD B,E
 		OUT (C),H
 		DEC A
-		JP P,STORE_AY2
+		JP P,.L3
 		RET
 
-RESTORE_AY	LD HL,AY_REGS
-		LD DE,0xFFC0
-		LD C,0xFD
-		LD A,0x0D
-RESTORE_AY1	LD B,D
-		OUT (C),A
-		LD B,E
-		OUTI
-		DEC A
-		JP P,RESTORE_AY1
-		RET
+;RESTORE_AY	LD BC,0xFFFD
+;		LD A,0xFE
+;		OUT (C),A
+;		LD HL,AY_REGS2
+;		CALL .L1
+;		LD BC,0xFFFD
+;		LD A,0xFF
+;		OUT (C),A
+;		LD HL,AY_REGS1
+;.L1		LD DE,0xFFC0
+;		LD C,0xFD
+;		LD A,0x0D
+;.L2		LD B,D
+;		OUT (C),A
+;		LD B,E
+;		OUTI
+;		DEC A
+;		JP P,.L2
+;		RET
 
 SYMS4SORT	DB ".!#$%&'()-0123456789@ABCDEFGHIJKLMNOPQRSTUVWXYZ^_`{}~",0x7F
 		DB "АБВГДЕЖЗИЙКЛМНОПРСТУФХЦЧШЩЪЫЬЭЮЯЁ",0

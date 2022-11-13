@@ -1,5 +1,5 @@
 
-;LAST UPDATE: 30.06.2019 savelij
+; LAST UPDATE: 09.11.2022 savelij
 
 ITSELECTOR	LD HL,FLAGS
 		RES B_MOUSE_PRESENT,(HL)	;ˆ“„ˆ’…‹œŽ… Ž’Š‹ž—…ˆ… Œ›˜ˆ „‹Ÿ ’…Š‘’ŒŽ„€
@@ -655,7 +655,6 @@ SETMEMORY1	LD C,A
 		CALL IWRITECMOS
 		JR SETANDPRINT
 
-	IFDEF REZIDENT
 ;‚Š‹ž—…ˆ…/‚›Š‹ž—…ˆ… …‡ˆ„…’€ HONEY COMANDER
 SET_REZIDENT	DI
 		LD H,CMOS_BYTE_01
@@ -672,7 +671,6 @@ KILL_REZID	DI
 		LD L,A
 		CALL IWRITECMOS
 		JR SETANDPRINT
-	ENDIF;REZIDENT
 
 ;ˆ‡Œ……ˆ… ’…Š‘’€ ‚ Œ…ž
 SETUP4SEL	DI
@@ -724,7 +722,6 @@ SETUP4SEL1	ADD A,A
 		LD (HL),2
 		POP DE
 ;„‹Ÿ …‡ˆ„…’€ HONEY COMANDER
-	IFDEF REZIDENT
 		LD A,E
 		AND M_REZIDENT
 		LD HL,TXT_ONOFF
@@ -748,7 +745,6 @@ SETUP4SEL1	ADD A,A
 		LDI
 		EX DE,HL
 		LD (HL),2
-	ENDIF;REZIDENT
 		RET
 
 ;Ž†ˆ„€ˆ… €†€’ˆŸ ˆ Ž’“‘Š€ˆŸ ‹žŽ‰ Š‹€‚ˆ˜ˆ

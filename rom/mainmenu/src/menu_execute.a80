@@ -1,5 +1,5 @@
 
-; LAST UPDATE: 05.10.2022 savelij
+; LAST UPDATE: 09.11.2022 savelij
 
 		TITLE "menu_execute.a80"
 
@@ -431,7 +431,6 @@ AUTO_TAPE	LD C,M_AUTO_TAPE
 		JR SET_MENU1
 
 ; для резидента HONEY COMANDER
-	IFDEF REZIDENT
 ; включение/выключение резидента
 REZID_SETUP	LD C,M_REZIDENT
 		LD HL,TXT_REZIDENT
@@ -443,7 +442,6 @@ KILL_REZID	LD C,M_KILL_REZIDENT
 		PUSH HL
 		LD H,CMOS_BYTE_03
 		JR SET_MENU1
-	ENDIF;REZIDENT
 
 ; установка перед выводом меню SETUP
 SETUPM		LD IX,SETUPER

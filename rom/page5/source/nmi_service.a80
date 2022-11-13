@@ -1,5 +1,5 @@
 
-; LAST UPDATE: 24.10.2022 savelij
+; LAST UPDATE: 13.11.2022 savelij
 
 ; последовательность для RST 8
 ; старый стек	HL AF BC RF ADR_RET DE	->
@@ -169,10 +169,10 @@ VARS_TXT_DEC	DB "281474976710655\0"		; число до 48 бит
 		DUPL HIGH ($) * 0x100 + 0xFF - $,0xFF
 		DW IM_EI_RET
 
-		DUPL HIGH ($)*0x100+0x80-$,0xFF
+		DUPL HIGH ($) * 0x100 + 0x80 - $,0xFF
 STACK_RST
 
-		DUPL (HIGH ($)+1)*0x100-$,0xFF
+		DUPL (HIGH ($) + 1) * 0x100 - $,0xFF
 STACK_NMI
 
 		JP NMI_EXIT_DBG
@@ -194,7 +194,6 @@ RAMSEL1
 		PUSH AF				; AF'
 		LD A,I
 		PUSH AF				; IF
-
 ; восстанавливаем память под переходом на обработчик NMI
 		LD HL,ADR_MAGIC
 		LD DE,TMP_ADR_0068 - CPU2
@@ -202,8 +201,6 @@ RAMSEL1
 		LDI
 		LDI
 
-		LD HL,OUT_NMI
-		LD (ADR_NMI_JUMP),HL
 		LD A,0xC9
 		LD (FOR_RET),A
 		XOR A
@@ -226,7 +223,7 @@ RAMSEL1
 		LD SP,STACK_RST
 		LD A,(R_77-CPU6)
 		AND 7
-		OR 0xA0;8			; выключение турбо 14 мгц
+		OR 0xA0				; выключение турбо 14 мгц
 		LD BC,0xFF77
 		OUT (C),A
 	PEC_OFF M_SHADOW_BF
@@ -275,10 +272,10 @@ P4_EXIT_RST8
 		LD A,(R_7FFD-CPU6)
 		AND 0x10
 		LD HL,B0_CPU1-CPU2
-		JR Z,RENS11
+		JR Z,.L11
 		LD HL,B1_CPU1-CPU2
-RENS11		LD A,3
-RENS12		EX AF,AF'
+.L11		LD A,3
+.L12		EX AF,AF'
 		LD E,(HL)			; байт для записи в порт
 		INC HL
 		LD D,(HL)			; старший байт адреса порта
@@ -289,7 +286,7 @@ RENS12		EX AF,AF'
 		OUT (C),E
 		EX AF,AF'
 		DEC A
-		JR NZ,RENS12
+		JR NZ,.L12
 	IFDEF DOS_FE
 		LD BC,FDD_EMU_PORT
 		LD A,(B_PORT_VIRT & 0x3FFF)
@@ -323,9 +320,9 @@ RENS12		EX AF,AF'
 		LD A,(R_7FFD-CPU6)
 		AND 0x10
 		LD DE,(B0_CPU0-CPU6)
-		JR Z,RENS13
+		JR Z,.L13
 		LD DE,(B1_CPU0-CPU6)
-RENS13		LD A,D
+.L13		LD A,D
 		OR 7
 		LD B,A
 		LD A,E				; страница ROM куда возвращаться
@@ -371,7 +368,7 @@ NMI_SERVICE	LD (NMI_SAVE_SP-CPU6),SP	; сохранение стека
 		LD HL,(NREG_F-CPU6)
 		AND A
 		SBC HL,DE
-		JR NZ,NMISERV005
+		JR NZ,.L005
 		LD HL,(NMI_SAVE_SP-CPU6)
 		INC HL
 		INC HL
@@ -379,7 +376,7 @@ NMI_SERVICE	LD (NMI_SAVE_SP-CPU6),SP	; сохранение стека
 		LD E,(HL)
 		INC HL
 		LD D,(HL)
-NMISERV005	PUSH DE
+.L005		PUSH DE
 		LD SP,STACK_NMI
 		LD HL,OUT_NMI
 		LD (ADR_NMI_JUMP),HL
@@ -390,21 +387,20 @@ NMISERV005	PUSH DE
 		LD (HL),A
 		INC HL
 		LD BC,RD_77
-NMISERV002
 		INIR
 		INI
 		LD BC,FDD_EMU_PORT
 		IN A,(C)
 		LD (B_PORT_VIRT & 0x3FFF),A
 		XOR A
-		OUT (C),A
+		OUT (C),A			; обнуляем биты эмуляции ВГ
 		LD B,1				; прерывания разрешены
 		LD A,R
-		JP PE,NMISERV001
+		JP PE,.L001
 		LD A,R
-		JP PE,NMISERV001
+		JP PE,.L001
 		DEC B				; прерывания запрещены
-NMISERV001	XOR A
+.L001		XOR A
 		LD I,A				; обработчик прерывания переставилии для адреса 00FF
 		CALL GET_NUM_IM
 	PEC_OFF M_SHADOW_BF
@@ -417,7 +413,6 @@ NMISERV001	XOR A
 		AND %11110111
 		LD BC,0xFF77
 		OUT (C),A			; установка 7.0Mhz для NMI сервиса
-
 		PUSH DE
 		LD BC,WIN_P6
 		XOR A
@@ -449,9 +444,6 @@ IN_DEBUG	XOR A
 		CPL
 		AND 0x1F
 		JR NZ,IN_DEBUG
-		LD B,HIGH (WIN_P0)
-		LD A,RAM_STS
-		OUT (C),A
 		LD HL,DEBUGGER
 		PUSH HL
 		JP OUT_NMI
@@ -465,7 +457,6 @@ EXITNMISERVICE	LD HL,ADR_MAGIC
 		AND M_NMI_BF!0xFF
 		OUT (PEVO_CONF),A
 		HALT				; ждем срабатывания MAGIC 
-FALSE_NMI
 ; восстанавливаем память под переходом на обработчик NMI
 		LD HL,TMP_ADR_0068 - CPU2
 		LD DE,ADR_MAGIC
@@ -477,10 +468,10 @@ FALSE_NMI
 		LD A,(N_7FFD-CPU6)
 		AND 0x10
 		LD HL,B0_CPU0-CPU6
-		JR Z,ENS11
+		JR Z,.L11
 		LD HL,B1_CPU0-CPU6
-ENS11		LD A,4
-ENS12		EX AF,AF'
+.L11		LD A,4
+.L12		EX AF,AF'
 		LD E,(HL)			; байт для записи в порт
 		INC HL
 		LD D,(HL)			; старший байт адреса порта
@@ -489,17 +480,17 @@ ENS12		EX AF,AF'
 		OR 0x3F
 		LD B,A
 		BIT 3,D
-		JR NZ,ENS15
+		JR NZ,.L15
 		LD A,D
 		AND 3
 		RRCA
 		RRCA
 		OUT (C),A
 		RES 3,B
-ENS15		OUT (C),E
+.L15		OUT (C),E
 		EX AF,AF'
 		DEC A
-		JR NZ,ENS12
+		JR NZ,.L12
 	IFDEF DOS_FE
 		LD BC,FDD_EMU_PORT
 		LD A,(B_PORT_VIRT & 0x3FFF)
@@ -542,9 +533,9 @@ ENS15		OUT (C),E
 		POP BC
 		POP DE
 		POP AF
-		JP PO,ENMISERV1
+		JP PO,.L1
 		EI
-ENMISERV1	LD A,0x80+3-REG_R_CORRECT
+.L1		LD A,0x80+3-REG_R_CORRECT
 		LD HL,NREG_R-CPU6
 		SLA (HL)
 		RLA
@@ -565,11 +556,11 @@ LDIR__BYTES	LD HL,CPU6
 		LD A,(R_7FFD-CPU6)
 		AND 0x10
 		LD HL,B0_CPU1-CPU2
-		JR Z,LDIR_BYTES5
+		JR Z,.L5
 		LD HL,B1_CPU1-CPU2
-LDIR_BYTES5	LD C,LOW (WIN_A0)
+.L5		LD C,LOW (WIN_A0)
 		LD A,3
-LDIR_BYTES3	EX AF,AF'
+.L3		EX AF,AF'
 		LD E,(HL)			; байт для записи в порт
 		INC HL
 		LD D,(HL)			; старший байт адреса порта
@@ -578,17 +569,17 @@ LDIR_BYTES3	EX AF,AF'
 		OR 0x3F
 		LD B,A
 		BIT 3,D
-		JR NZ,LDIR_BYTES4
+		JR NZ,.L4
 		LD A,D
 		AND 3
 		RRCA
 		RRCA
 		OUT (C),A
 		RES 3,B
-LDIR_BYTES4	OUT (C),E
+.L4		OUT (C),E
 		EX AF,AF'
 		DEC A
-		JR NZ,LDIR_BYTES3
+		JR NZ,.L3
 		EXX
 		LDIR
 		LD BC,WIN_P6
@@ -625,7 +616,7 @@ GET_NUM_IM	PUSH HL
 		POP HL
 		RET
 
-		PHASE $+CPU6
+		PHASE $ + CPU6
 ; вызов подпрограмм из других страниц ROM
 CALL2PAGE	EX (SP),HL
 		PUSH BC
@@ -641,9 +632,9 @@ CALL2PAGE	EX (SP),HL
 		IN A,(C)
 		AND 0x10
 		LD BC,RD_0WINA0
-		JR Z,CALL2PAGE1
+		JR Z,.L2
 		LD BC,RD_1WINA0
-CALL2PAGE1	IN A,(C)
+.L2		IN A,(C)
 		AND 0x3F
 		LD BC,STEK_PAGES
 TEKPAGE		EQU $-2
@@ -680,7 +671,7 @@ CALL2RAMPAGE	EX (SP),HL
 
 ; вход в отладчик
 DEBUGGER	DI
-		LD HL,CPU6+DEBUG_ONOFF
+		LD HL,CPU6 + DEBUG_ONOFF
 		BIT B_DBG_ACTIV,(HL)
 		JR Z,DEBUGGER1
 ; принудительный вход в отладчик с возвратом в основное меню NMI
@@ -731,7 +722,7 @@ DBG2MAINMENU	LD HL,CPU6+DEBUG_ONOFF
 ; палитра, фонт, видеорежим
 NMI_EXIT_DBG
 	EVOPORT WIN_A0,ROM_RST82
-	ROMCALL RESTORE_AY,ROM_RST83		; восстановление рагистров AY
+;	ROMCALL RESTORE_AY,ROM_RST83		; восстановление регистров AY
 		LD HL,ADR_MAGIC
 		LD (HL),0xC9			; заглушка на MAGIC
 		IN A,(PEVO_CONF)
@@ -746,10 +737,10 @@ NMI_EXIT_DBG
 		LD A,(N_7FFD-CPU6)
 		AND 0x10
 		LD HL,B0_CPU0-CPU6
-		JR Z,ENSDBG11
+		JR Z,.L11
 		LD HL,B1_CPU0-CPU6
-ENSDBG11	LD A,4
-ENSDBG12	EX AF,AF'
+.L11		LD A,4
+.L12		EX AF,AF'
 		LD E,(HL)			; байт для записи в порт
 		INC HL
 		LD D,(HL)			; старший байт адреса порта
@@ -758,17 +749,17 @@ ENSDBG12	EX AF,AF'
 		OR 0x3F
 		LD B,A
 		BIT 3,D
-		JR NZ,ENSDBG15
+		JR NZ,.L15
 		LD A,D
 		AND 3
 		RRCA
 		RRCA
 		OUT (C),A
 		RES 3,B
-ENSDBG15	OUT (C),E
+.L15		OUT (C),E
 		EX AF,AF'
 		DEC A
-		JR NZ,ENSDBG12
+		JR NZ,.L12
 	PEC_OFF M_SHADOW_BF
 		LD BC,PENT_CONF
 		LD A,(N_EFF7-CPU6)
@@ -816,17 +807,6 @@ ENMIDBGSERV1	LD A,0x80+3-REG_R_CORRECT
 		LD SP,(NMI_SAVE_SP-CPU6)
 		OUT (0xBE),A
 		RETN
-
-SET_CPU3	PUSH BC
-		LD BC,WIN_A3
-		EX AF,AF'
-		LD A,0x40
-		OUT (C),A
-		EX AF,AF'
-		LD B,HIGH (WIN_P3)
-		OUT (C),A
-		POP BC
-		RET
 
 	IF 0
 TO_USBDRV	EX AF,AF'
@@ -963,16 +943,15 @@ NEXT4PAGE	DW 0xFFFF			; 2
 OSTAT_SECT	DW 0xFFFF			; 2
 NACH_SECT	DW 0xFFFF			; 2
 START_DATA	DW 0xFFFF			; 2
-AY_REGS		DUPL 0x0E,0xFF			; D
+;AY_REGS1	DUPL 0x0E,0xFF			; D
+;AY_REGS2	DUPL 0x0E,0xFF			; D
 TEKBUFTSC	DW 0xFFFF			; 2
 TEK_TEXT	DW 0xFFFF			; 2
 TURBO_MODE	DUPL 5,0xFF			; 5
 MEMORY_MODE	DUPL 4,0xFF			; 3
 ; для резидента HONEY COMANDER
-	IFDEF REZIDENT
 REZIDENT_MODE	DUPL 4,0xFF			; 4
 TXT_KILLREZID	DUPL 4,0xFF			; 4
-	ENDIF;REZIDENT
 BUFF_TIME	DB 0x16,0x00,0x48,0x17,CYAN<<3+BLUE+0xC0
 TXT_TIME	DB "00:00:00",0x16,0x01,0x48
 TXT_DATA	DB "00.00.00",0x17,0xFF,0

@@ -1,5 +1,5 @@
 
-; LAST UPDATE: 03.10.2022 savelij
+; LAST UPDATE: 09.11.2022 savelij
 
 ;Žˆ‘€’…‹œ ŽŠ€ (€„…‘ ‚ IX)
 ;+00 X ŠŽŽ„ˆ€’€
@@ -161,12 +161,10 @@ ACCSSDG_STAT	EQU $-2
 		DB "\r K.DRV AY printer:     off"
 ETXT_AYPRINTER	EQU $-2
 ;„‹Ÿ …‡ˆ„…’€ HONEY COMANDER 
-	IFDEF REZIDENT
 		DB "\r R.Resident Honey Cmd: off"
 TXT_REZIDENT	EQU $-2
 		DB "\r E.Kill rezident:      off"
 TXT_KILLREZID	EQU $-2
-	ENDIF;REZIDENT
 		DB "\r T.Autostart tape:     off"
 TXT_AUTOTAPE	EQU $-2
 		DB "\r H.Delay for HDD, secs  5"
@@ -175,20 +173,14 @@ TXT_HDDTIMEOUT	EQU $-1
 TXT_SCRSAVDELAY	EQU $-1
 		DZ "\r X.Exit"
 ;„‹Ÿ …‡ˆ„…’€ HONEY COMANDER
-	IFDEF REZIDENT
 SETUPERKEY	DB LOW (SETUPER1-$-1),"sgkrethlx"
-	ELSE
-SETUPERKEY	DB LOW (SETUPER1-$-1),"sgkthlx"
-	ENDIF;REZIDENT
 
 SETUPER1	DW SOUND_KEYS			;s
 		DW ACS_SDNGS			;g
 		DW AYPRN_SETUP			;k
 ;„‹Ÿ …‡ˆ„…’€ HONEY COMANDER
-	IFDEF REZIDENT
 		DW REZID_SETUP			;r
 		DW KILL_REZID			;e
-	ENDIF;REZIDENT
 		DW AUTO_TAPE			;t
 		DW HDDTIMEOUT			;h
 		DW SCRSAVTIMEOUT		;l

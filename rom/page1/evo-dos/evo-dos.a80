@@ -1,5 +1,5 @@
 
-; LAST UPDATE: 02.10.2022 savelij
+; LAST UPDATE: 09.11.2022 savelij
 
 PAGE
 		TITLE "evo-dos.a80"
@@ -23,14 +23,11 @@ ZASTV_ATR	EQU ZASTV_Y*0X20+0X5800+ZASTV_X		;€„…‘ ‚›‚Ž„€ –‚…’€ „‹Ÿ ‘ŠŽ˜…›• “ƒŽ
 		ld	de,0xffff
 
 ;„‹Ÿ …‡ˆ„…’€ HONEY COMANDER
-	IFNDEF REZIDENT
-		ld	a,7
-		jr	loc_9
-	ELSE;REZIDENT
+;		ld	a,7
+;		jr	loc_9
 		JP LOC_3C50
 
 		DB 1
-	ENDIF;REZIDENT
 
 		nop
 loc_9		out	(0xfe),a
@@ -5585,9 +5582,7 @@ CP_VARSTRDOS	CALL CMP_VARSTRDOS
 		include raznoe.a80
 		include patch.a80
 ;„‹Ÿ …‡ˆ„…’€ HONEY COMANDER
-	IFDEF REZIDENT
 		include hc_resident.a80
-	ENDIF;REZIDENT
 ;===============FREE SPACE 2============
 
 		TITLE "evo-dos.a80"
@@ -5612,14 +5607,12 @@ loc_3C09	jp	loc_3D03
 		RET
 
 ;„‹Ÿ …‡ˆ„…’€ HONEY COMANDER
-	IFDEF REZIDENT
 		DUPL 0X3C50-$,0XFF
 LOC_3C50	LD H,CMOS_BYTE_01
 		CALL READCMOS
 		AND M_REZIDENT
 		JP Z,LOC_3C4B
 		JP loc_3C50
-	ENDIF;REZIDENT
 
 	IF EMU
 		DUPL ADR_RST8END-$,0XFF
