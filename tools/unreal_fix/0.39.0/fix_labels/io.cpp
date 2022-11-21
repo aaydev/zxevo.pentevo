@@ -385,13 +385,14 @@ void out(unsigned port, unsigned char val)
 		  }
 		  if((comp.flags & CF_TRDOS)&&conf.trdos_IORam&&(bankr[0]==base_dos_rom)&&(p1 & 0x80)){
 		     comp.wd.out(p1, val);
-			 if((1<<comp.wd.drive)&comp.fddIO2Ram_mask){
+			 if( ( (1<<comp.wd.drive) & comp.fddIO2Ram_mask ) && ( ( cpu.pc & 0xc000 ) == 0 ) ){
 				trdos_in_nmi = comp.flags&CF_TRDOS;
 				cpu.nmi_in_progress=conf.trdos_IORam;
 				set_banks();
 			 }
-		  }else if((comp.flags & CF_TRDOS)&&conf.trdos_IORam
-				&&(1<<comp.wd.drive)&comp.fddIO2Ram_mask&&(bankr[0]==base_dos_rom)){
+		  }else if((comp.flags & CF_TRDOS) && ( ( cpu.pc & 0xc000 ) == 0 ) 
+			  && conf.trdos_IORam && (1<<comp.wd.drive)&comp.fddIO2Ram_mask && (bankr[0]==base_dos_rom))
+		  {
 		     trdos_in_nmi = comp.flags&CF_TRDOS;
 			 cpu.nmi_in_progress=conf.trdos_IORam;
 			 set_banks();
@@ -1028,15 +1029,19 @@ __inline unsigned char in1(unsigned port)
           // DF = 1101|1111b порт мыши
           // FF = 1111|1111b
       else if ((p1 & 0x9F) == 0x1F || p1 == 0xFF) {// 1F, 3F, 5F, 7F, FF
-		  if((comp.flags & CF_TRDOS)&&conf.trdos_IORam
-				&&((1<<comp.wd.drive)&comp.fddIO2Ram_mask)&&(bankr[0]==base_dos_rom)){
+		  if((comp.flags & CF_TRDOS) && conf.trdos_IORam && ( ( cpu.pc & 0xc000 ) == 0 )
+				&&((1<<comp.wd.drive)&comp.fddIO2Ram_mask)&&(bankr[0]==base_dos_rom))
+		  {
               comp.fddIO2Ram_wr_disable = true;
 		      cpu.nmi_in_progress=conf.trdos_IORam;
 			  trdos_in_nmi = comp.flags&CF_TRDOS;
 			  set_banks(); 
 			  return 0xff;
 		  }else{
-		      if(conf.trdos_IORam && (p1&0x80)) return (comp.wd.in(p1) & 0xE0) | comp.trdos_last_ff;
+		      if(conf.trdos_IORam && (p1&0x80))
+			  {  
+				return (comp.wd.in(p1) & 0xE0) | comp.trdos_last_ff;
+			  }
 			  return comp.wd.in(p1);
 		  }
 	  }
