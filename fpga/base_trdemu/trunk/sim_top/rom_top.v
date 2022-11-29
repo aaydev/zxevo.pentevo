@@ -7,17 +7,39 @@ module rom(
 );
 
 
-	wire [7:0] word;
+	reg [7:0] word;
 
-`ifdef SPITEST
-	spitest_rom spitest_rom( .in_addr(addr), .out_word(word) );
-`else
- `ifdef NMITEST
-	nmitest_rom nmitest_rom( .in_addr(addr), .out_word(word) );
- `else
-	bin2v zxevo_rom( .in_addr(addr), .out_word(word) );
- `endif
-`endif
+	integer fd;
+
+
+	reg [7:0] mem [0:511];
+
+
+
+	initial
+	begin
+		// init rom
+		integer i;
+		for(i=0;i<512;i=i+1)
+			mem[i] = 8'hFF;
+		
+		// load file
+		fd = $fopen("/tmp/testatmnoscr.rom","rb");
+
+		if( 512!=$fread(mem,fd) )
+		begin
+			$display("Couldn't load rom!\n");
+			$stop;
+		end
+
+		$fclose(fd);
+	end
+
+
+
+	always @*
+		word = mem[addr[8:0]];
+
 
 	always @*
 	begin
