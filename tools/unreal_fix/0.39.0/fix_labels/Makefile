@@ -77,12 +77,15 @@ EXE=x32/emul.exe
 
 
 
-.PHONY: all clean
+.PHONY: all clean nodeps
+
+nodeps: all
+
 all: $(EXE)
 
 -include $(NAMES:%=%.d)
 
-ifeq (,$(findstring $(MAKECMDGOALS),clean))
+ifeq (,$(findstring $(MAKECMDGOALS),clean nodeps))
 %.d: %.cpp 
 	$(CXX) -MM $(CXXFLAGS) $< | sed 's,\($*\)\.o[ :]*,\1.o $@ : ,g' > $@
 endif
