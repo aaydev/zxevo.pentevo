@@ -624,9 +624,6 @@ add wave -noupdate -group zmem /tb/DUT/z80mem/win
 add wave -noupdate -group zmem /tb/DUT/z80mem/page
 add wave -noupdate -group zmem /tb/DUT/z80mem/romnram
 add wave -noupdate -group zmem /tb/DUT/z80mem/wrdisable
-add wave -noupdate -group zmem /tb/DUT/z80mem/rd_buf
-add wave -noupdate -group zmem /tb/DUT/z80mem/cached_addr
-add wave -noupdate -group zmem /tb/DUT/z80mem/cached_addr_valid
 add wave -noupdate -group zmem /tb/DUT/z80mem/cache_hit
 add wave -noupdate -group zmem /tb/DUT/z80mem/dram_beg
 add wave -noupdate -group zmem /tb/DUT/z80mem/opfetch
@@ -984,9 +981,53 @@ add wave -noupdate -group tb /tb/is_iord
 add wave -noupdate -group tb /tb/is_iowr
 add wave -noupdate -group tb /tb/is_iack
 add wave -noupdate -group tb /tb/is_any
+add wave -noupdate -group pager0 {/tb/DUT/instantiate_atm_pagers[0]/atm_pager/rst_n}
+add wave -noupdate -group pager0 {/tb/DUT/instantiate_atm_pagers[0]/atm_pager/fclk}
+add wave -noupdate -group pager0 {/tb/DUT/instantiate_atm_pagers[0]/atm_pager/zpos}
+add wave -noupdate -group pager0 {/tb/DUT/instantiate_atm_pagers[0]/atm_pager/zneg}
+add wave -noupdate -group pager0 {/tb/DUT/instantiate_atm_pagers[0]/atm_pager/za}
+add wave -noupdate -group pager0 {/tb/DUT/instantiate_atm_pagers[0]/atm_pager/zd}
+add wave -noupdate -group pager0 {/tb/DUT/instantiate_atm_pagers[0]/atm_pager/mreq_n}
+add wave -noupdate -group pager0 {/tb/DUT/instantiate_atm_pagers[0]/atm_pager/rd_n}
+add wave -noupdate -group pager0 {/tb/DUT/instantiate_atm_pagers[0]/atm_pager/m1_n}
+add wave -noupdate -group pager0 {/tb/DUT/instantiate_atm_pagers[0]/atm_pager/pager_off}
+add wave -noupdate -group pager0 {/tb/DUT/instantiate_atm_pagers[0]/atm_pager/pent1m_ROM}
+add wave -noupdate -group pager0 {/tb/DUT/instantiate_atm_pagers[0]/atm_pager/pent1m_page}
+add wave -noupdate -group pager0 {/tb/DUT/instantiate_atm_pagers[0]/atm_pager/pent1m_ram0_0}
+add wave -noupdate -group pager0 {/tb/DUT/instantiate_atm_pagers[0]/atm_pager/pent1m_1m_on}
+add wave -noupdate -group pager0 {/tb/DUT/instantiate_atm_pagers[0]/atm_pager/in_nmi}
+add wave -noupdate -group pager0 {/tb/DUT/instantiate_atm_pagers[0]/atm_pager/in_trdemu}
+add wave -noupdate -group pager0 {/tb/DUT/instantiate_atm_pagers[0]/atm_pager/trdemu_wr_disable}
+add wave -noupdate -group pager0 {/tb/DUT/instantiate_atm_pagers[0]/atm_pager/atmF7_wr}
+add wave -noupdate -group pager0 {/tb/DUT/instantiate_atm_pagers[0]/atm_pager/dos}
+add wave -noupdate -group pager0 {/tb/DUT/instantiate_atm_pagers[0]/atm_pager/dos_turn_on}
+add wave -noupdate -group pager0 {/tb/DUT/instantiate_atm_pagers[0]/atm_pager/dos_turn_off}
+add wave -noupdate -group pager0 {/tb/DUT/instantiate_atm_pagers[0]/atm_pager/zclk_stall}
+add wave -noupdate -group pager0 {/tb/DUT/instantiate_atm_pagers[0]/atm_pager/page}
+add wave -noupdate -group pager0 {/tb/DUT/instantiate_atm_pagers[0]/atm_pager/romnram}
+add wave -noupdate -group pager0 {/tb/DUT/instantiate_atm_pagers[0]/atm_pager/wrdisable}
+add wave -noupdate -group pager0 {/tb/DUT/instantiate_atm_pagers[0]/atm_pager/rd_page0}
+add wave -noupdate -group pager0 {/tb/DUT/instantiate_atm_pagers[0]/atm_pager/rd_page1}
+add wave -noupdate -group pager0 {/tb/DUT/instantiate_atm_pagers[0]/atm_pager/rd_dos7ffd}
+add wave -noupdate -group pager0 {/tb/DUT/instantiate_atm_pagers[0]/atm_pager/rd_ramnrom}
+add wave -noupdate -group pager0 {/tb/DUT/instantiate_atm_pagers[0]/atm_pager/rd_wrdisables}
+add wave -noupdate -group pager0 {/tb/DUT/instantiate_atm_pagers[0]/atm_pager/ramnrom}
+add wave -noupdate -group pager0 {/tb/DUT/instantiate_atm_pagers[0]/atm_pager/dos_7ffd}
+add wave -noupdate -group pager0 {/tb/DUT/instantiate_atm_pagers[0]/atm_pager/wrdisables}
+add wave -noupdate -group pager0 {/tb/DUT/instantiate_atm_pagers[0]/atm_pager/mreq_n_reg}
+add wave -noupdate -group pager0 {/tb/DUT/instantiate_atm_pagers[0]/atm_pager/rd_n_reg}
+add wave -noupdate -group pager0 {/tb/DUT/instantiate_atm_pagers[0]/atm_pager/m1_n_reg}
+add wave -noupdate -group pager0 {/tb/DUT/instantiate_atm_pagers[0]/atm_pager/dos_exec_stb}
+add wave -noupdate -group pager0 {/tb/DUT/instantiate_atm_pagers[0]/atm_pager/ram_exec_stb}
+add wave -noupdate -group pager0 {/tb/DUT/instantiate_atm_pagers[0]/atm_pager/stall_count}
+add wave -noupdate /tb/romko/addr
+add wave -noupdate /tb/romko/data
+add wave -noupdate /tb/romko/ce_n
+add wave -noupdate /tb/romko/word
+add wave -noupdate /tb/romko/fd
 TreeUpdate [SetDefaultTree]
-WaveRestoreCursors {{Cursor 1} {3150600 ps} 0} {{Cursor 2} {5845051365500 ps} 0} {{Cursor 3} {3049669304700 ps} 0}
-quietly wave cursor active 2
+WaveRestoreCursors {{Cursor 1} {4342778 ps} 0} {{Cursor 2} {5845051365500 ps} 0} {{Cursor 3} {3049669304700 ps} 0}
+quietly wave cursor active 1
 configure wave -namecolwidth 487
 configure wave -valuecolwidth 149
 configure wave -justifyvalue left
@@ -1001,4 +1042,4 @@ configure wave -griddelta 8
 configure wave -timeline 0
 configure wave -timelineunits ns
 update
-WaveRestoreZoom {0 ps} {765872811795 ps}
+WaveRestoreZoom {4552330 ps} {5559654 ps}

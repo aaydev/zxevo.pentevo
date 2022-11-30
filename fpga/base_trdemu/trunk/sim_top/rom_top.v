@@ -12,7 +12,7 @@ module rom(
 	integer fd;
 
 
-	reg [7:0] mem [0:511];
+	reg [7:0] mem [0:524288];
 
 
 
@@ -20,13 +20,13 @@ module rom(
 	begin
 		// init rom
 		integer i;
-		for(i=0;i<512;i=i+1)
+		for(i=0;i<524288;i=i+1)
 			mem[i] = 8'hFF;
 		
 		// load file
-		fd = $fopen("/tmp/testatmnoscr.rom","rb");
+		fd = $fopen("/tmp/pentevo_test/ers_test.rom","rb");
 
-		if( 512!=$fread(mem,fd) )
+		if( 524288!=$fread(mem,fd) )
 		begin
 			$display("Couldn't load rom!\n");
 			$stop;
@@ -38,7 +38,7 @@ module rom(
 
 
 	always @*
-		word = mem[addr[8:0]];
+		word = mem[addr[18:0]];
 
 
 	always @*
