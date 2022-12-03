@@ -1,5 +1,5 @@
 
-;LAST UPDATE: 31.07.2017 savelij
+; LAST UPDATE: 25.11.2022 savelij
 
 _VERS_CORE	EQU 12
 _VERS_3		EQU 40
@@ -161,9 +161,9 @@ CLEAREGA2	REPT 0X20
 
 SCR_PAL		DUPL 0X10,0			;‘Ž‡„€€Ÿ €‹ˆ’€ ˆ‡ ”€‰‹€
 
-BLUE_3		DB 0,B_L,B_H,B_L|B_H
-GREEN_3		DB 0,G_L,G_H,G_L|G_H
-RED_3		DB 0,R_L,R_H,R_L|R_H
+BLUE_3		DB 0, M_B_L, M_B_H, M_B_L | M_B_H
+GREEN_3		DB 0, M_G_L, M_G_H, M_G_L | M_G_H
+RED_3		DB 0, M_R_L, M_R_H, M_R_L | M_R_H
 
 ;[ƒ……€’Ž –‚…’€ ‚ ”ŽŒ€’… ATM VGA Š€€ „‹Ÿ ‡€Œ…› €‰’Ž‚ ˆ‘•Ž„ŽƒŽ ˆ‡Ž€†…ˆŸ]
 SET_COLORS	LD HL,BUF_COLORS

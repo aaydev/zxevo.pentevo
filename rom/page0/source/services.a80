@@ -1,5 +1,5 @@
 
-; LAST UPDATE: 09.11.2022 savelij
+; LAST UPDATE: 25.11.2022 savelij
 
 		include ../../macros.a80
 		include ../../define.a80
@@ -540,22 +540,22 @@ PAGES_CUSTOM	DB 0xFF,0x7D,0x7A,CONF4CUSTOM+3
 
 ; палитра для spectrum режима
 TRSTPAL
-		DB (R_H | R_L | G_H | G_L | B_H | B_L)	! 0xF3	; 00
-		DB (R_H | R_L | G_H | G_L            )	! 0xF3	; 21
-		DB (            G_H | G_L | B_H | B_L)	! 0xF3	; 42
-		DB (            G_H | G_L            )	! 0xF3	; 63
-		DB (R_H | R_L |             B_H | B_L)	! 0xF3	; 90
-		DB (R_H | R_L			     )	! 0xF3	; B1
-		DB (                        B_H | B_L)	! 0xF3	; D2
-		DB BLACK				! 0xF3	; F3
-		DB (R_H |       G_H |       B_H      )	! 0xF3	; E0
-		DB (R_H |       G_H                  )	! 0xF3	; E1
-		DB (            G_H |       B_H      )	! 0xF3	; E2
-		DB (            G_H                  )	! 0xF3	; E3
-		DB (R_H |                   B_H      )	! 0xF3	; F0
-		DB (R_H)				! 0xF3	; F1
-		DB (                        B_H      )	! 0xF3	; F2
-		DB BLACK				! 0xF3	; F3
+		DB (M_R_H | M_R_L | M_G_H | M_G_L | M_B_H | M_B_L) ! 0xF3	; 00
+		DB (M_R_H | M_R_L | M_G_H | M_G_L                ) ! 0xF3	; 21
+		DB (                M_G_H | M_G_L | M_B_H | M_B_L) ! 0xF3	; 42
+		DB (                M_G_H | M_G_L                ) ! 0xF3	; 63
+		DB (M_R_H | M_R_L |                 M_B_H | M_B_L) ! 0xF3	; 90
+		DB (M_R_H | M_R_L			         ) ! 0xF3	; B1
+		DB (                                M_B_H | M_B_L) ! 0xF3	; D2
+		DB BLACK				           ! 0xF3	; F3
+		DB (M_R_H |         M_G_H |         M_B_H        ) ! 0xF3	; E0
+		DB (M_R_H |         M_G_H                        ) ! 0xF3	; E1
+		DB (                M_G_H |         M_B_H        ) ! 0xF3	; E2
+		DB (                M_G_H                        ) ! 0xF3	; E3
+		DB (M_R_H |                         M_B_H        ) ! 0xF3	; F0
+		DB (M_R_H)				           ! 0xF3	; F1
+		DB (                                M_B_H        ) ! 0xF3	; F2
+		DB BLACK				           ! 0xF3	; F3
 
 		DUPL 0x3FF8 - $,0xFF
 		DB "HEGLUK"

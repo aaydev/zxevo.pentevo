@@ -1,5 +1,5 @@
 
-; LAST UPDATE: 23.10.2022 savelij
+; LAST UPDATE: 03.12.2022 savelij
 
 ; ((out&0ffff)==37f7)&&((val&0ff)==1)
 ; ((out&0ffff)==77f7)&&((val&0ff)==1)
@@ -998,13 +998,41 @@ READ_SECTOR	LD A,(WR_1F)
 		JP C,OUT_1F.INFF_BIT6
 		CP 0xC0
 		JR C,READ_SECTOR_1
-.L1		LD A,(PORT_3F)
+.L1		CALL READ_CPU12			; чтение текущей конфы
+		LD BC,WIN_A1
+		LD A,0x40
+		OUT (C),A
+		LD B,HIGH (WIN_P1)
+		LD A,RAM_RAMDISK
+		OUT (C),A			; страница заголовков рамдиска
+		LD A,(PORT_3F)			; взяли номер трека
+		ADD A,A				; сторон 2
+		LD C,A
+		LD A,(WR_FF)
+		AND 0x10			; проверка какая сторона диска
+		JR NZ,.L2
+		INC C				; для стороны 1
+.L2		LD B,HIGH (CPU1) + 2		; адрес начала инфы о секторах на дорожке
+		LD A,0				; текущий номер сектора
+.CURR_SEC	EQU $-1
+		INC A
+		AND %00001111
+		LD (.CURR_SEC),A
+		ADD A,A
+		ADD A,HIGH (CPU1) + 2
+		LD B,A
+		LD A,(PORT_3F)			; номер дорожки
+		LD C,A
+		LD A,(BC)			; проичтали номер сектора
+		PUSH AF
+		CALL WRITE_CPU12		; восстановление конфы
+		LD A,(PORT_3F)
 		LD HL,(OLD_HL)
 		LD (HL),A			; номер дорожки
 		INC HL
 		LD (HL),0			; номер стороны
 		INC HL
-		LD A,(PORT_5F)
+		POP AF
 		LD (HL),A			; номер сектора
 		INC HL
 		LD (HL),0			; размер сектора

@@ -1,5 +1,5 @@
 
-; LAST UPDATE: 13.11.2022 savelij
+; LAST UPDATE: 25.11.2022 savelij
 
 PAGE	
 	TITLE "rst8service.a80 ROM_RST83"
@@ -188,7 +188,7 @@ ECODE_TABL
 CONT_MAGIC2	LD BC,CONF_128
 ;		LD A,(N_7FFD)
 	READ_7FFD
-		AND ZX_SCREEN!0xFF
+		AND M_ZX_SCREEN ! 0xFF
 		OUT (C),A			; включение отображения экрана 0
 		LD A,(N_77)
 		CALL CMP_SCRMODE		; проверка видеорежима прерванной программы
