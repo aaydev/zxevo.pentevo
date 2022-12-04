@@ -46,6 +46,8 @@ module zdos(
 	// control of page #FE for emulation
 	output reg         in_trdemu,
 
+	input  wire        in_nmi, // not exiting trdemu mode when also in nmi mode
+
 	input  wire        clr_nmi, // out (#BE),a
 	input  wire        vg_rdwr_fclk,
 	input  wire [ 3:0] fdd_mask,
@@ -79,7 +81,7 @@ module zdos(
 	always @(posedge fclk, negedge rst_n)
 	if( !rst_n )
 		in_trdemu <= 1'b0;
-	else if( clr_nmi )
+	else if( clr_nmi && !in_nmi )
 		in_trdemu <= 1'b0;
 	else if( trdemu_on )
 		in_trdemu <= 1'b1;

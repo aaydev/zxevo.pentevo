@@ -559,6 +559,7 @@ module top(
 	           .trdemu_wr_disable(trdemu_wr_disable),
 
 	           .in_trdemu   (in_trdemu   ),
+	           .in_nmi      (in_nmi      ),
 	           .clr_nmi     (clr_nmi     ),
 	           .vg_rdwr_fclk(vg_rdwr_fclk),
 	           .fdd_mask    (fdd_mask    ),
