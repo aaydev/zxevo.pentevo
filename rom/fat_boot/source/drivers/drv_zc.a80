@@ -1,5 +1,5 @@
 
-;LAST UPDATE: 01.12.2014 savelij
+; LAST UPDATE: 21.12.2022 savelij
 
 ;================áÄÉêìáóàä ë ZC SD äÄêíéóäà===================
 READ_SD		PUSH AF
@@ -68,6 +68,8 @@ SECM200		PUSH HL
 		LD D,E
 		LD E,0
 SECN200		POP AF
+		in (c) ;in f,(c)
+		in (c) ;in f,(c)
 		LD BC,P_DATA
 		OUT (C),A
 		NOP
@@ -87,6 +89,8 @@ SECN200		POP AF
 
 OUT_COM		PUSH BC
 		LD BC,P_DATA
+		in (c) ;in f,(c)
+		in (c) ;in f,(c)
 		OUT (C),A
 		XOR A
 		OUT (C),A
