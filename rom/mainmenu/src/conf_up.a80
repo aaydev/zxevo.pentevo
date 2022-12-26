@@ -1,0 +1,36 @@
+
+; LAST UPDATE: 26.12.2022 savelij
+
+; для кода со сменой конфигурации памяти ниже 0x8000
+
+; ATM CP/M
+ATM_CPM		EI
+		HALT
+		DI
+	PEC_ON M_SHADOW_BF
+		LD HL,CPM_PAGES
+		LD DE,0x3F
+ATM_CPM1	LD BC,CONF_128
+		OUT (C),D
+		LD BC,LOW (WIN_A3)
+ATM_CPM2	OUTI
+		LD A,B
+		SUB E
+		LD B,A
+		JR NZ,ATM_CPM2
+		LD A,D
+		XOR 0x10
+		LD D,A
+		JR NZ,ATM_CPM1
+		LD SP,0x8000
+		LD BC,0x177
+		LD A,6
+		OUT (C),A
+		LD BC,FDD_EMU_PORT
+		XOR A
+		OUT (C),A
+	PEC_OFF M_SHADOW_BF
+		JP 0x000C
+
+CPM_PAGES	DB 3!0x7F,2!0x7F,4!0x7F,0!0x7F
+		DB 3!0x7F,2!0x7F,5!0x7F,ROM_ATMCPM
