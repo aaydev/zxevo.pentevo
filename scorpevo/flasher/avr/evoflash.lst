@@ -1,0 +1,2303 @@
+
+AVRA   Ver. 1.2.3 evoflash.asm Mon Nov 14 18:42:55 2011
+
+
+          .LIST
+          .LISTMAC
+         
+          .DEF    FF_FL   =R08
+          .DEF    FF      =R13    ;всегда = $FF
+          .DEF    ONE     =R14    ;всегда = $01
+          .DEF    NULL    =R15    ;всегда = $00
+          .DEF    DATA    =R16
+          .DEF    TEMP    =R17
+          .DEF    COUNT   =R18
+          .DEF    BITS    =R19
+         ;локально используются: R0,R1,R20,R21,R24,R25
+         
+          .EQU    DBSIZE_HI       =HIGH(4096)
+          .EQU    DBMASK_HI       =HIGH(4095)
+          .EQU    nCONFIG         =PORTF0
+          .EQU    nSTATUS         =PORTF1
+          .EQU    CONF_DONE       =PORTF2
+         
+          .EQU    CMD_17          =$51    ;read_single_block
+          .EQU    ACMD_41         =$69    ;sd_send_op_cond
+         
+          .EQU    SD_CS0          =$57
+          .EQU    SD_CS1          =$5F
+          .EQU    FLASH_LOADDR    =$F0
+          .EQU    FLASH_MIDADDR   =$F1
+          .EQU    FLASH_HIADDR    =$F2
+          .EQU    FLASH_DATA      =$F3
+          .EQU    FLASH_CTRL      =$F4
+          .EQU    SCR_LOADDR      =$40
+          .EQU    SCR_HIADDR      =$41
+          .EQU    SCR_CHAR        =$44
+          .EQU    SCR_MODE        =$4E
+         ;
+         ;--------------------------------------
+         ;
+          .DSEG
+                  .ORG    $0100
+          BUFFER:
+                  .ORG    $0300
+          BUF4FAT:
+                  .ORG    $0500
+D:000500    CAL_FAT:.BYTE   1       ;тип обнаруженной FAT
+D:000501    MANYFAT:.BYTE   1       ;количество FAT-таблиц
+D:000502    BYTSSEC:.BYTE   1       ;количество секторов в кластере
+D:000503    ROOTCLS:.BYTE   4       ;сектор начала root директории
+D:000507    SEC_FAT:.BYTE   4       ;количество секторов одной FAT
+D:00050b    RSVDSEC:.BYTE   2       ;размер резервной области
+D:00050d    STARTRZ:.BYTE   4       ;начало диска/раздела
+D:000511    FRSTDAT:.BYTE   4       ;адрес первого сектора данных от BPB
+D:000515    SEC_DSC:.BYTE   4       ;количество секторов на диске/разделе
+D:000519    CLS_DSC:.BYTE   4       ;количество кластеров на диске/разделе
+D:00051d    FATSTR0:.BYTE   4       ;начало первой FAT таблицы
+D:000521    FATSTR1:.BYTE   4       ;начало второй FAT таблицы
+D:000525    TEK_DIR:.BYTE   4       ;кластер текущей директории
+D:000529    KCLSDIR:.BYTE   1       ;кол-во кластеров директории
+D:00052a    NUMSECK:.BYTE   1       ;счетчик секторов в кластере
+D:00052b    TFILCLS:.BYTE   4       ;текущий кластер
+D:00052f    MPHWOST:.BYTE   1       ;кол-во секторов в последнем кластере
+D:000530    KOL_CLS:.BYTE   4       ;кол-во кластеров файла минус 1
+D:000534    ZTFILCLS:.BYTE  4
+D:000538    ZMPHWOST:.BYTE  1
+D:000539    ZKOL_CLS:.BYTE  4
+D:00053d    SDERROR:.BYTE   1
+          LASTSECFLAG:
+D:00053e            .BYTE   1
+D:00053f    F_ADDR0:.BYTE   1
+D:000540    F_ADDR1:.BYTE   1
+D:000541    F_ADDR2:.BYTE   1
+D:000542    ERRFLG1:.BYTE   1
+D:000543    ERRFLG2:.BYTE   1
+         ;
+         ;--------------------------------------
+         ;
+          .CSEG
+                  .ORG    0
+C:000000 940c 1525         JMP     START
+C:000002 940c 1525         JMP     START   ;EXT_INT0       ; IRQ0 Handler
+C:000004 940c 1525         JMP     START   ;EXT_INT1       ; IRQ1 Handler
+C:000006 940c 1525         JMP     START   ;EXT_INT2       ; IRQ2 Handler
+C:000008 940c 1525         JMP     START   ;EXT_INT3       ; IRQ3 Handler
+C:00000a 940c 1525         JMP     START   ;EXT_INT4       ; IRQ4 Handler
+C:00000c 940c 1525         JMP     START   ;EXT_INT5       ; IRQ5 Handler
+C:00000e 940c 1525         JMP     START   ;EXT_INT6       ; IRQ6 Handler
+C:000010 940c 1525         JMP     START   ;EXT_INT7       ; IRQ7 Handler
+C:000012 940c 1525         JMP     START   ;TIM2_COMP      ; Timer2 Compare Handler
+C:000014 940c 1525         JMP     START   ;TIM2_OVF       ; Timer2 Overflow Handler
+C:000016 940c 1525         JMP     START   ;TIM1_CAPT      ; Timer1 Capture Handler
+C:000018 940c 1525         JMP     START   ;TIM1_COMPA     ; Timer1 CompareA Handler
+C:00001a 940c 1525         JMP     START   ;TIM1_COMPB     ; Timer1 CompareB Handler
+C:00001c 940c 1525         JMP     START   ;TIM1_OVF       ; Timer1 Overflow Handler
+C:00001e 940c 1525         JMP     START   ;TIM0_COMP      ; Timer0 Compare Handler
+C:000020 940c 1525         JMP     START   ;TIM0_OVF       ; Timer0 Overflow Handler
+C:000022 940c 1525         JMP     START   ;SPI_STC        ; SPI Transfer Complete Handler
+C:000024 940c 1525         JMP     START   ;USART0_RXC     ; USART0 RX Complete Handler
+C:000026 940c 1525         JMP     START   ;USART0_DRE     ; USART0,UDR Empty Handler
+C:000028 940c 1525         JMP     START   ;USART0_TXC     ; USART0 TX Complete Handler
+C:00002a 940c 1525         JMP     START   ;ADC            ; ADC Conversion Complete Handler
+C:00002c 940c 1525         JMP     START   ;EE_RDY         ; EEPROM Ready Handler
+C:00002e 940c 1525         JMP     START   ;ANA_COMP       ; Analog Comparator Handler
+C:000030 940c 1525         JMP     START   ;TIM1_COMPC     ; Timer1 CompareC Handler
+C:000032 940c 1525         JMP     START   ;TIM3_CAPT      ; Timer3 Capture Handler
+C:000034 940c 1525         JMP     START   ;TIM3_COMPA     ; Timer3 CompareA Handler
+C:000036 940c 1525         JMP     START   ;TIM3_COMPB     ; Timer3 CompareB Handler
+C:000038 940c 1525         JMP     START   ;TIM3_COMPC     ; Timer3 CompareC Handler
+C:00003a 940c 1525         JMP     START   ;TIM3_OVF       ; Timer3 Overflow Handler
+C:00003c 940c 1525         JMP     START   ;USART1_RXC     ; USART1 RX Complete Handler
+C:00003e 940c 1525         JMP     START   ;USART1_DRE     ; USART1,UDR Empty Handler
+C:000040 940c 1525         JMP     START   ;USART1_TXC     ; USART1 TX Complete Handler
+C:000042 940c 1525         JMP     START   ;TWI_INT        ; Two-wire Serial Interface Interrupt Handler
+C:000044 940c 1525         JMP     START   ;SPM_RDY        ; SPM Ready Handler
+         ;
+         ;--------------------------------------
+         ;
+          MSG_CFGFPGA:
+                  .DB     $0D,$0A,$0A,$0A,"Load FPGA configuration... ",0
+C:000046 0D0A0A0A4C6F6164204650474120636F6E66696775726174696F6E2E2E2E2000
+          MSG_OK:
+                  .DB     "Ok!",$0A
+C:000056 4F6B210A
+          MSG_NEWLINE:
+                  .DB     $0D,$0A,0,0
+C:000058 0D0A0000
+         ;
+          MSG_TITLE:
+                  .DB     "  ZX Evolution Flasher ",0
+C:00005A 20205A582045766F6C7574696F6E20466C61736865722000
+          MSG_ID_FLASH:
+                  .DB     "ID flash memory chip: ",0,0
+C:000066 494420666C617368206D656D6F727920636869703A200000
+          MSG_OPENFILE:
+                  .DB     "Open file from SD-card...",0
+C:000072 4F70656E2066696C652066726F6D2053442D636172642E2E2E00
+          MSG_SDERROR:
+                  .DB     "SD error: ",0,0
+C:00007F 5344206572726F723A200000
+          MSG_CARD:
+                  .DB     "Card",0,0
+C:000085 436172640000
+          MSG_READERROR:
+                  .DB     "Read error",0,0
+C:000088 52656164206572726F720000
+          MSG_FAT:
+                  .DB     "FAT",0
+C:00008E 46415400
+          MSG_FILE:
+                  .DB     "File",0,0
+C:000090 46696C650000
+          MSG_NOTFOUND:
+                  .DB     " not found",0,0
+C:000093 206E6F7420666F756E640000
+          MSG_EMPTY:
+                  .DB     " empty",0,0
+C:000099 20656D7074790000
+          MSG_TOOBIG:
+                  .DB     " too big",0,0
+C:00009D 20746F6F206269670000
+          MSG_F_ERASE:
+                  .DB     "Erase...",0,0
+C:0000A2 45726173652E2E2E0000
+          MSG_F_WRITE:
+                  .DB     "Write...",0,0
+C:0000A7 57726974652E2E2E0000
+          MSG_F_CHECK:
+                  .DB     "Check...",0,0
+C:0000AC 436865636B2E2E2E0000
+          MSG_F_COMPLETE:
+                  .DB     "Successfully complete.",0,0
+C:0000B1 5375636365737366756C6C7920636F6D706C6574652E0000
+          MSG_F_ERROR:
+                  .DB     "ERROR!",0,0
+C:0000BD 4552524F52210000
+          MSG_HALT:
+                  .DB     "HALT!",0
+C:0000C1 48414C542100
+         ;
+          CMD00:  .DB     $40,$00,$00,$00,$00,$95
+C:0000C4 400000000095
+          CMD08:  .DB     $48,$00,$00,$01,$AA,$87
+C:0000C7 48000001AA87
+          CMD16:  .DB     $50,$00,$00,$02,$00,$FF
+C:0000CA 5000000200FF
+          CMD55:  .DB     $77,$00,$00,$00,$00,$FF ;app_cmd
+C:0000CD 7700000000FF
+          CMD58:  .DB     $7A,$00,$00,$00,$00,$FF ;read_ocr
+C:0000D0 7A00000000FF
+          CMD59:  .DB     $7B,$00,$00,$00,$00,$FF ;crc_on_off
+C:0000D3 7B00000000FF
+          FILENAME:
+                  .DB     "ZXEVO   ROM",0
+C:0000D6 5A5845564F202020524F4D00
+         ;
+          PACKED_FPGA:
+          .LIST
+          .INCLUDE "_NVRAM.ASM"
+         ;
+         ;--------------------------------------
+         ;
+          .EQU    RTC_ADDRESS             =$A0    ; Address of PCF8583 RTC chip.
+          .EQU    RTC_COMMON_MODE_REG     =$FE    ; RTC's register for common modes.
+         ;.EQU    MODE_VGA                =$01    ; VGA mode (0 - not set/1 - set).
+         
+          .EQU    TW_START                =$08
+          .EQU    TW_REP_START            =$10
+          .EQU    TW_MT_SLA_ACK           =$18
+          .EQU    TW_MT_DATA_ACK          =$28
+          .EQU    TW_MR_SLA_ACK           =$40
+         
+          .MACRO  TW_SEND_STOP
+                  LDI     TEMP,(1<<TWINT)|(1<<TWEN)|(1<<TWSTO)
+                  STS     TWCR,TEMP
+          .ENDMACRO
+         ;
+         ;--------------------------------------
+         ;out:   DATA == mode (bit.0 - CLR == TV mode, SET == VGA mode)
+          NVRAM_READ_MODE:
+         ;init i2c
+         ;SCL frequency = CPU clk/ ( 16 + 2* (TWBR) * 4^(TWPS) )
+         ;11052000 / (16 + 2*48 ) = 98678,5Hz (100000Hz recommended for PCF8583)
+C:0014d6 92f0 0071         STS     TWSR,NULL
+C:0014d8 e310              LDI     TEMP,48
+C:0014d9 9310 0070         STS     TWBR,TEMP
+         
+         ;reset RTC
+         ;write 0 to control/status register [0] on PCF8583
+         
+C:0014db d027              RCALL   TW_SEND_START
+C:0014dc 7108              ANDI    DATA,TW_START|TW_REP_START
+C:0014dd f051              BREQ    RTC_ERROR1
+         
+C:0014de ea00              LDI     DATA,RTC_ADDRESS
+C:0014df d02e              RCALL   TW_SEND_ADDR
+C:0014e0 3108              CPI     DATA,TW_MT_SLA_ACK
+C:0014e1 f431              BRNE    RTC_ERROR1
+         
+C:0014e2 e000              LDI     DATA,0
+C:0014e3 d02a              RCALL   TW_SEND_DATA
+C:0014e4 3208              CPI     DATA,TW_MT_DATA_ACK
+C:0014e5 f411              BRNE    RTC_ERROR1
+         
+C:0014e6 e000              LDI     DATA,0
+C:0014e7 d026              RCALL   TW_SEND_DATA
+          RTC_ERROR1:
+C:0014e8   +          TW_SEND_STOP
+C:0014e8 e914      LDI     TEMP,(1<<TWINT)|(1<<TWEN)|(1<<TWSTO)
+C:0014e9 9310 0074 STS     TWCR,TEMP
+         
+         ;restore mode register from NVRAM
+         
+C:0014eb d017              RCALL   TW_SEND_START
+C:0014ec 7108              ANDI    DATA,TW_START|TW_REP_START
+C:0014ed f081              BREQ    RTC_ERROR2
+         
+C:0014ee ea00              LDI     DATA,RTC_ADDRESS
+C:0014ef d01e              RCALL   TW_SEND_ADDR
+C:0014f0 3108              CPI     DATA,TW_MT_SLA_ACK
+C:0014f1 f461              BRNE    RTC_ERROR2
+         
+C:0014f2 ef0e              LDI     DATA,RTC_COMMON_MODE_REG
+C:0014f3 d01a              RCALL   TW_SEND_DATA
+C:0014f4 3208              CPI     DATA,TW_MT_DATA_ACK
+C:0014f5 f441              BRNE    RTC_ERROR2
+         
+C:0014f6 d00c              RCALL   TW_SEND_START
+C:0014f7 3100              CPI     DATA,TW_REP_START
+         
+C:0014f8 ea01              LDI     DATA,RTC_ADDRESS|$01
+C:0014f9 d014              RCALL   TW_SEND_ADDR
+C:0014fa 3400              CPI     DATA,TW_MR_SLA_ACK
+C:0014fb f411              BRNE    RTC_ERROR2
+         
+C:0014fc d01e              RCALL   TW_READ_DATA
+C:0014fd c001              RJMP    RTC_OK2
+          RTC_ERROR2:
+C:0014fe e000              LDI     DATA,0
+          RTC_OK2:
+C:0014ff   +          TW_SEND_STOP
+C:0014ff e914      LDI     TEMP,(1<<TWINT)|(1<<TWEN)|(1<<TWSTO)
+C:001500 9310 0074 STS     TWCR,TEMP
+C:001502 9508              RET
+         ;
+         ;--------------------------------------
+         ;out:   DATA == i2c status
+          TW_SEND_START:
+         ;start transmit
+C:001503 ea04              LDI     DATA,(1<<TWINT)|(1<<TWSTA)|(1<<TWEN)
+C:001504 9300 0074         STS     TWCR,DATA
+         ;wait for flag
+          TW_SS_WAIT:
+C:001506 9100 0074         LDS     DATA,TWCR
+C:001508 ff07              SBRS    DATA,TWINT
+C:001509 cffc              RJMP    TW_SS_WAIT
+         ;return status
+C:00150a 9100 0071         LDS     DATA,TWSR
+C:00150c 7f08              ANDI    DATA,$F8
+C:00150d 9508              RET
+         ;
+         ;--------------------------------------
+         ;in:    DATA == data/address
+         ;out:   DATA == i2c status
+          TW_SEND_ADDR:
+          TW_SEND_DATA:
+         ;set data/address
+C:00150e 9300 0073         STS     TWDR,DATA
+         ;enable transmit
+C:001510 e804              LDI     DATA,(1<<TWINT)|(1<<TWEN)
+C:001511 9300 0074         STS     TWCR,DATA
+         ;wait for end transmit
+          TW_SD_WAIT:
+C:001513 9100 0074         LDS     DATA,TWCR
+C:001515 ff07              SBRS    DATA,TWINT
+C:001516 cffc              RJMP    TW_SD_WAIT
+         ;return status
+C:001517 9100 0071         LDS     DATA,TWSR
+C:001519 7f08              ANDI    DATA,$F8
+C:00151a 9508              RET
+         ;
+         ;--------------------------------------
+         ;out:   DATA == data
+          TW_READ_DATA:
+         ;enable transmit
+C:00151b e804              LDI     DATA,(1<<TWINT)|(1<<TWEN)
+C:00151c 9300 0074         STS     TWCR,DATA
+         ;wait for flag set
+          TW_RD_WAIT:
+C:00151e 9100 0074         LDS     DATA,TWCR
+C:001520 ff07              SBRS    DATA,TWINT
+C:001521 cffc              RJMP    TW_RD_WAIT
+         ;get data
+C:001522 9100 0073         LDS     DATA,TWDR
+         ;NOT return status
+         ;        LDS     DATA,TWSR
+         ;        ANDI    DATA,$F8
+C:001524 9508              RET
+         ;
+         ;--------------------------------------
+         ;
+          ;
+         ;
+         ;--------------------------------------
+         ;
+C:001525 94f8      START:  CLI
+C:001526 24ff              CLR     NULL
+C:001527 e011              LDI     TEMP,$01
+C:001528 2ee1              MOV     ONE,TEMP
+C:001529 ef1f              LDI     TEMP,$FF
+C:00152a 2ed1              MOV     FF,TEMP
+         ;WatchDog OFF
+C:00152b e11f              LDI     TEMP,0B00011111
+C:00152c bd11              OUT     WDTCR,TEMP
+C:00152d bcf1              OUT     WDTCR,NULL
+         
+C:00152e bef4              OUT     MCUCSR,NULL
+         ;
+C:00152f ef1f              LDI     TEMP,LOW(RAMEND)
+C:001530 bf1d              OUT     SPL,TEMP
+C:001531 e110              LDI     TEMP,HIGH(RAMEND)
+C:001532 bf1e              OUT     SPH,TEMP
+         ;
+C:001533 beeb              OUT     RAMPZ,ONE
+         ;
+C:001534 ef1f              LDI     TEMP,      0B11111111
+C:001535   +          OUTPORT PORTG,TEMP
+C:001535 9310 0065 STS     PORTG+$20*(PORTG<$40),TEMP
+C:001537 e010              LDI     TEMP,      0B00000000
+C:001538   +          OUTPORT DDRG,TEMP
+C:001538 9310 0064 STS     DDRG+$20*(DDRG<$40),TEMP
+         
+C:00153a e018              LDI     TEMP,      0B00001000
+C:00153b   +          OUTPORT PORTF,TEMP
+C:00153b 9310 0062 STS     PORTF+$20*(PORTF<$40),TEMP
+C:00153d   +          OUTPORT DDRF,TEMP
+C:00153d 9310 0061 STS     DDRF+$20*(DDRF<$40),TEMP
+         
+C:00153f ef13              LDI     TEMP,      0B11110011
+C:001540 b913              OUT     PORTE,TEMP
+C:001541 e010              LDI     TEMP,      0B00000000
+C:001542 b912              OUT     DDRE,TEMP
+         
+C:001543 ef1f              LDI     TEMP,      0B11111111
+C:001544 bb12              OUT     PORTD,TEMP
+C:001545 e010              LDI     TEMP,      0B00000000
+C:001546 bb11              OUT     DDRD,TEMP
+         
+C:001547 ed1f              LDI     TEMP,      0B11011111
+C:001548 bb15              OUT     PORTC,TEMP
+C:001549 e010              LDI     TEMP,      0B00000000
+C:00154a bb14              OUT     DDRC,TEMP
+         
+C:00154b ef19              LDI     TEMP,      0B11111001
+C:00154c bb18              OUT     PORTB,TEMP
+C:00154d e817              LDI     TEMP,      0B10000111
+C:00154e bb17              OUT     DDRB,TEMP
+         
+C:00154f ef1f              LDI     TEMP,      0B11111111
+C:001550 bb1b              OUT     PORTA,TEMP
+C:001551 e010              LDI     TEMP,      0B00000000
+C:001552 bb1a              OUT     DDRA,TEMP
+         ;UART1 Set baud rate
+C:001553   +          OUTPORT UBRR1H,NULL
+C:001553 92f0 0098 STS     UBRR1H+$20*(UBRR1H<$40),NULL
+C:001555 e015              LDI     TEMP,5     ;115200 baud @ 11059.2 kHz, Normal speed
+C:001556   +          OUTPORT UBRR1L,TEMP
+C:001556 9310 0099 STS     UBRR1L+$20*(UBRR1L<$40),TEMP
+         ;UART1 Normal Speed
+C:001558   +          OUTPORT UCSR1A,NULL
+C:001558 92f0 009b STS     UCSR1A+$20*(UCSR1A<$40),NULL
+         ;UART1 data8bit, 2stopbits
+C:00155a e01e              LDI     TEMP,(1<<UCSZ1)|(1<<UCSZ0)|(1<<USBS)
+C:00155b   +          OUTPORT UCSR1C,TEMP
+C:00155b 9310 009d STS     UCSR1C+$20*(UCSR1C<$40),TEMP
+         ;UART1 Разрешаем передачу
+C:00155d e018              LDI     TEMP,(1<<TXEN)
+C:00155e   +          OUTPORT UCSR1B,TEMP
+C:00155e 9310 009a STS     UCSR1B+$20*(UCSR1B<$40),TEMP
+         ;SPI init
+C:001560 e011              LDI     TEMP,(1<<SPI2X)
+C:001561 b91e              OUT     SPSR,TEMP
+C:001562 e710              LDI     TEMP,(1<<SPE)|(1<<DORD)|(1<<MSTR)|(0<<CPOL)|(0<<CPHA)
+C:001563 b91d              OUT     SPCR,TEMP
+         ;ждём включения ATX, а потом ещё чуть-чуть.
+C:001564 9b00      UP11:   SBIS    PINF,0 ;PINC,5 ; а если powergood нет вообще ?
+C:001565 cffe              RJMP    UP11
+C:001566 e005              LDI     DATA,5
+C:001567 d631              RCALL   DELAY
+         
+C:001568   +          LDIZ    MSG_CFGFPGA*2
+C:001568 e8ec      LDI     ZL,LOW(MSG_CFGFPGA*2)
+C:001569 e0f0      LDI     ZH,HIGH(MSG_CFGFPGA*2)
+C:00156a d5e3              RCALL   UART_PRINTSTRZ
+         ;загрузка FPGA
+C:00156b   +          INPORT  TEMP,DDRF
+C:00156b 9110 0061 LDS     TEMP,DDRF+$20*(DDRF<$40)
+C:00156d 6011              SBR     TEMP,(1<<nCONFIG)
+C:00156e   +          OUTPORT DDRF,TEMP
+C:00156e 9310 0061 STS     DDRF+$20*(DDRF<$40),TEMP
+         
+C:001570 e913              LDI     TEMP,147 ;40 us @ 11.0592 MHz
+C:001571 951a      LDFPGA1:DEC     TEMP    ;1
+C:001572 f7f1              BRNE    LDFPGA1 ;2
+         
+C:001573   +          INPORT  TEMP,DDRF
+C:001573 9110 0061 LDS     TEMP,DDRF+$20*(DDRF<$40)
+C:001575 7f1e              CBR     TEMP,(1<<nCONFIG)
+C:001576   +          OUTPORT DDRF,TEMP
+C:001576 9310 0061 STS     DDRF+$20*(DDRF<$40),TEMP
+         
+C:001578 9b01      LDFPGA2:SBIS    PINF,nSTATUS
+C:001579 cffe              RJMP    LDFPGA2
+         
+C:00157a   +          LDIZ    PACKED_FPGA*2
+C:00157a ebe8      LDI     ZL,LOW(PACKED_FPGA*2)
+C:00157b e0f1      LDI     ZH,HIGH(PACKED_FPGA*2)
+C:00157c   +          LDIY    BUFFER
+C:00157c e0c0      LDI     YL,LOW(BUFFER)
+C:00157d e0d1      LDI     YH,HIGH(BUFFER)
+         ;(не трогаем стек! всё ОЗУ под буфер)
+C:00157e e810              LDI     TEMP,$80
+C:00157f 9005      MS:     LPM     R0,Z+
+C:001580 9209              ST      Y+,R0
+         ;-begin-PUT_BYTE_1---
+C:001581 b80f              OUT     SPDR,R0
+C:001582 9b77      PUTB1:  SBIS    SPSR,SPIF
+C:001583 cffe              RJMP    PUTB1
+         ;-end---PUT_BYTE_1---
+C:001584 50d1              SUBI    YH,HIGH(BUFFER) ;
+C:001585 70df              ANDI    YH,DBMASK_HI    ;Y warp
+C:001586   +          ADDI    YH,HIGH(BUFFER) ;
+C:001586 5fdf      SUBI    YH,(-HIGH(BUFFER)&$FF)
+C:001587 e052      M0:     LDI     R21,$02
+C:001588 ef4f              LDI     R20,$FF
+          M1:
+C:001589 0f11      M1X:    ADD     TEMP,TEMP
+C:00158a f411              BRNE    M2
+C:00158b 9115              LPM     TEMP,Z+
+C:00158c 1f11              ROL     TEMP
+C:00158d 1f44      M2:     ROL     R20
+C:00158e f7d0              BRCC    M1X
+C:00158f 955a              DEC     R21
+C:001590 f449              BRNE    X2
+C:001591 e002              LDI     DATA,2
+C:001592 9545              ASR     R20
+C:001593 f080              BRCS    N1
+C:001594 9503              INC     DATA
+C:001595 9543              INC     R20
+C:001596 f051              BREQ    N2
+C:001597 e053              LDI     R21,$03
+C:001598 e34f              LDI     R20,$3F
+C:001599 cfef              RJMP    M1
+         
+C:00159a 955a      X2:     DEC     R21
+C:00159b f4b1              BRNE    X3
+C:00159c 9546              LSR     R20
+C:00159d f308              BRCS    MS
+C:00159e 9553              INC     R21
+C:00159f cfe9              RJMP    M1
+         
+C:0015a0 0f04      X6:     ADD     DATA,R20
+C:0015a1 e054      N2:     LDI     R21,$04
+C:0015a2 ef4f              LDI     R20,$FF
+C:0015a3 cfe5              RJMP    M1
+         
+C:0015a4 9543      N1:     INC     R20
+C:0015a5 f4d1              BRNE    M4
+C:0015a6 9553              INC     R21
+C:0015a7 9547      N5:     ROR     R20
+C:0015a8 f158              BRCS    DEMLZEND
+C:0015a9 1f55              ROL     R21
+C:0015aa 0f11              ADD     TEMP,TEMP
+C:0015ab f411              BRNE    N6
+C:0015ac 9115              LPM     TEMP,Z+
+C:0015ad 1f11              ROL     TEMP
+C:0015ae f7c0      N6:     BRCC    N5
+C:0015af 0f05              ADD     DATA,R21
+C:0015b0 e056              LDI     R21,6
+C:0015b1 cfd7              RJMP    M1
+C:0015b2 955a      X3:     DEC     R21
+C:0015b3 f411              BRNE    X4
+C:0015b4 e001              LDI     DATA,1
+C:0015b5 c00b              RJMP    M3
+C:0015b6 955a      X4:     DEC     R21
+C:0015b7 f429              BRNE    X5
+C:0015b8 9543              INC     R20
+C:0015b9 f431              BRNE    M4
+C:0015ba e055              LDI     R21,$05
+C:0015bb e14f              LDI     R20,$1F
+C:0015bc cfcc              RJMP    M1
+C:0015bd 955a      X5:     DEC     R21
+C:0015be f709              BRNE    X6
+C:0015bf 2f54              MOV     R21,R20
+C:0015c0 9145      M4:     LPM     R20,Z+
+C:0015c1 955a      M3:     DEC     R21
+C:0015c2 2fa4              MOV     XL,R20
+C:0015c3 2fb5              MOV     XH,R21
+C:0015c4 0fac              ADD     XL,YL
+C:0015c5 1fbd              ADC     XH,YH
+          LDIRLOOP:
+C:0015c6 50b1              SUBI    XH,HIGH(BUFFER) ;
+C:0015c7 70bf              ANDI    XH,DBMASK_HI    ;X warp
+C:0015c8   +          ADDI    XH,HIGH(BUFFER) ;
+C:0015c8 5fbf      SUBI    XH,(-HIGH(BUFFER)&$FF)
+C:0015c9 900d              LD      R0,X+
+C:0015ca 9209              ST      Y+,R0
+         ;-begin-PUT_BYTE_2---
+C:0015cb b80f              OUT     SPDR,R0
+C:0015cc 9b77      PUTB2:  SBIS    SPSR,SPIF
+C:0015cd cffe              RJMP    PUTB2
+         ;-end---PUT_BYTE_2---
+C:0015ce 50d1              SUBI    YH,HIGH(BUFFER) ;
+C:0015cf 70df              ANDI    YH,DBMASK_HI    ;Y warp
+C:0015d0   +          ADDI    YH,HIGH(BUFFER) ;
+C:0015d0 5fdf      SUBI    YH,(-HIGH(BUFFER)&$FF)
+C:0015d1 950a              DEC     DATA
+C:0015d2 f799              BRNE    LDIRLOOP
+         
+C:0015d3 cfb3              RJMP    M0
+         ;теперь можно юзать стек
+          DEMLZEND:
+C:0015d4 9b02              SBIS    PINF,CONF_DONE
+C:0015d5 cffe              RJMP    DEMLZEND
+         ;SPI reinit
+C:0015d6 e510              LDI     TEMP,(1<<SPE)|(0<<DORD)|(1<<MSTR)|(0<<CPOL)|(0<<CPHA)
+C:0015d7 b91d              OUT     SPCR,TEMP
+         
+C:0015d8 9a16              SBI     DDRE,6
+C:0015d9   +          LED_OFF
+C:0015d9 9ac7      SBI     PORTB,7
+C:0015da   +          LDIZ    MSG_OK*2
+C:0015da eaec      LDI     ZL,LOW(MSG_OK*2)
+C:0015db e0f0      LDI     ZH,HIGH(MSG_OK*2)
+C:0015dc d571              RCALL   UART_PRINTSTRZ
+         ; - - - - - - - - - - - - - - - - - - -
+C:0015dd def8              RCALL   NVRAM_READ_MODE
+C:0015de e41e              LDI     TEMP,SCR_MODE
+C:0015df d560              RCALL   FPGA_REG
+         ; - - - - - - - - - - - - - - - - - - -
+C:0015e0 e0a0              LDI     XL,0
+C:0015e1 e0b0              LDI     XH,0
+C:0015e2 d571              RCALL   SET_CURSOR
+C:0015e3   +          LDIZ    MSG_TITLE*2
+C:0015e3 ebe4      LDI     ZL,LOW(MSG_TITLE*2)
+C:0015e4 e0f0      LDI     ZH,HIGH(MSG_TITLE*2)
+C:0015e5 d57a              RCALL   PRINTSTRZ
+         
+C:0015e6   +          LDIZ    LARGEBOOTSTART*2-4
+C:0015e6 efec      LDI     ZL,LOW(LARGEBOOTSTART*2-4)
+C:0015e7 edff      LDI     ZH,HIGH(LARGEBOOTSTART*2-4)
+         ;        OUT     RAMPZ,ONE
+C:0015e8 91a7              ELPM    XL,Z+
+C:0015e9 91b6              ELPM    XH,Z
+C:0015ea 2f0a              MOV     DATA,XL
+C:0015eb 710f              ANDI    DATA,$1F
+C:0015ec f0d9              BREQ    PRVERS9
+C:0015ed 2f1b              MOV     TEMP,XH
+C:0015ee 0faa              LSL     XL
+C:0015ef 1f11              ROL     TEMP
+C:0015f0 0faa              LSL     XL
+C:0015f1 1f11              ROL     TEMP
+C:0015f2 0faa              LSL     XL
+C:0015f3 1f11              ROL     TEMP
+C:0015f4 701f              ANDI    TEMP,$0F
+C:0015f5 f091              BREQ    PRVERS9
+C:0015f6 301d              CPI     TEMP,13
+C:0015f7 f480              BRCC    PRVERS9
+C:0015f8 2f2b              MOV     COUNT,XH
+C:0015f9 9526              LSR     COUNT
+C:0015fa 732f              ANDI    COUNT,$3F
+C:0015fb 3029              CPI     COUNT,9
+C:0015fc f058              BRCS    PRVERS9
+C:0015fd 930f              PUSH    DATA
+C:0015fe e208              LDI     DATA,$28 ;"("
+C:0015ff d57b              RCALL   PUTCHAR
+C:001600 2f02              MOV     DATA,COUNT
+C:001601 d564              RCALL   DECBYTE
+C:001602 2f01              MOV     DATA,TEMP
+C:001603 d562              RCALL   DECBYTE
+C:001604 910f              POP     DATA
+C:001605 d560              RCALL   DECBYTE
+C:001606 e209              LDI     DATA,$29 ;")"
+C:001607 d573              RCALL   PUTCHAR
+          PRVERS9:
+         ; - - - - - - - - - - - - - - - - - - -
+         ;информация о Flash-ROM чипе
+C:001608 d543              RCALL   UART_NEWLINE
+C:001609 e0a0              LDI     XL,0
+C:00160a e0b2              LDI     XH,2
+C:00160b d548              RCALL   SET_CURSOR
+C:00160c   +          LDIZ    MSG_ID_FLASH*2
+C:00160c ecec      LDI     ZL,LOW(MSG_ID_FLASH*2)
+C:00160d e0f0      LDI     ZH,HIGH(MSG_ID_FLASH*2)
+C:00160e d551              RCALL   PRINTSTRZ
+         
+C:00160f d4b3              RCALL   F_ID
+C:001610 2f0e              MOV     DATA,ZL
+C:001611 d560              RCALL   HEXBYTE
+C:001612 e200              LDI     DATA,$20
+C:001613 d567              RCALL   PUTCHAR
+C:001614 2f0f              MOV     DATA,ZH
+C:001615 d55c              RCALL   HEXBYTE
+         ; - - - - - - - - - - - - - - - - - - -
+C:001616 d535              RCALL   UART_NEWLINE
+C:001617 e0a0              LDI     XL,0
+C:001618 e0b3              LDI     XH,3
+C:001619 d53a              RCALL   SET_CURSOR
+C:00161a   +          LDIZ    MSG_OPENFILE*2
+C:00161a eee4      LDI     ZL,LOW(MSG_OPENFILE*2)
+C:00161b e0f0      LDI     ZH,HIGH(MSG_OPENFILE*2)
+C:00161c d543              RCALL   PRINTSTRZ
+         ;
+         ;инициализация SD карточки
+C:00161d e51f              LDI     TEMP,SD_CS1
+C:00161e ef0f              SER     DATA
+C:00161f d520              RCALL   FPGA_REG
+C:001620 e210              LDI     TEMP,32
+C:001621 d2ad              RCALL   SD_RD_DUMMY
+         
+C:001622 e517              LDI     TEMP,SD_CS0
+C:001623 ef0f              SER     DATA
+C:001624 d51b              RCALL   FPGA_REG
+C:001625 ef8f              SER     R24
+C:001626   +  SDINIT1:LDIZ    CMD00*2
+C:001626 e8e8      LDI     ZL,LOW(CMD00*2)
+C:001627 e0f1      LDI     ZH,HIGH(CMD00*2)
+C:001628 d2ab              RCALL   SD_WR_PGM_6
+C:001629 958a              DEC     R24
+C:00162a f411              BRNE    SDINIT2
+C:00162b e001              LDI     DATA,1  ;нет SD
+C:00162c c44a              RJMP    SD_ERROR
+C:00162d 3001      SDINIT2:CPI     DATA,$01
+C:00162e f7b9              BRNE    SDINIT1
+         
+C:00162f   +          LDIZ    CMD08*2
+C:00162f e8ee      LDI     ZL,LOW(CMD08*2)
+C:001630 e0f1      LDI     ZH,HIGH(CMD08*2)
+C:001631 d2a2              RCALL   SD_WR_PGM_6
+C:001632 e080              LDI     R24,$00
+C:001633 ff02              SBRS    DATA,2
+C:001634 e480              LDI     R24,$40
+C:001635 e014              LDI     TEMP,4
+C:001636 d298              RCALL   SD_RD_DUMMY
+         
+C:001637   +  SDINIT3:LDIZ    CMD55*2
+C:001637 e9ea      LDI     ZL,LOW(CMD55*2)
+C:001638 e0f1      LDI     ZH,HIGH(CMD55*2)
+C:001639 d29a              RCALL   SD_WR_PGM_6
+C:00163a e012              LDI     TEMP,2
+C:00163b d293              RCALL   SD_RD_DUMMY
+C:00163c e609              LDI     DATA,ACMD_41
+C:00163d d290              RCALL   SD_EXCHANGE
+C:00163e 2f08              MOV     DATA,R24
+C:00163f d28e              RCALL   SD_EXCHANGE
+         
+C:001640   +          LDIZ    CMD55*2+2
+C:001640 e9ec      LDI     ZL,LOW(CMD55*2+2)
+C:001641 e0f1      LDI     ZH,HIGH(CMD55*2+2)
+C:001642 e014              LDI     TEMP,4
+C:001643 d293              RCALL   SD_WR_PGX
+C:001644 2300              TST     DATA
+C:001645 f789              BRNE    SDINIT3
+         
+C:001646   +  SDINIT4:LDIZ    CMD59*2
+C:001646 eae6      LDI     ZL,LOW(CMD59*2)
+C:001647 e0f1      LDI     ZH,HIGH(CMD59*2)
+C:001648 d28b              RCALL   SD_WR_PGM_6
+C:001649 2300              TST     DATA
+C:00164a f7d9              BRNE    SDINIT4
+         
+C:00164b   +  SDINIT5:LDIZ    CMD16*2
+C:00164b e9e4      LDI     ZL,LOW(CMD16*2)
+C:00164c e0f1      LDI     ZH,HIGH(CMD16*2)
+C:00164d d286              RCALL   SD_WR_PGM_6
+C:00164e 2300              TST     DATA
+C:00164f f7d9              BRNE    SDINIT5
+         ;
+         ; - - - - - - - - - - - - - - - - - - -
+         ;поиск FAT, инициализация переменных
+C:001650   +  WC_FAT: LDIX    0
+C:001650 e0a0      LDI     XL,LOW(0)
+C:001651 e0b0      LDI     XH,HIGH(0)
+C:001652   +          LDIY    0
+C:001652 e0c0      LDI     YL,LOW(0)
+C:001653 e0d0      LDI     YH,HIGH(0)
+C:001654 d2c2              RCALL   LOADLST
+C:001655   +          LDIZ    BUF4FAT+$01BE
+C:001655 ebee      LDI     ZL,LOW(BUF4FAT+$01BE)
+C:001656 e0f4      LDI     ZH,HIGH(BUF4FAT+$01BE)
+C:001657 8100              LD      DATA,Z
+C:001658 2300              TST     DATA
+C:001659 f4b9              BRNE    RDFAT05
+C:00165a ece2              LDI     ZL,$C2
+C:00165b 8100              LD      DATA,Z
+C:00165c e010              LDI     TEMP,0
+C:00165d 3001              CPI     DATA,$01
+C:00165e f051              BREQ    RDFAT06
+C:00165f e012              LDI     TEMP,2
+C:001660 300b              CPI     DATA,$0B
+C:001661 f039              BREQ    RDFAT06
+C:001662 300c              CPI     DATA,$0C
+C:001663 f029              BREQ    RDFAT06
+C:001664 e011              LDI     TEMP,1
+C:001665 3006              CPI     DATA,$06
+C:001666 f011              BREQ    RDFAT06
+C:001667 300e              CPI     DATA,$0E
+C:001668 f441              BRNE    RDFAT05
+C:001669 9310 0500 RDFAT06:STS     CAL_FAT,TEMP
+C:00166b ece6              LDI     ZL,$C6
+C:00166c 91a1              LD      XL,Z+
+C:00166d 91b1              LD      XH,Z+
+C:00166e 91c1              LD      YL,Z+
+C:00166f 81d0              LD      YH,Z
+C:001670 c02f              RJMP    RDFAT00
+C:001671   +  RDFAT05:LDIZ    BUF4FAT
+C:001671 e0e0      LDI     ZL,LOW(BUF4FAT)
+C:001672 e0f3      LDI     ZH,HIGH(BUF4FAT)
+C:001673 8535              LDD     BITS,Z+$0D
+C:001674 e000              LDI     DATA,0
+C:001675 e010              LDI     TEMP,0
+C:001676 e028              LDI     COUNT,8
+C:001677 9537      RDF051: ROR     BITS
+C:001678 1d0f              ADC     DATA,NULL
+C:001679 952a              DEC     COUNT
+C:00167a f7e1              BRNE    RDF051
+C:00167b 950a              DEC     DATA
+C:00167c f409              BRNE    RDF052
+C:00167d 9513              INC     TEMP
+C:00167e 8506      RDF052: LDD     DATA,Z+$0E
+C:00167f 8407              LDD     R0,Z+$0F
+C:001680 2900              OR      DATA,R0
+C:001681 f009              BREQ    RDF053
+C:001682 9513              INC     TEMP
+C:001683 8903      RDF053: LDD     DATA,Z+$13
+C:001684 8804              LDD     R0,Z+$14
+C:001685 2900              OR      DATA,R0
+C:001686 f409              BRNE    RDF054
+C:001687 9513              INC     TEMP
+C:001688 a100      RDF054: LDD     DATA,Z+$20
+C:001689 a001              LDD     R0,Z+$21
+C:00168a 2900              OR      DATA,R0
+C:00168b a002              LDD     R0,Z+$22
+C:00168c 2900              OR      DATA,R0
+C:00168d a003              LDD     R0,Z+$23
+C:00168e 2900              OR      DATA,R0
+C:00168f f409              BRNE    RDF055
+C:001690 9513              INC     TEMP
+C:001691 8905      RDF055: LDD     DATA,Z+$15
+C:001692 7f00              ANDI    DATA,$F0
+C:001693 3f00              CPI     DATA,$F0
+C:001694 f409              BRNE    RDF056
+C:001695 9513              INC     TEMP
+C:001696 3014      RDF056: CPI     TEMP,4
+C:001697 f011              BREQ    RDF057
+C:001698 e003              LDI     DATA,3  ;не найдена FAT
+C:001699 c3dd              RJMP    SD_ERROR
+C:00169a 92d0 0500 RDF057: STS     CAL_FAT,FF
+C:00169c   +          LDIY    0
+C:00169c e0c0      LDI     YL,LOW(0)
+C:00169d e0d0      LDI     YH,HIGH(0)
+C:00169e   +          LDIX    0
+C:00169e e0a0      LDI     XL,LOW(0)
+C:00169f e0b0      LDI     XH,HIGH(0)
+C:0016a0   +  RDFAT00:STSX    STARTRZ+0
+C:0016a0 93a0 050d STS     STARTRZ+0,XL
+C:0016a2 93b0 050e STS     STARTRZ+0+1,XH
+C:0016a4   +          STSY    STARTRZ+2
+C:0016a4 93c0 050f STS     STARTRZ+2,YL
+C:0016a6 93d0 0510 STS     STARTRZ+2+1,YH
+C:0016a8 d26e              RCALL   LOADLST
+C:0016a9   +          LDIY    0
+C:0016a9 e0c0      LDI     YL,LOW(0)
+C:0016aa e0d0      LDI     YH,HIGH(0)
+C:0016ab 89a6              LDD     XL,Z+22
+C:0016ac 89b7              LDD     XH,Z+23         ;bpb_fatsz16
+C:0016ad 2f0b              MOV     DATA,XH
+C:0016ae 2b0a              OR      DATA,XL
+C:0016af f421              BRNE    RDFAT01         ;если не fat12/16 (bpb_fatsz16=0)
+C:0016b0 a1a4              LDD     XL,Z+36         ;то берем bpb_fatsz32 из смещения +36
+C:0016b1 a1b5              LDD     XH,Z+37
+C:0016b2 a1c6              LDD     YL,Z+38
+C:0016b3 a1d7              LDD     YH,Z+39
+C:0016b4   +  RDFAT01:STSX    SEC_FAT+0
+C:0016b4 93a0 0507 STS     SEC_FAT+0,XL
+C:0016b6 93b0 0508 STS     SEC_FAT+0+1,XH
+C:0016b8   +          STSY    SEC_FAT+2       ;число секторов на fat-таблицу
+C:0016b8 93c0 0509 STS     SEC_FAT+2,YL
+C:0016ba 93d0 050a STS     SEC_FAT+2+1,YH
+C:0016bc   +          LDIY    0
+C:0016bc e0c0      LDI     YL,LOW(0)
+C:0016bd e0d0      LDI     YH,HIGH(0)
+C:0016be 89a3              LDD     XL,Z+19
+C:0016bf 89b4              LDD     XH,Z+20         ;bpb_totsec16
+C:0016c0 2f0b              MOV     DATA,XH
+C:0016c1 2b0a              OR      DATA,XL
+C:0016c2 f421              BRNE    RDFAT02         ;если не fat12/16 (bpb_totsec16=0)
+C:0016c3 a1a0              LDD     XL,Z+32         ;то берем из bpb_totsec32 смещения +32
+C:0016c4 a1b1              LDD     XH,Z+33
+C:0016c5 a1c2              LDD     YL,Z+34
+C:0016c6 a1d3              LDD     YH,Z+35
+C:0016c7   +  RDFAT02:STSX    SEC_DSC+0
+C:0016c7 93a0 0515 STS     SEC_DSC+0,XL
+C:0016c9 93b0 0516 STS     SEC_DSC+0+1,XH
+C:0016cb   +          STSY    SEC_DSC+2       ;к-во секторов на диске/разделе
+C:0016cb 93c0 0517 STS     SEC_DSC+2,YL
+C:0016cd 93d0 0518 STS     SEC_DSC+2+1,YH
+         ;вычисляем rootdirsectors
+C:0016cf 89a1              LDD     XL,Z+17
+C:0016d0 89b2              LDD     XH,Z+18         ;bpb_rootentcnt
+C:0016d1   +          LDIY    0
+C:0016d1 e0c0      LDI     YL,LOW(0)
+C:0016d2 e0d0      LDI     YH,HIGH(0)
+C:0016d3 2f0b              MOV     DATA,XH
+C:0016d4 2b0a              OR      DATA,XL
+C:0016d5 f019              BREQ    RDFAT03
+C:0016d6 e100              LDI     DATA,$10
+C:0016d7 d315              RCALL   BCDE_A
+C:0016d8 01ed              MOVW    YL,XL           ;это реализована формула
+                                         ;rootdirsectors = ( (bpb_rootentcnt*32)+(bpb_bytspersec-1) )/bpb_bytspersec
+                                         ;в Y rootdirsectors
+                                         ;если fat32, то Y=0 всегда
+C:0016d9 93df      RDFAT03:PUSH    YH
+C:0016da 93cf              PUSH    YL
+C:0016db 8900              LDD     DATA,Z+16       ;bpb_numfats
+C:0016dc 9300 0501         STS     MANYFAT,DATA
+C:0016de   +          LDSX    SEC_FAT+0
+C:0016de 91a0 0507 LDS     XL,SEC_FAT+0
+C:0016e0 91b0 0508 LDS     XH,SEC_FAT+0+1
+C:0016e2   +          LDSY    SEC_FAT+2
+C:0016e2 91c0 0509 LDS     YL,SEC_FAT+2
+C:0016e4 91d0 050a LDS     YH,SEC_FAT+2+1
+C:0016e6 950a              DEC     DATA
+C:0016e7 0faa      RDF031: LSL     XL
+C:0016e8 1fbb              ROL     XH
+C:0016e9 1fcc              ROL     YL
+C:0016ea 1fdd              ROL     YH
+C:0016eb 950a              DEC     DATA
+C:0016ec f7d1              BRNE    RDF031
+C:0016ed 918f              POP     R24
+C:0016ee 919f              POP     R25
+                                         ;полный размер fat-области в секторах
+C:0016ef d316              RCALL   HLDEPBC         ;прибавили rootdirsectors
+C:0016f0 8586              LDD     R24,Z+14
+C:0016f1 8597              LDD     R25,Z+15        ;bpb_rsvdseccnt
+C:0016f2 9380 050b         STS     RSVDSEC+0,R24
+C:0016f4 9390 050c         STS     RSVDSEC+1,R25
+C:0016f6 d30f              RCALL   HLDEPBC         ;прибавили bpb_resvdseccnt
+C:0016f7   +          STSX    FRSTDAT+0
+C:0016f7 93a0 0511 STS     FRSTDAT+0,XL
+C:0016f9 93b0 0512 STS     FRSTDAT+0+1,XH
+C:0016fb   +          STSY    FRSTDAT+2       ;положили номер первого сектора данных
+C:0016fb 93c0 0513 STS     FRSTDAT+2,YL
+C:0016fd 93d0 0514 STS     FRSTDAT+2+1,YH
+C:0016ff   +          LDIZ    SEC_DSC
+C:0016ff e1e5      LDI     ZL,LOW(SEC_DSC)
+C:001700 e0f5      LDI     ZH,HIGH(SEC_DSC)
+C:001701 d2ee              RCALL   BCDEHLM         ;вычли из полного к-ва секторов раздела
+C:001702   +          LDIZ    BUF4FAT
+C:001702 e0e0      LDI     ZL,LOW(BUF4FAT)
+C:001703 e0f3      LDI     ZH,HIGH(BUF4FAT)
+C:001704 8505              LDD     DATA,Z+13
+C:001705 9300 0502         STS     BYTSSEC,DATA
+C:001707 d2e5              RCALL   BCDE_A          ;разделили на к-во секторов в кластере
+C:001708   +          STSX    CLS_DSC+0
+C:001708 93a0 0519 STS     CLS_DSC+0,XL
+C:00170a 93b0 051a STS     CLS_DSC+0+1,XH
+C:00170c   +          STSY    CLS_DSC+2       ;положили кол-во кластеров на разделе
+C:00170c 93c0 051b STS     CLS_DSC+2,YL
+C:00170e 93d0 051c STS     CLS_DSC+2+1,YH
+         
+C:001710 9100 0500         LDS     DATA,CAL_FAT
+C:001712 3f0f              CPI     DATA,$FF
+C:001713 f519              BRNE    RDFAT04
+C:001714   +          LDSX    CLS_DSC+0
+C:001714 91a0 0519 LDS     XL,CLS_DSC+0
+C:001716 91b0 051a LDS     XH,CLS_DSC+0+1
+C:001718   +          LDSY    CLS_DSC+2
+C:001718 91c0 051b LDS     YL,CLS_DSC+2
+C:00171a 91d0 051c LDS     YH,CLS_DSC+2+1
+C:00171c   +          PUSHY
+C:00171c 93cf      PUSH    YL
+C:00171d 93df      PUSH    YH
+C:00171e   +          PUSHX
+C:00171e 93af      PUSH    XL
+C:00171f 93bf      PUSH    XH
+C:001720 0faa              LSL     XL
+C:001721 1fbb              ROL     XH
+C:001722 1fcc              ROL     YL
+C:001723 1fdd              ROL     YH
+C:001724 d2e6              RCALL   RASCHET
+C:001725 e001              LDI     DATA,1
+C:001726   +          POPX
+C:001726 91bf      POP     XH
+C:001727 91af      POP     XL
+C:001728   +          POPY
+C:001728 91df      POP     YH
+C:001729 91cf      POP     YL
+C:00172a f061              BREQ    RDFAT04
+C:00172b 0faa              LSL     XL
+C:00172c 1fbb              ROL     XH
+C:00172d 1fcc              ROL     YL
+C:00172e 1fdd              ROL     YH
+C:00172f 0faa              LSL     XL
+C:001730 1fbb              ROL     XH
+C:001731 1fcc              ROL     YL
+C:001732 1fdd              ROL     YH
+C:001733 d2d7              RCALL   RASCHET
+C:001734 e002              LDI     DATA,2
+C:001735 f009              BREQ    RDFAT04
+C:001736 2700              CLR     DATA
+C:001737 9300 0500 RDFAT04:STS     CAL_FAT,DATA
+         ;для fat12/16 вычисляем адрес первого сектора директории
+         ;для fat32 берем по смещемию +44
+         ;на выходе YX == сектор rootdir
+C:001739   +          LDIX    0
+C:001739 e0a0      LDI     XL,LOW(0)
+C:00173a e0b0      LDI     XH,HIGH(0)
+C:00173b   +          LDIY    0
+C:00173b e0c0      LDI     YL,LOW(0)
+C:00173c e0d0      LDI     YH,HIGH(0)
+C:00173d 2300              TST     DATA
+C:00173e f031              BREQ    FSRROO2
+C:00173f 950a              DEC     DATA
+C:001740 f021              BREQ    FSRROO2
+C:001741 a5a4              LDD     XL,Z+44
+C:001742 a5b5              LDD     XH,Z+45
+C:001743 a5c6              LDD     YL,Z+46
+C:001744 a5d7              LDD     YH,Z+47
+C:001745   +  FSRROO2:STSX    ROOTCLS+0
+C:001745 93a0 0503 STS     ROOTCLS+0,XL
+C:001747 93b0 0504 STS     ROOTCLS+0+1,XH
+C:001749   +          STSY    ROOTCLS+2       ;сектор root директории
+C:001749 93c0 0505 STS     ROOTCLS+2,YL
+C:00174b 93d0 0506 STS     ROOTCLS+2+1,YH
+C:00174d   +          STSX    TEK_DIR+0
+C:00174d 93a0 0525 STS     TEK_DIR+0,XL
+C:00174f 93b0 0526 STS     TEK_DIR+0+1,XH
+C:001751   +          STSY    TEK_DIR+2
+C:001751 93c0 0527 STS     TEK_DIR+2,YL
+C:001753 93d0 0528 STS     TEK_DIR+2+1,YH
+         
+C:001755   +  FSRR121:PUSHX
+C:001755 93af      PUSH    XL
+C:001756 93bf      PUSH    XH
+C:001757   +          PUSHY
+C:001757 93cf      PUSH    YL
+C:001758 93df      PUSH    YH
+C:001759   +          LDSX    RSVDSEC
+C:001759 91a0 050b LDS     XL,RSVDSEC
+C:00175b 91b0 050c LDS     XH,RSVDSEC+1
+C:00175d   +          LDIY    0
+C:00175d e0c0      LDI     YL,LOW(0)
+C:00175e e0d0      LDI     YH,HIGH(0)
+C:00175f   +          LDIZ    STARTRZ
+C:00175f e0ed      LDI     ZL,LOW(STARTRZ)
+C:001760 e0f5      LDI     ZH,HIGH(STARTRZ)
+C:001761 d29b              RCALL   BCDEHLP
+C:001762   +          STSX    FATSTR0+0
+C:001762 93a0 051d STS     FATSTR0+0,XL
+C:001764 93b0 051e STS     FATSTR0+0+1,XH
+C:001766   +          STSY    FATSTR0+2
+C:001766 93c0 051f STS     FATSTR0+2,YL
+C:001768 93d0 0520 STS     FATSTR0+2+1,YH
+C:00176a   +          LDIZ    SEC_FAT
+C:00176a e0e7      LDI     ZL,LOW(SEC_FAT)
+C:00176b e0f5      LDI     ZH,HIGH(SEC_FAT)
+C:00176c d290              RCALL   BCDEHLP
+C:00176d   +          STSX    FATSTR1+0
+C:00176d 93a0 0521 STS     FATSTR1+0,XL
+C:00176f 93b0 0522 STS     FATSTR1+0+1,XH
+C:001771   +          STSY    FATSTR1+2
+C:001771 93c0 0523 STS     FATSTR1+2,YL
+C:001773 93d0 0524 STS     FATSTR1+2+1,YH
+C:001775   +          POPY
+C:001775 91df      POP     YH
+C:001776 91cf      POP     YL
+C:001777   +          POPX
+C:001777 91bf      POP     XH
+C:001778 91af      POP     XL
+         
+C:001779 e011              LDI     TEMP,1
+C:00177a 2e0a              MOV     R0,XL
+C:00177b 2a0b              OR      R0,XH
+C:00177c 2a0c              OR      R0,YL
+C:00177d 2a0d              OR      R0,YH
+C:00177e f039              BREQ    LASTCLS
+C:00177f 931f      NEXTCLS:PUSH    TEMP
+C:001780 d1e4              RCALL   RDFATZP
+C:001781 d1d1              RCALL   LST_CLS
+C:001782 911f              POP     TEMP
+C:001783 f410              BRCC    LASTCLS
+C:001784 9513              INC     TEMP
+C:001785 cff9              RJMP    NEXTCLS
+C:001786 9310 0529 LASTCLS:STS     KCLSDIR,TEMP
+C:001788   +          LDIY    0
+C:001788 e0c0      LDI     YL,LOW(0)
+C:001789 e0d0      LDI     YH,HIGH(0)
+C:00178a d192              RCALL   RDDIRSC
+         ;
+         ; - - - - - - - - - - - - - - - - - - -
+         ;поиск файла в директории
+C:00178b   +          LDIY    0               ;номер описателя файла
+C:00178b e0c0      LDI     YL,LOW(0)
+C:00178c e0d0      LDI     YH,HIGH(0)
+C:00178d c006              RJMP    FNDMP32
+         
+C:00178e 9621      FNDMP31:ADIW    YL,1            ;номер++               ─────────┐
+C:00178f 96b0              ADIW    ZL,$20          ;следующий описатель             │
+C:001790 30f5              CPI     ZH,HIGH(BUF4FAT+512);                            │
+                                         ;вылезли за сектор?              │
+C:001791 f411              BRNE    FNDMP32         ;нет ещё                         │
+C:001792 d18a              RCALL   RDDIRSC         ;считываем следующий             │
+C:001793 f4b9              BRNE    FNDMP37         ;кончились сектора в директории ═│═╗
+C:001794 8503      FNDMP32:LDD     DATA,Z+$0B      ;атрибуты                        │ ║
+C:001795 fd03              SBRC    DATA,3          ;длиное имя/имя диска?           │ ║
+C:001796 cff7              RJMP    FNDMP31         ;да ────────────────────────────┤ ║
+C:001797 fd04              SBRC    DATA,4          ;директория?                     │ ║
+C:001798 cff5              RJMP    FNDMP31         ;да ────────────────────────────┤ ║
+C:001799 8100              LD      DATA,Z          ;первый символ                   │ ║
+C:00179a 3e05              CPI     DATA,$E5        ;удалённый файл?                 │ ║
+C:00179b f391              BREQ    FNDMP31         ;да ────────────────────────────┘ ║
+C:00179c 2300              TST     DATA            ;пустой описатель? (конец списка)  ╚═ в этой директории
+C:00179d f069              BREQ    FNDMP37         ;да ═════════════════════════════════ нет нашёго файла
+C:00179e 93ef              PUSH    ZL
+C:00179f 01df              MOVW    XL,ZL
+C:0017a0   +          LDIZ    FILENAME*2
+C:0017a0 eaec      LDI     ZL,LOW(FILENAME*2)
+C:0017a1 e0f1      LDI     ZH,HIGH(FILENAME*2)
+C:0017a2 9105      DALSHE: LPM     DATA,Z+
+C:0017a3 2300              TST     DATA
+C:0017a4 f041              BREQ    NASHEL
+C:0017a5 911d              LD      TEMP,X+
+C:0017a6 1701              CP      DATA,TEMP
+C:0017a7 f3d1              BREQ    DALSHE
+         ;не совпало
+C:0017a8 2ffb              MOV     ZH,XH
+C:0017a9 91ef              POP     ZL
+C:0017aa cfe3              RJMP    FNDMP31
+         ;нет такого файла
+          FNDMP37:
+C:0017ab e004              LDI     DATA,4  ;нет файла
+C:0017ac c2ca              RJMP    SD_ERROR
+         ;найден описатель
+C:0017ad 2ffb      NASHEL: MOV     ZH,XH
+C:0017ae 91ef              POP     ZL
+         ;
+         ; - - - - - - - - - - - - - - - - - - -
+         ;инициализация переменных
+         ;для последующего чтения файла
+         ;Z указывает на описатель файла
+C:0017af 8da2              LDD     XL,Z+$1A
+C:0017b0 8db3              LDD     XH,Z+$1B
+C:0017b1 89c4              LDD     YL,Z+$14
+C:0017b2 89d5              LDD     YH,Z+$15        ;считали номер первого кластера файла
+C:0017b3   +          STSX    TFILCLS+0
+C:0017b3 93a0 052b STS     TFILCLS+0,XL
+C:0017b5 93b0 052c STS     TFILCLS+0+1,XH
+C:0017b7   +          STSY    TFILCLS+2
+C:0017b7 93c0 052d STS     TFILCLS+2,YL
+C:0017b9 93d0 052e STS     TFILCLS+2+1,YH
+C:0017bb   +          STSX    ZTFILCLS+0
+C:0017bb 93a0 0534 STS     ZTFILCLS+0,XL
+C:0017bd 93b0 0535 STS     ZTFILCLS+0+1,XH
+C:0017bf   +          STSY    ZTFILCLS+2
+C:0017bf 93c0 0536 STS     ZTFILCLS+2,YL
+C:0017c1 93d0 0537 STS     ZTFILCLS+2+1,YH
+C:0017c3 8da4              LDD     XL,Z+$1C
+C:0017c4 8db5              LDD     XH,Z+$1D
+C:0017c5 8dc6              LDD     YL,Z+$1E
+C:0017c6 8dd7              LDD     YH,Z+$1F        ;считали длину файла
+         
+C:0017c7 2f0a              MOV     DATA,XL
+C:0017c8 2b0b              OR      DATA,XH
+C:0017c9 2b0c              OR      DATA,YL
+C:0017ca 2b0d              OR      DATA,YH
+C:0017cb f411              BRNE    F01
+C:0017cc e005              LDI     DATA,5  ;пустой файл
+C:0017cd c2a9              RJMP    SD_ERROR
+          F01:
+C:0017ce e008              LDI     DATA,$08
+C:0017cf 15ae              CP      XL,ONE
+C:0017d0 05bf              CPC     XH,NULL
+C:0017d1 07c0              CPC     YL,DATA
+C:0017d2 05df              CPC     YH,NULL
+C:0017d3 f010              BRCS    F02
+C:0017d4 e005              LDI     DATA,5  ;большой файл
+C:0017d5 c2a1              RJMP    SD_ERROR
+          F02:
+C:0017d6 ef8f              LDI     R24,LOW(511)
+C:0017d7 e091              LDI     R25,HIGH(511)
+C:0017d8 d22d              RCALL   HLDEPBC
+C:0017d9 d20a              RCALL   BCDE200         ;получили кол-во секторов
+C:0017da 9711              SBIW    XL,1
+C:0017db 09cf              SBC     YL,NULL
+C:0017dc 09df              SBC     YH,NULL
+C:0017dd 9100 0502         LDS     DATA,BYTSSEC
+C:0017df 950a              DEC     DATA
+C:0017e0 230a              AND     DATA,XL
+C:0017e1 9503              INC     DATA
+C:0017e2 9300 052f         STS     MPHWOST,DATA    ;кол-во секторов в последнем кластере
+C:0017e4 9300 0538         STS     ZMPHWOST,DATA
+C:0017e6 9100 0502         LDS     DATA,BYTSSEC
+C:0017e8 d204              RCALL   BCDE_A
+C:0017e9   +          STSX    KOL_CLS+0
+C:0017e9 93a0 0530 STS     KOL_CLS+0,XL
+C:0017eb 93b0 0531 STS     KOL_CLS+0+1,XH
+C:0017ed   +          STSY    KOL_CLS+2
+C:0017ed 93c0 0532 STS     KOL_CLS+2,YL
+C:0017ef 93d0 0533 STS     KOL_CLS+2+1,YH
+C:0017f1   +          STSX    ZKOL_CLS+0
+C:0017f1 93a0 0539 STS     ZKOL_CLS+0,XL
+C:0017f3 93b0 053a STS     ZKOL_CLS+0+1,XH
+C:0017f5   +          STSY    ZKOL_CLS+2
+C:0017f5 93c0 053b STS     ZKOL_CLS+2,YL
+C:0017f7 93d0 053c STS     ZKOL_CLS+2+1,YH
+C:0017f9 92f0 052a         STS     NUMSECK,NULL
+         ; - - - - - - - - - - - - - - - - - - -
+         ;всё нормально, начинаем
+         ;стирание
+C:0017fb d350              RCALL   UART_NEWLINE
+C:0017fc e0a0              LDI     XL,0
+C:0017fd e0b4              LDI     XH,4
+C:0017fe d355              RCALL   SET_CURSOR
+C:0017ff   +          LDIZ    MSG_F_ERASE*2
+C:0017ff e4e4      LDI     ZL,LOW(MSG_F_ERASE*2)
+C:001800 e0f1      LDI     ZH,HIGH(MSG_F_ERASE*2)
+C:001801 d35e              RCALL   PRINTSTRZ
+C:001802 d2ef              RCALL   F_ERASE
+         ;запись
+C:001803 d348              RCALL   UART_NEWLINE
+C:001804 e0a0              LDI     XL,0
+C:001805 e0b5              LDI     XH,5
+C:001806 d34d              RCALL   SET_CURSOR
+C:001807   +          LDIZ    MSG_F_WRITE*2
+C:001807 e4ee      LDI     ZL,LOW(MSG_F_WRITE*2)
+C:001808 e0f1      LDI     ZH,HIGH(MSG_F_WRITE*2)
+C:001809 d356              RCALL   PRINTSTRZ
+C:00180a e0a0              LDI     XL,0
+C:00180b e1b0              LDI     XH,16
+C:00180c d347              RCALL   SET_CURSOR
+C:00180d e001              LDI     DATA,$01 ;"░"
+C:00180e e414              LDI     TEMP,SCR_CHAR
+C:00180f d330              RCALL   FPGA_REG
+C:001810 ef1f              LDI     TEMP,$FF
+C:001811   +  FCHXY1: SPICS_CLR
+C:001811 98c0      CBI     PORTB,0
+C:001812   +          SPICS_SET
+C:001812 9ac0      SBI     PORTB,0
+C:001813 951a              DEC     TEMP
+C:001814 f7e1              BRNE    FCHXY1
+C:001815 e0a0              LDI     XL,0
+C:001816 e1b0              LDI     XH,16
+C:001817 d33c              RCALL   SET_CURSOR
+         
+C:001818 92f0 053f         STS     F_ADDR0,NULL
+C:00181a 92f0 0540         STS     F_ADDR1,NULL
+C:00181c 92f0 0541         STS     F_ADDR2,NULL
+         
+C:00181e d1f6      F13:    RCALL   NEXTSEC
+C:00181f 9300 053e         STS     LASTSECFLAG,DATA
+         
+C:001821   +          LDIZ    BUFFER
+C:001821 e0e0      LDI     ZL,LOW(BUFFER)
+C:001822 e0f1      LDI     ZH,HIGH(BUFFER)
+C:001823 91a0 053f         LDS     XL,F_ADDR0
+C:001825 91b0 0540         LDS     XH,F_ADDR1
+C:001827 91c0 0541         LDS     YL,F_ADDR2
+         
+C:001829 d2a8      F11:    RCALL   F_WRITE
+C:00182a 9611              ADIW    XL,1
+C:00182b 1dcf              ADC     YL,NULL
+C:00182c 9631              ADIW    ZL,1
+C:00182d 30f3              CPI     ZH,HIGH(BUFFER+512)
+C:00182e f7d1              BRNE    F11
+         
+C:00182f   +          LED_OFF
+C:00182f 9ac7      SBI     PORTB,7
+C:001830 fdb1              SBRC    XH,1
+C:001831   +          LED_ON  ;мигать при программировании
+C:001831 98c7      CBI     PORTB,7
+         
+C:001832 93a0 053f         STS     F_ADDR0,XL
+C:001834 93b0 0540         STS     F_ADDR1,XH
+C:001836 93c0 0541         STS     F_ADDR2,YL
+         
+C:001838 30a0              CPI     XL,$00
+C:001839 f431              BRNE    F12
+C:00183a 2f0b              MOV     DATA,XH
+C:00183b 7007              ANDI    DATA,$07
+C:00183c f419              BRNE    F12
+C:00183d e002              LDI     DATA,$02 ;"▒"
+C:00183e e414              LDI     TEMP,SCR_CHAR
+C:00183f d300              RCALL   FPGA_REG
+          F12:
+C:001840 9100 053e         LDS     DATA,LASTSECFLAG
+C:001842 2300              TST     DATA
+C:001843 f6d1              BRNE    F13
+         ;проверка
+C:001844 d2bb              RCALL   F_RST
+C:001845 ef14              LDI     TEMP,FLASH_CTRL
+C:001846 e003              LDI     DATA,0B00000011
+C:001847 d2f8              RCALL   FPGA_REG
+C:001848 d303              RCALL   UART_NEWLINE
+C:001849 e0a0              LDI     XL,0
+C:00184a e0b6              LDI     XH,6
+C:00184b d308              RCALL   SET_CURSOR
+C:00184c   +          LDIZ    MSG_F_CHECK*2
+C:00184c e5e8      LDI     ZL,LOW(MSG_F_CHECK*2)
+C:00184d e0f1      LDI     ZH,HIGH(MSG_F_CHECK*2)
+C:00184e d311              RCALL   PRINTSTRZ
+C:00184f e0a0              LDI     XL,0
+C:001850 e1b0              LDI     XH,16
+C:001851 d302              RCALL   SET_CURSOR
+         
+C:001852   +          LDSX    ZTFILCLS+0
+C:001852 91a0 0534 LDS     XL,ZTFILCLS+0
+C:001854 91b0 0535 LDS     XH,ZTFILCLS+0+1
+C:001856   +          LDSY    ZTFILCLS+2
+C:001856 91c0 0536 LDS     YL,ZTFILCLS+2
+C:001858 91d0 0537 LDS     YH,ZTFILCLS+2+1
+C:00185a   +          STSX    TFILCLS+0
+C:00185a 93a0 052b STS     TFILCLS+0,XL
+C:00185c 93b0 052c STS     TFILCLS+0+1,XH
+C:00185e   +          STSY    TFILCLS+2
+C:00185e 93c0 052d STS     TFILCLS+2,YL
+C:001860 93d0 052e STS     TFILCLS+2+1,YH
+C:001862 9100 0538         LDS     DATA,ZMPHWOST
+C:001864 9300 052f         STS     MPHWOST,DATA
+C:001866   +          LDSX    ZKOL_CLS+0
+C:001866 91a0 0539 LDS     XL,ZKOL_CLS+0
+C:001868 91b0 053a LDS     XH,ZKOL_CLS+0+1
+C:00186a   +          LDSY    ZKOL_CLS+2
+C:00186a 91c0 053b LDS     YL,ZKOL_CLS+2
+C:00186c 91d0 053c LDS     YH,ZKOL_CLS+2+1
+C:00186e   +          STSX    KOL_CLS+0
+C:00186e 93a0 0530 STS     KOL_CLS+0,XL
+C:001870 93b0 0531 STS     KOL_CLS+0+1,XH
+C:001872   +          STSY    KOL_CLS+2
+C:001872 93c0 0532 STS     KOL_CLS+2,YL
+C:001874 93d0 0533 STS     KOL_CLS+2+1,YH
+C:001876 92f0 052a         STS     NUMSECK,NULL
+C:001878 92f0 0542         STS     ERRFLG1,NULL
+C:00187a 92f0 0543         STS     ERRFLG2,NULL
+         ;
+C:00187c 92f0 053f         STS     F_ADDR0,NULL
+C:00187e 92f0 0540         STS     F_ADDR1,NULL
+C:001880 92f0 0541         STS     F_ADDR2,NULL
+         
+C:001882 d192      F25:    RCALL   NEXTSEC
+C:001883 9300 053e         STS     LASTSECFLAG,DATA
+C:001885   +          LDIZ    BUFFER
+C:001885 e0e0      LDI     ZL,LOW(BUFFER)
+C:001886 e0f1      LDI     ZH,HIGH(BUFFER)
+C:001887 91a0 053f         LDS     XL,F_ADDR0
+C:001889 91b0 0540         LDS     XH,F_ADDR1
+C:00188b 91c0 0541         LDS     YL,F_ADDR2
+         
+C:00188d d2a6      F21:    RCALL   F_IN
+C:00188e 9111              LD      TEMP,Z+
+C:00188f 1701              CP      DATA,TEMP
+C:001890 f011              BREQ    F26
+C:001891 92e0 0542         STS     ERRFLG1,ONE
+C:001893 9611      F26:    ADIW    XL,1
+C:001894 1dcf              ADC     YL,NULL
+C:001895 30f3              CPI     ZH,HIGH(BUFFER+512)
+C:001896 f7b1              BRNE    F21
+         
+C:001897   +          LED_OFF
+C:001897 9ac7      SBI     PORTB,7
+C:001898 fdb3              SBRC    XH,3
+C:001899   +          LED_ON  ;мигать при проверке
+C:001899 98c7      CBI     PORTB,7
+         
+C:00189a 93a0 053f         STS     F_ADDR0,XL
+C:00189c 93b0 0540         STS     F_ADDR1,XH
+C:00189e 93c0 0541         STS     F_ADDR2,YL
+         
+C:0018a0 30a0              CPI     XL,$00
+C:0018a1 f481              BRNE    F22
+C:0018a2 2f0b              MOV     DATA,XH
+C:0018a3 7007              ANDI    DATA,$07
+C:0018a4 f469              BRNE    F22
+C:0018a5 9110 0542         LDS     TEMP,ERRFLG1
+C:0018a7 2311              TST     TEMP
+C:0018a8 f031              BREQ    F23
+C:0018a9 92e0 0543         STS     ERRFLG2,ONE
+C:0018ab 92f0 0542         STS     ERRFLG1,NULL
+C:0018ad e508              LDI     DATA,$58 ;"X"
+C:0018ae c001              RJMP    F24
+C:0018af e003      F23:    LDI     DATA,$03 ;"█"
+C:0018b0 e414      F24:    LDI     TEMP,SCR_CHAR
+C:0018b1 d28e              RCALL   FPGA_REG
+          F22:
+C:0018b2 9100 053e         LDS     DATA,LASTSECFLAG
+C:0018b4 2300              TST     DATA
+C:0018b5 f661              BRNE    F25
+         ;стоп
+C:0018b6   +          LED_OFF
+C:0018b6 9ac7      SBI     PORTB,7
+C:0018b7 d294              RCALL   UART_NEWLINE
+C:0018b8 e0a0              LDI     XL,0
+C:0018b9 e0b7              LDI     XH,7
+C:0018ba d299              RCALL   SET_CURSOR
+C:0018bb   +          LDIZ    MSG_F_ERROR*2
+C:0018bb e7ea      LDI     ZL,LOW(MSG_F_ERROR*2)
+C:0018bc e0f1      LDI     ZH,HIGH(MSG_F_ERROR*2)
+C:0018bd 9110 0543         LDS     TEMP,ERRFLG2
+C:0018bf 2311              TST     TEMP
+C:0018c0 f411              BRNE    F91
+C:0018c1   +          LDIZ    MSG_F_COMPLETE*2
+C:0018c1 e6e2      LDI     ZL,LOW(MSG_F_COMPLETE*2)
+C:0018c2 e0f1      LDI     ZH,HIGH(MSG_F_COMPLETE*2)
+C:0018c3 d29c      F91:    RCALL   PRINTSTRZ
+C:0018c4 d287              RCALL   UART_NEWLINE
+C:0018c5 e0a0              LDI     XL,0
+C:0018c6 e0b9              LDI     XH,9
+C:0018c7 d28c              RCALL   SET_CURSOR
+C:0018c8   +          LDIZ    MSG_HALT*2
+C:0018c8 e8e2      LDI     ZL,LOW(MSG_HALT*2)
+C:0018c9 e0f1      LDI     ZH,HIGH(MSG_HALT*2)
+C:0018ca d295              RCALL   PRINTSTRZ
+C:0018cb 9816              CBI     DDRE,6
+C:0018cc cfff      STOP1:  RJMP    STOP1
+         
+         ;
+         ;--------------------------------------
+         ;out:   DATA
+          SD_RECEIVE:
+C:0018cd ef0f              SER     DATA
+         ; - - - - - - - - - - - - - - - - - - -
+         ;in:    DATA
+         ;out:   DATA
+          SD_EXCHANGE:
+C:0018ce c276              RJMP    FPGA_SAME_REG
+         ;
+         ;--------------------------------------
+         ;in;    TEMP - n
+          SD_RD_DUMMY:
+C:0018cf ef0f              SER     DATA
+C:0018d0 dffd              RCALL   SD_EXCHANGE
+C:0018d1 951a              DEC     TEMP
+C:0018d2 f7e1              BRNE    SD_RD_DUMMY
+C:0018d3 9508              RET
+         ;
+         ;--------------------------------------
+         ;in:    Z
+          SD_WR_PGM_6:
+C:0018d4 e012              LDI     TEMP,2
+C:0018d5 dff9              RCALL   SD_RD_DUMMY
+C:0018d6 e016              LDI     TEMP,6
+          SD_WR_PGX:
+C:0018d7 9105      SDWRP61:LPM     DATA,Z+
+C:0018d8 dff5              RCALL   SD_EXCHANGE
+C:0018d9 951a              DEC     TEMP
+C:0018da f7e1              BRNE    SDWRP61
+         ; - - - - - - - - - - - - - - - - - - -
+         ;out:   DATA
+          SD_WAIT_NOTFF:
+C:0018db e210              LDI     TEMP,32
+C:0018dc ef0f      SDWNFF2:SER     DATA
+C:0018dd dff0              RCALL   SD_EXCHANGE
+C:0018de 3f0f              CPI     DATA,$FF
+C:0018df f411              BRNE    SDWNFF1
+C:0018e0 951a              DEC     TEMP
+C:0018e1 f7d1              BRNE    SDWNFF2
+C:0018e2 9508      SDWNFF1:RET
+         ;
+         ;--------------------------------------
+         ;in:    Z - куда
+         ;       Y,X - №сектора
+          SD_READ_SECTOR:
+C:0018e3   +          PUSHZ
+C:0018e3 93ef      PUSH    ZL
+C:0018e4 93ff      PUSH    ZH
+C:0018e5   +          LDIZ    CMD58*2
+C:0018e5 eae0      LDI     ZL,LOW(CMD58*2)
+C:0018e6 e0f1      LDI     ZH,HIGH(CMD58*2)
+C:0018e7 dfec              RCALL   SD_WR_PGM_6
+C:0018e8 dfe4              RCALL   SD_RECEIVE
+C:0018e9 fd06              SBRC    DATA,6
+C:0018ea c007              RJMP    SDRDSE1
+C:0018eb 0faa              LSL     XL
+C:0018ec 1fbb              ROL     XH
+C:0018ed 1fcc              ROL     YL
+C:0018ee 2fdc              MOV     YH,YL
+C:0018ef 2fcb              MOV     YL,XH
+C:0018f0 2fba              MOV     XH,XL
+C:0018f1 27aa              CLR     XL
+          SDRDSE1:
+C:0018f2 e015              LDI     TEMP,3+2
+C:0018f3 dfdb              RCALL   SD_RD_DUMMY
+         
+C:0018f4 e501              LDI     DATA,CMD_17
+C:0018f5 dfd8              RCALL   SD_EXCHANGE
+C:0018f6 2f0d              MOV     DATA,YH
+C:0018f7 dfd6              RCALL   SD_EXCHANGE
+C:0018f8 2f0c              MOV     DATA,YL
+C:0018f9 dfd4              RCALL   SD_EXCHANGE
+C:0018fa 2f0b              MOV     DATA,XH
+C:0018fb dfd2              RCALL   SD_EXCHANGE
+C:0018fc 2f0a              MOV     DATA,XL
+C:0018fd dfd0              RCALL   SD_EXCHANGE
+C:0018fe ef0f              SER     DATA
+C:0018ff dfce              RCALL   SD_EXCHANGE
+         
+C:001900 ef8f              SER     R24
+C:001901 dfd9      SDRDSE2:RCALL   SD_WAIT_NOTFF
+C:001902 958a              DEC     R24
+C:001903 f069              BREQ    SDRDSE8
+C:001904 3f0e              CPI     DATA,$FE
+C:001905 f7d9              BRNE    SDRDSE2
+         
+C:001906   +          POPZ
+C:001906 91ff      POP     ZH
+C:001907 91ef      POP     ZL
+C:001908 e080              LDI     R24,$00
+C:001909 e092              LDI     R25,$02
+C:00190a dfc2      SDRDSE3:RCALL   SD_RECEIVE
+C:00190b 9301              ST      Z+,DATA
+C:00190c 9701              SBIW    R24,1
+C:00190d f7e1              BRNE    SDRDSE3
+         
+C:00190e e012              LDI     TEMP,2
+C:00190f dfbf              RCALL   SD_RD_DUMMY
+         ;SDRDSE4:RCALL   SD_WAIT_NOTFF
+         ;        CPI     DATA,$FF
+         ;        BRNE    SDRDSE4
+C:001910 9508              RET
+         
+          SDRDSE8:
+C:001911 e002             LDI     DATA,2  ;ошибка при чтении сектора
+C:001912 c164              RJMP    SD_ERROR
+         ;
+         ;--------------------------------------
+         ;чтение сектора данных
+          LOAD_DATA:
+C:001913   +          LDIZ    BUFFER
+C:001913 e0e0      LDI     ZL,LOW(BUFFER)
+C:001914 e0f1      LDI     ZH,HIGH(BUFFER)
+C:001915 dfcd              RCALL   SD_READ_SECTOR  ;читать один сектор
+C:001916 9508              RET
+         ;
+         ;--------------------------------------
+         ;чтение сектора служ.инф. (FAT/DIR/...)
+C:001917   +  LOADLST:LDIZ    BUF4FAT
+C:001917 e0e0      LDI     ZL,LOW(BUF4FAT)
+C:001918 e0f3      LDI     ZH,HIGH(BUF4FAT)
+C:001919 dfc9              RCALL   SD_READ_SECTOR  ;читать один сектор
+C:00191a   +          LDIZ    BUF4FAT
+C:00191a e0e0      LDI     ZL,LOW(BUF4FAT)
+C:00191b e0f3      LDI     ZH,HIGH(BUF4FAT)
+C:00191c 9508              RET
+         ;
+         ;--------------------------------------
+         ;чтение сектора dir по номеру описателя (Y)
+         ;на выходе: DATA=#ff (sreg.Z=0) выход за пределы dir
+C:00191d   +  RDDIRSC:PUSHY
+C:00191d 93cf      PUSH    YL
+C:00191e 93df      PUSH    YH
+C:00191f 01de              MOVW    XL,YL
+C:001920   +          LDIY    0
+C:001920 e0c0      LDI     YL,LOW(0)
+C:001921 e0d0      LDI     YH,HIGH(0)
+C:001922 e100              LDI     DATA,$10
+C:001923 d0c9              RCALL   BCDE_A
+C:001924 93af              PUSH    XL
+C:001925 9100 0502         LDS     DATA,BYTSSEC
+C:001927 930f              PUSH    DATA
+C:001928 d0c4              RCALL   BCDE_A
+C:001929 9100 0529         LDS     DATA,KCLSDIR
+C:00192b 950a              DEC     DATA
+C:00192c 170a              CP      DATA,XL
+C:00192d f438              BRCC    RDDIRS3
+C:00192e 91cf              POP     YL
+C:00192f 91cf              POP     YL
+C:001930   +          POPY
+C:001930 91df      POP     YH
+C:001931 91cf      POP     YL
+C:001932 ef0f              SER     DATA
+C:001933 2300              TST     DATA
+C:001934 9508              RET
+C:001935   +  RDDIRS3:LDSY    TEK_DIR+2
+C:001935 91c0 0527 LDS     YL,TEK_DIR+2
+C:001937 91d0 0528 LDS     YH,TEK_DIR+2+1
+C:001939 2f0a              MOV     DATA,XL
+C:00193a 2300              TST     DATA
+C:00193b   +          LDSX    TEK_DIR+0
+C:00193b 91a0 0525 LDS     XL,TEK_DIR+0
+C:00193d 91b0 0526 LDS     XH,TEK_DIR+0+1
+C:00193f f029              BREQ    RDDIRS1
+C:001940 930f      RDDIRS2:PUSH    DATA
+C:001941 d023              RCALL   RDFATZP
+C:001942 910f              POP     DATA
+C:001943 950a              DEC     DATA
+C:001944 f7d9              BRNE    RDDIRS2
+C:001945 d07c      RDDIRS1:RCALL   REALSEC
+C:001946 900f              POP     R0
+C:001947 940a              DEC     R0
+C:001948 910f              POP     DATA
+C:001949 2100              AND     DATA,R0
+C:00194a 0fa0              ADD     XL,DATA
+C:00194b 1dbf              ADC     XH,NULL
+C:00194c 1dcf              ADC     YL,NULL
+C:00194d 1ddf              ADC     YH,NULL
+C:00194e dfc8              RCALL   LOADLST
+C:00194f   +          POPY
+C:00194f 91df      POP     YH
+C:001950 91cf      POP     YL
+C:001951 2700              CLR     DATA
+C:001952 9508              RET
+         ;
+         ;--------------------------------------
+         ;out:   sreg.C == CLR - EOCmark
+         ;(chng: TEMP)
+C:001953 e01f      LST_CLS:LDI     TEMP,$0F
+C:001954 9100 0500         LDS     DATA,CAL_FAT
+C:001956 2300              TST     DATA
+C:001957 f419              BRNE    LST_CL1
+C:001958 3fa7              CPI     XL,$F7
+C:001959 07b1              CPC     XH,TEMP
+C:00195a 9508              RET
+C:00195b 950a      LST_CL1:DEC     DATA
+C:00195c f419              BRNE    LST_CL2
+C:00195d 3fa7              CPI     XL,$F7
+C:00195e 05bd              CPC     XH,FF
+C:00195f 9508              RET
+C:001960 3fa7      LST_CL2:CPI     XL,$F7
+C:001961 05bd              CPC     XH,FF
+C:001962 05cd              CPC     YL,FF
+C:001963 07d1              CPC     YH,TEMP
+C:001964 9508              RET
+         ;
+         ;--------------------------------------
+         ;
+C:001965 9100 0500 RDFATZP:LDS     DATA,CAL_FAT
+C:001967 2300              TST     DATA
+C:001968 f131              BREQ    RDFATS0         ;FAT12
+C:001969 950a              DEC     DATA
+C:00196a f071              BREQ    RDFATS1         ;FAT16
+         ;FAT32
+C:00196b 0faa              LSL     XL
+C:00196c 1fbb              ROL     XH
+C:00196d 1fcc              ROL     YL
+C:00196e 1fdd              ROL     YH
+C:00196f 2f0a              MOV     DATA,XL
+C:001970 2fab              MOV     XL,XH
+C:001971 2fbc              MOV     XH,YL
+C:001972 2fcd              MOV     YL,YH
+C:001973 27dd              CLR     YH
+C:001974 d009              RCALL   RDFATS2
+C:001975 9631              ADIW    ZL,1
+C:001976 91c1              LD      YL,Z+
+C:001977 81d0              LD      YH,Z
+C:001978 9508              RET
+         ;FAT16
+C:001979   +  RDFATS1:LDIY    0
+C:001979 e0c0      LDI     YL,LOW(0)
+C:00197a e0d0      LDI     YH,HIGH(0)
+C:00197b 2f0a              MOV     DATA,XL
+C:00197c 2fab              MOV     XL,XH
+C:00197d 27bb              CLR     XH
+C:00197e 930f      RDFATS2:PUSH    DATA
+C:00197f   +          PUSHY
+C:00197f 93cf      PUSH    YL
+C:001980 93df      PUSH    YH
+C:001981   +          LDIZ    FATSTR0
+C:001981 e1ed      LDI     ZL,LOW(FATSTR0)
+C:001982 e0f5      LDI     ZH,HIGH(FATSTR0)
+C:001983 d079              RCALL   BCDEHLP
+C:001984 df92              RCALL   LOADLST
+C:001985   +          POPY
+C:001985 91df      POP     YH
+C:001986 91cf      POP     YL
+C:001987 910f              POP     DATA
+C:001988 0fe0              ADD     ZL,DATA
+C:001989 1dff              ADC     ZH,NULL
+C:00198a 0fe0              ADD     ZL,DATA
+C:00198b 1dff              ADC     ZH,NULL
+C:00198c 91a1              LD      XL,Z+
+C:00198d 81b0              LD      XH,Z
+C:00198e 9508              RET
+         ;FAT12
+C:00198f 01fd      RDFATS0:MOVW    ZL,XL
+C:001990 0fee              LSL     ZL
+C:001991 1fff              ROL     ZH
+C:001992 0fea              ADD     ZL,XL
+C:001993 1ffb              ADC     ZH,XH
+C:001994 95f6              LSR     ZH
+C:001995 95e7              ROR     ZL
+C:001996 2f0a              MOV     DATA,XL
+C:001997 2faf              MOV     XL,ZH
+C:001998 27bb              CLR     XH
+C:001999 27cc              CLR     YL
+C:00199a 27dd              CLR     YH
+C:00199b 95a6              LSR     XL
+C:00199c 930f              PUSH    DATA
+C:00199d   +          PUSHZ
+C:00199d 93ef      PUSH    ZL
+C:00199e 93ff      PUSH    ZH
+C:00199f   +          LDIZ    FATSTR0
+C:00199f e1ed      LDI     ZL,LOW(FATSTR0)
+C:0019a0 e0f5      LDI     ZH,HIGH(FATSTR0)
+C:0019a1 d05b              RCALL   BCDEHLP
+C:0019a2 df74              RCALL   LOADLST
+C:0019a3   +          POPY
+C:0019a3 91df      POP     YH
+C:0019a4 91cf      POP     YL
+C:0019a5 70d1              ANDI    YH,$01
+C:0019a6 0fec              ADD     ZL,YL
+C:0019a7 1ffd              ADC     ZH,YH
+C:0019a8 91c1              LD      YL,Z+
+C:0019a9 30f5              CPI     ZH,HIGH(BUF4FAT+512)
+C:0019aa f431              BRNE    RDFATS4
+C:0019ab 93cf              PUSH    YL
+C:0019ac   +          LDIY    0
+C:0019ac e0c0      LDI     YL,LOW(0)
+C:0019ad e0d0      LDI     YH,HIGH(0)
+C:0019ae 9611              ADIW    XL,1
+C:0019af df67              RCALL   LOADLST
+C:0019b0 91cf              POP     YL
+C:0019b1 910f      RDFATS4:POP     DATA
+C:0019b2 81b0              LD      XH,Z
+C:0019b3 2fac              MOV     XL,YL
+C:0019b4   +          LDIY    0
+C:0019b4 e0c0      LDI     YL,LOW(0)
+C:0019b5 e0d0      LDI     YH,HIGH(0)
+C:0019b6 9506              LSR     DATA
+C:0019b7 f440              BRCC    RDFATS3
+C:0019b8 95b6              LSR     XH
+C:0019b9 95a7              ROR     XL
+C:0019ba 95b6              LSR     XH
+C:0019bb 95a7              ROR     XL
+C:0019bc 95b6              LSR     XH
+C:0019bd 95a7              ROR     XL
+C:0019be 95b6              LSR     XH
+C:0019bf 95a7              ROR     XL
+C:0019c0 70bf      RDFATS3:ANDI    XH,$0F
+C:0019c1 9508              RET
+         ;
+         ;--------------------------------------
+         ;вычисление реального сектора
+         ;на входе YX==номер FAT
+         ;на выходе YX==адрес сектора
+C:0019c2 2f0d      REALSEC:MOV     DATA,YH
+C:0019c3 2b0c              OR      DATA,YL
+C:0019c4 2b0b              OR      DATA,XH
+C:0019c5 2b0a              OR      DATA,XL
+C:0019c6 f459              BRNE    REALSE1
+C:0019c7   +          LDIZ    FATSTR1
+C:0019c7 e2e1      LDI     ZL,LOW(FATSTR1)
+C:0019c8 e0f5      LDI     ZH,HIGH(FATSTR1)
+C:0019c9   +          LDSX    SEC_FAT+0
+C:0019c9 91a0 0507 LDS     XL,SEC_FAT+0
+C:0019cb 91b0 0508 LDS     XH,SEC_FAT+0+1
+C:0019cd   +          LDSY    SEC_FAT+2
+C:0019cd 91c0 0509 LDS     YL,SEC_FAT+2
+C:0019cf 91d0 050a LDS     YH,SEC_FAT+2+1
+C:0019d1 c02b              RJMP    BCDEHLP
+C:0019d2 9712      REALSE1:SBIW    XL,2            ;номер кластера-2
+C:0019d3 09cf              SBC     YL,NULL
+C:0019d4 09df              SBC     YH,NULL
+C:0019d5 9100 0502         LDS     DATA,BYTSSEC
+C:0019d7 c004              RJMP    REALSE2
+C:0019d8 0faa      REALSE3:LSL     XL
+C:0019d9 1fbb              ROL     XH
+C:0019da 1fcc              ROL     YL
+C:0019db 1fdd              ROL     YH
+C:0019dc 9506      REALSE2:LSR     DATA
+C:0019dd f7d0              BRCC    REALSE3
+                                         ;умножили на размер кластера
+C:0019de   +          LDIZ    STARTRZ
+C:0019de e0ed      LDI     ZL,LOW(STARTRZ)
+C:0019df e0f5      LDI     ZH,HIGH(STARTRZ)
+C:0019e0 d01c              RCALL   BCDEHLP         ;прибавили смещение от начала диска
+C:0019e1   +          LDIZ    FRSTDAT
+C:0019e1 e1e1      LDI     ZL,LOW(FRSTDAT)
+C:0019e2 e0f5      LDI     ZH,HIGH(FRSTDAT)
+C:0019e3 c019              RJMP    BCDEHLP         ;прибавили смещение от начала раздела
+         ;
+         ;--------------------------------------
+         ;YX>>9 (деление на 512)
+C:0019e4 2fab      BCDE200:MOV     XL,XH
+C:0019e5 2fbc              MOV     XH,YL
+C:0019e6 2fcd              MOV     YL,YH
+C:0019e7 e0d0              LDI     YH,0
+C:0019e8 e001              LDI     DATA,1
+         ; - - - - - - - - - - - - - - - - - - -
+         ;YXDATA>>до"переноса"
+         ;если в DATA вкл.только один бит, то получается
+         ;YX=YX/DATA
+C:0019e9 95d6      BCDE_A1:LSR     YH
+C:0019ea 95c7              ROR     YL
+C:0019eb 95b7              ROR     XH
+C:0019ec 95a7              ROR     XL
+C:0019ed 9507      BCDE_A: ROR     DATA
+C:0019ee f7d0              BRCC    BCDE_A1
+C:0019ef 9508              RET
+         ;
+         ;--------------------------------------
+         ;YX=[Z]-YX
+C:0019f0 9101      BCDEHLM:LD      DATA,Z+
+C:0019f1 1b0a              SUB     DATA,XL
+C:0019f2 2fa0              MOV     XL,DATA
+C:0019f3 9101              LD      DATA,Z+
+C:0019f4 0b0b              SBC     DATA,XH
+C:0019f5 2fb0              MOV     XH,DATA
+C:0019f6 9101              LD      DATA,Z+
+C:0019f7 0b0c              SBC     DATA,YL
+C:0019f8 2fc0              MOV     YL,DATA
+C:0019f9 8100              LD      DATA,Z
+C:0019fa 0b0d              SBC     DATA,YH
+C:0019fb 2fd0              MOV     YH,DATA
+C:0019fc 9508              RET
+         ;
+         ;--------------------------------------
+         ;YX=YX+[Z]
+C:0019fd 9101      BCDEHLP:LD      DATA,Z+
+C:0019fe 0fa0              ADD     XL,DATA
+C:0019ff 9101              LD      DATA,Z+
+C:001a00 1fb0              ADC     XH,DATA
+C:001a01 9101              LD      DATA,Z+
+C:001a02 1fc0              ADC     YL,DATA
+C:001a03 8100              LD      DATA,Z
+C:001a04 1fd0              ADC     YH,DATA
+C:001a05 9508              RET
+         ;
+         ;--------------------------------------
+         ;YX=YX+R25R24
+C:001a06 0fa8      HLDEPBC:ADD     XL,R24
+C:001a07 1fb9              ADC     XH,R25
+C:001a08 1dcf              ADC     YL,NULL
+C:001a09 1ddf              ADC     YH,NULL
+C:001a0a 9508              RET
+         ;
+         ;--------------------------------------
+         ;
+C:001a0b dfd8      RASCHET:RCALL   BCDE200
+C:001a0c   +          LDIZ    SEC_FAT
+C:001a0c e0e7      LDI     ZL,LOW(SEC_FAT)
+C:001a0d e0f5      LDI     ZH,HIGH(SEC_FAT)
+C:001a0e dfe1              RCALL   BCDEHLM
+C:001a0f 2f0a              MOV     DATA,XL
+C:001a10 7f00              ANDI    DATA,$F0
+C:001a11 2b0b              OR      DATA,XH
+C:001a12 2b0c              OR      DATA,YL
+C:001a13 2b0d              OR      DATA,YH
+C:001a14 9508              RET
+         ;
+         ;--------------------------------------
+         ;чтение очередного сектора файла в BUFFER
+         ;out:   DATA == 0 - считан последний сектор файла
+          NEXTSEC:
+C:001a15 e517              LDI     TEMP,SD_CS0
+C:001a16 ef0f              SER     DATA
+C:001a17 d128              RCALL   FPGA_REG
+         
+C:001a18   +          LDIZ    KOL_CLS
+C:001a18 e3e0      LDI     ZL,LOW(KOL_CLS)
+C:001a19 e0f5      LDI     ZH,HIGH(KOL_CLS)
+C:001a1a 9101              LD      DATA,Z+
+C:001a1b 9111              LD      TEMP,Z+
+C:001a1c 2b01              OR      DATA,TEMP
+C:001a1d 9111              LD      TEMP,Z+
+C:001a1e 2b01              OR      DATA,TEMP
+C:001a1f 9111              LD      TEMP,Z+
+C:001a20 2b01              OR      DATA,TEMP
+C:001a21 f1e1              BREQ    LSTCLSF
+C:001a22   +          LDSX    TFILCLS+0
+C:001a22 91a0 052b LDS     XL,TFILCLS+0
+C:001a24 91b0 052c LDS     XH,TFILCLS+0+1
+C:001a26   +          LDSY    TFILCLS+2
+C:001a26 91c0 052d LDS     YL,TFILCLS+2
+C:001a28 91d0 052e LDS     YH,TFILCLS+2+1
+C:001a2a df97              RCALL   REALSEC
+C:001a2b 9100 052a         LDS     DATA,NUMSECK
+C:001a2d 0fa0              ADD     XL,DATA
+C:001a2e 1dbf              ADC     XH,NULL
+C:001a2f 1dcf              ADC     YL,NULL
+C:001a30 1ddf              ADC     YH,NULL
+C:001a31 dee1              RCALL   LOAD_DATA
+C:001a32   +          LDSX    TFILCLS+0
+C:001a32 91a0 052b LDS     XL,TFILCLS+0
+C:001a34 91b0 052c LDS     XH,TFILCLS+0+1
+C:001a36   +          LDSY    TFILCLS+2
+C:001a36 91c0 052d LDS     YL,TFILCLS+2
+C:001a38 91d0 052e LDS     YH,TFILCLS+2+1
+C:001a3a 9100 052a         LDS     DATA,NUMSECK
+C:001a3c 9503              INC     DATA
+C:001a3d 9300 052a         STS     NUMSECK,DATA
+C:001a3f 9110 0502         LDS     TEMP,BYTSSEC
+C:001a41 1710              CP      TEMP,DATA
+C:001a42 f4c9              BRNE    NEXT_OK
+         
+C:001a43 92f0 052a         STS     NUMSECK,NULL
+C:001a45 df1f              RCALL   RDFATZP
+C:001a46   +          STSX    TFILCLS+0
+C:001a46 93a0 052b STS     TFILCLS+0,XL
+C:001a48 93b0 052c STS     TFILCLS+0+1,XH
+C:001a4a   +          STSY    TFILCLS+2
+C:001a4a 93c0 052d STS     TFILCLS+2,YL
+C:001a4c 93d0 052e STS     TFILCLS+2+1,YH
+C:001a4e   +          LDIZ    KOL_CLS
+C:001a4e e3e0      LDI     ZL,LOW(KOL_CLS)
+C:001a4f e0f5      LDI     ZH,HIGH(KOL_CLS)
+C:001a50 8100              LD      DATA,Z
+C:001a51 5001              SUBI    DATA,1
+C:001a52 9301              ST      Z+,DATA
+C:001a53 8100              LD      DATA,Z
+C:001a54 090f              SBC     DATA,NULL
+C:001a55 9301              ST      Z+,DATA
+C:001a56 8100              LD      DATA,Z
+C:001a57 090f              SBC     DATA,NULL
+C:001a58 9301              ST      Z+,DATA
+C:001a59 8100              LD      DATA,Z
+C:001a5a 090f              SBC     DATA,NULL
+C:001a5b 9301              ST      Z+,DATA
+C:001a5c ef0f      NEXT_OK:SER     DATA
+C:001a5d 9508              RET
+         
+C:001a5e   +  LSTCLSF:LDSX    TFILCLS+0
+C:001a5e 91a0 052b LDS     XL,TFILCLS+0
+C:001a60 91b0 052c LDS     XH,TFILCLS+0+1
+C:001a62   +          LDSY    TFILCLS+2
+C:001a62 91c0 052d LDS     YL,TFILCLS+2
+C:001a64 91d0 052e LDS     YH,TFILCLS+2+1
+C:001a66 df5b              RCALL   REALSEC
+C:001a67 9100 052a         LDS     DATA,NUMSECK
+C:001a69 0fa0              ADD     XL,DATA
+C:001a6a 1dbf              ADC     XH,NULL
+C:001a6b 1dcf              ADC     YL,NULL
+C:001a6c 1ddf              ADC     YH,NULL
+C:001a6d dea5              RCALL   LOAD_DATA
+C:001a6e 9100 052a         LDS     DATA,NUMSECK
+C:001a70 9503              INC     DATA
+C:001a71 9300 052a         STS     NUMSECK,DATA
+C:001a73 9110 052f         LDS     TEMP,MPHWOST
+C:001a75 1b01              SUB     DATA,TEMP
+C:001a76 9508              RET
+         ;
+         ;--------------------------------------
+         ;ошибки
+          SD_ERROR:
+C:001a77 9300 053d         STS     SDERROR,DATA
+C:001a79 ef1f              LDI     TEMP,LOW(RAMEND)
+C:001a7a bf1d              OUT     SPL,TEMP
+C:001a7b e110              LDI     TEMP,HIGH(RAMEND)
+C:001a7c bf1e              OUT     SPH,TEMP
+         
+C:001a7d d0ce              RCALL   UART_NEWLINE
+C:001a7e e0a0              LDI     XL,0
+C:001a7f e0b4              LDI     XH,4
+C:001a80 d0d3              RCALL   SET_CURSOR
+C:001a81   +          LDIZ    MSG_SDERROR*2
+C:001a81 efee      LDI     ZL,LOW(MSG_SDERROR*2)
+C:001a82 e0f0      LDI     ZH,HIGH(MSG_SDERROR*2)
+C:001a83 d0dc              RCALL   PRINTSTRZ
+C:001a84 9100 053d         LDS     DATA,SDERROR
+C:001a86 3001              CPI     DATA,1
+C:001a87 f421              BRNE    SD_ERR2
+C:001a88   +          LDIZ    MSG_CARD*2
+C:001a88 e0ea      LDI     ZL,LOW(MSG_CARD*2)
+C:001a89 e0f1      LDI     ZH,HIGH(MSG_CARD*2)
+C:001a8a d0d5              RCALL   PRINTSTRZ
+C:001a8b c011              RJMP    SD_NOTFOUND
+          SD_ERR2:
+C:001a8c 3002              CPI     DATA,2
+C:001a8d f421              BRNE    SD_ERR3
+C:001a8e   +          LDIZ    MSG_READERROR*2
+C:001a8e e1e0      LDI     ZL,LOW(MSG_READERROR*2)
+C:001a8f e0f1      LDI     ZH,HIGH(MSG_READERROR*2)
+C:001a90 d0cf              RCALL   PRINTSTRZ
+C:001a91 c01e              RJMP    SD_ERR9
+          SD_ERR3:
+C:001a92 3003              CPI     DATA,3
+C:001a93 f421              BRNE    SD_ERR4
+C:001a94   +          LDIZ    MSG_FAT*2
+C:001a94 e1ec      LDI     ZL,LOW(MSG_FAT*2)
+C:001a95 e0f1      LDI     ZH,HIGH(MSG_FAT*2)
+C:001a96 d0c9              RCALL   PRINTSTRZ
+C:001a97 c005              RJMP    SD_NOTFOUND
+          SD_ERR4:
+C:001a98 3004              CPI     DATA,4
+C:001a99 f439              BRNE    SD_ERR5
+C:001a9a   +          LDIZ    MSG_FILE*2
+C:001a9a e2e0      LDI     ZL,LOW(MSG_FILE*2)
+C:001a9b e0f1      LDI     ZH,HIGH(MSG_FILE*2)
+C:001a9c d0c3              RCALL   PRINTSTRZ
+          SD_NOTFOUND:
+C:001a9d   +          LDIZ    MSG_NOTFOUND*2
+C:001a9d e2e6      LDI     ZL,LOW(MSG_NOTFOUND*2)
+C:001a9e e0f1      LDI     ZH,HIGH(MSG_NOTFOUND*2)
+C:001a9f d0c0              RCALL   PRINTSTRZ
+C:001aa0 c00f              RJMP    SD_ERR9
+          SD_ERR5:
+C:001aa1 3005              CPI     DATA,5
+C:001aa2 f439              BRNE    SD_ERR6
+C:001aa3   +          LDIZ    MSG_FILE*2
+C:001aa3 e2e0      LDI     ZL,LOW(MSG_FILE*2)
+C:001aa4 e0f1      LDI     ZH,HIGH(MSG_FILE*2)
+C:001aa5 d0ba              RCALL   PRINTSTRZ
+C:001aa6   +          LDIZ    MSG_EMPTY*2
+C:001aa6 e3e2      LDI     ZL,LOW(MSG_EMPTY*2)
+C:001aa7 e0f1      LDI     ZH,HIGH(MSG_EMPTY*2)
+C:001aa8 d0b7              RCALL   PRINTSTRZ
+C:001aa9 c006              RJMP    SD_ERR9
+          SD_ERR6:
+C:001aaa   +          LDIZ    MSG_FILE*2
+C:001aaa e2e0      LDI     ZL,LOW(MSG_FILE*2)
+C:001aab e0f1      LDI     ZH,HIGH(MSG_FILE*2)
+C:001aac d0b3              RCALL   PRINTSTRZ
+C:001aad   +          LDIZ    MSG_TOOBIG*2
+C:001aad e3ea      LDI     ZL,LOW(MSG_TOOBIG*2)
+C:001aae e0f1      LDI     ZH,HIGH(MSG_TOOBIG*2)
+C:001aaf d0b0              RCALL   PRINTSTRZ
+          SD_ERR9:
+         ;
+C:001ab0 91e0 053d         LDS     ZL,SDERROR
+C:001ab2   +  SD_ERR1:LED_ON
+C:001ab2 98c7      CBI     PORTB,7
+C:001ab3 e005              LDI     DATA,5
+C:001ab4 d0d5              RCALL   BEEP
+C:001ab5   +          LED_OFF
+C:001ab5 9ac7      SBI     PORTB,7
+C:001ab6 e005              LDI     DATA,5
+C:001ab7 d0e1              RCALL   DELAY
+C:001ab8 95ea              DEC     ZL
+C:001ab9 f7c1              BRNE    SD_ERR1
+         ;
+C:001aba d091              RCALL   UART_NEWLINE
+C:001abb e0a0              LDI     XL,0
+C:001abc e0b6              LDI     XH,6
+C:001abd d096              RCALL   SET_CURSOR
+C:001abe   +          LDIZ    MSG_HALT*2
+C:001abe e8e2      LDI     ZL,LOW(MSG_HALT*2)
+C:001abf e0f1      LDI     ZH,HIGH(MSG_HALT*2)
+C:001ac0 d09f              RCALL   PRINTSTRZ
+C:001ac1 9816              CBI     DDRE,6
+C:001ac2 cfff      STOP2:  RJMP    STOP2
+         ;
+         ;======================================
+         ;чтение ID Flash-ROM чипа
+         ;out:   ZL,ZH
+C:001ac3 d03c      F_ID:   RCALL   F_RST
+C:001ac4 e900              LDI     DATA,$90
+C:001ac5 d040              RCALL   F_CMD
+C:001ac6 ef14              LDI     TEMP,FLASH_CTRL
+C:001ac7 e003              LDI     DATA,0B00000011
+C:001ac8 d077              RCALL   FPGA_REG
+C:001ac9 e0a0              LDI     XL,$00
+C:001aca e0b0              LDI     XH,$00
+C:001acb e0c0              LDI     YL,$00
+C:001acc d067              RCALL   F_IN
+C:001acd 2fe0              MOV     ZL,DATA
+C:001ace e0a1              LDI     XL,$01
+C:001acf d064              RCALL   F_IN
+C:001ad0 2ff0              MOV     ZH,DATA
+C:001ad1 c02e              RJMP    F_RST
+         ;
+         ;--------------------------------------
+         ;запись одного байта во Flash-ROM
+         ;in:    RAM[Z] == data
+         ;       XL,XH,YL == address
+C:001ad2 ea00      F_WRITE:LDI     DATA,$A0
+C:001ad3 d032              RCALL   F_CMD
+C:001ad4 ef14              LDI     TEMP,FLASH_CTRL
+C:001ad5 e001              LDI     DATA,0B00000001
+C:001ad6 d069              RCALL   FPGA_REG
+C:001ad7 ef10              LDI     TEMP,FLASH_LOADDR
+C:001ad8 2f0a              MOV     DATA,XL
+C:001ad9 d066              RCALL   FPGA_REG
+C:001ada ef11              LDI     TEMP,FLASH_MIDADDR
+C:001adb 2f0b              MOV     DATA,XH
+C:001adc d063              RCALL   FPGA_REG
+C:001add ef12              LDI     TEMP,FLASH_HIADDR
+C:001ade 2f0c              MOV     DATA,YL
+C:001adf d060              RCALL   FPGA_REG
+C:001ae0 ef13              LDI     TEMP,FLASH_DATA
+C:001ae1 8100              LD      DATA,Z
+C:001ae2 d05d              RCALL   FPGA_REG
+C:001ae3 ef14              LDI     TEMP,FLASH_CTRL
+C:001ae4 e005              LDI     DATA,0B00000101
+C:001ae5 d05a              RCALL   FPGA_REG
+C:001ae6 e001              LDI     DATA,0B00000001
+C:001ae7 d05d              RCALL   FPGA_SAME_REG
+C:001ae8 e003              LDI     DATA,0B00000011
+C:001ae9 d05b              RCALL   FPGA_SAME_REG
+C:001aea ef13              LDI     TEMP,FLASH_DATA
+C:001aeb d054              RCALL   FPGA_REG
+C:001aec d058      F_WRIT1:RCALL   FPGA_SAME_REG
+C:001aed 8110              LD      TEMP,Z
+C:001aee 2701              EOR     DATA,TEMP
+C:001aef fd07              SBRC    DATA,7
+C:001af0 cffb              RJMP    F_WRIT1
+C:001af1 9508              RET
+         ;
+         ;--------------------------------------
+         ;стирание Flash-ROM
+C:001af2 e800      F_ERASE:LDI     DATA,$80
+C:001af3 d012              RCALL   F_CMD
+C:001af4 e100              LDI     DATA,$10
+C:001af5 d010              RCALL   F_CMD
+C:001af6 ef14              LDI     TEMP,FLASH_CTRL
+C:001af7 e003              LDI     DATA,0B00000011
+C:001af8 d047              RCALL   FPGA_REG
+C:001af9 ef13              LDI     TEMP,FLASH_DATA
+C:001afa d045              RCALL   FPGA_REG
+C:001afb   +  F_ERAS1:LED_OFF
+C:001afb 9ac7      SBI     PORTB,7
+C:001afc d048              RCALL   FPGA_SAME_REG
+C:001afd   +          LED_ON
+C:001afd 98c7      CBI     PORTB,7
+C:001afe ff07              SBRS    DATA,7
+C:001aff cffb              RJMP    F_ERAS1
+         ;
+         ; - - - - - - - - - - - - - - - - - - -
+         ;сброс Flash-ROM чипа
+C:001b00 ef00      F_RST:  LDI     DATA,$F0
+C:001b01 d004              RCALL   F_CMD
+C:001b02 e113              LDI     TEMP,19 ;~5 us @ 11.0592 MHz
+C:001b03 951a      F_RST1: DEC     TEMP    ;1
+C:001b04 f7f1              BRNE    F_RST1  ;2
+C:001b05 9508              RET
+         ;
+         ;--------------------------------------
+         ;комманда в Flash-ROM чип
+         ;in:    DATA == instructions
+C:001b06 930f      F_CMD:  PUSH    DATA
+C:001b07 ef14              LDI     TEMP,FLASH_CTRL
+C:001b08 e001              LDI     DATA,0B00000001
+C:001b09 d036              RCALL   FPGA_REG
+C:001b0a ef10              LDI     TEMP,FLASH_LOADDR
+C:001b0b e505              LDI     DATA,$55
+C:001b0c d033              RCALL   FPGA_REG
+C:001b0d ef11              LDI     TEMP,FLASH_MIDADDR
+C:001b0e e505              LDI     DATA,$55
+C:001b0f d030              RCALL   FPGA_REG
+C:001b10 ef13              LDI     TEMP,FLASH_DATA
+C:001b11 ea0a              LDI     DATA,$AA
+C:001b12 d02d              RCALL   FPGA_REG
+C:001b13 ef14              LDI     TEMP,FLASH_CTRL
+C:001b14 e005              LDI     DATA,0B00000101
+C:001b15 d02a              RCALL   FPGA_REG
+C:001b16 e001              LDI     DATA,0B00000001
+C:001b17 d02d              RCALL   FPGA_SAME_REG
+C:001b18 ef10              LDI     TEMP,FLASH_LOADDR
+C:001b19 ea0a              LDI     DATA,$AA
+C:001b1a d025              RCALL   FPGA_REG
+C:001b1b ef11              LDI     TEMP,FLASH_MIDADDR
+C:001b1c e20a              LDI     DATA,$2A
+C:001b1d d022              RCALL   FPGA_REG
+C:001b1e ef13              LDI     TEMP,FLASH_DATA
+C:001b1f e505              LDI     DATA,$55
+C:001b20 d01f              RCALL   FPGA_REG
+C:001b21 ef14              LDI     TEMP,FLASH_CTRL
+C:001b22 e005              LDI     DATA,0B00000101
+C:001b23 d01c              RCALL   FPGA_REG
+C:001b24 e001              LDI     DATA,0B00000001
+C:001b25 d01f              RCALL   FPGA_SAME_REG
+C:001b26 ef10              LDI     TEMP,FLASH_LOADDR
+C:001b27 e505              LDI     DATA,$55
+C:001b28 d017              RCALL   FPGA_REG
+C:001b29 ef11              LDI     TEMP,FLASH_MIDADDR
+C:001b2a e505              LDI     DATA,$55
+C:001b2b d014              RCALL   FPGA_REG
+C:001b2c ef13              LDI     TEMP,FLASH_DATA
+C:001b2d 910f              POP     DATA
+C:001b2e d011              RCALL   FPGA_REG
+C:001b2f ef14              LDI     TEMP,FLASH_CTRL
+C:001b30 e005              LDI     DATA,0B00000101
+C:001b31 d00e              RCALL   FPGA_REG
+C:001b32 e001              LDI     DATA,0B00000001
+C:001b33 c011              RJMP    FPGA_SAME_REG
+         ;
+         ;--------------------------------------
+         ;чтение одного байта Flash-ROM
+         ;in:    XL,XH,YL == address
+         ;out:   DATA == data
+C:001b34 ef10      F_IN:   LDI     TEMP,FLASH_LOADDR
+C:001b35 2f0a              MOV     DATA,XL
+C:001b36 d009              RCALL   FPGA_REG
+C:001b37 ef11              LDI     TEMP,FLASH_MIDADDR
+C:001b38 2f0b              MOV     DATA,XH
+C:001b39 d006              RCALL   FPGA_REG
+C:001b3a ef12              LDI     TEMP,FLASH_HIADDR
+C:001b3b 2f0c              MOV     DATA,YL
+C:001b3c d003              RCALL   FPGA_REG
+C:001b3d ef13              LDI     TEMP,FLASH_DATA
+C:001b3e ef0f              LDI     DATA,$FF
+C:001b3f c000              RJMP    FPGA_REG
+         ;
+         ;--------------------------------------
+         ;обмен с регистрами в FPGA
+         ;in:    TEMP == номер регистра
+         ;       DATA == данные
+         ;out:   DATA == данные
+          FPGA_REG:
+C:001b40 930f              PUSH    DATA
+C:001b41   +          SPICS_SET
+C:001b41 9ac0      SBI     PORTB,0
+C:001b42 b91f              OUT     SPDR,TEMP
+C:001b43 d003              RCALL   RD_WHEN_RDY
+C:001b44 910f              POP     DATA
+         ;обмен без установки регистра
+         ;in:    DATA == данные
+         ;out:   DATA == данные
+          FPGA_SAME_REG:
+C:001b45   +          SPICS_CLR
+C:001b45 98c0      CBI     PORTB,0
+C:001b46 b90f              OUT     SPDR,DATA
+         ;ожидание окончания обмена с FPGA по SPI
+         ;и чтение пришедших данных
+         ;out:   DATA == данные
+          RD_WHEN_RDY:
+C:001b47 9b77              SBIS    SPSR,SPIF
+C:001b48 cffe              RJMP    RD_WHEN_RDY
+C:001b49 b10f              IN      DATA,SPDR
+C:001b4a   +          SPICS_SET
+C:001b4a 9ac0      SBI     PORTB,0
+C:001b4b 9508              RET
+         ;
+         ;--------------------------------------
+         ;
+          UART_NEWLINE:
+C:001b4c   +          LDIZ    MSG_NEWLINE*2
+C:001b4c ebe0      LDI     ZL,LOW(MSG_NEWLINE*2)
+C:001b4d e0f0      LDI     ZH,HIGH(MSG_NEWLINE*2)
+         ;
+         ; - - - - - - - - - - - - - - - - - - -
+         ;вывод строки на UART
+         ;in:    Z == указательна строку (в младших 64K)
+          UART_PRINTSTRZ:
+C:001b4e 9105      UPSTRZ1:LPM     DATA,Z+
+C:001b4f 2300              TST     DATA
+C:001b50 f011              BREQ    UPSTRZ2
+C:001b51 d02f              RCALL   UART_PUTCHAR
+C:001b52 cffb              RJMP    UPSTRZ1
+C:001b53 9508      UPSTRZ2:RET
+         ;
+         ;--------------------------------------
+         ;установка позиции печати на экране
+         ;in:    XL == x (0..31)
+         ;       XH == y (0..23)
+          SET_CURSOR:
+C:001b54 e210              LDI     TEMP,32
+C:001b55 9fb1              MUL     XH,TEMP
+C:001b56 27bb              CLR     XH
+C:001b57 0da0              ADD     XL,R0
+C:001b58 1db1              ADC     XH,R1
+C:001b59 9711              SBIW    XL,1
+C:001b5a e410              LDI     TEMP,SCR_LOADDR
+C:001b5b 2f0a              MOV     DATA,XL
+C:001b5c dfe3              RCALL   FPGA_REG
+C:001b5d e411              LDI     TEMP,SCR_HIADDR
+C:001b5e 2f0b              MOV     DATA,XH
+C:001b5f cfe0              RJMP    FPGA_REG
+         ;
+         ;--------------------------------------
+         ;вывод строки на экран и на UART
+         ;in:    Z == указательна строку (в младших 64K)
+          PRINTSTRZ:
+C:001b60 9105      PRSTRZ1:LPM     DATA,Z+
+C:001b61 2300              TST     DATA
+C:001b62 f011              BREQ    PRSTRZ2
+C:001b63 d017              RCALL   PUTCHAR
+C:001b64 cffb              RJMP    PRSTRZ1
+C:001b65 9508      PRSTRZ2:RET
+         ;
+         ;--------------------------------------
+         ;out byte in dec
+         ;in:    DATA == byte (0..99)
+C:001b66 5d00      DECBYTE:SUBI    DATA,208
+C:001b67 ff07              SBRS    DATA,7
+C:001b68 5300              SUBI    DATA,48
+C:001b69 5e08              SUBI    DATA,232
+C:001b6a ff06              SBRS    DATA,6
+C:001b6b 5108              SUBI    DATA,24
+C:001b6c 5f04              SUBI    DATA,244
+C:001b6d ff05              SBRS    DATA,5
+C:001b6e 500c              SUBI    DATA,12
+C:001b6f 5f0a              SUBI    DATA,250
+C:001b70 ff04              SBRS    DATA,4
+C:001b71 5006              SUBI    DATA,6
+         ;
+         ; - - - - - - - - - - - - - - - - - - -
+         ;out byte in hex
+         ;in:    DATA == byte
+C:001b72 930f      HEXBYTE:PUSH    DATA
+C:001b73 9502              SWAP    DATA
+C:001b74 d001              RCALL   HEXHALF
+C:001b75 910f              POP     DATA
+C:001b76 700f      HEXHALF:ANDI    DATA,$0F
+C:001b77 300a              CPI     DATA,$0A
+C:001b78 f008              BRCS    HEXBYT1
+C:001b79   +          ADDI    DATA,$07
+C:001b79 5f09      SUBI    DATA,(-$07&$FF)
+C:001b7a   +  HEXBYT1:ADDI    DATA,$30
+C:001b7a 5d00      SUBI    DATA,(-$30&$FF)
+         ;
+         ; - - - - - - - - - - - - - - - - - - -
+         ;вывод символа на экран и на UART
+         ;in:    DATA == char
+C:001b7b 930f      PUTCHAR:PUSH    DATA
+C:001b7c 931f              PUSH    TEMP
+C:001b7d e414              LDI     TEMP,SCR_CHAR
+C:001b7e dfc1              RCALL   FPGA_REG
+C:001b7f 911f              POP     TEMP
+C:001b80 910f              POP     DATA
+          UART_PUTCHAR:
+C:001b81 931f              PUSH    TEMP
+C:001b82   +  UPCHR1: INPORT  TEMP,UCSR1A
+C:001b82 9110 009b LDS     TEMP,UCSR1A+$20*(UCSR1A<$40)
+C:001b84 ff15              SBRS    TEMP,UDRE
+C:001b85 cffc              RJMP    UPCHR1
+C:001b86   +          OUTPORT UDR1,DATA
+C:001b86 9300 009c STS     UDR1+$20*(UDR1<$40),DATA
+C:001b88 911f              POP     TEMP
+C:001b89 9508              RET
+         ;
+         ;--------------------------------------
+         ;in:    DATA == продолжительность *0.1 сек
+          BEEP:
+C:001b8a e614      BEE2:   LDI     TEMP,100;100 периодов 1кГц
+C:001b8b 981e      BEE1:   CBI     PORTE,6
+C:001b8c d007              RCALL   BEEPDLY
+C:001b8d 9a1e              SBI     PORTE,6
+C:001b8e d005              RCALL   BEEPDLY
+C:001b8f 951a              DEC     TEMP
+C:001b90 f7d1              BRNE    BEE1
+C:001b91 950a              DEC     DATA
+C:001b92 f7b9              BRNE    BEE2
+C:001b93 9508              RET
+         
+C:001b94 e684      BEEPDLY:LDI     R24,$64
+C:001b95 e095              LDI     R25,$05
+C:001b96 9701      BEEPDL1:SBIW    R24,1
+C:001b97 f7f1              BRNE    BEEPDL1
+C:001b98 9508              RET
+         ;
+         ;--------------------------------------
+         ;in:    DATA == продолжительность *0.1 сек
+C:001b99 e14e      DELAY:  LDI     R20,$1E ;\
+C:001b9a ef5e              LDI     R21,$FE ;/ 0,1 сек @ 11.0592MHz
+C:001b9b 95c8      DELAY1: LPM             ;3
+C:001b9c 95c8              LPM             ;3
+C:001b9d 95c8              LPM             ;3
+C:001b9e 95c8              LPM             ;3
+C:001b9f 5041              SUBI    R20,1   ;1
+C:001ba0 4050              SBCI    R21,0   ;1
+C:001ba1 4000              SBCI    DATA,0  ;1
+C:001ba2 f7c1              BRNE    DELAY1  ;2(1)
+C:001ba3 9508              RET
+         ;
+         ;--------------------------------------
+         ;
+
+
+Segment usage:
+   Code      :      7076 words (14152 bytes)
+   Data      :        68 bytes
+   EEPROM    :         0 bytes
+
+Assembly completed with no errors.

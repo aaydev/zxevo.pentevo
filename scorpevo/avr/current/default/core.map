@@ -1,0 +1,733 @@
+Archive member included because of file (symbol)
+
+c:/winavr/bin/../lib/gcc/avr/4.3.3/avr51\libgcc.a(_udivmodqi4.o)
+                              rtc.o (__udivmodqi4)
+c:/winavr/bin/../lib/gcc/avr/4.3.3/avr51\libgcc.a(_udivmodsi4.o)
+                              rs232.o (__udivmodsi4)
+c:/winavr/bin/../lib/gcc/avr/4.3.3/avr51\libgcc.a(_divmodsi4.o)
+                              rs232.o (__divmodsi4)
+c:/winavr/bin/../lib/gcc/avr/4.3.3/avr51\libgcc.a(_exit.o)
+                              c:/winavr/bin/../lib/gcc/avr/4.3.3/../../../../avr/lib/avr51/crtm128.o (exit)
+c:/winavr/bin/../lib/gcc/avr/4.3.3/avr51\libgcc.a(_clear_bss.o)
+                              zx.o (__do_clear_bss)
+c:/winavr/bin/../lib/gcc/avr/4.3.3/../../../../avr/lib/avr51\libc.a(memcpy_P.o)
+                              kbmap.o (memcpy_P)
+c:/winavr/bin/../lib/gcc/avr/4.3.3/../../../../avr/lib/avr51\libc.a(eerd_block_atmega128.o)
+                              kbmap.o (__eerd_block_m128)
+
+Allocating common symbols
+Common symbol       size              file
+
+ps2keyboard_count   0x1               ps2.o
+modes_register      0x1               main.o
+dbpos               0x2               depacker_dirty.o
+zx_fifo_out_ptr     0x1               zx.o
+curFpga             0x4               main.o
+zx_map              0x5               zx.o
+ps2mouse_initstep   0x1               ps2.o
+zx_mouse_button     0x1               zx.o
+ps2keyboard_shifter
+                    0x2               ps2.o
+kbmap               0x2               kbmap.o
+zx_fifo             0x100             zx.o
+kbmap_E0            0x2               kbmap.o
+zx_realkbd          0xb               zx.o
+flags_register      0x1               main.o
+ps2mouse_timeout    0x1               ps2.o
+kb_status           0x1               zx.o
+zx_counters         0x28              zx.o
+bitcount            0x1               depacker_dirty.o
+ps2keyboard_cmd_count
+                    0x1               ps2.o
+ps2mouse_resp_count
+                    0x1               ps2.o
+zx_fifo_in_ptr      0x1               zx.o
+gluk_regs           0xe               rtc.o
+bitstream           0x1               depacker_dirty.o
+ps2mouse_count      0x1               ps2.o
+zx_mouse_y          0x1               zx.o
+dbuf                0x800             main.o
+ps2mouse_shifter    0x2               ps2.o
+ps2keyboard_timeout
+                    0x1               ps2.o
+ps2keyboard_cmd     0x1               ps2.o
+shift_pause         0x1               zx.o
+atx_counter         0x2               atx.o
+zx_mouse_x          0x1               zx.o
+
+Memory Configuration
+
+Name             Origin             Length             Attributes
+text             0x00000000         0x00020000         xr
+data             0x00800060         0x0000ffa0         rw !x
+eeprom           0x00810000         0x00010000         rw !x
+fuse             0x00820000         0x00000400         rw !x
+lock             0x00830000         0x00000400         rw !x
+signature        0x00840000         0x00000400         rw !x
+*default*        0x00000000         0xffffffff
+
+Linker script and memory map
+
+Address of section .data set to 0x800100
+LOAD c:/winavr/bin/../lib/gcc/avr/4.3.3/../../../../avr/lib/avr51/crtm128.o
+LOAD zx.o
+LOAD interrupts.o
+LOAD main.o
+LOAD ps2.o
+LOAD spi.o
+LOAD depacker_dirty.o
+LOAD rs232.o
+LOAD rtc.o
+LOAD atx.o
+LOAD joystick.o
+LOAD version.o
+LOAD tape.o
+LOAD kbmap.o
+LOAD top.o
+LOAD c:/winavr/bin/../lib/gcc/avr/4.3.3/avr51\libgcc.a
+LOAD c:/winavr/bin/../lib/gcc/avr/4.3.3/../../../../avr/lib/avr51\libc.a
+LOAD c:/winavr/bin/../lib/gcc/avr/4.3.3/avr51\libgcc.a
+
+.hash
+ *(.hash)
+
+.dynsym
+ *(.dynsym)
+
+.dynstr
+ *(.dynstr)
+
+.gnu.version
+ *(.gnu.version)
+
+.gnu.version_d
+ *(.gnu.version_d)
+
+.gnu.version_r
+ *(.gnu.version_r)
+
+.rel.init
+ *(.rel.init)
+
+.rela.init
+ *(.rela.init)
+
+.rel.text
+ *(.rel.text)
+ *(.rel.text.*)
+ *(.rel.gnu.linkonce.t*)
+
+.rela.text
+ *(.rela.text)
+ *(.rela.text.*)
+ *(.rela.gnu.linkonce.t*)
+
+.rel.fini
+ *(.rel.fini)
+
+.rela.fini
+ *(.rela.fini)
+
+.rel.rodata
+ *(.rel.rodata)
+ *(.rel.rodata.*)
+ *(.rel.gnu.linkonce.r*)
+
+.rela.rodata
+ *(.rela.rodata)
+ *(.rela.rodata.*)
+ *(.rela.gnu.linkonce.r*)
+
+.rel.data
+ *(.rel.data)
+ *(.rel.data.*)
+ *(.rel.gnu.linkonce.d*)
+
+.rela.data
+ *(.rela.data)
+ *(.rela.data.*)
+ *(.rela.gnu.linkonce.d*)
+
+.rel.ctors
+ *(.rel.ctors)
+
+.rela.ctors
+ *(.rela.ctors)
+
+.rel.dtors
+ *(.rel.dtors)
+
+.rela.dtors
+ *(.rela.dtors)
+
+.rel.got
+ *(.rel.got)
+
+.rela.got
+ *(.rela.got)
+
+.rel.bss
+ *(.rel.bss)
+
+.rela.bss
+ *(.rela.bss)
+
+.rel.plt
+ *(.rel.plt)
+
+.rela.plt
+ *(.rela.plt)
+
+.text           0x00000000     0x8588
+ *(.vectors)
+ .vectors       0x00000000       0x8c c:/winavr/bin/../lib/gcc/avr/4.3.3/../../../../avr/lib/avr51/crtm128.o
+                0x00000000                __vectors
+                0x00000000                __vector_default
+ *(.vectors)
+ *(.progmem.gcc*)
+ *(.progmem*)
+ .progmem.data  0x0000008c      0x140 kbmap.o
+                0x0000018c                default_kbmap_E0
+                0x0000008c                default_kbmap
+ .progmem.data  0x000001cc     0x673b top.o
+                0x00006907                fpga_end
+                0x000001cc                fpga
+                0x00006908                . = ALIGN (0x2)
+ *fill*         0x00006907        0x1 00
+                0x00006908                __trampolines_start = .
+ *(.trampolines)
+ .trampolines   0x00006908        0x0 linker stubs
+ *(.trampolines*)
+                0x00006908                __trampolines_end = .
+ *(.jumptables)
+ *(.jumptables*)
+ *(.lowtext)
+ *(.lowtext*)
+                0x00006908                __ctors_start = .
+ *(.ctors)
+                0x00006908                __ctors_end = .
+                0x00006908                __dtors_start = .
+ *(.dtors)
+                0x00006908                __dtors_end = .
+ SORT(*)(.ctors)
+ SORT(*)(.dtors)
+ *(.init0)
+ .init0         0x00006908        0x0 c:/winavr/bin/../lib/gcc/avr/4.3.3/../../../../avr/lib/avr51/crtm128.o
+                0x00006908                __init
+ *(.init0)
+ *(.init1)
+ *(.init1)
+ *(.init2)
+ .init2         0x00006908        0xc c:/winavr/bin/../lib/gcc/avr/4.3.3/../../../../avr/lib/avr51/crtm128.o
+ *(.init2)
+ *(.init3)
+ *(.init3)
+ *(.init4)
+ .init4         0x00006914       0x1a c:/winavr/bin/../lib/gcc/avr/4.3.3/../../../../avr/lib/avr51/crtm128.o
+                0x00006914                __do_copy_data
+ .init4         0x0000692e       0x10 c:/winavr/bin/../lib/gcc/avr/4.3.3/avr51\libgcc.a(_clear_bss.o)
+                0x0000692e                __do_clear_bss
+ *(.init4)
+ *(.init5)
+ *(.init5)
+ *(.init6)
+ *(.init6)
+ *(.init7)
+ *(.init7)
+ *(.init8)
+ *(.init8)
+ *(.init9)
+ .init9         0x0000693e        0x8 c:/winavr/bin/../lib/gcc/avr/4.3.3/../../../../avr/lib/avr51/crtm128.o
+ *(.init9)
+ *(.text)
+ .text          0x00006946        0x4 c:/winavr/bin/../lib/gcc/avr/4.3.3/../../../../avr/lib/avr51/crtm128.o
+                0x00006946                __vector_22
+                0x00006946                __vector_28
+                0x00006946                __vector_1
+                0x00006946                __vector_32
+                0x00006946                __vector_34
+                0x00006946                __vector_24
+                0x00006946                __vector_12
+                0x00006946                __bad_interrupt
+                0x00006946                __vector_31
+                0x00006946                __vector_3
+                0x00006946                __vector_23
+                0x00006946                __vector_30
+                0x00006946                __vector_25
+                0x00006946                __vector_11
+                0x00006946                __vector_13
+                0x00006946                __vector_17
+                0x00006946                __vector_19
+                0x00006946                __vector_27
+                0x00006946                __vector_33
+                0x00006946                __vector_4
+                0x00006946                __vector_9
+                0x00006946                __vector_2
+                0x00006946                __vector_21
+                0x00006946                __vector_15
+                0x00006946                __vector_29
+                0x00006946                __vector_26
+                0x00006946                __vector_14
+                0x00006946                __vector_16
+                0x00006946                __vector_18
+                0x00006946                __vector_20
+ .text          0x0000694a      0x682 zx.o
+                0x0000694a                zx_clr_kb
+                0x00006acc                zx_fifo_get
+                0x00006b1e                zx_spi_send
+                0x00006dfa                zx_task
+                0x00006a84                zx_fifo_put
+                0x00006dc2                zx_mouse_task
+                0x00006af2                zx_mouse_reset
+                0x00006b68                zx_vga_switcher
+                0x00006b52                zx_set_config
+                0x00006d2a                zx_wait_task
+                0x00006986                update_keys
+                0x00006ae2                zx_fifo_copy
+                0x00006fb2                zx_init
+                0x00006b94                to_zx
+                0x00006ab8                zx_fifo_isempty
+                0x00006a9a                zx_fifo_isfull
+ .text          0x00006fcc      0x3a6 interrupts.o
+                0x00007230                __vector_6
+                0x000072f8                __vector_7
+                0x00007168                __vector_5
+                0x0000731e                __vector_8
+                0x00006fcc                __vector_10
+ .text          0x00007372      0x14e main.o
+                0x000073a6                put_buffer
+                0x000073cc                main
+                0x00007372                hardware_init
+ .text          0x000074c0      0x4d2 ps2.o
+                0x000077a6                ps2keyboard_parse
+                0x00007854                ps2keyboard_task
+                0x00007500                ps2_encode
+                0x0000757e                ps2keyboard_send_cmd
+                0x000074c0                ps2_decode
+                0x000075ca                ps2mouse_send
+                0x00007562                ps2keyboard_send
+                0x000075e6                ps2mouse_task
+ .text          0x00007992       0x14 spi.o
+                0x0000799c                spi_send
+                0x00007992                spi_init
+ .text          0x000079a6      0x2e8 depacker_dirty.o
+                0x00007b0a                depacker_dirty
+                0x00007ad2                repeat
+                0x000079a6                get_bits_dirty
+                0x00007aa6                put_byte
+                0x00007a10                get_bigdisp_dirty
+ .text          0x00007c8e      0x1a6 rs232.o
+                0x00007d30                rs232_zx_write
+                0x00007dc2                rs232_zx_read
+                0x00007c8e                rs232_init
+                0x00007cf0                rs232_set_baud
+                0x00007ce0                rs232_transmit
+ .text          0x00007e34      0x47a rtc.o
+                0x00008272                rtc_init
+                0x00007e4e                rtc_write
+                0x0000813c                gluk_set_reg
+                0x00008064                gluk_inc
+                0x00007f6c                gluk_init
+                0x00007ebe                rtc_read
+                0x00008226                gluk_get_reg
+ .text          0x000082ae       0xd4 atx.o
+                0x000082f6                atx_power_task
+                0x000082ae                wait_for_atx_power
+ .text          0x00008382       0x1e joystick.o
+                0x00008382                joystick_task
+ .text          0x000083a0       0x5c version.o
+                0x000083a0                GetVersionByte
+                0x000083da                SetVersionType
+ .text          0x000083fc       0x48 tape.o
+                0x000083fc                tape_task
+ .text          0x00008444       0x7c kbmap.o
+                0x00008444                kbmap_init
+ .text          0x000084c0        0x0 c:/winavr/bin/../lib/gcc/avr/4.3.3/avr51\libgcc.a(_udivmodqi4.o)
+ .text          0x000084c0        0x0 c:/winavr/bin/../lib/gcc/avr/4.3.3/avr51\libgcc.a(_udivmodsi4.o)
+ .text          0x000084c0        0x0 c:/winavr/bin/../lib/gcc/avr/4.3.3/avr51\libgcc.a(_divmodsi4.o)
+ .text          0x000084c0        0x0 c:/winavr/bin/../lib/gcc/avr/4.3.3/avr51\libgcc.a(_exit.o)
+ .text          0x000084c0        0x0 c:/winavr/bin/../lib/gcc/avr/4.3.3/avr51\libgcc.a(_clear_bss.o)
+ .text          0x000084c0        0x0 c:/winavr/bin/../lib/gcc/avr/4.3.3/../../../../avr/lib/avr51\libc.a(memcpy_P.o)
+ .text          0x000084c0        0x0 c:/winavr/bin/../lib/gcc/avr/4.3.3/../../../../avr/lib/avr51\libc.a(eerd_block_atmega128.o)
+                0x000084c0                . = ALIGN (0x2)
+ *(.text.*)
+ .text.libgcc   0x000084c0       0x18 c:/winavr/bin/../lib/gcc/avr/4.3.3/avr51\libgcc.a(_udivmodqi4.o)
+                0x000084c0                __udivmodqi4
+ .text.libgcc   0x000084d8       0x44 c:/winavr/bin/../lib/gcc/avr/4.3.3/avr51\libgcc.a(_udivmodsi4.o)
+                0x000084d8                __udivmodsi4
+ .text.libgcc   0x0000851c       0x36 c:/winavr/bin/../lib/gcc/avr/4.3.3/avr51\libgcc.a(_divmodsi4.o)
+                0x0000851c                __divmodsi4
+ .text.libgcc   0x00008552        0x0 c:/winavr/bin/../lib/gcc/avr/4.3.3/avr51\libgcc.a(_exit.o)
+ .text.libgcc   0x00008552        0x0 c:/winavr/bin/../lib/gcc/avr/4.3.3/avr51\libgcc.a(_clear_bss.o)
+ .text.avr-libc
+                0x00008552       0x12 c:/winavr/bin/../lib/gcc/avr/4.3.3/../../../../avr/lib/avr51\libc.a(memcpy_P.o)
+                0x00008552                memcpy_P
+ .text.avr-libc
+                0x00008564       0x20 c:/winavr/bin/../lib/gcc/avr/4.3.3/../../../../avr/lib/avr51\libc.a(eerd_block_atmega128.o)
+                0x00008568                __eerd_blraw_m128
+                0x00008564                __eerd_block_m128
+                0x00008584                . = ALIGN (0x2)
+ *(.fini9)
+ .fini9         0x00008584        0x0 c:/winavr/bin/../lib/gcc/avr/4.3.3/avr51\libgcc.a(_exit.o)
+                0x00008584                exit
+                0x00008584                _exit
+ *(.fini9)
+ *(.fini8)
+ *(.fini8)
+ *(.fini7)
+ *(.fini7)
+ *(.fini6)
+ *(.fini6)
+ *(.fini5)
+ *(.fini5)
+ *(.fini4)
+ *(.fini4)
+ *(.fini3)
+ *(.fini3)
+ *(.fini2)
+ *(.fini2)
+ *(.fini1)
+ *(.fini1)
+ *(.fini0)
+ .fini0         0x00008584        0x4 c:/winavr/bin/../lib/gcc/avr/4.3.3/avr51\libgcc.a(_exit.o)
+ *(.fini0)
+                0x00008588                _etext = .
+
+.data           0x00800100       0x2c load address 0x00008588
+                0x00800100                PROVIDE (__data_start, .)
+ *(.data)
+ .data          0x00800100        0x0 c:/winavr/bin/../lib/gcc/avr/4.3.3/../../../../avr/lib/avr51/crtm128.o
+ .data          0x00800100        0x0 zx.o
+ .data          0x00800100        0x2 interrupts.o
+ .data          0x00800102        0x0 main.o
+ .data          0x00800102       0x15 ps2.o
+                0x00800102                ps2mouse_init_sequence
+ .data          0x00800117        0x0 spi.o
+ .data          0x00800117        0x0 depacker_dirty.o
+ .data          0x00800117        0x0 rs232.o
+ .data          0x00800117        0xc rtc.o
+ .data          0x00800123        0x0 atx.o
+ .data          0x00800123        0x0 joystick.o
+ .data          0x00800123        0x8 version.o
+                0x00800127                bootVersionAddr
+                0x00800123                baseVersionAddr
+ .data          0x0080012b        0x0 tape.o
+ .data          0x0080012b        0x0 kbmap.o
+ .data          0x0080012b        0x0 c:/winavr/bin/../lib/gcc/avr/4.3.3/avr51\libgcc.a(_udivmodqi4.o)
+ .data          0x0080012b        0x0 c:/winavr/bin/../lib/gcc/avr/4.3.3/avr51\libgcc.a(_udivmodsi4.o)
+ .data          0x0080012b        0x0 c:/winavr/bin/../lib/gcc/avr/4.3.3/avr51\libgcc.a(_divmodsi4.o)
+ .data          0x0080012b        0x0 c:/winavr/bin/../lib/gcc/avr/4.3.3/avr51\libgcc.a(_exit.o)
+ .data          0x0080012b        0x0 c:/winavr/bin/../lib/gcc/avr/4.3.3/avr51\libgcc.a(_clear_bss.o)
+ .data          0x0080012b        0x0 c:/winavr/bin/../lib/gcc/avr/4.3.3/../../../../avr/lib/avr51\libc.a(memcpy_P.o)
+ .data          0x0080012b        0x0 c:/winavr/bin/../lib/gcc/avr/4.3.3/../../../../avr/lib/avr51\libc.a(eerd_block_atmega128.o)
+ *(.data*)
+ *(.rodata)
+ *(.rodata*)
+ *(.gnu.linkonce.d*)
+                0x0080012c                . = ALIGN (0x2)
+ *fill*         0x0080012b        0x1 00
+                0x0080012c                _edata = .
+                0x0080012c                PROVIDE (__data_end, .)
+
+.bss            0x0080012c      0x994
+                0x0080012c                PROVIDE (__bss_start, .)
+ *(.bss)
+ .bss           0x0080012c        0x0 c:/winavr/bin/../lib/gcc/avr/4.3.3/../../../../avr/lib/avr51/crtm128.o
+ .bss           0x0080012c        0x3 zx.o
+ .bss           0x0080012f        0x3 interrupts.o
+ .bss           0x00800132        0x0 main.o
+ .bss           0x00800132        0x4 ps2.o
+ .bss           0x00800136        0x0 spi.o
+ .bss           0x00800136        0x0 depacker_dirty.o
+ .bss           0x00800136       0x1e rs232.o
+ .bss           0x00800154        0x0 rtc.o
+ .bss           0x00800154        0x2 atx.o
+ .bss           0x00800156        0x1 joystick.o
+ .bss           0x00800157        0x0 version.o
+ .bss           0x00800157        0x0 tape.o
+ .bss           0x00800157        0x0 kbmap.o
+ .bss           0x00800157        0x0 c:/winavr/bin/../lib/gcc/avr/4.3.3/avr51\libgcc.a(_udivmodqi4.o)
+ .bss           0x00800157        0x0 c:/winavr/bin/../lib/gcc/avr/4.3.3/avr51\libgcc.a(_udivmodsi4.o)
+ .bss           0x00800157        0x0 c:/winavr/bin/../lib/gcc/avr/4.3.3/avr51\libgcc.a(_divmodsi4.o)
+ .bss           0x00800157        0x0 c:/winavr/bin/../lib/gcc/avr/4.3.3/avr51\libgcc.a(_exit.o)
+ .bss           0x00800157        0x0 c:/winavr/bin/../lib/gcc/avr/4.3.3/avr51\libgcc.a(_clear_bss.o)
+ .bss           0x00800157        0x0 c:/winavr/bin/../lib/gcc/avr/4.3.3/../../../../avr/lib/avr51\libc.a(memcpy_P.o)
+ .bss           0x00800157        0x0 c:/winavr/bin/../lib/gcc/avr/4.3.3/../../../../avr/lib/avr51\libc.a(eerd_block_atmega128.o)
+ *(.bss*)
+ *(COMMON)
+ COMMON         0x00800157      0x13f zx.o
+                0x00800157                zx_fifo_out_ptr
+                0x00800158                zx_map
+                0x0080015d                zx_mouse_button
+                0x0080015e                zx_fifo
+                0x0080025e                zx_realkbd
+                0x00800269                kb_status
+                0x0080026a                zx_counters
+                0x00800292                zx_fifo_in_ptr
+                0x00800293                zx_mouse_y
+                0x00800294                shift_pause
+                0x00800295                zx_mouse_x
+ COMMON         0x00800296      0x806 main.o
+                0x00800296                modes_register
+                0x00800297                curFpga
+                0x0080029b                flags_register
+                0x0080029c                dbuf
+ COMMON         0x00800a9c        0xc ps2.o
+                0x00800a9c                ps2keyboard_count
+                0x00800a9d                ps2mouse_initstep
+                0x00800a9e                ps2keyboard_shifter
+                0x00800aa0                ps2mouse_timeout
+                0x00800aa1                ps2keyboard_cmd_count
+                0x00800aa2                ps2mouse_resp_count
+                0x00800aa3                ps2mouse_count
+                0x00800aa4                ps2mouse_shifter
+                0x00800aa6                ps2keyboard_timeout
+                0x00800aa7                ps2keyboard_cmd
+ COMMON         0x00800aa8        0x4 depacker_dirty.o
+                0x00800aa8                dbpos
+                0x00800aaa                bitcount
+                0x00800aab                bitstream
+ COMMON         0x00800aac        0xe rtc.o
+                0x00800aac                gluk_regs
+ COMMON         0x00800aba        0x2 atx.o
+                0x00800aba                atx_counter
+ COMMON         0x00800abc        0x4 kbmap.o
+                0x00800abc                kbmap
+                0x00800abe                kbmap_E0
+                0x00800ac0                PROVIDE (__bss_end, .)
+                0x00008588                __data_load_start = LOADADDR (.data)
+                0x000085b4                __data_load_end = (__data_load_start + SIZEOF (.data))
+
+.noinit         0x00800ac0        0x0
+                0x00800ac0                PROVIDE (__noinit_start, .)
+ *(.noinit*)
+                0x00800ac0                PROVIDE (__noinit_end, .)
+                0x00800ac0                _end = .
+                0x00800ac0                PROVIDE (__heap_start, .)
+
+.eeprom         0x00810000      0x142
+ *(.eeprom*)
+ .eeprom        0x00810000      0x142 kbmap.o
+                0x00810000                saved_kbmap
+                0x00810142                __eeprom_end = .
+
+.fuse
+ *(.fuse)
+ *(.lfuse)
+ *(.hfuse)
+ *(.efuse)
+
+.lock
+ *(.lock*)
+
+.signature
+ *(.signature*)
+
+.stab
+ *(.stab)
+
+.stabstr
+ *(.stabstr)
+
+.stab.excl
+ *(.stab.excl)
+
+.stab.exclstr
+ *(.stab.exclstr)
+
+.stab.index
+ *(.stab.index)
+
+.stab.indexstr
+ *(.stab.indexstr)
+
+.comment
+ *(.comment)
+
+.debug
+ *(.debug)
+
+.line
+ *(.line)
+
+.debug_srcinfo
+ *(.debug_srcinfo)
+
+.debug_sfnames
+ *(.debug_sfnames)
+
+.debug_aranges  0x00000000      0x1a0
+ *(.debug_aranges)
+ .debug_aranges
+                0x00000000       0x20 zx.o
+ .debug_aranges
+                0x00000020       0x20 interrupts.o
+ .debug_aranges
+                0x00000040       0x20 main.o
+ .debug_aranges
+                0x00000060       0x20 ps2.o
+ .debug_aranges
+                0x00000080       0x20 spi.o
+ .debug_aranges
+                0x000000a0       0x20 depacker_dirty.o
+ .debug_aranges
+                0x000000c0       0x20 rs232.o
+ .debug_aranges
+                0x000000e0       0x20 rtc.o
+ .debug_aranges
+                0x00000100       0x20 atx.o
+ .debug_aranges
+                0x00000120       0x20 joystick.o
+ .debug_aranges
+                0x00000140       0x20 version.o
+ .debug_aranges
+                0x00000160       0x20 tape.o
+ .debug_aranges
+                0x00000180       0x20 kbmap.o
+
+.debug_pubnames
+                0x00000000      0x746
+ *(.debug_pubnames)
+ .debug_pubnames
+                0x00000000      0x1c3 zx.o
+ .debug_pubnames
+                0x000001c3       0x5e interrupts.o
+ .debug_pubnames
+                0x00000221       0x77 main.o
+ .debug_pubnames
+                0x00000298      0x1a7 ps2.o
+ .debug_pubnames
+                0x0000043f       0x2c spi.o
+ .debug_pubnames
+                0x0000046b       0x8b depacker_dirty.o
+ .debug_pubnames
+                0x000004f6       0x6c rs232.o
+ .debug_pubnames
+                0x00000562       0x85 rtc.o
+ .debug_pubnames
+                0x000005e7       0x4c atx.o
+ .debug_pubnames
+                0x00000633       0x24 joystick.o
+ .debug_pubnames
+                0x00000657       0x60 version.o
+ .debug_pubnames
+                0x000006b7       0x20 tape.o
+ .debug_pubnames
+                0x000006d7       0x6f kbmap.o
+
+.debug_info     0x00000000     0x21b1
+ *(.debug_info)
+ .debug_info    0x00000000      0x699 zx.o
+ .debug_info    0x00000699      0x227 interrupts.o
+ .debug_info    0x000008c0      0x2fc main.o
+ .debug_info    0x00000bbc      0x4ff ps2.o
+ .debug_info    0x000010bb       0xb0 spi.o
+ .debug_info    0x0000116b      0x344 depacker_dirty.o
+ .debug_info    0x000014af      0x2cc rs232.o
+ .debug_info    0x0000177b      0x471 rtc.o
+ .debug_info    0x00001bec      0x1c9 atx.o
+ .debug_info    0x00001db5       0xa9 joystick.o
+ .debug_info    0x00001e5e      0x164 version.o
+ .debug_info    0x00001fc2       0xae tape.o
+ .debug_info    0x00002070      0x141 kbmap.o
+ *(.gnu.linkonce.wi.*)
+
+.debug_abbrev   0x00000000      0xebb
+ *(.debug_abbrev)
+ .debug_abbrev  0x00000000      0x243 zx.o
+ .debug_abbrev  0x00000243       0xce interrupts.o
+ .debug_abbrev  0x00000311      0x183 main.o
+ .debug_abbrev  0x00000494      0x1dc ps2.o
+ .debug_abbrev  0x00000670       0x72 spi.o
+ .debug_abbrev  0x000006e2      0x113 depacker_dirty.o
+ .debug_abbrev  0x000007f5      0x144 rs232.o
+ .debug_abbrev  0x00000939      0x217 rtc.o
+ .debug_abbrev  0x00000b50      0x106 atx.o
+ .debug_abbrev  0x00000c56       0x6a joystick.o
+ .debug_abbrev  0x00000cc0       0xdf version.o
+ .debug_abbrev  0x00000d9f       0x75 tape.o
+ .debug_abbrev  0x00000e14       0xa7 kbmap.o
+
+.debug_line     0x00000000     0x22e1
+ *(.debug_line)
+ .debug_line    0x00000000      0x64d zx.o
+ .debug_line    0x0000064d      0x3f2 interrupts.o
+ .debug_line    0x00000a3f      0x345 main.o
+ .debug_line    0x00000d84      0x5dc ps2.o
+ .debug_line    0x00001360       0xcf spi.o
+ .debug_line    0x0000142f      0x20d depacker_dirty.o
+ .debug_line    0x0000163c      0x253 rs232.o
+ .debug_line    0x0000188f      0x54a rtc.o
+ .debug_line    0x00001dd9      0x1c2 atx.o
+ .debug_line    0x00001f9b       0xb4 joystick.o
+ .debug_line    0x0000204f       0xe5 version.o
+ .debug_line    0x00002134       0xd2 tape.o
+ .debug_line    0x00002206       0xdb kbmap.o
+
+.debug_frame    0x00000000      0x4a0
+ *(.debug_frame)
+ .debug_frame   0x00000000      0x110 zx.o
+ .debug_frame   0x00000110       0x60 interrupts.o
+ .debug_frame   0x00000170       0x40 main.o
+ .debug_frame   0x000001b0       0xb0 ps2.o
+ .debug_frame   0x00000260       0x30 spi.o
+ .debug_frame   0x00000290       0x60 depacker_dirty.o
+ .debug_frame   0x000002f0       0x60 rs232.o
+ .debug_frame   0x00000350       0x90 rtc.o
+ .debug_frame   0x000003e0       0x30 atx.o
+ .debug_frame   0x00000410       0x20 joystick.o
+ .debug_frame   0x00000430       0x30 version.o
+ .debug_frame   0x00000460       0x20 tape.o
+ .debug_frame   0x00000480       0x20 kbmap.o
+
+.debug_str      0x00000000      0x8d2
+ *(.debug_str)
+ .debug_str     0x00000000      0x2af zx.o
+                                0x31d (size before relaxing)
+ .debug_str     0x000002af       0xdc interrupts.o
+                                0x1f4 (size before relaxing)
+ .debug_str     0x0000038b       0xf0 main.o
+                                0x22e (size before relaxing)
+ .debug_str     0x0000047b       0xf8 ps2.o
+                                0x358 (size before relaxing)
+ .debug_str     0x00000573       0x12 spi.o
+                                 0xf4 (size before relaxing)
+ .debug_str     0x00000585       0x87 depacker_dirty.o
+                                0x1a2 (size before relaxing)
+ .debug_str     0x0000060c      0x10a rs232.o
+                                0x201 (size before relaxing)
+ .debug_str     0x00000716       0xbb rtc.o
+                                0x1ae (size before relaxing)
+ .debug_str     0x000007d1       0x36 atx.o
+                                0x16e (size before relaxing)
+ .debug_str     0x00000807       0x2b joystick.o
+                                 0xff (size before relaxing)
+ .debug_str     0x00000832       0x4b version.o
+                                0x15a (size before relaxing)
+ .debug_str     0x0000087d       0x14 tape.o
+                                 0xfc (size before relaxing)
+ .debug_str     0x00000891       0x41 kbmap.o
+                                0x129 (size before relaxing)
+
+.debug_loc      0x00000000      0xded
+ *(.debug_loc)
+ .debug_loc     0x00000000      0x4af zx.o
+ .debug_loc     0x000004af       0x1e interrupts.o
+ .debug_loc     0x000004cd       0x71 main.o
+ .debug_loc     0x0000053e      0x15b ps2.o
+ .debug_loc     0x00000699       0x13 spi.o
+ .debug_loc     0x000006ac      0x234 depacker_dirty.o
+ .debug_loc     0x000008e0      0x11d rs232.o
+ .debug_loc     0x000009fd      0x259 rtc.o
+ .debug_loc     0x00000c56       0x64 atx.o
+ .debug_loc     0x00000cba       0x1e joystick.o
+ .debug_loc     0x00000cd8       0xac version.o
+ .debug_loc     0x00000d84       0x69 tape.o
+
+.debug_macinfo
+ *(.debug_macinfo)
+OUTPUT(core.elf elf32-avr)
+LOAD linker stubs
+
+.debug_ranges   0x00000000       0x48
+ .debug_ranges  0x00000000       0x48 main.o

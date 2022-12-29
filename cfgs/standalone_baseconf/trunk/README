@@ -1,0 +1,6 @@
+manually place in this dir:
+
+pentevo/avr/baseconf/trunk as 'avr'
+pentevo/fpga/baseconf/trunk as 'fpga'
+
+

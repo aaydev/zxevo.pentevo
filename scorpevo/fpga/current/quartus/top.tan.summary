@@ -1,0 +1,116 @@
+--------------------------------------------------------------------------------------
+Timing Analyzer Summary
+--------------------------------------------------------------------------------------
+
+Type           : Worst-case tsu
+Slack          : N/A
+Required Time  : None
+Actual Time    : 28.400 ns
+From           : a[3]
+To             : zports:porty|p7ffd_int[1]
+From Clock     : --
+To Clock       : clkz_in
+Failed Paths   : 0
+
+Type           : Worst-case tco
+Slack          : N/A
+Required Time  : None
+Actual Time    : 33.600 ns
+From           : zports:porty|peff7_int[7]
+To             : d[0]
+From Clock     : clkz_in
+To Clock       : --
+Failed Paths   : 0
+
+Type           : Worst-case tpd
+Slack          : N/A
+Required Time  : None
+Actual Time    : 48.400 ns
+From           : a[1]
+To             : d[0]
+From Clock     : --
+To Clock       : --
+Failed Paths   : 0
+
+Type           : Worst-case th
+Slack          : N/A
+Required Time  : None
+Actual Time    : 6.000 ns
+From           : a[14]
+To             : zports:porty|nmi_out
+From Clock     : --
+To Clock       : m1_n
+Failed Paths   : 0
+
+Type           : Clock Setup: 'fclk'
+Slack          : -8.900 ns
+Required Time  : 28.00 MHz ( period = 35.714 ns )
+Actual Time    : N/A
+From           : zports:porty|peff7_int[0]
+To             : videoout:vidia|vgrn[1]
+From Clock     : clkz_in
+To Clock       : fclk
+Failed Paths   : 129
+
+Type           : Clock Setup: 'clkz_in'
+Slack          : 17.814 ns
+Required Time  : 14.00 MHz ( period = 71.428 ns )
+Actual Time    : N/A
+From           : resetter:myrst|rst_out_n
+To             : vg93:vgshka|vg_a[1]
+From Clock     : fclk
+To Clock       : clkz_in
+Failed Paths   : 0
+
+Type           : Clock Setup: 'mreq_n'
+Slack          : 18.233 ns
+Required Time  : 24.00 MHz ( period = 41.666 ns )
+Actual Time    : Restricted to 166.67 MHz ( period = 6.000 ns )
+From           : pfpzu:profrom|plane[1]
+To             : pfpzu:profrom|newplane[0]
+From Clock     : mreq_n
+To Clock       : mreq_n
+Failed Paths   : 0
+
+Type           : Clock Hold: 'fclk'
+Slack          : 0.800 ns
+Required Time  : 28.00 MHz ( period = 35.714 ns )
+Actual Time    : N/A
+From           : fetch:fecher|lpm_counter:fcnt_rtl_5|alt_counter_f10ke:wysi_counter|counter_cell[0]
+To             : fetch:fecher|lpm_counter:fcnt_rtl_5|alt_counter_f10ke:wysi_counter|counter_cell[0]
+From Clock     : fclk
+To Clock       : fclk
+Failed Paths   : 0
+
+Type           : Clock Hold: 'clkz_in'
+Slack          : 0.800 ns
+Required Time  : 14.00 MHz ( period = 71.428 ns )
+Actual Time    : N/A
+From           : zint:preryv|intctr[0]
+To             : zint:preryv|intctr[0]
+From Clock     : clkz_in
+To Clock       : clkz_in
+Failed Paths   : 0
+
+Type           : Clock Hold: 'mreq_n'
+Slack          : 21.833 ns
+Required Time  : 24.00 MHz ( period = 41.666 ns )
+Actual Time    : N/A
+From           : pfpzu:profrom|plane[1]
+To             : pfpzu:profrom|newplane[1]
+From Clock     : mreq_n
+To Clock       : mreq_n
+Failed Paths   : 0
+
+Type           : Total number of failed paths
+Slack          : 
+Required Time  : 
+Actual Time    : 
+From           : 
+To             : 
+From Clock     : 
+To Clock       : 
+Failed Paths   : 129
+
+--------------------------------------------------------------------------------------
+
