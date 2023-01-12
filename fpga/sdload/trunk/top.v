@@ -188,7 +188,7 @@ module top(
 	assign vg_hdry = 1'b0;
 	assign vg_rclk = 1'b0;
 	assign vg_rawr = 1'b0;
-	assign vg_a a= 2'b00;
+	assign vg_a = 2'b00;
 	assign vg_wrd = 1'b0;
 	assign vg_side = 1'b0;
 
