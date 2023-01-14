@@ -1,0 +1,12 @@
+360x240 60Hz screen, vga or tv.
+timings as in VIDEO, 
+in VGA: maybe invert all syncs, make vsync a whole number of hsyncs
+
+60x40 6x6 characters,
+6x6 pix font (2x512 bytes)
+
+2400 bytes char buffer,
+5 bit per attr (4 background colors, 8 foreground colors) => 1500 bytes per attrs
+1500+2400 = 3900 bytes (8x512 bytes)
+
+

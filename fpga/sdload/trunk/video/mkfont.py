@@ -1,6 +1,9 @@
+#!/usr/bin/env python3
+
+"""
 // ZX-Evo SDLoad Configuration (c) NedoPC 2023
 //
-// top module for video output.
+// font generator: takes 6912-positioned font and generates font in internal FPGA format
 
 /*
     This file is part of ZX-Evo Base Configuration firmware.
@@ -20,26 +23,18 @@
     along with ZX-Evo Base Configuration firmware.
     If not, see <http://www.gnu.org/licenses/>.
 */
+"""
 
-module video_top
-(
-	input  wire fclk,
-	input  wire rst_n,
+import argparse,os,sys
 
-	// config inputs
-	input  wire vga_on,
 
-	// data write iface
-	/* TODO */
 
-	// video output
-	output wire vsync,
-	output wire hsync,
-	output wire csync,
-	output wire [1:0] red,
-	output wire [1:0] grn,
-	output wire [1:0] blu
-);
 
-endmodule
+
+
+def main():
+
+
+if __name__=="__main__":
+	main()
 
