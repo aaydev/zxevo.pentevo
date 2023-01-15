@@ -49,11 +49,14 @@ class ZXPic:
 		else:
 			self.attrs = None
 
+		self.sz_x = 256
+		self.sz_y = 192
 
-	def get_pixel(self,x,y):
+
+	def get_pix(self,x,y):
 		
-		if( x<0 or x>255 or y<0 or y>191 ):
-			sys.exit('x,y must be within 0..255 and 0..191 range!')
+		if( x<0 or x>=self.sz_x or y<0 or y>=self.sz_y ):
+			sys.exit('x,y must be within 0..{} and 0..{} range!'.format(self.sz_x-1,self.sz_y-1))
 
 
 		bitnum = 7 - (x & 7)
@@ -63,7 +66,134 @@ class ZXPic:
 		return True if self.pixels[offset] & (1<<bitnum) else False
 
 
+class CharSet:
 
+	def __init__(self, num_els, first_idx, sz_x, sz_y):
+		
+		# check arguments
+		if( int(num_els)<=0 ):
+			sys.exit('num_els must be positive!')
+		else:
+			self.num_els = int(num_els)
+
+		if( int(first_idx)<0 ):
+			sys.exit('first_idx must be non-negative!')
+		else:
+			self.first_idx = int(first_idx)
+
+		if( int(sz_x)<1 ):
+			sys.exit('sz_x must be positive!')
+		else:
+			self.sz_x = int(sz_x)
+
+		if( int(sz_y)<1 ):
+			sys.exit('sz_y must be positive!')
+		else:
+			self.sz_y = int(sz_y)
+
+		# generate empty characters
+		self.charset = [None] * (self.first_idx + self.num_els)
+
+		for char_idx in range(self.first_idx, self.first_idx + self.num_els):
+			
+			char = [None] * self.sz_y
+
+			for char_y in range(self.sz_y):
+
+				line = [False] * self.sz_x;
+
+				char[char_y] = line
+
+			self.charset[char_idx] = char
+
+	
+	def set_pix(self, char_idx, char_y, char_x, value):
+
+		self.charset[char_idx][char_y][char_x] = value
+
+
+	def get_pix(self, char_idx, char_y, char_x):
+
+		return self.charset[char_idx][char_y][char_x]
+
+
+
+def generate_font(pic, start_cx=0, start_cy=0, blk_sx=8, blk_sy=8, box_offx=0, box_offy=0, box_sx=6, box_sy=6, first_idx=32, num_els=224):
+# pic -- byte pic with sizes pic.sz_x, pic.sz_y and get_pix(x,y)
+# blk_sx/y -- size of font blocks (bounding boxes), typical 8x8
+# start_cx/cy -- coord of first element of font, in blocks (typical upper left, 0/0)
+# box_offx/y -- offset of actual box with a letter inside block (typical 0/0)
+# box_sx/y -- actual box size, 6/6 for 6x6 font etc.
+# first_idx -- font index corresponding to start_cx/y position
+# num_els -- how many font elements to parse
+
+	# check args
+	start_cx = int(start_cx)
+	start_cy = int(start_cy)
+	blk_sx = int(blk_sx)
+	blk_sy = int(blk_sy)
+	box_offx = int(box_offx)
+	box_offy = int(box_offy)
+	box_sx = int(box_sx)
+	box_sy = int(box_sy)
+	first_idx = int(first_idx)
+	num_els = int(num_els)
+
+	assert first_idx>=0
+	assert num_els>0
+
+	assert blk_sx>0
+	assert blk_sy>0
+
+	assert start_cx>=0
+	assert start_cy>=0
+
+	assert blk_sx*(start_cx+1) <= pic.sz_x
+	assert blk_sy*(start_cy+1) <= pic.sz_y
+
+	assert box_offx>=0
+	assert box_offy>=0
+
+	assert box_sx>0
+	assert box_sy>0
+
+	assert box_offx+box_sx > blk_sx, 'box_offx+box_sx > blk_sx!'
+	assert box_offy+box_sy > blk_sy, 'box_offy+box_sy > blk_sy!'
+	
+
+	# create empty font
+	font = CharSet(num_els, first_idx, box_sx, box_sy)
+
+	# load font data
+	curr_blk_x = start_cx
+	curr_blk_y = start_cy
+
+	pic_overflow = False
+
+	for char_idx in range(first_idx, first_idx + num_els):
+		
+		assert not pic_overflow
+
+		# x/y of upper left part of the box
+		x_origin = curr_blk_x*blk_sx + box_offx
+		y_origin = curr_blk_y*blk_sy + box_offy
+
+		# copy pixels
+		for y in range(box_sy):
+			for x in range(box_sx):
+				font.set_pix(char_idx, y, x, pic.get_pix(x_origin + x, y_origin + y)
+		
+		# step to next char in bitmap
+		curr_blk_x = curr_blk_x + 1
+		if( curr_blk_x*blk_sx >= pic.sz_x ):
+			curr_blk_x = 0
+			curr_blk_y = curr_blk_y + 1
+			if( curr_blk_y*blk_sy >= pic.sz_y ):
+				curr_blk_y = 0
+				pic_overflow = True
+
+
+	return font
 
 
 
@@ -73,12 +203,18 @@ def main():
 	# parse arguments
 	p = argparse.ArgumentParser()
 	#
-	p.add_argument('--scr', '-s',           action='store', help='6912 or 6144 ZX screen with font')
-	p.add_argument('--out', '-o',           action='store', help='Filename prefix for resulting file(s). Extensions will be added as needed')
-	p.add_argument(         '-x', type=int, action='store', help='Initial X position of 8x8 block with first symbol (that must be a space)')
-	p.add_argument(         '-y', type=int, action='store', help='Initial Y position of 8x8 block with first symbol (that must be a space)')
+	p.add_argument('--scr', '-s',           action='store', required=True, help='Filename of 6912 or 6144 ZX screen with font')
+	p.add_argument('--out', '-o',           action='store', required=True, help='Filename prefix for resulting file(s). Extensions will be added as needed')
+	p.add_argument(         '-x', type=int, action='store', default=0,     help='Initial X position of 8x8 block with first symbol (that must be a space)')
+	p.add_argument(         '-y', type=int, action='store', default=0,     help='Initial Y position of 8x8 block with first symbol (that must be a space)')
 	#
 	args = p.parse_args()
+
+
+	pic = ZXPic(args.scr)
+
+
+
 
 
 if __name__=="__main__":
