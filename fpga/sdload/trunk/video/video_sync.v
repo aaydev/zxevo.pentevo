@@ -1,0 +1,129 @@
+// ZX-Evo SDLoad Configuration (c) NedoPC 2023
+//
+// video sync module
+
+/*
+    This file is part of ZX-Evo Base Configuration firmware.
+
+    ZX-Evo Base Configuration firmware is free software:
+    you can redistribute it and/or modify it under the terms of
+    the GNU General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+
+    ZX-Evo Base Configuration firmware is distributed in the hope that
+    it will be useful, but WITHOUT ANY WARRANTY; without even
+    the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+    See the GNU General Public License for more details.
+
+    You should have received a copy of the GNU General Public License
+    along with ZX-Evo Base Configuration firmware.
+    If not, see <http://www.gnu.org/licenses/>.
+*/
+
+module video_sync
+(
+	input  wire clk,
+	input  wire rst_n,
+
+	input  wire vga_on,
+
+
+);
+
+	parameter H_PERIOD = 9'd448; // in 7MHz clock
+	//
+	parameter H_TV_SYNC_END  = 9'd33; // counting starts with HSYNC going active
+	parameter H_TV_PIX_START = 9'd78;
+	parameter H_TV_PIX_END   = 9'd438;
+	//
+	parameter H_VGA_SYNC_END  = 9'd53;
+	parameter H_VGA_PIX_START = 9'd79;
+	parameter H_VGA_PIX_END   = 9'd439;
+
+
+	parameter V_PERIOD = 9'd262; // in 15625Hz clock
+	//
+	parameter V_SYNC_END  = 9'd2; // in TV mode, must be a little longer than exact 2 HSYNC periods. Addition is 78 7MHz clocks
+	parameter V_PIX_START = 9'd18;
+	parameter V_PIX_END   = 9'd258;
+
+
+	reg [1:0] pix_divider = 2'b0;
+	reg pix_stb;
+
+
+	reg [8:0] h_counter = 9'd0;
+
+
+	reg v_div2 = 1'b0;
+
+	reg [8:0] v_counter = 9'd0;
+
+
+
+	// pixel clock strobes
+	always @(posedge clk)
+		pix_divider[1:0] <= { pix_divider[0], ~pix_divider[1] };
+	//
+	always @(posedge clk)
+		pix_stb <= vga_on ? (~^pix_divider) : (&pix_divider);
+
+
+
+	// horizontal counter: counts from 1 to 448
+	wire h_count_end = &h_counter[8:6]; // 448 is 0x1C0
+	//
+	always @(posedge clk)
+	if( pix_stb )
+	begin
+		if( h_count_end )
+			h_counter <= 9'd1;
+		else
+			h_counter <= h_counter + 9'd1;
+	end
+
+	// hsync on/off
+	wire hsync_on  = h_count_end;
+	wire hsync_off = vga_on ? (h_counter==H_VGA_SYNC_END) : (h_counter==H_TV_SYNC_END);
+
+	// hpix on/off
+	wire hpix_on  = vga_on ? (h_counter==H_VGA_PIX_START) : (h_counter==H_TV_PIX_START);
+	wire hpix_off = vga_on ? (h_counter==H_VGA_PIX_STOP) : (h_counter==H_TV_PIX_STOP);
+
+
+	// skip every second vertical count in vga mode
+	always @(posedge clk)
+	if( pix_stb && h_count_end )
+		v_div2 <= vga_on ? (~v_div2) : 1'b1;
+
+	// vertical count strobe
+	wire v_stb = pix_stb & h_count_end & v_div2;
+
+	// vertical counter: from 1 to 262
+	wire v_count_end = v_counter[8] & (&v_counter[2:1]); // 262 is 0x106
+	//
+	always @(posedge clk)
+	if( v_stb )
+	begin
+		if( v_count_end )
+			v_counter <= 9'd1;
+		else
+			v_counter <= v_counter + 9'd1;
+	end
+
+	// vsync on/off
+	wire vsync_on  = v_count_end;
+	wire vsync_off = (v_counter==V_SYNC_END);
+
+	// vpix on/off
+	wire vpix_on  = (v_counter==V_PIX_START);
+	wire vpix_off = (v_counter==V_PIX_STOP);
+
+
+
+
+
+
+endmodule
+
