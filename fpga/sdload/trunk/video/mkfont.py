@@ -34,7 +34,7 @@ class ZXPic:
 		with open(filename,'rb') as file:
 			self.zxscr = bytes(file.read())
 
-		if( len(self.zxscr)!=6144 and len(self.zxscr)!=6192 ):
+		if( len(self.zxscr)!=6144 and len(self.zxscr)!=6912 ):
 			sys.exit('Wrong zx file <{}> size, must be 6144 or 6912'.format(filename))
 
 		if( len(self.zxscr)==6912 ):
@@ -157,8 +157,8 @@ def generate_font(pic, start_cx=0, start_cy=0, blk_sx=8, blk_sy=8, box_offx=0, b
 	assert box_sx>0
 	assert box_sy>0
 
-	assert box_offx+box_sx > blk_sx, 'box_offx+box_sx > blk_sx!'
-	assert box_offy+box_sy > blk_sy, 'box_offy+box_sy > blk_sy!'
+	assert box_offx+box_sx <= blk_sx, 'box_offx+box_sx > blk_sx!'
+	assert box_offy+box_sy <= blk_sy, 'box_offy+box_sy > blk_sy!'
 	
 
 	# create empty font
@@ -181,7 +181,7 @@ def generate_font(pic, start_cx=0, start_cy=0, blk_sx=8, blk_sy=8, box_offx=0, b
 		# copy pixels
 		for y in range(box_sy):
 			for x in range(box_sx):
-				font.set_pix(char_idx, y, x, pic.get_pix(x_origin + x, y_origin + y)
+				font.set_pix(char_idx, y, x, pic.get_pix(x_origin + x, y_origin + y))
 		
 		# step to next char in bitmap
 		curr_blk_x = curr_blk_x + 1
@@ -195,6 +195,25 @@ def generate_font(pic, start_cx=0, start_cy=0, blk_sx=8, blk_sy=8, box_offx=0, b
 
 	return font
 
+
+
+
+def gen_binary(font):
+	
+	binary = bytearray(1024) #zeroed
+
+	for i in range(32,256):
+		for y in range(6):
+			for x in range(6):		
+				
+				offs = ((i>>3)*36 + x + y*6) & 0x3FF
+
+				bit = 1<<(7-(i&7))
+
+				if font.get_pix(i,y,x):
+					binary[offs] = binary[offs] | bit
+
+	return binary
 
 
 
@@ -213,8 +232,17 @@ def main():
 
 	pic = ZXPic(args.scr)
 
+	font = generate_font(pic=pic,
+	                     start_cx=0, start_cy=1,
+	                     first_idx=32, num_els=224)
+
+	binary = gen_binary(font)
 
 
+	bin_name = args.out + ".bin"
+
+	with open(bin_name,"wb") as wrbin:
+		wrbin.write(binary)
 
 
 if __name__=="__main__":
