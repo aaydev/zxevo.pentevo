@@ -69,27 +69,22 @@ class ZXPic:
 class CharSet:
 
 	def __init__(self, num_els, first_idx, sz_x, sz_y):
-		
+
+		num_els   = int(num_els)
+		first_idx = int(first_idx)
+		sz_x      = int(sz_x)
+		sz_y      = int(sz_y)
+
 		# check arguments
-		if( int(num_els)<=0 ):
-			sys.exit('num_els must be positive!')
-		else:
-			self.num_els = int(num_els)
+		assert num_els>0, 'num_els must be positive!'
+		assert first_idx>=0, 'first_idx must be non-negative!'
+		assert sz_x>0, 'sz_x must be positive!'
+		assert sz_y>0, 'sz_y must be positive!'
 
-		if( int(first_idx)<0 ):
-			sys.exit('first_idx must be non-negative!')
-		else:
-			self.first_idx = int(first_idx)
-
-		if( int(sz_x)<1 ):
-			sys.exit('sz_x must be positive!')
-		else:
-			self.sz_x = int(sz_x)
-
-		if( int(sz_y)<1 ):
-			sys.exit('sz_y must be positive!')
-		else:
-			self.sz_y = int(sz_y)
+		self.num_els   = num_els
+		self.first_idx = first_idx
+		self.sz_x      = sz_x
+		self.sz_y      = sz_y
 
 		# generate empty characters
 		self.charset = [None] * (self.first_idx + self.num_els)
@@ -205,9 +200,10 @@ def gen_binary(font):
 	for i in range(32,256):
 		for y in range(6):
 			for x in range(6):		
-				
+			
+				# actual layout of the resulting font is defined here
 				offs = ((i>>3)*36 + x + y*6) & 0x3FF
-
+				#
 				bit = 1<<(7-(i&7))
 
 				if font.get_pix(i,y,x):

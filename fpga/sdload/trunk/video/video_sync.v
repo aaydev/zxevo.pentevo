@@ -27,6 +27,8 @@ module video_sync
 	input  wire rst_n,
 
 	input  wire vga_on,
+	input  wire hsync_polarity, // 1 - positive polarity, 0 - negative
+	input  wire vsync_polarity //
 
 
 );
@@ -35,18 +37,18 @@ module video_sync
 	//
 	parameter H_TV_SYNC_END  = 9'd33; // counting starts with HSYNC going active
 	parameter H_TV_PIX_START = 9'd78;
-	parameter H_TV_PIX_END   = 9'd438;
+	parameter H_TV_PIX_STOP  = 9'd438;
 	//
 	parameter H_VGA_SYNC_END  = 9'd53;
 	parameter H_VGA_PIX_START = 9'd79;
-	parameter H_VGA_PIX_END   = 9'd439;
+	parameter H_VGA_PIX_STOP  = 9'd439;
 
 
 	parameter V_PERIOD = 9'd262; // in 15625Hz clock
 	//
-	parameter V_SYNC_END  = 9'd2; // in TV mode, must be a little longer than exact 2 HSYNC periods. Addition is 78 7MHz clocks
+	parameter V_SYNC_END = 9'd2; // in TV mode, must be a little longer than exact 2 HSYNC periods. Addition is 78 7MHz clocks
 	parameter V_PIX_START = 9'd18;
-	parameter V_PIX_END   = 9'd258;
+	parameter V_PIX_STOP  = 9'd258;
 
 
 	reg [1:0] pix_divider = 2'b0;
@@ -60,6 +62,12 @@ module video_sync
 
 	reg [8:0] v_counter = 9'd0;
 
+	
+	// initial sync signals
+	reg i_hsync;
+	reg i_vsync;
+	reg i_hpix;
+	reg i_vpix;
 
 
 	// pixel clock strobes
@@ -120,6 +128,51 @@ module video_sync
 	wire vpix_on  = (v_counter==V_PIX_START);
 	wire vpix_off = (v_counter==V_PIX_STOP);
 
+
+	// make initial sync signals
+	always @(posedge clk)
+	if( pix_stb )
+	begin
+		if( hsync_on )
+			i_hsync <= hsync_polarity;
+		else if( hsync_off )
+			i_hsync <= ~hsync_polarity;
+
+		if( hpix_on )
+			i_hpix <= 1'b1;
+		else if( hpix_off )
+			i_hpix <= 1'b0;
+	end
+	//
+	// vsync in tv mode must be 78 pix_stb's longer
+	reg [7:0] extra_vsync_count;
+	reg       extra_vsync_count_r;
+	always @(posedge clk)
+	if( v_stb && vsync_off )
+			extra_vsync_count <= 8'd77 + 8'h80;
+	else if( pix_stb && extra_vsync_count[7] )
+			extra_vsync_count <= extra_vsync_count - 8'd1;
+	//
+	always @(posedge clk)
+	if( pix_stb )
+		extra_vsync_count_r <= extra_vsync_count[7];
+	//
+	always @(posedge clk)
+	begin
+		if( v_stb && vsync_on )
+			i_vsync <= vsync_polarity;
+		else if( vga_on ? (v_stb && vsync_off) : (pix_stb && extra_vsync_count_r && !extra_vsync_count[7]) )
+			i_vsync <= ~vsync_polarity;
+	end
+	//
+	always @(posedge clk)
+	if( v_stb )
+	begin
+		if( vpix_on )
+			i_vpix <= 1'b1;
+		else if( vpix_off )
+			i_vpix <= 1'b0;
+	end
 
 
 
