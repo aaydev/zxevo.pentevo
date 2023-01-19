@@ -1,6 +1,6 @@
 // ZX-Evo SDLoad Configuration (c) NedoPC 2023
 //
-// top module for video output.
+// fetch/display data from internal EABs
 
 /*
     This file is part of ZX-Evo Base Configuration firmware.
@@ -21,61 +21,45 @@
     If not, see <http://www.gnu.org/licenses/>.
 */
 
-module video_top
+module video_fetch
 (
-	input  wire fclk,
+	input  wire clk,
 	input  wire rst_n,
 
-	// config inputs
-	input  wire vga_on,
+	input  wire pix_stb,
 
-	// data write iface
-	/* TODO */
+	input  wire i_hsync,
+	input  wire i_vsync,
+	input  wire i_hpix,
+	input  wire i_vpix,
 
-	// video output
-	output wire vsync,
-	output wire hsync,
-	output wire csync,
-	output wire [1:0] red,
-	output wire [1:0] grn,
-	output wire [1:0] blu
+	input  wire v_init,
+	input  wire h_init,
+	input  wire h_step,
 );
 
+	localparam CHAR_ADDR_INIT = 12'h000;
+	localparam ATTR_ADDR_INIT = 12'h9C0;
+	localparam ATTR_ADDR_ADD  = 12'h028;
 
-	wire pix_stb;
-	
-	wire i_hsync, i_vsync,
-	     i_hpix,  i_vpix;
-	
-	wire v_init, h_init,
-	             h_step;
+	reg [11:0] char_addr;
+	reg [11:0] attr_line_addr;
 
 
 
 
-	video_sync video_sync
-	(
-		.clk  (fclk ),
-		.rst_n(rst_n),
 
-		.vga_on        ( vga_on),
-		.hsync_polarity(~vga_on),
-		.vsync_polarity(~vga_on),
+	always @(posedge clk)
+	if( pix_stb )
+	begin
+		char_addr <= CHAR_ADDR_INIT;
+	end
 
-		.pix_stb(pix_stb),
-
-		.i_hsync(i_hsync),
-		.i_vsync(i_vsync),
-		.i_hpix (i_hpix ),
-		.i_vpix (i_vpix ),
-
-		.v_init(v_init),
-		.h_init(h_init),
-		.h_step(h_step)
-	);
-
-
-
+	always @(posedge clk)
+	if( pix_stb )
+	begin
+		attr_line_addr <= ATTR_ADDR_INIT;
+	end
 
 
 endmodule
