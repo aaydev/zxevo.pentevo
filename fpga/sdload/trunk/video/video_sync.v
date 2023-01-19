@@ -28,9 +28,21 @@ module video_sync
 
 	input  wire vga_on,
 	input  wire hsync_polarity, // 1 - positive polarity, 0 - negative
-	input  wire vsync_polarity //
+	input  wire vsync_polarity, //
 
+	// pixel strobe -- everything happens enabled by this signal
+	output reg  pix_stb,
 
+	// initial sync signals
+	output reg i_hsync,
+	output reg i_vsync,
+	output reg i_hpix,
+	output reg i_vpix,
+
+	// fetch synchronizing signals
+	output reg v_init, // prepare fetching whole screen
+	output reg h_init, // prepare fetching/displaying single line 
+	output reg h_step  // step to the next screen line
 );
 
 	parameter H_PERIOD = 9'd448; // in 7MHz clock
@@ -52,7 +64,6 @@ module video_sync
 
 
 	reg [1:0] pix_divider = 2'b0;
-	reg pix_stb;
 
 
 	reg [8:0] h_counter = 9'd0;
@@ -63,11 +74,6 @@ module video_sync
 	reg [8:0] v_counter = 9'd0;
 
 	
-	// initial sync signals
-	reg i_hsync;
-	reg i_vsync;
-	reg i_hpix;
-	reg i_vpix;
 
 
 	// pixel clock strobes
@@ -176,6 +182,33 @@ module video_sync
 
 
 
+	// fetch/display syncs
+	always @(posedge clk)
+	if( pix_stb )
+	begin
+		if( v_stb && vsync_off )
+			v_init <= 1'b1;
+		else
+			v_init <= 1'b0;
+	end
+	//
+	always @(posedge clk)
+	if( pix_stb )
+	begin
+		if( hsync_off )
+			h_init <= 1'b1;
+		else
+			h_init <= 1'b0;
+	end
+	//
+	always @(posedge clk)
+	if( pix_stb )
+	begin
+		if( i_vpix && v_stb )
+			h_step <= 1'b1;
+		else
+			h_step <= 1'b0;
+	end
 
 
 endmodule

@@ -41,5 +41,42 @@ module video_top
 	output wire [1:0] blu
 );
 
+
+	wire pix_stb;
+	
+	wire i_hsync, i_vsync,
+	     i_hpix,  i_vpix;
+	
+	wire v_init, h_init,
+	             h_step;
+
+
+
+
+	video_sync video_sync
+	(
+		.clk  (clk  ),
+		.rst_n(rst_n),
+
+		.vga_on        ( vga_on),
+		.hsync_polarity(~vga_on),
+		.vsync_polarity(~vga_on),
+
+		.pix_stb(pix_stb),
+
+		.i_hsync(i_hsync),
+		.i_vsync(i_vsync),
+		.i_hpix (i_hpix ),
+		.i_vpix (i_vpix ),
+
+		.v_init(v_init),
+		.h_init(h_init),
+		.h_step(h_step)
+	);
+
+
+
+
+
 endmodule
 
