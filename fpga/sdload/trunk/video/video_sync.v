@@ -34,15 +34,19 @@ module video_sync
 	output reg  pix_stb,
 
 	// initial sync signals
-	output reg i_hsync,
-	output reg i_vsync,
-	output reg i_hpix,
-	output reg i_vpix,
+	output reg  i_hsync,
+	output reg  i_vsync,
+	output reg  i_hpix,
+	output reg  i_vpix,
 
 	// fetch synchronizing signals
-	output reg v_init, // prepare fetching whole screen
-	output reg h_init, // prepare fetching/displaying single line 
-	output reg h_step  // step to the next screen line
+	output reg  v_init, // prepare fetching whole screen
+	output reg  h_init, // prepare fetching/displaying single line 
+	output reg  h_step, // step to the next screen line
+
+	output reg  h_char  // strobes 6 pix_stb's before the pix_stb that begins h_pix,
+	                    // then continues throughout the visible area. Ends also 6 pix_stb's
+	                    // before the end of h_pix
 );
 
 	parameter H_PERIOD = 9'd448; // in 7MHz clock
@@ -209,6 +213,45 @@ module video_sync
 		else
 			h_step <= 1'b0;
 	end
+
+	
+	wire start_char = vga_on ? (h_counter==(H_VGA_PIX_START-7)) : (h_counter==(H_TV_PIX_START-7));
+	wire stop_char  = vga_on ? (h_counter==(H_VGA_PIX_STOP -7)) : (h_counter==(H_TV_PIX_STOP -7));
+
+	reg char;
+	always @(posedge clk)
+	if( pix_stb )
+		if( start_char )
+			char <= 1'b1;
+		else if( stop_char )
+			char <= 1'b0;
+
+	// MOD 6 counter
+	reg [2:0] char_ctr;
+	//
+	always @(posedge clk)
+	if( pix_stb )
+	begin
+		if( start_char )
+			char_ctr <= 3'd0;
+		else
+			char_ctr <= (char_ctr[2] & char_ctr[0]) ? 3'd0 : (char_ctr + 3'd1);
+	end
+	//
+
+	//
+	always @(posedge clk)
+	if( pix_stb )
+	begin
+		if( start_char )
+			h_char <= 1'b1;
+		else if( char && (char_ctr[2] & char_ctr[0]) )
+			h_char <= 1'b1;
+		else
+			h_char <= 1'b0;
+	end
+
+
 
 
 endmodule
