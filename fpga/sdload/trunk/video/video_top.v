@@ -48,7 +48,7 @@ module video_top
 	     i_hpix,  i_vpix;
 	
 	wire v_init, h_init,
-	             h_step;
+             h_step, h_char;
 
 
 
@@ -71,7 +71,8 @@ module video_top
 
 		.v_init(v_init),
 		.h_init(h_init),
-		.h_step(h_step)
+		.h_step(h_step),
+		.h_char(h_char)
 	);
 
 

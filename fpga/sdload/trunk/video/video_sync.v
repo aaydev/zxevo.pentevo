@@ -41,9 +41,10 @@ module video_sync
 
 	// fetch synchronizing signals
 	output reg  v_init, // prepare fetching whole screen
+	output reg  v_step, // step to the next screen line
+	output reg  v_char, // step to the next char line
+	
 	output reg  h_init, // prepare fetching/displaying single line 
-	output reg  h_step, // step to the next screen line
-
 	output reg  h_char  // strobes 6 pix_stb's before the pix_stb that begins h_pix,
 	                    // then continues throughout the visible area. Ends also 6 pix_stb's
 	                    // before the end of h_pix
@@ -186,7 +187,8 @@ module video_sync
 
 
 
-	// fetch/display syncs
+	// vertical fetch syncs
+
 	always @(posedge clk)
 	if( pix_stb )
 	begin
@@ -195,7 +197,33 @@ module video_sync
 		else
 			v_init <= 1'b0;
 	end
-	//
+
+
+	reg [2:0] vctr_6;
+	always @(posedge clk)
+	if( pix_stb )
+	begin
+		if( ?? )
+			vctr_6
+		else if( v_stb )
+			vctr_6 <= (vctr_6[2] & vctr_6[0]) ? 3'd0 : (vctr_6 + 3'd1);
+	end
+
+
+	always @(posedge clk)
+	if( pix_stb )
+	begin
+		if( i_vpix && v_stb )
+			v_step <= 1'b1;
+		else
+			v_step <= 1'b0;
+	end
+	
+
+
+
+	// horizontal fetch syncs
+
 	always @(posedge clk)
 	if( pix_stb )
 	begin
@@ -203,15 +231,6 @@ module video_sync
 			h_init <= 1'b1;
 		else
 			h_init <= 1'b0;
-	end
-	//
-	always @(posedge clk)
-	if( pix_stb )
-	begin
-		if( i_vpix && v_stb )
-			h_step <= 1'b1;
-		else
-			h_step <= 1'b0;
 	end
 
 	
