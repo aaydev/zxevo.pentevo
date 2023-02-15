@@ -1,5 +1,5 @@
 
-; LAST UPDATE: 03.12.2022 savelij
+; LAST UPDATE: 15.02.2023 savelij
 
 ; ((out&0ffff)==37f7)&&((val&0ff)==1)
 ; ((out&0ffff)==77f7)&&((val&0ff)==1)
@@ -870,14 +870,24 @@ OUT_OUTI	LD HL,(BUFF_SECT)
 IN_1F		LD A,(WR_1F)
 		AND %11110000
 		CP 0x10
-		JR C,.L1
+		JR C,.L1			; 00-0F команды восстановления
 		CP 0x20
-		JR C,.L3
+		JR C,.L3			; 10-1F команды поиска
 		CP 0x80
-		JR C,.L5
+		JR C,.L5			; 20-7F команды шагания головки
+		CP 0xC0
+		JR C,.L8			; 80-BF команды чтения/записи
 		CP 0xD0
-		JR Z,.L7
+		JR Z,.L7			; D0-DF команды принудительного прерывания
 		XOR A
+		JR .L2
+
+; проверка выхода за 80 дорожку
+.L8		LD A,(PORT_3F)
+		CP 80
+		LD A,0
+		JR C,.L2
+		LD A,%00010000			; при уходе за 80 дорожку выдача ошибки "массив не найден"
 		JR .L2
 
 .L7             LD A,0x80

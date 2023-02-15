@@ -1,5 +1,5 @@
 
-; LAST UPDATE: 06.10.2022 savelij
+; LAST UPDATE: 15.02.2023 savelij
 
 	TITLE "mounter.a80 ROM_RST83"
 
@@ -746,6 +746,7 @@ RDWRMOUNT6	LD A,(RREG_A)				; номер дисковода
 		LD C,(HL)
 		INC H
 		LD B,(HL)				; BCDE=номер кластера
+; TODO: проверка номера кластера на 0 и 0xFFFFFFFF и возврат ошибки чтения/записи по надобности
 		LD A,(IX+_MOUNT_Cls_Step)		; шаг кластеров
 		DEC A
 		JR Z,RDWRMOUNT3				; шаг кластеров =1

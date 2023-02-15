@@ -1,5 +1,5 @@
 
-; LAST UPDATE: 16.01.2023 savelij
+; LAST UPDATE: 15.02.2023 savelij
 
 ; версия в бинарном виде ERS
 VERSBIN		EQU 0x00005910
@@ -11,4 +11,4 @@ VERSBIOS	EQU "0.59.10 "
 	ENDIF
 
 ; версия DOS
-VERS_DOS	EQU "0.56"
+VERS_DOS	EQU "0.57"

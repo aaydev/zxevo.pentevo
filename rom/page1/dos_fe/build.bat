@@ -1,9 +1,12 @@
 
 echo off
 
-..\..\..\tools\asl\bin\asl -U -L dos_fe.a80
-..\..\..\tools\asl\bin\p2bin dos_fe.p dos_fe.rom -r $-$ -k
+if not exist rom md rom
+if not exist lst md lst
+set path=%path%;d:\yad\svn\pentevo\tools\asl\bin;d:\yad\svn\pentevo\tools\mhmt
+set includes=d:\yad\svn\pentevo\rom
 
-..\..\..\tools\mhmt\mhmt -mlz dos_fe.rom ..\dos_fe_pack.rom
+asl -U -L -x -olist lst\dos_fe.lst -i %includes% dos_fe.a80
+p2bin dos_fe.p rom\dos_fe.rom -r $-$ -k
 
-rem del dos_fe.rom
+mhmt -mlz rom\dos_fe.rom ..\dos_fe_pack.rom

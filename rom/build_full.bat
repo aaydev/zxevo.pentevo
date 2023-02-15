@@ -10,7 +10,7 @@ call build.bat
 echo ####################
 echo ## BUILD FAT BOOT ##
 echo ####################
-cd fat_boot\source
+cd ..\..\fat_boot\source
 call build.bat
 
 echo #####################
