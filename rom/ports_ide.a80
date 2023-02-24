@@ -1,5 +1,5 @@
 
-; LAST UPDATE: 25.05.2022 savelij
+; LAST UPDATE: 23.02.2023 savelij
 
 ; нумерация контроллеров HDD
  INIT_VAR
@@ -8,7 +8,6 @@
  SETVAR HDD_DIVIDE
  SETVAR HDD_PROFI
  SETVAR HDD_TURBO2
- SETVAR HDD_SPRINTER
 
 ; порты DIVIDE
 PV_1F7		EQU 0xBF			; регистр состояния/регистр команд
@@ -92,21 +91,3 @@ PA_1F2		EQU 0xFE4F			; счетчик секторов
 PA_1F1		EQU 0xFE2F			; порт свойств
 PA_1F0		EQU 0xFF0F			; порт данных младшие 8 бит
 ;PS3F6						; регистр состояния/управления
-
-; порты SPRINTER
-PR_1F7W		EQU 0x4153			; W регистр команд
-PR_1F7R		EQU 0x4053			; R регистр состояния
-PR_1F6W		EQU 0x4152			; W CHS-номер головы и устройства/LBA адрес 24-27
-PR_1F6R		EQU 0x4052			; R CHS-номер головы и устройства/LBA адрес 24-27
-PR_1F5W		EQU 0x0155			; W CHS-цилиндр 8-15/LBA адрес 16-23
-PR_1F5R		EQU 0x0055			; R CHS-цилиндр 8-15/LBA адрес 16-23
-PR_1F4W		EQU 0x0154			; W CHS-цилиндр 0-7/LBA адрес 8-15
-PR_1F4R		EQU 0x0054			; R CHS-цилиндр 0-7/LBA адрес 8-15
-PR_1F3W		EQU 0x0153			; W CHS-номер сектора/LBA адрес 0-7
-PR_1F3R		EQU 0x0053			; R CHS-номер сектора/LBA адрес 0-7
-PR_1F2W		EQU 0x0152			; W счетчик секторов
-PR_1F2R		EQU 0x0052			; R счетчик секторов
-PR_1F1W		EQU 0x0151			; W порт свойств
-PR_1F1R		EQU 0x0051			; R порт ошибок
-PR_1F0W		EQU 0x0150			; W порт данных младшие 8 бит
-PR_1F0R		EQU 0x0050			; R порт данных младшие 8 бит

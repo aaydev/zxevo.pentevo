@@ -1,5 +1,5 @@
 
-; LAST UPDATE: 26.11.2022 savelij
+; LAST UPDATE: 21.02.2023 savelij
 
 		TITLE "menu_execute.a80"
 
@@ -330,6 +330,13 @@ UMOUNTIMAGE
 	RST8 _WINW
 		JP _RULILKA			; возвращаемся к общему управлению
 
+; демонтирование всех дисков
+DISMOUNT_ALL	LD A,3
+	RST8 _MOUNTER,_CLOSEMOUNT
+		LD A,2
+	RST8 _MOUNTER,_CLOSEMOUNT
+		LD A,1
+	RST8 _MOUNTER,_CLOSEMOUNT
 DISMOUNT_A	XOR A
 DISMOUNT_DRV
 	RST8 _MOUNTER,_CLOSEMOUNT

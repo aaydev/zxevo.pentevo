@@ -1,5 +1,5 @@
 
-; LAST UPDATE: 09.11.2022 savelij
+; LAST UPDATE: 21.02.2023 savelij
 
 ;ОПИСАТЕЛЬ ОКНА (АДРЕС В IX)
 ;+00 X КООРДИНАТА
@@ -130,21 +130,23 @@ KILL2
 
 ;===============демонтирование образов=====================
 WDISMOUNT
- WINHDR 0x0F,0x08,LOW ((WDISM2-WDISM1)/2)+2,0x0C,0x07,0x1F,%00100000,0, \
+ WINHDR 0x0E,0x08,LOW ((WDISM2-WDISM1)/2)+2,0x0D,0x07,0x1F,%00100000,0, \
 	0,((WDISM2-WDISM1)/2),WDISMTXT,WDISM1,0,WDISMKEY
 WDISMTXT	DB "\x17\xFFDismount"
 		DB "\r 1.Dismount A:"		;1
 		DB "\r 2.Dismount B:"		;2
 		DB "\r 3.Dismount C:"		;3
 		DB "\r 4.Dismount D:"		;4
+		DB "\r 5.Dismount all"		;5
 		DB "\r X.Exit",0		;x
 
-WDISMKEY	DB LOW (WDISM1-$-1),"1234x"
+WDISMKEY	DB LOW (WDISM1-$-1),"12345x"
 
 WDISM1		DW DISMOUNT_A			;1
 		DW DISMOUNT_B			;2
 		DW DISMOUNT_C			;3
 		DW DISMOUNT_D			;4
+		DW DISMOUNT_ALL			;5
 		DW RESTART			;x
 WDISM2
 ;===============демонтирование образов=====================

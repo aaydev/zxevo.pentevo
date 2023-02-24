@@ -1,5 +1,5 @@
 
-; LAST UPDATE: 05.10.2022 savelij
+; LAST UPDATE: 24.02.2023 savelij
 
 ; загрузка выбранного шрифта
 LOAD_FONT	LD HL,FONTS
@@ -304,8 +304,8 @@ SELMOUNT	LD HL,BUF_FILEITEM+0x1C
 		LD BC,0x0A
 		LD DE,0
 		CALL BCDEHLM
-		JP M,LOADIMAGE			; образ меньше стандартного, загрузка в рамдиск
-; размер TRD образа стандартного размера или больше
+		JP NZ,LOADIMAGE			; образ меньше или больше стандартного, загрузка в рамдиск
+; размер TRD образа стандартного размера
 		LD HL,ERS_FLAGS
 		BIT B_VIEW_IMG,(HL)
 		LD IX,RUN_IMAGE			; окно выбора загрузки/монтирования

@@ -1,5 +1,5 @@
 
-; LAST UPDATE: 26.11.2022 savelij
+; LAST UPDATE: 24.02.2023 savelij
 
 PAGE
 		TITLE "main.a80"
@@ -885,7 +885,6 @@ DIV_HLBC_DE	ld a,b
 
 		include conf_down.a80
 		include menu_execute.a80
-		include flasher.a80
 		include call_cmos.a80
 		include menu_data.a80
 		include fat_boot.a80
@@ -896,6 +895,7 @@ DIV_HLBC_DE	ld a,b
 		include pc_keys_test.a80
 		include bmp_view.a80
 		include conf_up.a80
+		include flasher.a80
 
 KOSHAK		binclude kot_anim.bin,9
 ICON		binclude icon.bin,9
