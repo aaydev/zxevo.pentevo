@@ -1,95 +1,4 @@
 
-;        ORG     0X6000
-
-        ; rom programming example for PENTEVO
-        ; contains 2 parts: example and working procedures
-
-
-        ; prepare hardware
-
-;        DI 
-
-;        LD      A,3
-;        OUT     (0XBF),A ; enable shadow ports, enable ROM write
-
-
-        ; write byte
-;
- ;      LD      E,0X04
-  ;     LD      HL,0X0001
-   ;    LD      A,0X55
-    ;   CALL    PGM_BYTE
-
-     ;  LD      HL,0X0123
-      ; LD      A,0XAA
-       ;CALL    PGM_BYTE
-
-
-        ; erase 64Kb block
-
-;       LD      E,0X04
- ;      LD      HL,0X0000
-  ;     CALL    ERASE_BLK
-
-
-        ; program 16k of shit
-
-;       LD      E,0X04
- ;      LD      HL,0X0000
-  ;     LD      IX,0X8000
-   ;    LD      BC,0X4000
-
-;L2
-    ;   LD      A,(IX)
-     ;  CALL    PGM_BYTE
-
-      ; INC     IX
-       ;CALL    INC_EHL
-;       DEC     BC
- ;      LD      A,B
-  ;     OR      C
-   ;    JR      NZ,L2
-
-        ; read page
-
-;        LD      E,0X04
-;        LD      HL,0X0000
-;        LD      IX,0X8000
-;        LD      BC,0X4000
-;L1
-;        CALL    RDBYTE
-;        LD      (IX),A
-
-;        CALL    INC_EHL
-;        INC     IX
-;        DEC     BC
-;        LD      A,B
-;        OR      C
-;        JR      NZ,L1
-
-;        LD      BC,0XFFF7 ;return RAM to 0XC000..0XFFFF
-;        LD      A,0XFF
-;        OUT     (C),A
-
-;        LD      A,0
-;        OUT     (0XBF),A ; disable ports, disable ROM write
-
-;        EI 
-;        RET 
-
-
-
-
-
-;INC_EHL
-;        INC     L
-;        RET     NZ
-;        INC     H
-;        RET     NZ
-;        INC     E
-;        RET 
-
-
 
 PGM_BYTE
         ; programs byte to the given location
@@ -122,7 +31,72 @@ PGM_BYTE
         POP     DE
         CALL    WRBYTE
 
-        JR      ERR_END ; wait for end/error as always
+        JP      ERR_END ; wait for end/error as always
+
+sendCmd:
+	ld bc,0xfff7
+	ld a,0x3f & (~(1))
+	out (c),a
+	ld a,0xaa
+	ld (0x1555 + 0xc000),a
+	
+	ld a,0x3f & (~(0))
+	out (c),a
+	ld a,0x55
+	ld (0x2aaa + 0xc000),a
+	
+	ld a,0x3f & (~(1))
+	out (c),a
+	ld a,e
+	ld (0x1555 + 0xc000),a
+	ret
+	
+rom_read_id ; out: hl - ChipID
+
+	ld e,0xf0
+	call sendCmd
+		
+	ld e,0x90
+	call sendCmd
+	
+	LD      A,87
+	DEC     A
+	JR      NZ,$-1
+	
+	ld hl,(0xc000)
+	
+	ld e,0xf0
+	call sendCmd
+	
+	ret
+
+erase_all_chip
+	ld e,0xf0
+	call sendCmd
+	
+	ld e,0x80
+	call sendCmd
+	
+	ld e,0x10
+	call sendCmd
+	
+	;now wait 100uS @ 14MHz to start actual block erase
+
+	LD      A,87
+	DEC     A
+	JR      NZ,$-1
+	
+	ld hl, 0xc000
+	
+ERASE_ALL_LOOP
+	ld a,(hl)
+	xor (hl)
+	jr	nz,ERASE_ALL_LOOP
+	
+	ld e,0xf0
+	call sendCmd
+	
+	ret
 
 
 ERASE_BLK

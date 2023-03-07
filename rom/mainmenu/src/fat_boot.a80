@@ -1447,9 +1447,22 @@ FLASHER		LD BC,PENT_CONF
 		LD BC,WIN_A0
 		LD A,0x7F
 		OUT (C),A			; отключение пзу в окне 0
+		
+		call rom_read_id	; чтение ID чипа
+		ex de,hl
+		xor a				;стираем только чипы с блоками по 64к
+		ld hl,0xe220
+		sbc hl,de
+		jr z,FLASHER_CUST_ERASE
+		xor a
+		ld hl,0xa401
+		sbc hl,de
+		jr nz,FLASHER_CUST_PROG
+FLASHER_CUST_ERASE
 		LD E,0
 		LD HL,0
 		CALL ERASE_BLK			; стирание CUSTOM ROM страницы
+FLASHER_CUST_PROG
 		LD A,RAM_FLASHER
 		LD E,0
 		CALL FLASH_64KB			; программирование CUSTOM ROM страницы
@@ -1467,13 +1480,15 @@ FLASHER6	LD IX,ERASE_ROM			; вывод окна о стирании FLASH
 		OUT (C),A			; отключение rom в окне 0
 		LD A,3
 		CALL SETWIN_INDICAT		; установка индикатора процесса
-		LD E,0
-		LD HL,0
-FLASHER4	CALL ERASE_BLK			; стирание блока 64КБ
-		CALL INC_INDICAT		; обновление индикатора процесса
-		INC E				; следующий блок	
-		BIT 3,E
-		JR Z,FLASHER4
+		
+		call erase_all_chip
+;		LD E,0
+;		LD HL,0
+;FLASHER4	CALL ERASE_BLK			; стирание блока 64КБ
+;		CALL INC_INDICAT		; обновление индикатора процесса
+;		INC E				; следующий блок	
+;		BIT 3,E
+;		JR Z,FLASHER4
 		LD IX,UPDATE_WIN
 		LD A,RAM_FLASHER		; страница начала загруженного ROM файла
 		LD E,0
