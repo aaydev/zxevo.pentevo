@@ -1,79 +1,83 @@
 
-echo off
+@echo off
+
+set BUILDFULL=TRUE
+
+call setpath.bat
 
 echo ###############
 echo ## BUILD STS ##
 echo ###############
-cd sts\src
+cd %rootdir%\sts\src
 call build.bat
 
 echo ####################
 echo ## BUILD FAT BOOT ##
 echo ####################
-cd ..\..\fat_boot\source
+cd %rootdir%\fat_boot\source
 call build.bat
 
 echo #####################
 echo ## BUILD MAIN MENU ##
 echo #####################
-cd ..\..\mainmenu\src
+cd %rootdir%\mainmenu\src
 call build.bat
 
 echo ##################
 echo ## BUILD DOS_FE ##
 echo ##################
-cd ..\..\page1\dos_fe
+cd %rootdir%\page1\dos_fe
 call build.bat
 
 echo ######################
 echo ## BUILD START PAGE ##
 echo ######################
-cd ..\..\page0\source
+cd %rootdir%\page0\source
 call build.bat
 
 echo ###################
 echo ## BUILD NEO-DOS ##
 echo ###################
-cd ..\..\page1\neo-dos
+cd %rootdir%\page1\neo-dos
 call build.bat
 
 echo ###################
 echo ## BUILD EVO-DOS ##
 echo ###################
-cd ..\..\page1\evo-dos
+cd %rootdir%\page1\evo-dos
 call build.bat
 
 echo #####################
 echo ## BUILD BASIC 128 ##
 echo #####################
-cd ..\..\page2\source
+cd %rootdir%\page2\source
 call build.bat
 
 echo ####################
 echo ## BUILD BASIC 48 ##
 echo ####################
-cd ..\..\page3\source
+cd %rootdir%\page3\source
 call build.bat
 
 echo ####################
 echo ## BUILD ATM CP/M ##
 echo ####################
-cd ..\..\atm_cpm\source
+cd %rootdir%\atm_cpm\source
 call build.bat
 
 echo ##########################
 echo ## BUILD RST 8 SERVICES ##
 echo ##########################
-cd ..\..\page5\source
+cd %rootdir%\page5\source
 call build.bat
 
 echo #######################
 echo ## BUILD TR-DOS 6.10 ##
 echo #######################
-cd ..\..\trdos_v6\source
+cd %rootdir%\trdos_v6\source
 call build.bat
 
-cd ..\..
+cd %rootdir%
 
 echo ###############
 echo ## BUILD ERS ##
@@ -102,6 +106,7 @@ echo ## BUILD FULL ERS ROM EMUL FDD FE ##
 echo ####################################
 rem          64             64              64                   128               192
 copy /b /y ff_64k.rom + basics_std.rom + glukpent.rom + profrom\evoprofrom.rom + ers_fe.rom zxevo_fe.rom
+
 
 echo #################################
 echo ## COPY ROM'S FOR UNRESLSPECCY ##

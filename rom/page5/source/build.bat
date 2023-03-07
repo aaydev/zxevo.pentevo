@@ -3,14 +3,14 @@ echo off
 
 if not exist rom md rom
 if not exist lst md lst
-set path=%path%;d:\yad\svn\pentevo\tools\asl\bin;d:\yad\svn\pentevo\tools\mhmt
-set includes=d:\yad\svn\pentevo\rom
 
-cd ..\..\fat_boot\source
+if "%BUILDFULL%"=="" call ../../setpath.bat
+
+cd %rootdir%\fat_boot\source
 
 call build.bat
 
-cd ..\..\page5\source
+cd %rootdir%\page5\source
 
 mhmt -mlz 8x8_ar.fnt 8x8_ar_pack.bin
 mhmt -mlz 866_code.fnt 866_code_pack.bin
@@ -22,3 +22,8 @@ p2bin rst8service.p ..\rst8service.rom -r $-$ -k
 
 asl -U -L -x -olist lst\rst8service_fe.lst -i %includes% -D DOS_FE rst8service.a80
 p2bin rst8service.p ..\rst8service_fe.rom -r $-$ -k
+
+
+if NOT "%BUILDFULL%"=="" exit /b
+
+set PATH=%oldpath%

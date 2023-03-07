@@ -3,8 +3,8 @@ echo off
 
 if not exist rom md rom
 if not exist lst md lst
-set path=d:\yad\svn\pentevo\tools\asl\bin\;d:\yad\svn\pentevo\tools\mhmt\
-set includes=d:\yad\svn\pentevo\rom
+
+if "%BUILDFULL%"=="" call ../../setpath.bat
 
 asl -U -L -x -olist lst\main.lst -i %includes% main.a80
 p2bin main.p rom\main.rom -r $-$ -k
@@ -21,3 +21,8 @@ mhmt -mlz rom\cmosset.rom ..\cmosset_pack.rom
 mhmt -mlz rom\chars_eng.bin ..\chars_pack.rom
 
 rem del *.rom
+
+if NOT "%BUILDFULL%"=="" exit /b
+
+set PATH=%oldpath%
+
