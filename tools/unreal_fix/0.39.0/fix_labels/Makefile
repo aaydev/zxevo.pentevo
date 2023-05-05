@@ -72,8 +72,11 @@ NAMES=$(SRCS:.cpp=)
 
 PCH=std.h.gch
 
+ifdef AMD64
+EXE=x32/emul64.exe
+else
 EXE=x32/emul.exe
-
+endif
 
 
 

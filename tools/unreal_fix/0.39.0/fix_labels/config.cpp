@@ -261,8 +261,23 @@ void load_config(const char *fname)
    char line[FILENAME_MAX];
    load_errors = 0;
 
-   GetModuleFileName(nullptr, ininame, sizeof ininame);
-   strlwr(ininame); *(unsigned*)(strstr(ininame, ".exe")+1) = WORD4('i','n','i',0);
+   GetModuleFileName(nullptr, ininame, sizeof(ininame));
+
+   //strlwr(ininame); // WHAT'S THIS FOR???
+   
+   // this was a flawed code since strstr searches FIRST occurence!
+   //*(unsigned*)(strstr(ininame, ".exe")+1) = WORD4('i','n','i',0);
+
+   // make default config name: for EXENAME64.exe or EXENAME.exe that will be EXENAME.ini
+   size_t ininame_len = strlen(ininame);
+   const char const_64_exe[] = "64.exe";
+   const char const_exe[] = ".exe";
+   const char const_ini[] = ".ini";
+   //
+   if( !strcasecmp(ininame + ininame_len - sizeof(const_64_exe) + 1, const_64_exe) )
+   	memcpy(ininame + ininame_len - sizeof(const_64_exe) + 1, const_ini, sizeof(const_ini));
+   else if( !strcasecmp(ininame + ininame_len - sizeof(const_exe) + 1, const_exe) )
+   	memcpy(ininame + ininame_len - sizeof(const_exe) + 1, const_ini, sizeof(const_ini));
 
    if (fname && *fname) {
       char *dst = strrchr(ininame, '\\');
