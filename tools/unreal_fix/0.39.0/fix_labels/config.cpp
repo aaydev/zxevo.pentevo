@@ -275,9 +275,9 @@ void load_config(const char *fname)
    const char const_ini[] = ".ini";
    //
    if( !strcasecmp(ininame + ininame_len - sizeof(const_64_exe) + 1, const_64_exe) )
-   	memcpy(ininame + ininame_len - sizeof(const_64_exe) + 1, const_ini, sizeof(const_ini));
+   	memcpy(ininame + ininame_len - sizeof(const_64_exe) + 1, const_ini, sizeof(const_ini)); // fix last "64.exe" to ".ini"
    else if( !strcasecmp(ininame + ininame_len - sizeof(const_exe) + 1, const_exe) )
-   	memcpy(ininame + ininame_len - sizeof(const_exe) + 1, const_ini, sizeof(const_ini));
+   	memcpy(ininame + ininame_len - sizeof(const_exe) + 1, const_ini, sizeof(const_ini)); // fix last ".exe" to ".ini"
 
    if (fname && *fname) {
       char *dst = strrchr(ininame, '\\');
