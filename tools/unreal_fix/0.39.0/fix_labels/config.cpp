@@ -256,6 +256,14 @@ void load_ay_vols()
    }
 }
 
+#if (defined _MSC_VER)
+int strcasecmp(char const *s1, char const *s2)
+{
+	return ::_stricmp(s1, s2);
+}
+#endif
+
+
 void load_config(const char *fname)
 {
    char line[FILENAME_MAX];
