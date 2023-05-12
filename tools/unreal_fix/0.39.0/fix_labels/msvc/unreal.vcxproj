@@ -524,7 +524,7 @@
       <SubSystem>Console</SubSystem>
       <AdditionalOptions>-pdbaltpath:%_PDB% %(AdditionalOptions)</AdditionalOptions>
       <GenerateDebugInformation>DebugFull</GenerateDebugInformation>
-      <AdditionalDependencies>zlib64.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='icl-Debug|x64'">

@@ -7,7 +7,7 @@
   </PropertyGroup>
   <ItemDefinitionGroup>
     <ClCompile>
-      <PreprocessorDefinitions>_M_IX86_FP=2;_USING_V110_SDK71_;_CRT_SECURE_NO_DEPRECATE;USE_SND_EXTERNAL_BUFFER;_PREFIX_;_NO_CRT_STDIO_INLINE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>_M_IX86_FP=2;_CRT_SECURE_NO_DEPRECATE;USE_SND_EXTERNAL_BUFFER;_PREFIX_;_NO_CRT_STDIO_INLINE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <AdditionalOptions>-Zc:threadSafeInit- %(AdditionalOptions)</AdditionalOptions>
       <DiagnosticsFormat>Caret</DiagnosticsFormat>
       <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
