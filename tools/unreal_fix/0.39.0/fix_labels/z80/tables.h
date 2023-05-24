@@ -92,7 +92,7 @@ extern const TMakeSbc MakeSbc;
 Z80INLINE void and8(Z80 *cpu, unsigned char src)
 {
    cpu->a &= src;
-   cpu->f = log_f[cpu->a] | HF;
+   cpu->f = log_f[cpu->a] | (u8)HF;
 }
 
 Z80INLINE void or8(Z80 *cpu, unsigned char src)

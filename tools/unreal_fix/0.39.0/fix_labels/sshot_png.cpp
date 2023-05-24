@@ -45,7 +45,11 @@ static png_set_filter_ptr png_set_filter_p = nullptr;
 static HMODULE PngDll = nullptr;
 bool PngInit()
 {
-    PngDll = LoadLibrary("libpng12.dll");
+#if defined(_WIN64) || defined(AMD64)
+	PngDll = LoadLibrary("libpng64.dll");
+#else
+	PngDll = LoadLibrary("libpng16.dll");
+#endif
     if(!PngDll)
         return false;
     png_error_p = (png_error_ptr)GetProcAddress(PngDll, "png_error");
@@ -95,6 +99,7 @@ void PngDone()
 
 static png_structp png_ptr = nullptr;
 static png_infop info_ptr = nullptr;
+static FILE *io_ptr;
 
 static void
 PNGAPI
@@ -102,7 +107,7 @@ png_write_data(png_structp png_ptr, png_bytep data, png_size_t length)
 {
    size_t check;
 
-   check = fwrite(data, 1, length, (FILE *)(png_ptr->io_ptr));
+   check = fwrite(data, 1, length, (FILE *)(io_ptr));
    if (check != length)
    {
       png_error_p(png_ptr, "Write Error");
@@ -113,10 +118,13 @@ static void
 PNGAPI
 png_flush(png_structp png_ptr)
 {
+	/*
    FILE *io_ptr;
    io_ptr = (FILE *)CVT_PTR((png_ptr->io_ptr));
-   if (io_ptr != nullptr)
+   */
+	if (io_ptr != nullptr)
       fflush(io_ptr);
+  
 }
 
 BOOL PngSaveImage (FILE *pfFile, png_byte *pDiData,
@@ -150,7 +158,8 @@ BOOL PngSaveImage (FILE *pfFile, png_byte *pDiData,
     }
 
     // initialize the png structure
-    png_set_write_fn_p(png_ptr, (png_voidp)pfFile, png_write_data, png_flush);
+	io_ptr = pfFile;
+    png_set_write_fn_p(png_ptr, (png_voidp)pfFile, (png_rw_ptr)png_write_data, png_flush);
     
     // we're going to write a very simple 3x8 bit RGB image
     png_set_IHDR_p(png_ptr, info_ptr, png_uint_32(iWidth), png_uint_32(iHeight), ciBitDepth,
@@ -182,6 +191,8 @@ BOOL PngSaveImage (FILE *pfFile, png_byte *pDiData,
     // and we're done
     free (ppbRowPointers);
     ppbRowPointers = nullptr;
+
+	
     
     // clean up after the write, and free any memory allocated
     png_destroy_write_struct_p(&png_ptr, (png_infopp) nullptr);

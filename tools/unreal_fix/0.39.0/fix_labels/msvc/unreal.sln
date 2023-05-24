@@ -9,6 +9,8 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "z80", "z80.vcxproj", "{72B2
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "snd", "snd.vcxproj", "{D83EF518-4C10-46B6-8A64-138CEF801212}"
 EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{E65EFA2B-A90A-4303-9B95-7EE96D29ADB4}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		clang-Debug|x64 = clang-Debug|x64
