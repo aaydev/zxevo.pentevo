@@ -3,6 +3,7 @@
 #define PNG_NO_GLOBAL_ARRAYS
 
 #include "png/zlib.h"
+#include "png/pnglibconf.h"
 #include "png/pngconf.h"
 #include "png/png.h"
 
