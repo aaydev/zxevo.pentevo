@@ -206,7 +206,7 @@ module zports(
 
 	localparam ZXEVBF = 8'hBF; // xxBF config port
 	
-	localparam ZXEVBE = 8'hBE; // xxBE config-read and nmi-end port
+	localparam ZXEVBE = 8'hBE; // xxBE nmi-end port
 	localparam ZXEVBD = 8'hBD; // xxBD config-read and write port
 
 	localparam COMPORT = 8'hEF; // F8EF..FFEF - rs232 ports
@@ -217,7 +217,7 @@ module zports(
 
 
 
-	// xxBE/xxBD high part addresses
+	// xxBD high part addresses
 	localparam BD_PG0      = 5'h00;
 	localparam BD_PG1      = 5'h01;
 	localparam BD_PG2      = 5'h02;
@@ -467,7 +467,6 @@ module zports(
 			dout = { 2'b00, pal444_ena, brk_ena, set_nmi, fntw_en_reg, romrw_en_reg, shadow_en_reg };
 		end
 
-		ZXEVBE,		// TODO: remove read capability from xxBE
 		ZXEVBD: begin
 			dout = portbdmux;
 		end
