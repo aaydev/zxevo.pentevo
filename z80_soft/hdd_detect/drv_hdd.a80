@@ -1,0 +1,762 @@
+
+; LAST UPDATE: 26.07.2023 savelij
+
+; возвращаемые ошибки
+; 0 - OK
+; 1 - ошибка HDD TIMEOUT
+; 6 - ошибка выполнения команды
+; 7 - обнаружен CD/DVD
+
+	switch (HDDTYPE)
+	case HDD_NEMO
+.NEMO
+	case HDD_SMUC
+.SMUC
+	case HDD_PROFI
+.PROFI
+	case HDD_TURBO2
+.TURBO2
+	case HDD_DIVIDE
+.DIVIDE
+	endcase
+
+		DW .DRIVER_READ_ID
+		DW .DRIVER_READ_SECTORS
+		DW .DRIVER_WRITE_SECTORS
+		DW .DRIVER_CHECK_DEVICE
+
+; Входные параметры общие:
+; HL-адрес загрузки в память
+; BCDE-32-х битный номер сектора
+; A-количество блоков (блок=512 байт)
+; только для многоблочной записи/чтении
+
+; установка регистров HDD
+; на входе:
+;		IYH = команда для HDD
+;		BCDE = LBA номер сектора
+;		A = количество секторов
+;		A' = номер устройства (бит 0 = 0/1 - master/slave)
+.SEND_CMD	LD IYL,A
+		PUSH HL
+		PUSH DE
+		LD E,C
+		LD A,B
+		AND 0x0F
+		LD D,A
+		EX AF,AF'
+		OR %10100000
+		OR D
+		LD D,A
+
+	switch (HDDTYPE)
+
+	case HDD_NEMO
+		LD BC,0xFF << 8 + PN_3F6
+		LD A,%00001010
+		OUT (C),A
+		LD C,PN_1F6
+		LD A,D
+		AND 0xF0
+		OUT (C),A
+		LD C,PN_1F7
+
+	case HDD_SMUC
+		LD BC,PS_1F6
+		AND 0xF0
+		CALL .SMUC_WR_PORT
+		LD B,HIGH (PS_1F7)
+
+	case HDD_PROFI
+		LD BC,PP_3F6
+		LD A,%00001010
+		OUT (C),A
+		LD BC,PP_1F6W
+		LD A,D
+		AND 0xF0
+		OUT (C),A
+		LD BC,PP_1F7R
+
+	case HDD_TURBO2
+		LD BC,PA_1F6
+		AND 0xF0
+		OUT (C),A
+		LD C,LOW (PA_1F7)
+
+	case HDD_DIVIDE
+		LD BC,0xFF << 8 + PV_3F6
+		LD A,%00001010
+		OUT (C),A
+		LD C,PV_1F6
+		LD A,D
+		AND 0xF0
+		OUT (C),A
+		LD C,PV_1F7
+ 	endcase
+
+		LD HL,HDD_TIME_OUT
+.SEND_WAIT	DEC HL
+		LD A,H
+		OR L
+		JR Z,.SEND_ERROR1
+
+	switch (HDDTYPE)
+
+	case HDD_NEMO
+		IN A,(C)
+
+	case HDD_SMUC
+		CALL .SMUC_RD_PORT
+
+	case HDD_PROFI
+		IN A,(C)
+
+	case HDD_TURBO2
+		IN A,(C)
+
+	case HDD_DIVIDE
+		IN A,(C)
+	endcase
+		AND A
+		JR Z,.SEND_ERROR7
+		BIT 7,A
+		JR NZ,.SEND_WAIT
+		BIT 6,A
+		JR Z,.SEND_WAIT
+
+	switch (HDDTYPE)
+
+	case HDD_NEMO
+		LD C,PN_1F6
+		OUT (C),D
+		LD C,PN_1F5
+		OUT (C),E
+		POP DE
+		LD C,PN_1F4
+		OUT (C),D
+		LD C,PN_1F3
+		OUT (C),E
+		LD C,PN_1F2
+		LD A,IYL
+		OUT (C),A
+		LD C,PN_1F1
+		XOR A
+		OUT (C),A
+		LD C,PN_1F7
+		LD A,IYH
+		OUT (C),A
+
+	case HDD_SMUC
+		LD B,HIGH (PS_1F6)
+		LD A,D
+		CALL .SMUC_WR_PORT
+		LD B,HIGH (PS_1F5)
+		LD A,E
+		CALL .SMUC_WR_PORT
+		POP DE
+ 		LD B,HIGH (PS_1F4)
+		LD A,D
+		CALL .SMUC_WR_PORT
+		LD B,HIGH (PS_1F3)
+		LD A,E
+		CALL .SMUC_WR_PORT
+		LD B,HIGH (PS_1F2)
+		LD A,IYL
+		CALL .SMUC_WR_PORT
+		LD B,HIGH (PS_1F1)
+		XOR A
+		CALL .SMUC_WR_PORT
+		LD B,HIGH (PS_1F7)
+		LD A,IYH
+		CALL .SMUC_WR_PORT
+
+	case HDD_PROFI
+		LD BC,PP_1F6W
+		OUT (C),D
+		LD BC,PP_1F5W
+		OUT (C),E
+		POP DE
+		LD BC,PP_1F4W
+		OUT (C),D
+		LD BC,PP_1F3W
+		OUT (C),E
+		LD BC,PP_1F2W
+		LD A,IYL
+		OUT (C),A
+		LD BC,PP_1F1W
+		XOR A
+		OUT (C),A
+		LD BC,PP_1F7W
+		LD A,IYH
+		OUT (C),A
+
+	case HDD_TURBO2
+		LD C,LOW (PA_1F6)
+		OUT (C),D
+		LD C,LOW (PA_1F5)
+		OUT (C),E
+		POP DE
+		LD C,LOW (PA_1F4)
+		OUT (C),D
+		LD C,LOW (PA_1F3)
+		OUT (C),E
+		LD C,LOW (PA_1F2)
+		LD A,IYL
+		OUT (C),A
+		LD C,LOW (PA_1F1)
+		XOR A
+		OUT (C),A
+		LD C,LOW (PA_1F7)
+		LD A,IYH
+		OUT (C),A
+
+	case HDD_DIVIDE
+		LD C,PV_1F6
+		OUT (C),D
+		LD C,PV_1F5
+		OUT (C),E
+		POP DE
+		LD C,PV_1F4
+		OUT (C),D
+		LD C,PV_1F3
+		OUT (C),E
+		LD C,PV_1F2
+		LD A,IYL
+		OUT (C),A
+		LD C,PV_1F1
+		XOR A
+		OUT (C),A
+		LD C,PV_1F7
+		LD A,IYH
+		OUT (C),A
+	endcase
+		POP HL
+.DRIVER_CHECK_DEVICE
+		XOR A
+		RET
+
+.SEND_ERROR7	LD A,7		;обнаружен CD/DVD
+		JR .SEND_ERROR
+
+.SEND_ERROR1	LD A,1		;ошибка HDD TIMEOUT
+.SEND_ERROR	POP HL
+		POP HL
+		RET
+
+; чтение сектора идентификации винта
+; на входе:
+;		HL = адрес буфера для чтения
+;		A' = номер устройства ( бит 4 = 0/1 - master/slave)
+;					бит 6 = 0/1 - CHS/LBA
+.DRIVER_READ_ID	
+	switch (HDDTYPE)
+
+	case HDD_NEMO
+	case HDD_SMUC
+		CALL .FIND_SMUC
+
+	case HDD_PROFI
+		CALL .PROFI_CONF_SET
+
+	case HDD_TURBO2
+		CALL .ATM_CPM_ON
+
+	case HDD_DIVIDE
+	endcase
+		PUSH IY
+		PUSH HL
+		PUSH DE
+		PUSH BC
+		LD IYH,0xEC
+		CALL .SEND_CMD
+		AND A
+		JR NZ,.READID_ERROR
+		LD DE,HDD_TIME_OUT
+.READID_WAIT	DEC DE
+		LD A,D
+		OR E
+		JR Z,.READID_ERROR1
+
+	switch (HDDTYPE)
+
+	case HDD_NEMO
+		LD BC,0xFF << 8 + PN_1F7
+		IN A,(C)
+
+	case HDD_SMUC
+		LD BC,PS_1F7
+		CALL .SMUC_RD_PORT
+
+	case HDD_PROFI
+		LD BC,PP_1F7R
+		IN A,(C)
+
+	case HDD_TURBO2
+		LD BC,PA_1F7
+		IN A,(C)
+
+	case HDD_DIVIDE
+		LD BC,0xFF << 8 + PV_1F7
+		IN A,(C)
+	endcase
+		BIT 7,A
+		JR NZ,.READID_WAIT
+		BIT 1,A
+		JR NZ,.READID_ERROR6
+		BIT 3,A
+		JR Z,.READID_WAIT
+		CALL .READSEC
+		XOR A
+		JR .READID_ERROR
+
+.READID_ERROR6	LD A,6				; ошибка выполнения команды
+		JR .READID_ERROR
+
+.READID_ERROR1	LD A,1
+.READID_ERROR	POP BC
+		POP DE
+		POP HL
+		POP IY
+
+	switch (HDDTYPE)
+
+	case HDD_NEMO
+		RET
+
+	case HDD_SMUC
+		RET
+
+	case HDD_PROFI
+.PROFI_CONF_RES	PUSH BC
+		PUSH AF
+		LD BC,0xDFFD
+		XOR A
+		OUT (C),A
+		POP AF
+		POP BC
+		RET
+
+	case HDD_TURBO2
+.ATM_CPM_OFF	PUSH BC
+		PUSH AF
+		LD BC,.ATMCPMOFF1
+		PUSH BC
+		LD BC,0x2A53
+		PUSH BC
+		LD BC,0xFF77
+		LD A,%10101011
+		JP 0x3D2F
+
+	case HDD_DIVIDE
+		RET
+	endcase
+
+; чтение секторов HDD
+; на входе:
+;		HL = адрес чтения
+;		BCDE = номер сектора
+;		A = количество секторов
+;		A' = номер устройства (бит 0 = 0/1 - master/slave)
+.DRIVER_READ_SECTORS
+	switch (HDDTYPE)
+	case HDD_NEMO
+	case HDD_SMUC
+
+	case HDD_PROFI
+		CALL .PROFI_CONF_SET
+
+	case HDD_TURBO2
+		CALL .ATM_CPM_ON
+
+	case HDD_DIVIDE
+	endcase
+		PUSH IY
+		PUSH HL
+		PUSH DE
+		PUSH BC
+		LD IYL,A
+		LD IYH,0x20
+		CALL .SEND_CMD
+		AND A
+		JR NZ,.READID_ERROR
+.READ_WAIT1	LD DE,HDD_TIME_OUT
+.READ_WAIT	DEC DE
+		LD A,D
+		OR E
+		JR Z,.READID_ERROR1
+
+	switch (HDDTYPE)
+
+	case HDD_NEMO
+		LD BC,0xFF << 8 + PN_1F7
+		IN A,(C)
+
+	case HDD_SMUC
+		LD BC,PS_1F7
+		CALL .SMUC_RD_PORT
+
+	case HDD_PROFI
+		LD BC,PP_1F7R
+		IN A,(C)
+
+	case HDD_TURBO2
+		LD BC,PA_1F7
+		IN A,(C)
+
+	case HDD_DIVIDE
+		LD BC,0xFF << 8 + PV_1F7
+		IN A,(C)
+	endcase
+		BIT 7,A
+		JR NZ,.READ_WAIT
+		BIT 1,A
+		JR NZ,.READID_ERROR6
+		BIT 3,A
+		JR Z,.READ_WAIT
+		CALL .READSEC
+		DEC IYL
+		JR NZ,.READ_WAIT1
+		XOR A
+		JR .READID_ERROR
+
+; запись секторов HDD
+; на входе:
+;		HL = адрес записи
+;		BCDE = номер сектора
+;		A = количество секторов
+;		A' = номер устройства (бит 0 = 0/1 - master/slave)
+.DRIVER_WRITE_SECTORS
+	switch (HDDTYPE)
+	case HDD_NEMO
+	case HDD_SMUC
+	case HDD_PROFI
+		CALL .PROFI_CONF_SET
+
+	case HDD_TURBO2
+		CALL .ATM_CPM_ON
+
+	case HDD_DIVIDE
+	endcase
+		PUSH IY
+		PUSH HL
+		PUSH DE
+		PUSH BC
+		LD IYL,A
+		LD IYH,0x30
+		CALL .SEND_CMD
+		AND A
+		JR NZ,.READID_ERROR
+.WRITE_WAIT1	LD DE,HDD_TIME_OUT
+.WRITE_WAIT	DEC DE
+		LD A,D
+		OR E
+		JR Z,.READID_ERROR1
+
+	switch (HDDTYPE)
+
+	case HDD_NEMO
+		LD BC,0xFF << 8 + PN_1F7
+		IN A,(C)
+
+	case HDD_SMUC
+		LD BC,PS_1F7
+		CALL .SMUC_RD_PORT
+
+	case HDD_PROFI
+		LD BC,PP_1F7R
+		IN A,(C)
+
+	case HDD_TURBO2
+		LD BC,PA_1F7
+		IN A,(C)
+
+	case HDD_DIVIDE
+		LD BC,0xFF << 8 + PV_1F7
+		IN A,(C)
+	endcase
+		BIT 7,A
+		JR NZ,.WRITE_WAIT
+		BIT 1,A
+		JR NZ,.READID_ERROR6
+		BIT 3,A
+		JR Z,.WRITE_WAIT
+		CALL .WRITSEC
+		DEC IYL
+		JR NZ,.WRITE_WAIT1
+		XOR A
+		JP .READID_ERROR
+
+; read sector (512 bytes)
+	switch (HDDTYPE)
+
+	case HDD_NEMO
+.READSEC	LD A,0x40
+		LD C,PN_1F0
+.READSC1
+	REPT 4
+		IN E,(C)
+		INC C
+		IN D,(C)
+		DEC C
+		LD (HL),E
+		INC HL
+		LD (HL),D
+		INC HL
+	ENDM
+		DEC A
+		JR NZ,.READSC1
+		RET
+
+	case HDD_SMUC
+.READSEC	LD A,0x40
+		LD DE,PS_PORT_RW
+.READSC1	EX AF,AF'
+	REPT 4
+		LD B,D
+		CALL .SMUC_RD_PORT
+		LD (HL),A
+		INC HL
+		LD B,E
+		CALL .SMUC_RD_PORT
+		LD (HL),A
+		INC HL
+	ENDM
+		EX AF,AF'
+		DEC A
+		JR NZ,.READSC1
+		RET
+
+	case HDD_PROFI
+.READSEC	LD A,0x40
+.READSC1
+	REPT 4
+		LD BC,PP_1F0R
+		IN E,(C)
+		LD BC,PP_HIR
+		IN D,(C)
+		LD (HL),E
+		INC HL
+		LD (HL),D
+		INC HL
+	ENDM
+		DEC A
+		JR NZ,.READSC1
+		RET
+
+	case HDD_TURBO2
+.READSEC	LD BC,PA_1F0
+		INC B
+		INIR
+		INIR
+		RET
+
+	case HDD_DIVIDE
+.READSEC	LD A,0x40
+		LD C,PV_1F0
+.READSC1
+	REPT 8
+		INI
+		INC B
+	ENDM
+		DEC A
+		JR NZ,.READSC1
+		RET
+	endcase
+
+; save sector (512 bytes)
+	switch (HDDTYPE)
+
+	case HDD_NEMO
+.WRITSEC	EXX
+		PUSH HL
+		LD HL,0
+		ADD HL,SP
+		EXX
+		LD SP,HL
+		LD A,0x40
+		LD HL,PRTN_RW
+.WR_SEC1
+	REPT 4
+		POP DE
+		LD C,L
+		OUT (C),D
+		LD C,H
+		OUT (C),E
+	ENDM
+		DEC A
+		JR NZ,.WR_SEC1
+		LD HL,0
+		ADD HL,SP
+		EXX
+		LD SP,HL
+		POP HL
+		EXX
+		RET
+
+	case HDD_SMUC
+.WRITSEC	LD DE,PS_PORT_RW
+		LD A,0x40
+.WR_SEC1	PUSH AF
+	REPT 4
+		LD A,(HL)
+		INC HL
+		EX AF,AF'
+		LD A,(HL)
+		INC HL
+		LD B,E
+		CALL .SMUC_WR_PORT
+		EX AF,AF'
+		LD B,D
+		CALL .SMUC_WR_PORT
+	ENDM
+		POP AF
+		DEC A
+		JR NZ,.WR_SEC1
+		RET
+
+	case HDD_PROFI
+.WRITSEC	EXX
+		PUSH HL
+		LD HL,0
+		ADD HL,SP
+		EXX
+		LD SP,HL
+		LD A,0x40
+.WR_SEC1
+	REPT 4
+		POP DE
+		LD BC,PP_HIW
+		OUT (C),D
+		LD BC,PP_1F0W
+		OUT (C),E
+	ENDM
+		DEC A
+		JR NZ,.WR_SEC1
+		LD HL,0
+		ADD HL,SP
+		EXX
+		LD SP,HL
+		POP HL
+		EXX
+		RET
+
+	case HDD_TURBO2
+.WRITSEC	EXX
+		PUSH HL
+		LD HL,0
+		ADD HL,SP
+		EXX
+		LD SP,HL
+		LD A,0x40
+		LD BC,PA_1F0
+.WR_SEC1
+	REPT 4
+		POP DE
+		OUT (C),D
+		DEC B
+		OUT (C),E
+		INC B
+	ENDM
+		DEC A
+		JR NZ,.WR_SEC1
+		LD HL,0
+		ADD HL,SP
+		EXX
+		LD SP,HL
+		POP HL
+		EXX
+		RET
+
+	case HDD_DIVIDE
+.WRITSEC	LD A,0x40
+		LD C,PV_1F0
+.WR_SEC1
+	REPT 8
+		OUTI
+		INC B
+	ENDM
+		DEC A
+		JR NZ,.WR_SEC1
+		RET
+	endcase
+
+	switch (HDDTYPE)
+	case HDD_NEMO
+	case HDD_SMUC
+.SMUC_RD_PORT	PUSH HL
+		LD HL,0x3FF3
+		EX (SP),HL
+		JP 0x3D2F
+
+.LDIRRET	PUSH HL
+		LD HL,0x180D
+		EX (SP),HL
+		JP 0x3D2F
+
+.CPOUTIN	OUT (C),A
+		RET
+		IN A,(C)
+		RET
+
+.FIND_SMUC	PUSH HL
+		EX DE,HL
+		LD HL,0x3FF0
+		LD BC,6
+		CALL .LDIRRET
+		POP HL
+		LD B,6
+		LD DE,.CPOUTIN
+.FINDSMUC1	LD A,(DE)
+		CP (HL)
+		INC HL
+		INC DE
+		JR NZ,.FINDSMUC2
+		DJNZ .FINDSMUC1
+		LD BC,0x5FBA;SMUCVER
+		DEC SP
+		DEC SP
+		POP HL
+		CALL .SMUC_RD_PORT
+		INC A
+		JR NZ,.FINDSMUC3
+.FINDSMUC2	POP HL
+		LD A,8		;SMUC не найден
+		RET
+
+.FINDSMUC3	LD BC,0xFFBA;SMUCSYS
+		LD A,0x77
+
+.SMUC_WR_PORT	PUSH HL
+		LD HL,0x3FF0
+		EX (SP),HL
+		JP 0x3D2F
+
+	case HDD_PROFI
+.PROFI_CONF_SET	PUSH BC
+		PUSH AF
+		LD BC,0xDFFD
+		LD A,0x20
+		OUT (C),A
+		POP AF
+		POP BC
+		RET
+
+	case HDD_TURBO2
+.ATMCPMOFF1	POP AF
+		POP BC
+		RET
+
+.ATM_CPM_ON	PUSH BC
+		PUSH AF
+		LD BC,.ATMCPMOFF1
+		PUSH BC
+		LD BC,0x2A53
+		PUSH BC
+		LD BC,0x4177
+		LD A,%10101011
+		JP 0x3D2F
+
+	case HDD_DIVIDE
+	endcase
+
+.END_DRV

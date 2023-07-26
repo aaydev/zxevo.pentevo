@@ -1,0 +1,315 @@
+
+; LAST UPDATE: 26.07.2023 savelij
+
+		include macros.a80
+		include global_vars.a80
+		include basic_tokens.a80
+		include ports_ide.a80
+
+HDD_TIME_OUT	EQU 0x0000
+
+ INIT_VAR 0x6000
+ SETVAR BUFTSC,			0x200
+ SETVAR BUFSEC,			0x200
+ SETVAR TXT_HEX,		0x20
+ SETVAR TXT_DEC,		0x20
+
+_MASTER		EQU %00000000
+_SLAVE		EQU %00010000
+_CHS		EQU %00000000
+_LBA		EQU %01000000
+
+		ORG 0x8000
+		DI
+		CALL FADRTSC
+		CALL CLS
+		LD HL,TEXT.TITLE
+		CALL PRINT_MSG
+		LD HL,TEXT.SELECTIDE
+		CALL PRINT_MSG
+.WAITKEY	CALL KEYS
+		CP '1'
+		JR C,.WAITKEY
+		CP '6'
+		JR NC,.WAITKEY
+		SUB '1'
+		ADD A,A
+		ADD A,LOW (HDDTABL)
+		LD L,A
+		ADC A,HIGH (HDDTABL)
+		SUB L
+		LD H,A
+		LD A,(HL)
+		INC HL
+		LD H,(HL)
+		LD L,A
+		LD (COMHDD.TYPE),HL
+		CALL CLS
+.RESTART	LD HL,TEXT.TITLE
+		CALL PRINT_MSG
+		LD IXH,0
+; поиск HDD MASTER
+		LD A,_MASTER + _CHS
+		EX AF,AF'
+		LD HL,BUFSEC
+		CALL COMHDD
+		DB 0
+		LD C,_MASTER
+		AND A
+		JR NZ,.NOMASTER
+; вывод информациии HDD MASTER
+		INC IXH
+		CALL .HDD_INFO
+		JR .SLAVE
+
+.NOMASTER	LD HL,TEXT.MASTERNONE
+		CALL PRINT_MSG
+; поиск HDD SLAVE
+.SLAVE		LD A,_SLAVE + _CHS
+		EX AF,AF'
+		LD HL,BUFSEC
+		CALL COMHDD
+		DB 0
+		LD C,_SLAVE
+		AND A
+		JR NZ,.NOSLAVE
+; вывод информации HDD SLAVE
+		INC IXH
+		CALL .HDD_INFO
+		JR .ENDFOUND
+
+.NOSLAVE	LD HL,TEXT.SLAVENONE
+		CALL PRINT_MSG
+; окончание поиска
+.ENDFOUND	LD A,IXH
+		AND A
+		LD HL,TEXT.DEVNOTFOUND
+		CALL Z,PRINT_MSG
+		LD HL,TEXT.RESET
+		CALL PRINT_MSG
+		JR $
+
+.HDD_INFO	LD A,C
+		LD (VVARS.HDDTYPE),A
+		CP _MASTER
+		LD HL,TEXT.MASTERFOUND
+		JR Z,.HI1
+		LD HL,TEXT.SLAVEFOUND
+.HI1		CALL PRINT_MSG
+		LD HL,BUFSEC + 23 * WORD
+		PUSH HL
+		LD B,0x18
+.MF01		LD A,(HL)
+		INC HL
+		LD E,(HL)
+		DEC HL
+		LD (HL),E
+		INC HL
+		LD (HL),A
+		INC HL
+		DJNZ .MF01
+		LD HL,BUFSEC + 23 * WORD + 21 * WORD	
+		LD (HL),"\r"
+		INC HL
+		LD (HL),0
+		POP HL
+		CALL PRINT_MSG			; имя винта
+		LD HL,TEXT.CHS
+		CALL PRINT_MSG
+		LD HL,BUFSEC + 0x200
+		LD DE,(BUFSEC + 1 * WORD)	; количество цилиндров
+		CALL FHEX2DEC
+		CALL PRINT_MSG
+		LD A,"/"
+		CALL PRINT_A_
+		LD DE,(BUFSEC + 3 * WORD)	; количество головок
+		CALL FHEX1DEC
+		CALL PRINT_MSG
+		LD A,"/"
+		CALL PRINT_A_
+		LD DE,(BUFSEC + 6 * WORD)	; количество секторов
+		CALL FHEX1DEC
+		CALL PRINT_MSG
+		LD HL,(BUFSEC + 49 * WORD)
+		LD A,H
+		AND %00000010			; бит 9 в слове 49
+		JR NZ,.LBATYPE
+; LBA режим не поддерживается
+		LD HL,TEXT.LBANOTSUPP
+		JP PRINT_MSG
+
+; проверка бита поддержки LBA48
+.LBATYPE	LD HL,(BUFSEC + 83 * WORD)
+		LD A,H
+		AND %00000100			; бит 10 в слове 83
+		JR Z,.LBA28
+; для LBA48
+.LBA48		LD HL,(BUFSEC + 100 * WORD); размер в секторах
+		LD DE,(BUFSEC + 101 * WORD)
+		LD BC,(BUFSEC + 102 * WORD)
+		LD (.CH1),BC
+		LD (.CH2),DE
+		LD (.CH3),HL
+		LD B,11
+		CALL .DIV_LBA
+		LD IXL,0			; текст "MB"
+		LD A,C
+		AND A
+		JR Z,.L3
+		LD IXL,1			; текст "GB"
+		LD B,2
+		LD L,H
+		LD H,E
+		LD E,D
+		LD D,C
+		LD C,0
+		CALL .DIV_LBA
+		JR .L3
+
+; для LBA28
+.LBA28		LD HL,0
+		LD (.CH1),HL
+		LD HL,(BUFSEC + 60 * WORD)
+		LD DE,(BUFSEC + 61 * WORD)	; размер в LBA секторах
+		LD (.CH2),DE
+		LD (.CH3),HL
+		LD BC,11 << 8 + 0
+		CALL .DIV_LBA
+		LD IXL,0
+.L3		LD B,D
+		LD C,E
+		EX DE,HL
+		LD HL,BUFSEC + 0x200
+		CALL FHEX4DEC
+		CALL PRINT_MSG
+		LD A,IXL
+		AND A
+		LD HL,TEXT.TXTMB
+		JR Z,.L4
+		LD HL,TEXT.TXTGB
+.L4		CALL PRINT_MSG
+		LD HL,TEXT.SIZE
+		CALL PRINT_MSG
+		EXX
+		LD DE,0
+.CH1		EQU $-2
+		EXX
+		LD BC,0
+.CH2		EQU $-2
+		LD DE,0
+.CH3		EQU $-2
+		CALL FHEX6DEC
+		CALL PRINT_MSG
+		LD HL,TEXT.SECTORS
+		JP PRINT_MSG
+
+.DIV_LBA
+.L1		SRL C
+		RR D
+		RR E
+		RR H
+		RR L
+		DJNZ .L1
+		RET
+
+CLS		LD HL,0x4000
+		LD DE,0x4001
+		LD BC,0x1800
+		LD (HL),L
+		LDIR
+		LD (HL),%00000111
+		LD BC,0x2FF
+		LDIR
+		RET
+
+KEYS		EI
+		HALT
+		DI
+		BIT 5,(IY+1)
+		JR Z,KEYS
+		LD A,(IY-0x32)
+		RES 5,(IY+1)
+		RET
+
+; HDD DRIVER
+COMHDD		EX AF,AF'
+		LD (.TMP_NUMHDD),A
+		EX (SP),HL
+		LD A,(HL)
+		INC HL
+		EX (SP),HL
+		ADD A,A
+		PUSH HL
+		LD HL,0
+.TYPE		EQU $-2
+		ADD A,L
+		LD L,A
+		ADC A,H
+		SUB L
+		LD H,A
+		LD A,(HL)
+		INC HL
+		LD H,(HL)
+		LD L,A
+		LD A,0
+.TMP_NUMHDD	EQU $-1
+		EX AF,AF'
+		EX (SP),HL
+		RET
+
+HDDTABL		DW IDE_NEMO
+		DW IDE_ATM2
+		DW IDE_SMUC
+		DW IDE_DIVIDE
+		DW IDE_PROFI
+
+HDDTYPE := HDD_NEMO
+IDE_NEMO	include drv_hdd.a80
+
+HDDTYPE := HDD_TURBO2
+IDE_ATM2	include drv_hdd.a80
+
+HDDTYPE := HDD_SMUC
+IDE_SMUC	include drv_hdd.a80
+
+HDDTYPE := HDD_DIVIDE
+IDE_DIVIDE	include drv_hdd.a80
+
+HDDTYPE := HDD_PROFI
+IDE_PROFI	include drv_hdd.a80
+
+		include print.a80
+		include math.a80
+
+VVARS
+.PPOS_X		DB 0			; координата печати текста (шрифт 6х8)
+.PPOS_Y		DB 0			; координата печати текста (шрифт 6х8)
+.COLOR_TEXT	DB 0			; цвет текста
+.HDDTYPE	DB 0			; тип MASTER/SLAVE
+
+TEXT
+.TITLE		DB "\x16\x05\x00\x17\x07HDD detect tool Build "
+		TEXTDATE
+		DB " \r\r\0"
+.TXTMB		DB " MB \r\0"
+.TXTGB		DB " GB \r\0"
+.MASTERFOUND	DB "\rHDD master found \r\0"
+.SLAVEFOUND	DB "\rHDD slave found \r\0"
+.MASTERNONE	DB "\rHDD master not found \r\0"
+.SLAVENONE	DB "\rHDD slave not found \r\0"
+.MASTERCDDVD	DB "\rCD/DVD-ROM master found \r\0"
+.SLAVECDDVD	DB "\rCD/DVD-ROM slave found \r\0"
+.CHS		DB "C/H/S: \0"
+.NEWLINE	DB "\r\0"
+.RESET		DB "\x16\x09\x17End detect. Press RESET \0"
+.LBANOTSUPP	DB "\rLBA mode not support \0"
+.SIZE		DB "Size: \0"
+.SECTORS	DB " sectors \r\0"
+.DEVNOTFOUND	DB "\rDevice(s) not found \0"
+.SELECTIDE	DB "\x16\x0A\x051.HDD Nemo \r"
+		DB "\x16\x0A\x062.HDD ATM Turbo 2 \r"
+		DB "\x16\x0A\x073.HDD SMUC \r"
+		DB "\x16\x0A\x084.HDD DIVIDE \r"
+		DB "\x16\x0A\x095.HDD Profi \r\0"
+
+FONT		binclude altstd.fnt
