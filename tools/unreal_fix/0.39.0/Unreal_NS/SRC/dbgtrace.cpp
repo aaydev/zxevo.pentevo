@@ -300,7 +300,7 @@ void showtrace()
 #define DBG_ATTR_TITLES		0x5D//0x71	//white	blue
 
 
-    char trace_follow_regs_text[10];
+    char trace_follow_regs_text[ 10];
     //-------------------------------------------------------------------------
     switch (conf.trace_follow_regs)
     {
@@ -469,17 +469,21 @@ restart_showtrace:
 	follow_regs_value &= 0xFFFF;	//тк в старших битах может быть левый мусор РЕАЛЬНО!!!
 	//---------------------------------------------------------------------
 	// Если следим за каким то регистром
-	if ( (conf.trace_follow_regs)	&&
-	     (pc == follow_regs_value)
-	 )
+	if (conf.trace_follow_regs)
 	{
-	    temp_line_flags |= FLAG_FOLLOW;
-	    trace_follow_regs_in_view = 1;
+	    if (pc == follow_regs_value)	// r0171 fix [NS]
+	    {
+		//printf("now in view\n");
+		temp_line_flags |= FLAG_FOLLOW;
+		trace_follow_regs_in_view = 1;
+	    }
 	}
 	//---------------------------------------------------------------------
 	// Если не следим
 	else
 	{
+	    // то делаем вид что мы уже все нашли
+	    //printf("now not in view\n");
 	    trace_follow_regs_in_view = 1;
 	    conf.trace_follow_request = 0;
 	}
