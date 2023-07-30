@@ -152,68 +152,89 @@ int disasm_line( unsigned addr, char *line)
 static unsigned tracewndflags()						//????
 {
     Z80 &cpu = CpuMgr.Cpu();
-    unsigned readptr = cpu.pc, base = cpu.hl;
-    unsigned char opcode = 0; unsigned char ed = 0;
+    unsigned readptr = cpu.pc;
+    unsigned base = cpu.hl;
+    unsigned char opcode = 0; 
+    unsigned char ed = 0;
     //-------------------------------------------------------------------------
     for (;;)
     {
-	opcode = cpu.DirectRm(readptr++);
+	opcode = cpu.DirectRm( readptr++);
+	//---------------------------------------------------------------------
 	if (opcode == 0xDD)
 	    base = cpu.ix;
+	//---------------------------------------------------------------------
 	else if (opcode == 0xFD)
 	    base = cpu.iy;
+	//---------------------------------------------------------------------
 	else if (opcode == 0xED)
 	    ed = 1;
+	//---------------------------------------------------------------------
 	else
 	    break;
+	//---------------------------------------------------------------------
     }
     //-------------------------------------------------------------------------
     unsigned fl = 0;
+    //-------------------------------------------------------------------------
     if (opcode == 0x76) // halt
     {
 	u32 addr;
+	//---------------------------------------------------------------------
 	if (cpu.im < 2)		//!!!! точно ли для всех?????
 	{
 	    addr = 0x38;
 	}
-	else // im2
+	//---------------------------------------------------------------------
+	// im2
+	else 
 	{
-	    unsigned vec = unsigned(cpu.i << 8U) | cpu.IntVec();
-	    addr = u32((cpu.DirectRm(vec+1) << 8U) | cpu.DirectRm(vec));
+	    unsigned vec = unsigned( cpu.i << 8U) | cpu.IntVec();
+	    addr = u32( (cpu.DirectRm( vec+1) << 8U) | cpu.DirectRm( vec));
 	}
+	//---------------------------------------------------------------------
 	return TWF_HALTCMD | addr;
     }
-//-----------------------------------------------------------------------------
+    //-------------------------------------------------------------------------
     if (ed)
     {
 	//---------------------------------------------------------------------
-	if ((opcode & 0xF4) == 0xB0) // ldir/lddr | cpir/cpdr | inir/indr | otir/otdr
+	// ldir/lddr | cpir/cpdr | inir/indr | otir/otdr
+	if ((opcode & 0xF4) == 0xB0) 
 	    return TWF_BLKCMD;
 	//---------------------------------------------------------------------
+	// reti/retn
 	if ((opcode & 0xC7) != 0x45)
-	    return 0; // reti/retn
+	    return 0; 
 	//---------------------------------------------------------------------
 ret:
-	return (cpu.DirectRm(cpu.sp) | unsigned(cpu.DirectRm(cpu.sp+1) << 8U)) | TWF_BRANCH | TWF_BRADDR;
+	return	( cpu.DirectRm( cpu.sp) | unsigned( cpu.DirectRm( cpu.sp + 1) << 8U))	| 
+		TWF_BRANCH								| 
+		TWF_BRADDR;
     }
     //-------------------------------------------------------------------------
-    if (opcode == 0xC9)						// ret
+    // ret
+    if (opcode == 0xC9)						
 	goto ret;
     //-------------------------------------------------------------------------
-    if (opcode == 0xC3)						// jp
+    // jp
+    if (opcode == 0xC3)						
     {
 jp:	
-	return (cpu.DirectRm(readptr) | unsigned(cpu.DirectRm(readptr+1) << 8U)) | TWF_BRANCH | fl;
+	return (cpu.DirectRm( readptr) | unsigned( cpu.DirectRm( readptr + 1) << 8U))	|
+	TWF_BRANCH									| 
+	fl;
     }
     //-------------------------------------------------------------------------
-    if (opcode == 0xCD)						// call
+    // call
+    if (opcode == 0xCD)						
     {
 	fl = TWF_CALLCMD;
 	goto jp;
     }
     //-------------------------------------------------------------------------
     static const unsigned char flags[] = { ZF,CF,PV,SF };
-
+    //-------------------------------------------------------------------------
     if ((opcode & 0xC1) == 0xC0)
     {
 	unsigned char flag = flags[(opcode >> 4) & 3];
@@ -221,19 +242,23 @@ jp:
 	//---------------------------------------------------------------------
 	if (!(opcode & 0x08))
 	    res ^= flag;
+	//---------------------------------------------------------------------
 	if (!res)
 	    return 0;
 	//---------------------------------------------------------------------
-	if ((opcode & 0xC7) == 0xC0)				// ret cc
+	// ret cc
+	if ((opcode & 0xC7) == 0xC0)				
 	    goto ret;
 	//---------------------------------------------------------------------
-	if ((opcode & 0xC7) == 0xC4)				// call cc
+	// call cc
+	if ((opcode & 0xC7) == 0xC4)				
 	{
 	    fl = TWF_CALLCMD;
 	    goto jp;
 	}
 	//---------------------------------------------------------------------
-	if ((opcode & 0xC7) == 0xC2)				// jp cc
+	// jp cc
+	if ((opcode & 0xC7) == 0xC2)				
 	{
 	    fl = TWF_LOOPCMD;
 	    goto jp;
@@ -241,11 +266,13 @@ jp:
 	//---------------------------------------------------------------------
     }
     //-------------------------------------------------------------------------
+    // jp (hl/ix/iy)
     if (opcode == 0xE9)
-	return base | TWF_BRANCH | TWF_BRADDR;		// jp (hl/ix/iy)
+	return base | TWF_BRANCH | TWF_BRADDR;		
     //-------------------------------------------------------------------------
+    // rst #xx
     if ((opcode & 0xC7) == 0xC7)
-	return (opcode & 0x38) | TWF_CALLCMD | TWF_BRANCH;	// rst #xx
+	return (opcode & 0x38) | TWF_CALLCMD | TWF_BRANCH;	
     //-------------------------------------------------------------------------
     if ((opcode & 0xC7) == 0x00)
     {
@@ -253,21 +280,27 @@ jp:
 	if (!opcode || opcode == 0x08)
 	    return 0;
 	//---------------------------------------------------------------------
-	int offs = (signed char)cpu.DirectRm(readptr++);
-	unsigned addr = unsigned(offs + int(readptr)) | TWF_BRANCH;
+	int offs = (signed char) cpu.DirectRm( readptr++);
+	unsigned addr = unsigned( offs + int( readptr)) | TWF_BRANCH;
+	//---------------------------------------------------------------------
+	// jr
 	if (opcode == 0x18)
-	    return addr;					// jr
+	    return addr;					
 	//---------------------------------------------------------------------
+	// djnz
 	if (opcode == 0x10)
-	    return (cpu.b==1)? 0 : addr | TWF_LOOPCMD;		// djnz
+	    return (cpu.b == 1)  ?  0 : 
+				    addr | TWF_LOOPCMD;		
 	//---------------------------------------------------------------------
-	unsigned char flag = flags[(opcode >> 4) & 1];		// jr cc
+	// jr cc
+	unsigned char flag = flags[ (opcode >> 4) & 1];		
 	unsigned char res = cpu.f & flag;
+	//---------------------------------------------------------------------
 	if (!(opcode & 0x08))
 	    res ^= flag;
 	//---------------------------------------------------------------------
-	return res  ?	addr | TWF_LOOPCMD : 
-			0;
+	return res  ?  addr | TWF_LOOPCMD : 
+		       0;
 	//---------------------------------------------------------------------
     }
     return 0;
@@ -278,9 +311,9 @@ jp:
 //=============================================================================
 static unsigned trcurs_y;
 unsigned asmii;
-static char asmpc[64];
-static char dumppc[12];
-const unsigned cs[3][2] = 
+static char asmpc[ 64];
+static char dumppc[ 12];
+const unsigned cs[ 3][ 2] = 
 { 
     {  0,  4}, 
     {  5, 10}, 
@@ -297,7 +330,7 @@ const unsigned cs[3][2] =
 void showtrace()
 {
 
-#define DBG_ATTR_TITLES		0x5D//0x71	//white	blue
+#define DBG_ATTR_TITLES		0x5D	//0x71	//white	blue
 
 
     char trace_follow_regs_text[ 10];
@@ -466,29 +499,31 @@ restart_showtrace:
 	    case REG_PC:	follow_regs_value = cpu.pc;	break;
 	}
 	//---------------------------------------------------------------------
-	follow_regs_value &= 0xFFFF;	//тк в старших битах может быть левый мусор РЕАЛЬНО!!!
+	// тк в старших битах может быть левый мусор РЕАЛЬНО!!!
+	follow_regs_value &= 0xFFFF;	
 	//---------------------------------------------------------------------
 	// Если следим за каким то регистром
 	if (conf.trace_follow_regs)
 	{
+	    //-----------------------------------------------------------------
 	    if (pc == follow_regs_value)	// r0171 fix [NS]
 	    {
-		//printf("now in view\n");
+		// printf("now in view\n");
 		temp_line_flags |= FLAG_FOLLOW;
 		trace_follow_regs_in_view = 1;
 	    }
+	    //-----------------------------------------------------------------
 	}
 	//---------------------------------------------------------------------
 	// Если не следим
 	else
 	{
 	    // то делаем вид что мы уже все нашли
-	    //printf("now not in view\n");
+	    // printf("now not in view\n");
 	    trace_follow_regs_in_view = 1;
 	    conf.trace_follow_request = 0;
 	}
 	//-------------------------------------------------------------------------
-    
 	
 //	if (pc == cpu.pc) { temp_line_flags |= FLAG_PC;	trace_follow_regs_in_view = 1; }
 	
@@ -519,7 +554,7 @@ restart_showtrace:
 	}
 	//---------------------------------------------------------------------
 	switch ((temp_line_flags & (FLAG_BP_X | FLAG_PC | FLAG_FOLLOW)))
-	{	
+	{
 	    //Follow поверx PC  -----------------------------------------------
 	    case (FLAG_FOLLOW):				
 	    case (FLAG_FOLLOW | FLAG_PC):		
@@ -540,6 +575,7 @@ restart_showtrace:
 		break;
 	    //-----------------------------------------------------------------
 	}
+	//---------------------------------------------------------------------
 	    
 
 		
@@ -568,8 +604,8 @@ restart_showtrace:
 	{
 	    char labels_line[ 16 + 129];
 	    //-----------------------------------------------------------------
-	    // тк пока глюки с отрисовкой первой и последней строки
-	    if (ii >= (trace_size-1))
+	    // КОСТЫЛЬ тк пока глюки с отрисовкой первой и последней строки
+	    if (ii >= (trace_size - 1))
 		goto mod_new_labels_skip_2;    
 	    //-----------------------------------------------------------------
 	    if (get_labels( pc, labels_line))
@@ -616,6 +652,7 @@ mod_new_labels_skip:
 	    //-----------------------------------------------------------------
 	    if (activedbg == WNDTRACE)
 	    {
+		//-------------------------------------------------------------
 		for (unsigned q = 0;    q < cs[ cpu.trace_mode][ 1];    q++)
 		{
 		    txtscr[	s80 * s30		+ 
@@ -625,6 +662,7 @@ mod_new_labels_skip:
 				q
 			   ] = (DBG_ATTR_TRACE_SELECTED);	//W_CURS;
 		}
+		//-------------------------------------------------------------
 	    }
 	    //-----------------------------------------------------------------
 	}
@@ -663,6 +701,7 @@ mod_new_labels_skip:
 				attr1	//ink only	//color
 			      );
 		}
+		//-------------------------------------------------------------
 		else 
 		{
 		// стрелочка при JP CALL	(0043 2003 jr nz,0048   v)
@@ -706,28 +745,34 @@ mod_new_labels_skip:
     if (conf.trace_follow_request)					// [NS]
     {
 	//printf("trace_follow_request \n");
+	//---------------------------------------------------------------------
 	if ((!trace_follow_regs_in_view) && (conf.trace_follow_regs))
 	{
 	    //printf("(!trace_PC_in_view)\n");
+	    //-----------------------------------------------------------------
 	    switch (conf.trace_follow_regs)
 	    {
-		case REG_AF: cpu.trace_top = cpu.trace_curs = cpu.af;	break;
-		case REG_BC: cpu.trace_top = cpu.trace_curs = cpu.bc;	break;
-		case REG_DE: cpu.trace_top = cpu.trace_curs = cpu.de;	break;
-		case REG_HL: cpu.trace_top = cpu.trace_curs = cpu.hl;	break;
+		case REG_AF:  cpu.trace_top = cpu.trace_curs = cpu.af;		break;
+		case REG_BC:  cpu.trace_top = cpu.trace_curs = cpu.bc;		break;
+		case REG_DE:  cpu.trace_top = cpu.trace_curs = cpu.de;		break;
+		case REG_HL:  cpu.trace_top = cpu.trace_curs = cpu.hl;		break;
 		case REG_AF1: cpu.trace_top = cpu.trace_curs = cpu.alt.af;	break;
 		case REG_BC1: cpu.trace_top = cpu.trace_curs = cpu.alt.bc;	break;
 		case REG_DE1: cpu.trace_top = cpu.trace_curs = cpu.alt.de;	break;
 		case REG_HL1: cpu.trace_top = cpu.trace_curs = cpu.alt.hl;	break;
-		case REG_IX: cpu.trace_top = cpu.trace_curs = cpu.ix;	break;
-		case REG_IY: cpu.trace_top = cpu.trace_curs = cpu.iy;	break;
-		case REG_SP: cpu.trace_top = cpu.trace_curs = cpu.sp;	break;
-		case REG_PC: cpu.trace_top = cpu.trace_curs = cpu.pc;	break;
+		case REG_IX:  cpu.trace_top = cpu.trace_curs = cpu.ix;		break;
+		case REG_IY:  cpu.trace_top = cpu.trace_curs = cpu.iy;		break;
+		case REG_SP:  cpu.trace_top = cpu.trace_curs = cpu.sp;		break;
+		case REG_PC:  cpu.trace_top = cpu.trace_curs = cpu.pc;		break;
 	    }
+	    //-----------------------------------------------------------------
 	    //cpu.trace_top = cpu.trace_curs = cpu.pc;
 	    //printf("restart_showtrace ");
+	    // если не нашли того за чем следим
 	    goto restart_showtrace;
 	}
+	//---------------------------------------------------------------------
+	// если не зачем не следим то снимаем реквест
 	else
 	{
 	    //printf("trace_follow_request = 0;");
@@ -743,7 +788,8 @@ mod_new_labels_skip:
 	// переставляем верх на положение курсора и дизасмим еще раз
 	
 	//---------------------------------------------------------------------
-	// Page down
+	// Page down -> мы детектим по нахождению в последней строке
+	//	но помоему это вызывает некоторые глюки (какие?)	2do !!!!!
 	if (cpu.graph_trace_cursor_pos == (trace_size - 1))
 	{
 	    cpu.trace_curs = cpu.trpc[ cpu.graph_trace_cursor_pos];
@@ -767,8 +813,9 @@ mod_new_labels_skip:
 
 
     unsigned char dbuf[16];
-   //-------------------------------------------------------------------------
+    //-------------------------------------------------------------------------
     unsigned i; //Alone Coder
+    //-------------------------------------------------------------------------
     for (/*int*/ i = 0;    i < 16;    i++)
 	dbuf[i] = cpu.DirectRm( cpu.trace_curs + i);
     //-------------------------------------------------------------------------
@@ -785,51 +832,53 @@ mod_new_labels_skip:
 			"%02X",
 			cpu.DirectRm(cpu.trace_curs + i)
 		);
-
     //-------------------------------------------------------------------------
     // печать текущего z80
     char cpu_num[ 10];
 //    _snprintf(	cpu_num,
-//			sizeof(cpu_num),
+//			sizeof( cpu_num),
 //			"Z80(%u)",
 //			CpuMgr.GetCurrentCpu()
 //	        );
+    //-------------------------------------------------------------------------
     if ( (CpuMgr.GetCurrentCpu()) == 0 )	// [NS]
     {
 	sprintf( cpu_num, "ZX-CPU" );//"ZX-Z80" );	//И зачем нам нужно было угадывать где мы щас?
     }
+    //-------------------------------------------------------------------------
     else
     {
 	sprintf( cpu_num, "GS-CPU" );//"GS-Z80" );
     }
+    //-------------------------------------------------------------------------
 	     
     tprint(	trace_x,
-		trace_y-1,
+		trace_y - 1,
 		cpu_num,
 		DBG_ATTR_TRACE_CURRENT_Z80	//W_TITLE
 	   );
     //-------------------------------------------------------------------------
     // печать адреса последнего перехода
-    char lbr[18];	//lbr[5];
+    char lbr[ 18];			//lbr[5];
     _snprintf(	lbr,
-		sizeof(lbr),
-		"Last branch(%04hX)",	//"%04hX",
+		sizeof( lbr),
+		"Last Branch(%04hX)",	//"%04hX",
 		cpu.last_branch
 	      );
-    tprint(	trace_x+8,
-		trace_y-1,
+    tprint(	trace_x + 8,
+		trace_y - 1,
 		lbr,
 		DBG_ATTR_TRACE_LAST_BRANCH	//W_TITLE
 	  );
-    //-------------------------------------------------------------------------
-    // рамочка
-    frame(	trace_x,
-		trace_y,
-		32,
-		trace_size,
-		FRAME
-	 );
-    //-------------------------------------------------------------------------
+//    //-------------------------------------------------------------------------
+//    // рамочка НЕНУЖНА
+//    frame(	trace_x,
+//		trace_y,
+//		32,
+//		trace_size,
+//		FRAME
+//	 );
+//    //-------------------------------------------------------------------------
     
 } //void showtrace()
 //=============================================================================
@@ -838,23 +887,25 @@ mod_new_labels_skip:
 //=============================================================================
 void c_lbl_import() //menu for importing labels from XAS/ALASM ???	// в меню WNDTRACE дебагера
 {									// и "cpu.importl" хоткей
-   mon_labels.import_menu();						// скорей всего уже сломан? 
+    mon_labels.import_menu();						// скорей всего уже сломан? 
 }
 //=============================================================================
 
       /* ------------------------------------------------------------- */
-static unsigned save_pos[8] = { -1U,-1U,-1U,-1U,-1U,-1U,-1U,-1U };
-static unsigned save_cur[8] = { -1U,-1U,-1U,-1U,-1U,-1U,-1U,-1U };
-static unsigned stack_pos[32] = { -1U }, stack_cur[32] = { -1U };
+static unsigned save_pos[ 8] = { -1U,-1U,-1U,-1U,-1U,-1U,-1U,-1U };
+static unsigned save_cur[ 8] = { -1U,-1U,-1U,-1U,-1U,-1U,-1U,-1U };
+static unsigned stack_pos[ 1024] = { -1U };	// 32] = { -1U }; 1К хватит всем [NS]
+static unsigned stack_cur[ 1024] = { -1U };	// 32] = { -1U };
 
 //=============================================================================
 void push_pos();							//????
 void push_pos()
 {
     Z80 &cpu = CpuMgr.Cpu();
-    memmove(&stack_pos[1], &stack_pos[0], sizeof stack_pos - sizeof *stack_pos);
-    memmove(&stack_cur[1], &stack_cur[0], sizeof stack_cur - sizeof *stack_cur);
-    stack_pos[0] = cpu.trace_top; stack_cur[0] = cpu.trace_curs;
+    memmove( &stack_pos[ 1], &stack_pos[ 0], sizeof stack_pos - sizeof *stack_pos);
+    memmove( &stack_cur[ 1], &stack_cur[ 0], sizeof stack_cur - sizeof *stack_cur);
+    stack_pos[ 0] = cpu.trace_top; 
+    stack_cur[ 0] = cpu.trace_curs;
 }
 //=============================================================================
 
@@ -867,8 +918,8 @@ static unsigned cpu_up( unsigned ip)
     Z80 &cpu = CpuMgr.Cpu();
     //printf("ip = %X\n",ip);
     unsigned char buf1[ 0x10];
-    unsigned p1 = (ip > sizeof buf1)  ?	ip - sizeof buf1 :
-					0;
+    unsigned p1 = (ip > sizeof buf1)  ?	 ip - sizeof buf1 :
+					 0;
     //-------------------------------------------------------------------------
     for (unsigned i = 0;    i < sizeof buf1;    i++)
 	buf1[ i] = cpu.DirectRm( p1 + i);
@@ -896,8 +947,10 @@ void cgoto()
 {
     Z80 &cpu = CpuMgr.Cpu();
     int v = input4( trace_x, trace_y, cpu.trace_top);
+    //-------------------------------------------------------------------------
     if (v != -1)
 	cpu.trace_top = cpu.trace_curs = unsigned( v);
+    //-------------------------------------------------------------------------
 }
 //=============================================================================
 
@@ -990,13 +1043,13 @@ void center()	// edit instruction ???
 		   );
 	    cpu.trace_curs = cpu.trace_top;
 	    //-----------------------------------------------------------------
-	    printf("asmii %d ",asmii);
+	    //printf("asmii %d ",asmii);
 	    for (unsigned i = 0;    i < asmii;    i++)
 	    {
-		printf("** ");
+		//printf("** ");
 		cpu.trace_top = cpu_up(cpu.trace_top);
 	    }
-	    printf("\n");
+	    //printf("\n");
 	    //-----------------------------------------------------------------
 	    break;
 	}
@@ -1049,39 +1102,52 @@ void center()	// edit instruction ???
 //=============================================================================
 char dispatch_trace()				//????
 {
-// if (input.lastkey >= 'A' && input.lastkey < 'Z')
-// {
-	//printf("dispatch_trace %c\n",input.lastkey);
-// [NS] ввод цифр жо тожы нужен в окне дизасма
-   if ((input.lastkey >= '0' && input.lastkey <= '9') || (input.lastkey >= 'A' && input.lastkey <= 'Z'))
-   {
-       center();
-       return 1;
-   }
-   return 0;
+    //printf("dispatch_trace %c\n",input.lastkey);
+    //-------------------------------------------------------------------------
+    if ( (input.lastkey >= '0' && input.lastkey <= '9') || 	// [NS] ввод цифр жо тожы нужен в окне дизасма
+	 (input.lastkey >= 'A' && input.lastkey <= 'Z')
+     )
+    {
+	center();
+	return 1;
+    }
+    //-------------------------------------------------------------------------
+    return 0;
 }
+//=============================================================================
+
+
 //=============================================================================
 // FIND TEXT в окне дизасма			// в меню WNDTRACE дебагера
 void cfindtext()				// и "cpu.findtext" хоткей
 {
-   Z80 &cpu = CpuMgr.Cpu();
-   unsigned char oldmode = editor; editor = ED_MEM;
-   int rs = find1dlg(cpu.trace_curs);
-   editor = oldmode;
-   if (rs != -1)
-       cpu.trace_top = cpu.trace_curs = unsigned(rs);
+    Z80 &cpu = CpuMgr.Cpu();
+    unsigned char oldmode = editor; 
+    editor = ED_MEM;
+    int rs = find1dlg( cpu.trace_curs);
+    editor = oldmode;
+    //-------------------------------------------------------------------------
+    if (rs != -1)
+	cpu.trace_top = cpu.trace_curs = unsigned( rs);
+    //-------------------------------------------------------------------------
 }
 //=============================================================================
 // FIND CODE в окне дизасма			// в меню WNDTRACE дебагера
 void cfindcode()				// и "cpu.findcode" хоткей
 {
-   Z80 &cpu = CpuMgr.Cpu();
-   unsigned char oldmode = editor; editor = ED_MEM;
-   int rs = find2dlg(cpu.trace_curs);
-   editor = oldmode;
-   if (rs != -1)
-       cpu.trace_top = cpu.trace_curs = unsigned(rs);
+    Z80 &cpu = CpuMgr.Cpu();
+    unsigned char oldmode = editor; 
+    editor = ED_MEM;
+    int rs = find2dlg( cpu.trace_curs);
+    editor = oldmode;
+    //-------------------------------------------------------------------------
+    if (rs != -1)
+	cpu.trace_top = cpu.trace_curs = unsigned( rs);
+    //-------------------------------------------------------------------------
 }
+//=============================================================================
+
+
 //=============================================================================
 // set breakpoint				// в меню WNDTRACE дебагера
 void cbpx()					// и "cpu.bpx" хоткей
@@ -1170,43 +1236,64 @@ void cup()
     // простой переход в середине экрана
     if (cpu.graph_trace_cursor_pos > 0)
     {
-		int prev_cpu_trace_curs = cpu.trpc[ cpu.graph_trace_cursor_pos];
+	// printf("simple\n");
+	int prev_cpu_trace_curs = cpu.trpc[ cpu.graph_trace_cursor_pos];
 	cpu.graph_trace_cursor_pos--;
 	cpu.trace_curs = cpu.trpc[ cpu.graph_trace_cursor_pos];
 		
-		// Переход через метку (двойной адрес)
-		if (prev_cpu_trace_curs == cpu.trace_curs)
+	//---------------------------------------------------------------------
+	// Переход через метку отдельной строкой (двойной адрес)	[NS]
+	if (prev_cpu_trace_curs == cpu.trace_curs)
+	{
+	    // printf("  double\n");
+	    //-----------------------------------------------------------------
+	    // переход из середины строки
+	    if (cpu.graph_trace_cursor_pos > 0)
+	    {
+		// printf("    cursor > 0\n");
+		cpu.graph_trace_cursor_pos--;
+		cpu.trace_curs = cpu.trpc[ cpu.graph_trace_cursor_pos];
+	    }
+	    //-----------------------------------------------------------------
+	    else
+	    {
+		// printf("    cursor == 0\n");
+		// printf("      %x\n",cpu.trace_top);
+		//-------------------------------------------------------------
+		// Переход через границу FFFF-0000 (когда 0000 с меткой)
+		if (cpu.trace_top == 0x0000)
 		{
-		    // переход из середины строки
-		    if (cpu.graph_trace_cursor_pos > 0)
-		    {
-			cpu.graph_trace_cursor_pos--;
-			cpu.trace_curs = cpu.trpc[ cpu.graph_trace_cursor_pos];
-		    }
-		    else
-		    {
-			cpu.trace_top = cpu.trace_curs = cpu_up( cpu.trace_top);
-		    }
+		    cpu.trace_top = cpu.trace_curs = cpu_up( 0x10000);
 		}
-		
-	
-	
-	
+		//-------------------------------------------------------------
+		// Переход когда в самом верху экрана адрес с меткой
+		else
+		{
+		    cpu.trace_top = cpu.trace_curs = cpu_up( cpu.trace_top);
+		}
+		//-------------------------------------------------------------
+	    }
+	    //-----------------------------------------------------------------
+	}
+	//---------------------------------------------------------------------
     }  
     //-------------------------------------------------------------------------
     // скролл экрана только с самой верхней позиции
     else
     {
+	// printf("scroll\n");
 	//---------------------------------------------------------------------
 	// Простой переход
 	if (cpu.trace_top > 0x0000)
 	{
+	    // printf("  trace_top > 0\n");
 	    cpu.trace_top = cpu.trace_curs = cpu_up( cpu.trace_top);
 	}
 	//---------------------------------------------------------------------
 	// Переход с 0x0000 к 0xFFFF
 	else
 	{
+	    // printf("  trace_top < 0\n");
 	//  cpu.trace_top = cpu.trace_curs = 0xFFFF;
 	    cpu.trace_top = cpu.trace_curs = cpu_up( 0x10000);
 	}
@@ -1228,31 +1315,16 @@ void cup()
 //    }
 //    printf("\n");
     //-------------------------------------------------------------------------
-    
-    cpu.trace_top &= 0xFFFF;
+    cpu.trace_top &= 0xFFFF;	// на всякий случай
     cpu.trace_curs &= 0xFFFF; 
-    
     //-------------------------------------------------------------------------
     return;
     //-------------------------------------------------------------------------
 
 
 
-
-
-
-
-
 /*
-
    Z80 &cpu = CpuMgr.Cpu();
-
-
-
-
-
-
-
 
 //   printf("cpu.trace_curs %d\n",cpu.trace_curs);
 //   printf("cpu.trace_top %d\n",cpu.trace_top);   
@@ -1267,7 +1339,6 @@ void cup()
 //	или там аутостеп/трейс
 //		наверное такое лучшо вынести на отдельную кнопку?
 
- 
     signed int trace_top_1;
     //-------------------------------------------------------------------------
     if (cpu.trace_curs < 500)
@@ -1350,9 +1421,11 @@ void cup()
  
  
  */
- 
- 
-}
+  
+} // void cup()
+//=============================================================================м
+
+
 //=============================================================================
 void cdown()						//"cpu.down" хоткей
 {
@@ -1360,10 +1433,9 @@ void cdown()						//"cpu.down" хоткей
 	
     Z80 &cpu = CpuMgr.Cpu();
     
-    
     //-------------------------------------------------------------------------
     // простой переход в середине экрана
-    if (cpu.graph_trace_cursor_pos < (trace_size-1))
+    if (cpu.graph_trace_cursor_pos < (trace_size - 1))
     {
 	cpu.graph_trace_cursor_pos++;
 	cpu.trace_curs = cpu.trpc[ cpu.graph_trace_cursor_pos];
@@ -1372,36 +1444,33 @@ void cdown()						//"cpu.down" хоткей
     // скролл экрана только с самой нижней позиции
     else
     {
-	  // printf("== trace_size\n");
-	   cpu.trace_top = cpu.trpc[ 1];
-	   cpu.trace_curs = cpu.trpc[ cpu.graph_trace_cursor_pos + 1];
-	   cpu.graph_trace_cursor_pos = trace_size;
-	
-		// Переход через метку (двойной адрес)
-		if (cpu.trpc[ 0] == cpu.trpc[ 1])
-		{
-			//printf("== prev_cpu_trace_curs\n");
-			cpu.trace_top = cpu.trpc[ 2];
-		}
+	// printf("== trace_size\n");
+	cpu.trace_top = cpu.trpc[ 1];
+	cpu.trace_curs = cpu.trpc[ cpu.graph_trace_cursor_pos + 1];
+	cpu.graph_trace_cursor_pos = trace_size;
+	//---------------------------------------------------------------------
+	// Переход через метку (двойной адрес)
+	if (cpu.trpc[ 0] == cpu.trpc[ 1])
+	{
+	    // printf("== prev_cpu_trace_curs\n");
+	    cpu.trace_top = cpu.trpc[ 2];
+	}
+	//---------------------------------------------------------------------
+    }
+    //-------------------------------------------------------------------------
+    if (cpu.trpc[ 0] != cpu.trpc[ 1])
+    {
+	//---------------------------------------------------------------------
+	if (cpu.graph_trace_cursor_pos >= (trace_size - 1))
+	{
+	    // printf("fix pos\n");
+	    // cpu.trace_top = cpu.trpc[ 3];
+	    cpu.graph_trace_cursor_pos = (trace_size - 1);
+	}
+	//---------------------------------------------------------------------
     }
     //-------------------------------------------------------------------------
     
-    
-    
-		if (cpu.trpc[ 0] != cpu.trpc[ 1])
-		{
-    			if (cpu.graph_trace_cursor_pos >= (trace_size-1))
-			{
-			   // printf("fix pos\n");
-			    //cpu.trace_top = cpu.trpc[ 3];
-			    cpu.graph_trace_cursor_pos = (trace_size-1);
-			}
-		}
-		
-		
-		
-		
-		
 		/*
 		else
 		{
@@ -1413,10 +1482,6 @@ void cdown()						//"cpu.down" хоткей
 			}
 		}
 		*/
-    
-    
-    
-    
     
     
 /*
@@ -1471,7 +1536,6 @@ void cpgdn()	//next page				// "cpu.pgdn" хоткей
 {
     Z80 &cpu = CpuMgr.Cpu();
    
-    
     // вначале переход к последней строке
     //-------------------------------------------------------------------------
     if (cpu.graph_trace_cursor_pos < (trace_size - 1))
@@ -1559,14 +1623,21 @@ void cpgdn()	//next page				// "cpu.pgdn" хоткей
 void cpgup()		//prev page			// "cpu.pgup" хоткей
 {
     Z80 &cpu = CpuMgr.Cpu();
+    // printf("cursor %X\n",cpu.graph_trace_cursor_pos);
     //-------------------------------------------------------------------------
     // Переход на пред страницу только когда курсор в самом верху
     // по типу explorer.exe
-    if (cpu.graph_trace_cursor_pos == 0)
+    if ( (cpu.graph_trace_cursor_pos == 0) ||
+	 (cpu.trace_curs == cpu.trace_top)
+     )
     {
+	// printf("  cursor == 0\n");
 	unsigned i; 		//Alone Coder 0.36.7
 	//---------------------------------------------------------------------
-	// тупо повторяем 20 раз :rofl:
+	// тупо повторяем 20 раз :rofl:					2do !!!!!
+	//  	НО в режиме меток отдельной строкой
+	// 	количество видимых строк меньше чем строк дизасма !!!!!
+	// 	НУЖНО посчитать фактическое число уникальных адресов
 	for (i = 0;    i < trace_size;    i++)
 	{
 	    cpu.trace_top = cpu_up( cpu.trace_top);
@@ -1621,18 +1692,20 @@ void cpgup()		//prev page			// "cpu.pgup" хоткей
 
 //=============================================================================
 // pop cursor position from jumpstack			// в меню WNDTRACE дебагера
-void pop_pos()	//IDA mode				// и "cpu.back" хоткей
+void pop_pos()	// IDA mode				// и "cpu.back" хоткей
 {		// back from "goto to branch destination"
 		// на самом деле это Return to previous possition
 		// тк переход по адресу при вводе кидает адрес в стек
-   Z80 &cpu = CpuMgr.Cpu();
-   if (stack_pos[0] == -1U)
-       return;
-   cpu.trace_curs = stack_cur[0];
-   cpu.trace_top = stack_pos[0];
-   memcpy(&stack_pos[0], &stack_pos[1], sizeof stack_pos - sizeof *stack_pos);
-   memcpy(&stack_cur[0], &stack_cur[1], sizeof stack_cur - sizeof *stack_cur);
-   stack_pos[(sizeof stack_pos / sizeof *stack_pos)-1] = -1U;
+    Z80 &cpu = CpuMgr.Cpu();
+    //-------------------------------------------------------------------------
+    if (stack_pos[0] == -1U)
+	return;
+    //-------------------------------------------------------------------------
+    cpu.trace_curs = stack_cur[ 0];
+    cpu.trace_top = stack_pos[ 0];
+    memcpy( &stack_pos[ 0], &stack_pos[ 1], sizeof stack_pos - sizeof *stack_pos);
+    memcpy( &stack_cur[ 0], &stack_cur[ 1], sizeof stack_cur - sizeof *stack_cur);
+    stack_pos[ (sizeof stack_pos / sizeof *stack_pos) - 1] = -1U;
 }
 //=============================================================================
 
@@ -1647,7 +1720,8 @@ void cjump() 	// IDA mode				// "cpu.context" хоткей
     char *ptr = nullptr;
     //-------------------------------------------------------------------------
     for (char *p = asmpc;    *p;    p++)
-      if (ishex(p[0]) & ishex(p[1]) & ishex(p[2]) & ishex(p[3])) ptr = p;
+	if (ishex( p[ 0]) & ishex( p[ 1]) & ishex( p[ 2]) & ishex( p[ 3])) 
+	    ptr = p;
     //-------------------------------------------------------------------------
     if (!ptr) 
 	return;
@@ -1724,26 +1798,29 @@ void mon_view_mem_rPC() 	{ Z80 &cpu = CpuMgr.Cpu();	mon_view_mem_addr( cpu.pc);	
 // показать/скрыть labels
 void cfliplabels()				// в меню WNDTRACE дебагера
 {						// "cpu.labels" хоткей
-   trace_labels = !trace_labels; showtrace();
+    trace_labels = !trace_labels; 
+    showtrace();
 }
 //=============================================================================
 // save cursor position to slot n
-static void csave(unsigned n)		//"cpu.save1"..."cpu.save8" хоткеи
+static void csave( unsigned n)		//"cpu.save1"..."cpu.save8" хоткеи
 {
-   Z80 &cpu = CpuMgr.Cpu();
-   save_pos[n] = cpu.trace_top;
-   save_cur[n] = cpu.trace_curs;
+    Z80 &cpu = CpuMgr.Cpu();
+    save_pos[ n] = cpu.trace_top;
+    save_cur[ n] = cpu.trace_curs;
 }
 //=============================================================================
 // save cursor position to jumpstack, load from slot 1
-static void crest(unsigned n)		//"cpu.rest1"..."cpu.rest8" хоткеи
+static void crest( unsigned n)		//"cpu.rest1"..."cpu.rest8" хоткеи
 {
-   Z80 &cpu = CpuMgr.Cpu();
-   if (save_pos[n] == -1U)
-       return;
-   push_pos();
-   cpu.trace_top = save_pos[n];
-   cpu.trace_curs = save_cur[n];
+    Z80 &cpu = CpuMgr.Cpu();
+    //-------------------------------------------------------------------------
+    if (save_pos[n] == -1U)
+	return;
+    //-------------------------------------------------------------------------
+    push_pos();
+    cpu.trace_top = save_pos[ n];
+    cpu.trace_curs = save_cur[ n];
 }
 //=============================================================================
 void csave1() { csave(0); }
@@ -1779,8 +1856,8 @@ namespace z80dbg						//????
 
 
 
-float zx_step_dither = 0.0;
-float gs_step_dither = 0.0;
+float zx_step_dither = 0.0;	// по моему это все для распределения ошибки [NS]
+float gs_step_dither = 0.0;	// при ТИПО шагание zx/gs одновременно
 
 float zx_tact_dither = 0.0;
 float gs_tact_dither = 0.0;
@@ -1871,7 +1948,7 @@ void mon_step()
 	    //printf("gs_tact_dither %f\n",gs_tact_dither);
 	    //-----------------------------------------------------------------
 	    // Возможна раздача GS ошибки
-	    if (gs_tact_dither > 4.0)	// пушо меньше 4 тактов невозможно
+	    if (gs_tact_dither > 4.0)	// пушо меньше 4 тактов невозможно шагнуть
 	    {
 		//CpuMgr.SwitchCpu();
 		CpuMgr.SetCurrentCpu( 1);	// GS CPU
@@ -2034,7 +2111,7 @@ void mon_step_x( int count)
     //-------------------------------------------------------------------------
     for (int temp_cnt = 0;    temp_cnt < count;    temp_cnt++)
     {
-	debugscr();		//а почему не после?
+	debugscr();		// а почему не после?
 	debugflip();
 	
 	mon_step();
@@ -2141,3 +2218,6 @@ void mon_stepover_jump()						// [NS]
 			);
 }
 //=============================================================================
+
+
+
