@@ -708,7 +708,7 @@ void mon_help()
 
 //=============================================================================
 // скопипащено с Петзольдов
-BOOL CALLBACK AboutDlgProc(	HWND hDlg,
+intptr_t CALLBACK AboutDlgProc(	HWND hDlg,
 				UINT iMsg,
 				WPARAM wParam,
 				LPARAM lParam

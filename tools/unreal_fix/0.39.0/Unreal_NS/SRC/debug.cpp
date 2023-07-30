@@ -550,19 +550,19 @@ static void handle_mouse()
 	    AppendMenu( menu, MF_SEPARATOR, 0, nullptr); //=======================================================
 	    AppendMenu( menu, MF_STRING, IDM_MON_GOTO_PC,			"Goto PC"			);
 	    //----------------------------------------------------------------------------------------------------
-	    AppendMenu( menu, (MF_STRING | MF_POPUP),
-				(UINT) wnd_trace_goto_sub_menu, 		"Goto Register"	 ); // -->
+	    AppendMenuA( menu, (MF_STRING | MF_POPUP),
+				(UINT_PTR) wnd_trace_goto_sub_menu, 		"Goto Register"	 ); // -->
 	    //----------------------------------------------------------------------------------------------------
 	    AppendMenu( menu, MF_STRING, IDM_MON_GOTO_OPERAND_ADDR,	   	"Goto Operand Address"		);
 
 	    AppendMenu( menu, MF_SEPARATOR, 0, nullptr); //=======================================================
-	    AppendMenu( menu, (MF_STRING | MF_POPUP),
-				(UINT) wnd_trace_view_sub_menu, 		"View Register"	 ); // -->
+	    AppendMenuA( menu, (MF_STRING | MF_POPUP),
+				(UINT_PTR) wnd_trace_view_sub_menu, 		"View Register"	 ); // -->
 	    //----------------------------------------------------------------------------------------------------
 	    AppendMenu( menu, MF_STRING, IDM_MON_VIEW_OPERAND_ADDR,		"View Operand Address"		);
 	    AppendMenu( menu, MF_SEPARATOR, 0, nullptr); //=======================================================
-	    AppendMenu( menu, (MF_STRING | MF_POPUP),
-				(UINT) wnd_trace_follow_sub_menu, 		"Follow Register" ); // -->
+	    AppendMenuA( menu, (MF_STRING | MF_POPUP),
+				(UINT_PTR) wnd_trace_follow_sub_menu, 		"Follow Register" ); // -->
 	    //----------------------------------------------------------------------------------------------------
 	    AppendMenu( menu, MF_STRING, IDM_MON_RETURN_TO_PREV_ADDR,		"Return to Previous Address"	);
 	    AppendMenu( menu, MF_SEPARATOR, 0, nullptr); //=======================================================
@@ -613,8 +613,8 @@ static void handle_mouse()
 	    AppendMenu( menu, MF_STRING, IDM_MON_MEM_BPW,			"Breakpoint Write"	);
 	    AppendMenu( menu, MF_SEPARATOR, 0, nullptr);	//----------------------------------------
 	    AppendMenu( menu, MF_STRING, IDM_MON_MEM_TOGGLE_DUMP_HEX_TEXT,	"Toggle hex/text"	);
-	    AppendMenu( menu, (MF_STRING | MF_POPUP),
-				(UINT) wnd_mem_switch_dump_mode_sub_menu, 	"Switch dump mode"	); // -->
+	    AppendMenuA( menu, (MF_STRING | MF_POPUP),
+				(UINT_PTR) wnd_mem_switch_dump_mode_sub_menu, 	"Switch dump mode"	); // -->
 	    AppendMenu( menu, MF_SEPARATOR, 0, nullptr);	//----------------------------------------
 	    AppendMenu( menu, MF_STRING, IDM_MON_MEM_FIND_CODE,			"Find code"		);
 	    AppendMenu( menu, MF_STRING, IDM_MON_MEM_FIND_TEXT,			"Find text"		);	    
