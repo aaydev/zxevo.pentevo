@@ -13,6 +13,53 @@
 #define UBRR115200 (((F_CPU/16)/BAUD115200)-1)
 #define UBRR256000 (((F_CPU/16)/BAUD256000)-1)
 
+//LINE STATUS REGISTER (LSR) bits (16550 chip emulation):
+//--------------------------------------------------------
+/** The receiver Data Ready (DR) indicator. */
+#define LSR_DR     0
+/** The Overrun Error (OE) indicator. */
+#define LSR_OE     1
+/** The Parity Error (PE) indicator. */
+#define LSR_PE     2  
+/** The Framing Error (FE) indicator. */
+#define LSR_FE     3
+/** The Break Interrupt (BI) indicator. */
+#define LSR_BI     4
+/** The Transmitter Holding Register Empty (THRE) indicator. */
+#define LSR_THRE   5
+/** The Transmitter Empty (TEMT) indicator. */
+#define LSR_TEMT   6
+/** The FIFO Half-Full indicator (custom flag: on ZX EVO only). */
+#define LSR_HF     7    
+
+//LINE CONTROL REGISTER (LCR) bits (16550 chip emulation):
+//---------------------------------------------------------
+/** 
+    These two bits specify the number of bits in each transmitted or received serial character. 
+    Bit 1 Bit 0 Character Length
+    0     0     5 Bits
+    0     1     6 Bits
+    1     0     7 Bits
+    1     1     8 Bits
+*/
+#define LCR_WLS0   0
+#define LCR_WLS1   1
+/** This bit specifies the number of Stop bits transmitted and received in each serial character. */
+#define LCR_STB    2
+/** This bit is the Parity Enable bit. */
+#define LCR_PEN    3
+/** This bit is the Even Parity Select bit. */
+#define LCR_EPS    4
+/** This bit is the Stick Parity bit. */
+#define LCR_SP     5
+/** This bit is the Break Control bit. */
+#define LCR_BC     6 
+/** This bit is the Divisor Latch Access Bit (DLAB). */
+#define LCR_DLAB   7
+
+//FIFO buffers size ((FIFO_SIZE-1) value used like mask - must be power of 2 and <= 256)
+#define FIFO_SIZE  16
+
 //Registers for 16550 emulation:
 
 //Divisor Latch LSB
@@ -36,11 +83,11 @@ static UBYTE rs232_MSR;
 //Scratch Pad
 static UBYTE rs232_SCR;
 //Fifo In
-static UBYTE rs232_FI[16];
+static UBYTE rs232_FI[FIFO_SIZE];
 static UBYTE rs232_FI_start;
 static UBYTE rs232_FI_end;
 //Fifo Out
-static UBYTE rs232_FO[16];
+static UBYTE rs232_FO[FIFO_SIZE];
 static UBYTE rs232_FO_start;
 static UBYTE rs232_FO_end;
 
@@ -64,7 +111,7 @@ void rs232_init(void)
 	rs232_ISR = 0x01;
 	rs232_LCR = 0;
 	rs232_MCR = 0;
-	rs232_LSR = 0x60;
+	rs232_LSR = _BV(LSR_THRE)|_BV(LSR_TEMT); //transmitter empty on start
 	rs232_MSR = 0xA0; //DSR=CD=1, RI=0
 	rs232_SCR = 0xFF;
 	rs232_FI_start = rs232_FI_end = 0;
@@ -94,9 +141,9 @@ void to_log(char* ptr)
 //after DLL or DLM changing
 void rs232_set_baud(void)
 {
-	if ( rs232_DLM | rs232_DLL )
+	if ( rs232_DLM|rs232_DLL )
 	{
-		if( (rs232_DLM&0x80)!=0 )
+		if ( (rs232_DLM&0x80) != 0 )
 		{
 			//AVR mode - direct load UBRR
 			UBRR1H = 0x7F&rs232_DLM;
@@ -125,16 +172,16 @@ void rs232_set_baud(void)
 void rs232_set_format(void)
 {
 	//set word length and stopbits
-	UBYTE format = ((rs232_LCR&0x07)<<1);
+	UBYTE format = ((rs232_LCR&(_BV(LCR_WLS0)|_BV(LCR_WLS1)|_BV(LCR_STB)))<<1);
 
 	//set parity (only "No parity","Odd","Even" supported)
-	switch( rs232_LCR&0x38 )
+	switch( rs232_LCR&(_BV(LCR_PEN)|_BV(LCR_EPS)|_BV(LCR_SP)) )
 	{
-		case 0x08:
+		case _BV(LCR_PEN):
 			//odd parity
 			format |= _BV(UPM0)|_BV(UPM1);
 			break;
-		case 0x18:
+		case _BV(LCR_PEN)|_BV(LCR_EPS):
 			//even parity
 			format |= _BV(UPM1);
 			break;
@@ -157,32 +204,32 @@ void rs232_zx_write(UBYTE index, UBYTE data)
 	switch( index )
 	{
 	case 0:
-		if ( rs232_LCR & 0x80 )
+		if ( rs232_LCR&_BV(LCR_DLAB) )
 		{
 			rs232_DLL = data;
 			rs232_set_baud();
 		}
 		else
 		{
-			//place byte to fifo out
+			//place byte to transmitter's fifo
 			if ( ( rs232_FO_end != rs232_FO_start ) ||
-			     ( rs232_LSR&0x20 ) )
+			     ( rs232_LSR&_BV(LSR_THRE) ) )
 			{
 				rs232_FO[rs232_FO_end] = data;
-				rs232_FO_end = (rs232_FO_end + 1) & 0x0F;
+				rs232_FO_end = (rs232_FO_end+1)&(FIFO_SIZE-1);
 
 				//clear fifo empty flag
-				rs232_LSR &= ~(0x60);
+				rs232_LSR &= ~(_BV(LSR_THRE)|_BV(LSR_TEMT));
 			}
 			else
 			{
-				//fifo overload
+				//fifo overload 
 			}
 		}
 		break;
 
 	case 1:
-		if ( rs232_LCR & 0x80 )
+		if ( rs232_LCR&_BV(LCR_DLAB) )
 		{
 			//write to DLM
 			rs232_DLM = data;
@@ -191,28 +238,30 @@ void rs232_zx_write(UBYTE index, UBYTE data)
 		else
 		{
 			//bit 7-4 not used and set to '0'
-			rs232_IER = data & 0x0F;
+			rs232_IER = data&0x0F;
 		}
 		break;
 
 	case 2:
-		if( data&1 )
+		if ( data&1 )
 		{
 			//FIFO always enable
-			if( data&(1<<1) )
+			if ( data&(1<<1) )
 			{
-				//receive FIFO reset
+				//receiver FIFO reset
 				rs232_FI_start = rs232_FI_end = 0;
 				//set empty FIFO flag and clear overrun flag
-				rs232_LSR &= ~(0x03);
+				rs232_LSR &= ~(_BV(LSR_OE)|_BV(LSR_DR)|_BV(LSR_HF));
 			}
-			if( data&(1<<2) )
+			
+			if ( data&(1<<2) )
 			{
-				//tramsmit FIFO reset
+				//tramsmitter FIFO reset
 				rs232_FO_start = rs232_FO_end = 0;
 				//set fifo is empty flag
-				rs232_LSR |= 0x60;
+				rs232_LSR |= _BV(LSR_THRE)|_BV(LSR_TEMT);
 			}
+			
 			rs232_FCR = data&0xC9;
 		}
 		break;
@@ -225,10 +274,11 @@ void rs232_zx_write(UBYTE index, UBYTE data)
 	case 4:
 		//bit 7-5 not used and set to '0'
 		rs232_MCR = data & 0x1F;
+		
 		if ( data&(1<<1) )
 		{
 			//clear RTS
-			RS232RTS_PORT &= ~(_BV(RS232RTS));
+			RS232RTS_PORT &= ~_BV(RS232RTS);
 		}
 		else
 		{
@@ -257,29 +307,36 @@ UBYTE rs232_zx_read(UBYTE index)
 	switch( index )
 	{
 	case 0:
-		if ( rs232_LCR & 0x80 )
+		if ( rs232_LCR&_BV(LCR_DLAB) )
 		{
 			data = rs232_DLL;
 		}
 		else
 		{
 			//get byte from fifo in
-			if ( rs232_LSR&0x01 )
+			if ( rs232_LSR&_BV(LSR_DR) )
 			{
 				data = rs232_FI[rs232_FI_start];
-				rs232_FI_start = ( rs232_FI_start + 1 ) & 0x0F;
+				//to next fifo's byte 
+				rs232_FI_start = (rs232_FI_start+1)&(FIFO_SIZE-1);
 
-				if( rs232_FI_start == rs232_FI_end )
+				if ( rs232_FI_start == rs232_FI_end )
 				{
 					//set empty FIFO flag
-					rs232_LSR &= ~(0x01);
+					rs232_LSR &= ~(_BV(LSR_DR));
+				}
+				
+				//check to clear half-full flag
+			    if ( ((rs232_FI_end-rs232_FI_start)&(FIFO_SIZE-1)) < (FIFO_SIZE/2) )
+				{
+					rs232_LSR &= ~(_BV(LSR_HF));
 				}
 			}
 		}
 		break;
 
 	case 1:
-		if ( rs232_LCR & 0x80 )
+		if ( rs232_LCR&_BV(LCR_DLAB) )
 		{
 			data = rs232_DLM;
 		}
@@ -335,17 +392,18 @@ UBYTE rs232_zx_read(UBYTE index)
 void rs232_task(void)
 {
 	//send data
-	if( (rs232_LSR&0x20)==0 )
+	if( (rs232_LSR&_BV(LSR_THRE)) == 0 )
 	{
 		if ( UCSR1A&_BV(UDRE) )
 		{
 			UDR1 = rs232_FO[rs232_FO_start];
-			rs232_FO_start = (rs232_FO_start+1)&0x0F;
+			//to next fifo's byte
+			rs232_FO_start = (rs232_FO_start+1)&(FIFO_SIZE-1);
 
-			if( rs232_FO_start == rs232_FO_end )
+			if ( rs232_FO_start == rs232_FO_end )
 			{
 				//set fifo is empty flag
-				rs232_LSR |= 0x60;
+				rs232_LSR |= _BV(LSR_THRE)|_BV(LSR_TEMT);
 			}
 		}
 	}
@@ -354,19 +412,27 @@ void rs232_task(void)
 	if( UCSR1A&_BV(RXC) )
 	{
 		BYTE b = UDR1;
-		if( (rs232_FI_end == rs232_FI_start) &&
-		    (rs232_LSR&0x01) )
+		if ( (rs232_FI_end == rs232_FI_start) &&
+		     (rs232_LSR&_BV(LSR_DR)) )
 		{
 			//set overrun flag
-			rs232_LSR|=0x02;
+			rs232_LSR |= _BV(LSR_OE);
 		}
 		else
 		{
 			//receive data
 		   	rs232_FI[rs232_FI_end] = b;
-		   	rs232_FI_end = (rs232_FI_end+1)&0x0F;
+			//to next fifo's byte
+		   	rs232_FI_end = (rs232_FI_end+1)&(FIFO_SIZE-1);
 		   	//set data received flag
-		   	rs232_LSR |= 0x01;
+		   	rs232_LSR |= _BV(LSR_DR);
+			
+			//check to set half-full flag
+			if ( (rs232_FI_end == rs232_FI_start) || 
+			     (((rs232_FI_end-rs232_FI_start)&(FIFO_SIZE-1)) >= (FIFO_SIZE/2)) )
+			{	
+				rs232_LSR |= _BV(LSR_HF);
+			}
 		}
 	}
 
@@ -374,27 +440,27 @@ void rs232_task(void)
 	if( UCSR1A&_BV(FE) )
 	{
 		//frame error
-		rs232_LSR |= 0x08;
+		rs232_LSR |= _BV(LSR_FE);
 	}
 	else
 	{
-		rs232_LSR &= ~(0x08);
+		rs232_LSR &= ~_BV(LSR_FE);
 	}
 
 	if( UCSR1A&_BV(UPE) )
 	{
 		//parity error
-		rs232_LSR |= 0x04;
+		rs232_LSR |= _BV(LSR_PE);
 	}
 	else
 	{
-		rs232_LSR &= ~(0x04);
+		rs232_LSR &= ~_BV(LSR_PE);
 	}
 
 	if( RS232CTS_PIN&_BV(RS232CTS) )
 	{
 		//CTS clear
-		if( (rs232_MSR&0x10)!=0 )
+		if( (rs232_MSR&0x10) != 0 )
 		{
 #ifdef LOGENABLE
 			to_log("CTS\r\n");
@@ -402,12 +468,13 @@ void rs232_task(void)
 			//CTS changed - set flag
 			rs232_MSR |= 0x01;
 		}
+		
 		rs232_MSR &= ~(0x10);
 	}
 	else
 	{
 		//CTS set
-		if( (rs232_MSR&0x10)==0 )
+		if( (rs232_MSR&0x10) == 0 )
 		{
 #ifdef LOGENABLE
 			to_log("CTS\r\n");
@@ -415,6 +482,7 @@ void rs232_task(void)
 			//CTS changed - set flag
 			rs232_MSR |= 0x01;
 		}
+		
 		rs232_MSR |= 0x10;
 	}
 }

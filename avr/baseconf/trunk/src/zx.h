@@ -80,13 +80,13 @@ extern UBYTE zx_realkbd[11];
 	UBYTE reset_type;
 };*/
 
-/** PS/2 keyboard LCTRL key status. */
+/** PS/2 keyboard LEFT CTRL key status. */
 #define KB_LCTRL_MASK   0x01
-/** PS/2 keyboard LCTRL key status. */
+/** PS/2 keyboard RIGHT CTRL key status. */
 #define KB_RCTRL_MASK   0x02
-/** PS/2 keyboard LALT key status. */
+/** PS/2 keyboard LEFT ALT key status. */
 #define KB_LALT_MASK    0x04
-/** PS/2 keyboard LALT key status. */
+/** PS/2 keyboard RIGHT ALT key status. */
 #define KB_RALT_MASK    0x08
 /** PS/2 keyboard LEFT SHIFT key status. */
 #define KB_LSHIFT_MASK 0x10
