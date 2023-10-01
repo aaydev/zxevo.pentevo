@@ -4,7 +4,6 @@
 #ifndef __YMF262_HH__
 #define __YMF262_HH__
 
-#include <string>
 #include "../sysdefs.h"
 
 using namespace std;
