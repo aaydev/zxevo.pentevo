@@ -61,7 +61,8 @@ SRCS=emul.cpp std.cpp atm.cpp cheat.cpp config.cpp dbgbpx.cpp dbgcmd.cpp dbglabl
 
 # sndrender sources
 SRCS+=sndrender/saa1099.cpp sndrender/sndbuffer.cpp sndrender/sndchip.cpp \
-      sndrender/sndcounter.cpp sndrender/sndrender.cpp sndrender/emul_2203.cpp
+      sndrender/sndcounter.cpp sndrender/sndrender.cpp sndrender/emul_2203.cpp \
+      sndrender/dev_moonsound.cpp sndrender/ymf262.cpp sndrender/ymf278.cpp
 
 # z80 sources
 SRCS+=z80/daa_tabs.cpp z80/op_cb.cpp z80/op_dd.cpp z80/op_ddcb.cpp z80/op_ed.cpp \

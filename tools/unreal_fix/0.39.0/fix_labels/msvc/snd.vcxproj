@@ -555,20 +555,26 @@
     </Lib>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="..\sndrender\dev_moonsound.cpp" />
     <ClCompile Include="..\sndrender\emul_2203.cpp" />
     <ClCompile Include="..\sndrender\saa1099.cpp" />
     <ClCompile Include="..\sndrender\sndbuffer.cpp" />
     <ClCompile Include="..\sndrender\sndchip.cpp" />
     <ClCompile Include="..\sndrender\sndcounter.cpp" />
     <ClCompile Include="..\sndrender\sndrender.cpp" />
+    <ClCompile Include="..\sndrender\ymf262.cpp" />
+    <ClCompile Include="..\sndrender\ymf278.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="..\sndrender\dev_moonsound.h" />
     <ClInclude Include="..\sndrender\emul_2203.h" />
     <ClInclude Include="..\sndrender\saa1099.h" />
     <ClInclude Include="..\sndrender\sndbuffer.h" />
     <ClInclude Include="..\sndrender\sndchip.h" />
     <ClInclude Include="..\sndrender\sndcounter.h" />
     <ClInclude Include="..\sndrender\sndrender.h" />
+    <ClInclude Include="..\sndrender\ymf262.h" />
+    <ClInclude Include="..\sndrender\ymf278.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

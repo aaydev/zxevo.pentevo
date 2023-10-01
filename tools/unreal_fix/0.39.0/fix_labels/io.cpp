@@ -8,6 +8,7 @@
 #include "atm.h"
 #include "profi.h"
 #include "sndrender/sndcounter.h"
+#include "sndrender/dev_moonsound.h"
 #include "sound.h"
 #include "gs.h"
 #include "sdcard.h"
@@ -84,6 +85,15 @@ void out(unsigned port, unsigned char val)
        return;
    }
    #endif
+
+   // ZXM-MoonSound
+   if (conf.sound.moonsound &&
+       (conf.mem_model == MM_PROFI ? !(comp.pDFFD & 0x80) : 1) &&
+       (((p1 & 0xFC) == 0xC4) || ((p1 & 0xFE) == 0xC2)))
+   {
+       if (zxmmoonsound.write(port, val))
+           return;
+   }
 
    // z-controller
    if (conf.zc && (port & 0xFF) == 0x57 )
@@ -815,6 +825,17 @@ __inline unsigned char in1(unsigned port)
    if ((port & 0xF7) == 0xB3 && conf.gs_type)
        return in_gs(p1);
    #endif
+
+   // ZXM-MoonSound
+   if (conf.sound.moonsound &&
+       (conf.mem_model == MM_PROFI ? !(comp.pDFFD & 0x80) : 1) &&
+       (((p1 & 0xFC) == 0xC4) || ((p1 & 0xFE) == 0xC2)))
+   {
+       u8 val = 0xFF;
+
+       if (zxmmoonsound.read(port, val))
+           return val;
+   }
 
    // z-controller
    if (conf.zc && (port & 0xFF) == 0x57)
