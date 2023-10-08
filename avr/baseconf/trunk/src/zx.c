@@ -375,8 +375,8 @@ void to_zx(UBYTE scancode, UBYTE was_E0, UBYTE was_release)
 #endif
 				if ( ( !was_release ) &&
 					 /*( !(kb_status & KB_CTRL_ALT_DEL_MAPPED_MASK) ) &&*/
-					 ( (kb_ctrl_status&/*(~kb_ctrl_mapped)&*/(/*KB_LCTRL_MASK|*/KB_RCTRL_MASK)) !=0 ) &&
-					 ( (kb_ctrl_status&/*(~kb_ctrl_mapped)&*/(/*KB_LALT_MASK|*/KB_RALT_MASK)) !=0 ) )
+					 ( (kb_ctrl_status&/*(~kb_ctrl_mapped)&*/(KB_LCTRL_MASK|KB_RCTRL_MASK)) !=0 ) &&
+					 ( (kb_ctrl_status&/*(~kb_ctrl_mapped)&*/(KB_LALT_MASK|KB_RALT_MASK)) !=0 ) )
 				{
 					//hard reset
 					flags_register |= FLAG_HARD_RESET;
