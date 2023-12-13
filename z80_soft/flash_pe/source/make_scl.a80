@@ -1,7 +1,8 @@
 
-;LAST UPDATE: 12.02.2014 savelij
+; LAST UPDATE: 10.01.2023 savelij
 
-		include ../../../rom/macros.a80
+		include macros.a80
+		include basic_tokens.a80
 
 ADR_LOADING	EQU 0X6000			;адрес загрузки и компиляции
 START_CODE	EQU ADR_LOADING
@@ -12,7 +13,7 @@ START_SCL	DB "SINCLAIR",1,"flash_peB"
 		DW BASIC_FULL,BASIC_FULL
 FULL_SIZE	DB SIZE_SECTORS+1
 
-		include ../../../rom/basic4monoloader.a80
+		include basic4monoloader.a80
 
 ;END_HEADER
 	
@@ -37,9 +38,9 @@ FULL_SIZE	DB SIZE_SECTORS+1
 		INC HL
 		RET
 		
-START_UNPACK	include ../../../rom/dec40.a80
+START_UNPACK	include dec40.a80
 END_UNPACK
-		binclude flash_pe_pack.rom	;имя пакованной проги
+		binclude rom/flash_pe_pack.rom	;имя пакованной проги
 END_COD
 
 		DUPL LOW (-$),0

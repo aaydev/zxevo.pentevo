@@ -1,0 +1,548 @@
+
+; LAST UPDATE: 21.02.2023 savelij
+
+		TITLE "menu_execute.a80"
+
+; загрузка с ленты
+TAPELOAD	LD H,CMOS_BYTE_00
+		CALL READCMOS
+		AND M_EMUL_TAPE
+		JP NZ,EMULTAPLOAD
+		LD IX,TAPE_LDT
+	RST8 _WINW
+TAPELOAD1	CALL MEMSET			; выставили режимы памяти и турбы
+		LD HL,BAS4TAPE
+		LD DE,0x5C3A
+		LD BC,EBAS4TAPE-BAS4TAPE
+		LDIR				; переменные басика сделали FOR ONLY TAPE
+		LD HL,ERROR_TAPE
+		PUSH HL
+		LD (0x5C3D),SP			; перехват ошибки если есть желание вернуться
+		LD HL,0xFF58
+		LD SP,HL			; выставили стек а ля бейсик 48
+		LD DE,0x3E08
+		LD BC,0xA8
+		EX DE,HL
+		LDIR				; положили шрифт UDG
+		LD HL,0x3E00
+		PUSH HL
+		LD HL,0x1303
+		PUSH HL
+		LD HL,0x1B76
+		PUSH HL				; заполнили дно переставленного стека
+		LD IX,0x5CD1			; установили для загрузки с ленты
+		JP 0x073E			; переход на загрузку с ленты
+
+; перехват ошибки или брека для возврата
+ERROR_TAPE	LD HL,BAS_VAR
+		LD DE,0x5C00
+		LD BC,EBAS_VAR-BAS_VAR
+		LDIR				; вернули тырдосные переменные на место
+		XOR A
+		LD (0x5C3D),BC			; сняли перехватчик ошибок
+		OUT (0xFE),A
+		DEC A
+		LD (gFenv),A
+		CALL GLUDIN			; погудели в ау что была ошибка
+		LD A,1
+		LD (gFenv),A
+		JP RESTART			; перезапуск HE GLUK
+
+; создание рам диска на 640К
+RAM_640		LD HL,RESTART
+		PUSH HL
+CREATE_TRDRAM
+		LD HL,636*4			; RAM DISK на 640 килобайт
+		LD (SECFREE),HL			; выставили переменную количества секторов на RAM DISK
+		DI
+
+	IFNDEF TESTEMUFDD
+; test
+	PEC_ON M_SHADOW_BF
+		LD A,RAM_RAMDISK+1
+		LD BC,WIN_P2
+		OUT (C),A
+		LD HL,0x8000
+		LD D,H
+		LD E,L
+		INC DE
+		LD BC,0x0FFF
+		LD (HL),L
+		LDIR				; очистили страницу TR-DOS директории
+		LD HL,DSKINFO
+		LD DE,0x88E1
+		LD C,DSK_END-DSKINFO
+		LDIR				; перенесли шаблон для 9 сектора диры
+		LD A,ZXSTD_CPU2
+		LD BC,WIN_P2
+		OUT (C),A
+	PEC_OFF M_SHADOW_BF
+; test
+	ENDIF
+
+		JP CREATE_TRD640
+
+; сброс NEOGS
+RESETNGS	LD A,C_GRST
+		OUT (GSCTR),A
+		JP RESTART
+
+; file not found
+FILE_NONE	LD IX,FILENONE
+	RST8 _WINW
+		JP STUPID1
+
+; проверка виртуального привода
+CMP_VIRTUAL	LD H,VIRT_REAL_DRIVE
+		CALL READCMOS
+		LD A,(DRV_SYM)
+		LD D,A				; номер текущего реального дисковода
+		LD A,L
+		RRCA
+		RRCA
+		AND 3				; номер реального дисковода из CMOS
+		CP D
+		JR NZ,PRT_NONETRDOS
+		LD IX,ERR_VIRTUAL
+		JR PRT_NONETRDOS1
+
+PRT_NONETRDOS	LD IX,NONETRDOS
+PRT_NONETRDOS1
+	RST8 _WINW
+		JR STUPID1
+
+; вывод помощи
+VIEW_HELP	LD IX,WIN_HELP
+	RST8 _WINW
+VIEWHELP1	CALL PRINTTIME
+		EI
+		HALT
+		BIT 5,(IY+1)
+		CALL Z,CP_TIME_KOSHAK
+		JR Z,VIEWHELP1
+		RES 5,(IY+1)
+		JR STUPID1
+
+LDFDI_ERROR	LD IX,LDFDIERROR
+	RST8 _WINW
+		JR STUPID1
+
+_STUPID		LD IX,MSTUPID
+		CALL DRAWWIN
+		LD HL,_STUPID
+		LD (DSTUPID),HL
+STUPID1		LD SP,0
+TEK_SP		EQU $-2
+		CALL SET_7FFD_0
+		EI
+		CALL RESET_VG
+		CALL EXIT4ERROR
+;		LD A,0xFF
+;		LD (gFenv),A
+;		CALL GLUDIN			;HL
+;		LD A,1
+;		LD (gFenv),A
+		JP RESTART
+
+; переходилка в басик 128
+BAS128		CALL SYSTEM
+		CALL MEMSET
+		DI
+		CALL INIT_LOADTAPE
+		XOR A
+		CALL SET_7FFD
+		RST 0
+
+; сброс указателя загрузчика TAPE
+INIT_LOADTAPE
+	PEC_ON M_SHADOW_BF
+		LD BC,WIN_P2
+		XOR A
+		OUT (C),A
+		LD HL,0x8000
+		LD (HL),A
+		INC L
+		LD (HL),A
+		INC L
+		LD (HL),A
+		LD B,HIGH (WIN_A2)
+		LD A,0x7D
+		OUT (C),A
+	PEC_OFF M_SHADOW_BF
+		RET
+
+; переходилка в басик 48
+BAS48		CALL SYSTEM
+		CALL MEMSET
+		CALL INIT_LOADTAPE
+		LD A,0x30
+		CALL SET_7FFD
+		RST 0
+
+; переходилка в тырдос
+DOS128		CALL SYSTEM
+		CALL MEMSET
+		LD IX,0
+		JP DOSIX
+
+; менюха зачистки страниц, форматирования рамдиска и дискетный копир
+_KILLS		LD IX,MKILLS
+	RST8 _WINW
+		JP _RULILKA
+
+; сброс в basic 48 со стандартной прошивкой при выключенном турбо режиме
+BAS48STD	DI
+		CALL SET_EMU_TAPE
+		LD BC,PENT_CONF
+		LD A,0x14
+		OUT (C),A
+		LD BC,CONF_128
+		LD A,0x30
+		OUT (C),A
+	PEC_ON M_SHADOW_BF
+	ATMPORT WIN_A0,0x3F
+	EVOPORT WIN_P0,0
+		LD HL,0
+		LD (HL),H
+		INC L
+		LD (HL),H
+		INC L
+		LD (HL),H
+	ATMPORT WIN_A0,ROM_BAS48_STD
+	PEC_OFF M_SHADOW_BF
+		JP 0
+
+; сброс в basic 128 со стандартной прошивкой при выключенном турбо режиме
+BAS128STD	DI
+		CALL SET_EMU_TAPE
+		LD BC,PENT_CONF
+		LD A,0x14
+		OUT (C),A
+	PEC_ON M_SHADOW_BF
+	ATMPORT WIN_A0,0x3F
+	EVOPORT WIN_P0,0
+		LD HL,0
+		LD (HL),H
+		INC L
+		LD (HL),H
+		INC L
+		LD (HL),H
+	ATMPORT WIN_A0,ROM_BAS48_128
+		LD BC,CONF_128
+		XOR A
+		OUT (C),A
+	ATMPORT WIN_A0,ROM_BAS128_STD
+	PEC_OFF M_SHADOW_BF
+		JP 0
+
+; HDD BOOT
+HDD_BOOT	LD HL,ADR_CAT
+		PUSH HL
+	RST8 _COM_DEV,_COMHDDN,_DEV_INIT
+		LD A,H
+		POP HL
+		AND A
+		JR NZ,HDDBOOT1
+HDDBOOT4	PUSH HL
+		CALL MEMSET
+		POP DE
+		PUSH DE
+		LD HL,HDDBOOT2
+		LD BC,EHDDBOOT2-HDDBOOT2
+		LDIR
+		RET
+
+HDDBOOT1	LD IX,HDDBOOT_ERROR
+	RST8 _WINW
+		JP STUPID1
+
+HDDBOOT2	LD HL,0x6000			; грузить будем как и был адрес
+		PUSH HL				; после загрузки запускаем загруженное
+		LD BC,0
+		LD DE,2
+		LD A,0x30
+	RST8 _COM_DEV,_COMHDDN,_DEV_READ
+		RET
+
+		LD DE,2				; грузим начиная с сектора 2 ибо LBA
+		LD BC,0xFF00+PN_1F6
+		LD A,0xE0			; выбрали мастер и lba режим
+		OUT (C),A
+		LD C,PN_1F5
+		OUT (C),D
+		LD C,PN_1F4
+		OUT (C),D
+		LD C,PN_1F3
+		OUT (C),E
+		LD C,PN_1F2
+		LD A,0x30			; грузим секторов как и было
+		OUT (C),A
+		EX AF,AF'			; спрятали количество секторов загрузки
+		LD C,PN_1F7
+		LD A,0x20
+		OUT (C),A			; команда чтения
+		LD C,PN_1F7
+HDDRD1_		IN A,(C)
+		AND 0x88
+		CP 8
+		JR NZ,HDDRD1_
+		EX AF,AF'
+HDDRD2_		EX AF,AF'
+		XOR A
+		LD C,PN_1F0
+READSC1_	IN E,(C)
+		INC C
+		IN D,(C)
+		DEC C
+		LD (HL),E
+		INC HL
+		LD (HL),D
+		INC HL
+		DEC A
+		JR NZ,READSC1_
+		LD C,PN_1F7
+HDDRD3_		IN A,(C)
+		AND 0x80
+		JR NZ,HDDRD3_
+		EX AF,AF'
+		DEC A
+		JR NZ,HDDRD2_
+		RET
+EHDDBOOT2
+
+		include "hdd_cd_boot.a80"
+
+HDDRDLN	EQU $-HDDREAD
+
+; CD BOOT
+CDBOOT	XOR A
+	CALL CLS
+	CALL MEMSET
+	CALL HDDBINI
+	EI
+	JP CDBOOTGO
+
+UMOUNTIMAGE
+	RST8 _MOUNTER,_GET_VIRT_BITS
+		AND 0x0F
+		JP Z,RESTART
+		LD IX,WDISMOUNT
+	RST8 _WINW
+		JP _RULILKA			; возвращаемся к общему управлению
+
+; демонтирование всех дисков
+DISMOUNT_ALL	LD A,3
+	RST8 _MOUNTER,_CLOSEMOUNT
+		LD A,2
+	RST8 _MOUNTER,_CLOSEMOUNT
+		LD A,1
+	RST8 _MOUNTER,_CLOSEMOUNT
+DISMOUNT_A	XOR A
+DISMOUNT_DRV
+	RST8 _MOUNTER,_CLOSEMOUNT
+		JP RESTART
+
+DISMOUNT_B	LD A,1
+		JR DISMOUNT_DRV
+
+DISMOUNT_C	LD A,2
+		JR DISMOUNT_DRV
+
+DISMOUNT_D	LD A,3
+		JR DISMOUNT_DRV
+
+; сброс CMOS
+RESET_CMOS
+	RST8 _CMOS_RW,_CLEAR_CMOS
+		CALL SET_MODES
+		JP RESTART
+
+; установка задержки до определения HDD
+HDDTIMEOUT	LD H,HDD_TIMEOUT
+		CALL READCMOS
+		LD E,A
+		AND 0x0F
+		INC A
+		CP 10
+		JR C,HDDTIMEOUT1
+		XOR A
+HDDTIMEOUT1	LD D,A
+		LD A,E
+		AND 0xF0
+		OR D
+		LD L,A
+		CALL WRITECMOS
+		AND 0x0F
+		ADD A,'0'
+		LD (TXT_HDDTIMEOUT),A
+		JR REPRINT_MENU
+
+; установка задержки запуска screensaver
+SCRSAVTIMEOUT	LD H,HDD_TIMEOUT
+		CALL READCMOS
+		LD E,A
+		AND 0xF0
+		ADD A,0x10
+		CP 0xA0
+		JR C,.L0
+		XOR A
+.L0		LD D,A
+		LD A,E
+		AND 0x0F
+		OR D
+		LD L,A
+		CALL WRITECMOS
+		AND 0xF0
+		RRCA
+		RRCA
+		RRCA
+		RRCA
+		LD (SCRSAV.TIMEOUT),A
+		ADD A,'0'
+		LD (TXT_SCRSAVDELAY),A
+		JR REPRINT_MENU
+
+; установка разрешения/запрещения озвучки клавиатуры
+SOUND_KEYS	LD C,M_SOUNDKEYS
+		LD HL,SNDKEYS_STAT
+SET_MENU	PUSH HL
+		LD H,CMOS_BYTE_01
+SET_MENU1	CALL READCMOS
+		XOR C
+		LD L,A
+		CALL WRITECMOS
+		AND C
+		POP HL
+		CALL SET_ONOFF
+REPRINT_MENU	LD HL,SETUPERTXT
+	RST8 _PRINT_MESSAGE
+		CALL REST_COLCURS
+	RST8 _COM_DEV,_CONTROL_SD
+		JP _RULILKA
+
+; установка разрешения/запрещения доступа к SD карте NEOGS
+ACS_SDNGS	LD C,M_ACCESSSDG
+		LD HL,ACCSSDG_STAT
+		JR SET_MENU
+
+; установка выбора драйвера принтера
+AYPRN_SETUP	LD C,M_TYPE_FONT
+		LD HL,ETXT_AYPRINTER
+		JR SET_MENU
+
+; включение/выключение автостарта TAP файла при выборе в FILE BROWSER
+AUTO_TAPE	LD C,M_AUTO_TAPE
+		LD HL,TXT_AUTOTAPE
+		PUSH HL
+		LD H,CMOS_BYTE_00
+		JR SET_MENU1
+
+; для резидента HONEY COMANDER
+; включение/выключение резидента
+REZID_SETUP	LD C,M_REZIDENT
+		LD HL,TXT_REZIDENT
+		JR SET_MENU
+
+; включение/выключения порчи резидента при запуске
+KILL_REZID	LD C,M_KILL_REZIDENT
+		LD HL,TXT_KILLREZID
+		PUSH HL
+		LD H,CMOS_BYTE_03
+		JR SET_MENU1
+
+; установка перед выводом меню SETUP
+SETUPM		LD IX,SETUPER
+		LD H,CMOS_BYTE_01
+		CALL READCMOS
+		LD B,A
+		AND M_SOUNDKEYS
+		LD HL,SNDKEYS_STAT
+		CALL SET_ONOFF
+		LD A,B
+		AND M_ACCESSSDG
+		LD HL,ACCSSDG_STAT
+		CALL SET_ONOFF
+		LD H,CMOS_BYTE_00
+		CALL READCMOS
+		AND M_AUTO_TAPE
+		LD HL,TXT_AUTOTAPE
+		CALL SET_ONOFF
+		LD H,HDD_TIMEOUT
+		CALL READCMOS
+		LD D,A
+		AND 0x0F
+		ADD A,'0'
+		LD (TXT_HDDTIMEOUT),A
+		LD A,D
+		AND 0xF0
+		RRCA
+		RRCA
+		RRCA
+		RRCA
+		ADD A,'0'
+		LD (TXT_SCRSAVDELAY),A
+	RST8 _WINW
+		JP _RULILKA
+
+; установка разрешения/запрещения эмуляции ленты
+SET_EMU_TAPE	LD H,CMOS_BYTE_00
+		CALL READCMOS
+		AND M_EMUL_TAPE
+		RET Z
+		LD BC,BREAK_LOW
+		LD A,LOW (ADRBRK_EMUTAP)
+		OUT (C),A
+		LD B,HIGH (BREAK_HIGH)
+		LD A,HIGH (ADRBRK_EMUTAP)
+		OUT (C),A
+	PEC_ON M_BREAK_BF
+		RET
+
+		include sdcardboot.a80
+
+SONGLN		CALL START_SONGLN
+		JP RESTART
+
+START_SONGLN	DI
+		PUSH IX
+		PUSH IY
+		LD A,0x11
+		CALL SET_7FFD
+		LD A,0x10
+		CALL SET_EFF7
+		LD HL,0x4000
+		LD DE,0xE000
+		LD BC,0x1B00
+		LDIR
+		LD HL,0xD000
+		LD DE,0xD001
+		LD BC,0x1000
+		LD (HL),0
+		LDIR
+SONGLN1		XOR A
+		IN A,(0xFE)
+		CPL
+		AND 0x1F
+		JR NZ,SONGLN1
+	PEC_ON M_SHADOW_BF
+	EVOPORT WIN_A0,ROM_RST82
+		CALL UNP_SONGLN
+	EVOPORT WIN_A0,ROM_BAS48|0x80
+	PEC_OFF M_SHADOW_BF
+		CALL 0xC000
+		LD HL,0xE000
+		LD DE,0x4000
+		LD BC,0x1B00
+		LDIR
+		LD HL,0xC000
+		LD DE,0xC001
+		LD BC,0x3FFF
+		LD (HL),0
+		LDIR
+		LD A,0x10
+		CALL SET_7FFD
+		XOR A
+		CALL SET_EFF7
+		POP IY
+		POP IX
+		RET

@@ -48,10 +48,15 @@ void Load()
 {
    if(Bass)
        return;
-
+#if defined(_WIN64) || defined(AMD64)
+   Bass = LoadLibrary("bass64.dll");
+   if (!Bass)
+	   errexit("can't load bass64.dll");
+#else
    Bass = LoadLibrary("bass.dll");
    if (!Bass)
-       errexit("can't load bass.dll");
+	   errexit("can't load bass.dll");
+#endif
 
    GetVersion = (TGetVersion)GetProcAddress(Bass, "BASS_GetVersion");
    if (!GetVersion || (HIWORD(GetVersion()) != 0x0204))

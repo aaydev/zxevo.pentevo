@@ -1,5 +1,5 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
-<Project DefaultTargets="Build" ToolsVersion="15.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+<Project DefaultTargets="Build" ToolsVersion="12.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup Label="ProjectConfigurations">
     <ProjectConfiguration Include="clang-Debug|Win32">
       <Configuration>clang-Debug</Configuration>
@@ -53,14 +53,13 @@
   <PropertyGroup Label="Globals">
     <ProjectGuid>{D83EF518-4C10-46B6-8A64-138CEF801212}</ProjectGuid>
     <Keyword>Win32Proj</Keyword>
-    <TargetPlatformVersion>10.0.15063.0</TargetPlatformVersion>
-    <WindowsTargetPlatformVersion>7.0</WindowsTargetPlatformVersion>
+    <WindowsTargetPlatformVersion>8.1</WindowsTargetPlatformVersion>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
     <ConfigurationType>StaticLibrary</ConfigurationType>
     <UseDebugLibraries>true</UseDebugLibraries>
-    <PlatformToolset>v141_xp</PlatformToolset>
+    <PlatformToolset>v141</PlatformToolset>
     <BasePlatformToolset>v141_xp</BasePlatformToolset>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='icl-Debug|Win32'" Label="Configuration">
@@ -96,7 +95,7 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
     <ConfigurationType>StaticLibrary</ConfigurationType>
     <UseDebugLibraries>true</UseDebugLibraries>
-    <PlatformToolset>v141_xp</PlatformToolset>
+    <PlatformToolset>v141</PlatformToolset>
     <BasePlatformToolset>v141_xp</BasePlatformToolset>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='icl-Debug|x64'" Label="Configuration">
@@ -556,20 +555,26 @@
     </Lib>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="..\sndrender\dev_moonsound.cpp" />
     <ClCompile Include="..\sndrender\emul_2203.cpp" />
     <ClCompile Include="..\sndrender\saa1099.cpp" />
     <ClCompile Include="..\sndrender\sndbuffer.cpp" />
     <ClCompile Include="..\sndrender\sndchip.cpp" />
     <ClCompile Include="..\sndrender\sndcounter.cpp" />
     <ClCompile Include="..\sndrender\sndrender.cpp" />
+    <ClCompile Include="..\sndrender\ymf262.cpp" />
+    <ClCompile Include="..\sndrender\ymf278.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="..\sndrender\dev_moonsound.h" />
     <ClInclude Include="..\sndrender\emul_2203.h" />
     <ClInclude Include="..\sndrender\saa1099.h" />
     <ClInclude Include="..\sndrender\sndbuffer.h" />
     <ClInclude Include="..\sndrender\sndchip.h" />
     <ClInclude Include="..\sndrender\sndcounter.h" />
     <ClInclude Include="..\sndrender\sndrender.h" />
+    <ClInclude Include="..\sndrender\ymf262.h" />
+    <ClInclude Include="..\sndrender\ymf278.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

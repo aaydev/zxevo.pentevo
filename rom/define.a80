@@ -1,0 +1,195 @@
+
+; LAST UPDATE: 17.09.2022 savelij
+
+; номера функций RST 8
+ INIT_VAR 0X40
+ SETVAR _AY_PRN_INIT
+ SETVAR _AY_PRN_A_
+ SETVAR _AY_PRN_TOKEN
+ SETVAR _AY_PRN_SCR
+ SETVAR _TAPE_INIT
+ SETVAR _TAPE_EMUL
+ SETVAR _WINW
+ SETVAR _PRINT_MESSAGE
+ SETVAR _PRINT_A
+ SETVAR _SCROLL_UP
+ SETVAR _SCROLL_DOWN
+ SETVAR _SET_MODE
+ SETVAR _MATH
+ SETVAR _VERSION
+
+ INIT_VAR 0X4F
+ SETVAR _BIOS
+ SETVAR _COM_DEV
+ SETVAR _COM_FAT
+ SETVAR _SORT_FINDFILES
+ SETVAR _MOUNTER
+ SETVAR _INST_FATBOOT
+ SETVAR _CMOS_RW
+ SETVAR _SETUP_PAL
+ SETVAR _SETUP_FONT
+
+; функции изменения режимов работы
+_ZXSCR_MODE	EQU %00000001			; ZX SCREEN
+_TXTSCR_MODE	EQU %00000010			; TXT SCREEN
+_TURBO_LOW	EQU %00010000			; TURBO 3,5 MHZ
+_TURBO_HIGH	EQU %00100000			; TURBO 7,0 MHZ
+_TURBO_MAX	EQU %00110000			; TURBO 14,0 MHZ
+_MEM_MODE_48	EQU %01000000			; MEMORY MODE 48 KB
+_MEM_MODE_128	EQU %10000000			; MEMORY MODE 128 KB
+_MEM_MODE_PENT	EQU %11000000			; MEMORY MODE PENT 1024 KB
+
+; биты ошибок
+ BITMASK INCORRECTFPGA,		7		; прошивка FPGA zxevo_fw.bin не той системы
+
+; функции деления, умножения, преобразования числа в текст
+ INIT_VAR
+ SETVAR _DIVIDE16
+ SETVAR _MULTIPLY16
+ SETVAR _DIVIDE32
+ SETVAR _MULTIPLY32
+ SETVAR _HEX4DECTXT
+ SETVAR _HEX2DECTXT
+ SETVAR _HEX1DECTXT
+
+; функции работы с CMOS
+ INIT_VAR
+ SETVAR _INIT_CMOS
+ SETVAR _READ_CMOS
+ SETVAR _WRITE_CMOS
+ SETVAR _CLEAR_CMOS
+
+; функции монтировщика образов
+ INIT_VAR
+ SETVAR _OPEN_MOUNT				; монтирование образа
+ SETVAR _RDWR_MOUNT				; чтение/запись примонтированных образов
+ SETVAR _FIND_MOUNTED				; поиск монтируемых образов прописанных в IMAGE.FNT
+ SETVAR _GET_MOUNTED				; получение буфера описателей примонтированных образов
+ SETVAR _CLOSEMOUNT				; демонтирование образа
+ SETVAR _LOADIMAGE				; загрузка образа в рамдиск
+ SETVAR _REST_NAMELOAD				; получение описателя файла загруженного в рамдиск
+ SETVAR _CMP_DRIVE				; проверка примонтированного образа на указанной букве
+ SETVAR _GET_VIRT_BITS				; получение битов смонтированных дисков
+ SETVAR _SET_VIRTREAL				; переключение реального/виртуального дисковода
+ SETVAR _SET_REAL				; переключение реального дисковода
+ SETVAR _SET_VIRT				; переключение виртуального дисковода
+
+; номера функций менеджера устройств
+ INIT_VAR
+ SETVAR _DEVFIND				; поиск устройств
+ SETVAR _SET_VOL				; выбор раздела
+ SETVAR _KOL_VOL				; запрос найденого
+ SETVAR _GET_FNDVOLUME				; получить таблицу найденных разделов
+ SETVAR _TO_DRV					; вызов драйвера выбранного устройства
+ SETVAR _SET_DEVICE				; установка битов устройства и LBA режима
+ SETVAR _CONTROL_SD				; контроль наличия SD карт
+ SETVAR _COMHDDN				; прямой вызов драйвера HDD NEMO (временная функция)
+ SETVAR _FREINIT_VOL				; полная переинициализация раздела
+ SETVAR _SET_SECTOR_NUM				; установка номера сектора для чтения/записи
+
+; номера функций вызова драйвера устройства
+ INIT_VAR
+ SETVAR _DEV_INIT				; поиск и инициализация устройства
+ SETVAR _DEV_STATUS				; запрос статуса устройства. пока заглушена
+ SETVAR _DEV_READ				; чтение секторов
+ SETVAR _DEV_WRITE				; запись секторов
+ SETVAR _DEV_READID				; чтение ID сектора
+
+; номера вызываемых функций FAT драйвера
+ INIT_VAR
+ SETVAR _INIT_FATVARS				; инициализация переменных FAT
+ SETVAR _READ_DIR				; получение описателя файла
+ SETVAR _ENTER_DIR				; вход/выход в дир
+ SETVAR _GET_PATH				; получение текущего пути
+ SETVAR _GET_LONGNAME				; получение длинного имени файла
+ SETVAR _FIND_NAME				; поиск по имени
+ SETVAR _FIND_FILEITEM				; поиск всех описателей с выдачей номеров найденного
+ SETVAR _SET_MASK_EXT				; установка маски расширений для поиска
+ SETVAR _OPEN_FILE				; открытие файла
+ SETVAR _READ_FILE				; последовательное чтение открытого файла
+ SETVAR _INIT_TEKDIR				; создание таблицы кластеров текущей директории
+ SETVAR _POS_FILES				; работа с текущей позицией
+ SETVAR _ROOT_DIR				; переход в корень текущего диска
+
+; подфункции функции _POS_FILES
+ INIT_VAR
+ SETVAR _POSTF00				; сохранение текущей позиции файла
+ SETVAR _POSTF01				; восстановление текущей позиции файла
+ SETVAR _POSTF02				; сброс текущей позиции в 0 и поиск первой "легальной" записи
+ SETVAR _POSTF03				; перемотать на "B" файлов назад
+ SETVAR _POSTF04				; перемотать на "B" файлов вперед
+ SETVAR _POSTF05				; подсчет количества "легальных" записей
+ SETVAR _POSTF06				; установить номер "легальной" записи из "BC"
+ SETVAR _POSTF07				; вернуть в "BC" текущий номер "легальной" записи
+
+; номера поддерживаемых расширений для RST 8
+; "TRDSCLFDITAPSPG$C FNTBMPROM"		;RST 8
+; "TRDSCLFDITAPSPG$C BMPSNA"		;MAINMENU
+ INIT_VAR 1
+ SETVAR _TRD		;TRD
+ SETVAR _SCL		;SCL
+ SETVAR _FDI		;FDI
+ SETVAR _TAP		;TAP
+ SETVAR _SPG		;SPG
+ SETVAR _HOB		;$C
+ SETVAR _FNT		;FNT
+ SETVAR _BMP		;BMP
+ SETVAR _ROM		;ROM
+ SETVAR _HOB1		;$??
+ SETVAR _HOB2		;!??
+
+; внутренние номера типов разделов
+ INIT_VAR
+ SETVAR _NO_INIT
+ SETVAR _FAT12					; 00 = 01	FAT12
+ SETVAR _FAT16					; 01 = 04,06,0E	FAT16
+ SETVAR _FAT32					; 02 = 0B,0C	FAT32
+ SETVAR _TRDOS					; 03 		TR-DOS диск
+ SETVAR _UNKNOWN				;		файловая система еще не определена или неизвестна
+
+;описатели для рисования окна
+ INIT_VAR
+ SETVAR _X_COORD
+ SETVAR _Y_COORD
+ SETVAR _V_SIZE
+ SETVAR _H_SIZE
+ SETVAR _COLOR_WIN
+ SETVAR _COLOR_CUR
+ SETVAR _FLAGS
+ SETVAR _NUM_PKT
+ SETVAR _TEK_PKT_L
+ SETVAR _TEK_PKT_H
+ SETVAR _NUM_KOL_L
+ SETVAR _NUM_KOL_H
+ SETVAR _ADR_TXT_L
+ SETVAR _ADR_TXT_H
+ SETVAR _ADR_PRG_L
+ SETVAR _ADR_PRG_H
+ SETVAR _ADR_MOUSE_L
+ SETVAR _ADR_MOUSE_H
+ SETVAR _ADR_HOTKEY_L
+ SETVAR _ADR_HOTKEY_H
+
+JUMP_SIZE	EQU 3
+
+ INIT_VAR 0X100
+ SETVAR _NEMO_RD_ID,JUMP_SIZE			; чтение сектора идентификации HDD с определением его наличия
+ SETVAR _NEMO_RD_SEC,JUMP_SIZE			; чтение секторов HDD
+ SETVAR _NEMO_WR_SEC,JUMP_SIZE			; запись секторов HDD
+
+ SETVAR _ZCSD_RD_ID,JUMP_SIZE			; чтение сектора идентификации набортной SD карты
+ SETVAR _ZCSD_RD_SEC,JUMP_SIZE			; чтение секторов набортной SD карты
+ SETVAR _ZCSD_WR_SEC,JUMP_SIZE			; запись секторов набортной SD карты
+
+ SETVAR _NGSSD_RD_ID,JUMP_SIZE			; чтение сектора идентификации SD карты NeoGS
+ SETVAR _NGSSD_RD_SEC,JUMP_SIZE			; чтение секторов SD карты NeoGS
+ SETVAR _NGSSD_WR_SEC,JUMP_SIZE			; запись секторов SD карты NeoGS
+
+ SETVAR _INIT_KEYB_PS2,JUMP_SIZE		; включение доступа к PS/2 клавиатуре
+ SETVAR _READ_KEYB_PS2,JUMP_SIZE		; считывание и декодирование сканкодов PS/2
+ SETVAR _READ_STAT_PS2,JUMP_SIZE		; чтение статуса и декодированных клавиш PS/2
+
+ SETVAR _INIT_TABLE_MEM,JUMP_SIZE		; получение таблицы занятых/свободных страниц памяти
+ SETVAR _GET_TABLE_MEM,JUMP_SIZE		; сброс всех занятых страницы памяти
+ SETVAR _ALLOC_PAGE,JUMP_SIZE			; получение номера свободной страницы памяти
+ SETVAR _FREE_PAGE,JUMP_SIZE			; освобождение по номеру страницы памяти

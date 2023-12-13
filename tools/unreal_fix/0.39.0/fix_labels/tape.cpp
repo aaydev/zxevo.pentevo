@@ -31,6 +31,7 @@ unsigned tape_infosize;
 
 static unsigned appendable;
 
+
 typedef int (__cdecl *inflateInit__ptr)(z_streamp strm, const char *version, int stream_size);
 typedef int (__cdecl *inflate_ptr)(z_streamp strm, int flush);
 typedef int (__cdecl *inflateEnd_ptr)(z_streamp strm);
@@ -43,8 +44,12 @@ static HMODULE ZlibDll = nullptr;
 
 bool ZlibInit()
 {
-    ZlibDll = LoadLibrary("zlib1.dll");
-    if(!ZlibDll)
+#if defined(_WIN64) || defined(AMD64)
+	ZlibDll = LoadLibrary("zlib64.dll");
+#else
+	ZlibDll = LoadLibrary("zlib1.dll");
+#endif
+	if(!ZlibDll)
     {
         return false;
     }
@@ -73,6 +78,7 @@ void ZlibDone()
         FreeLibrary(ZlibDll);
 }
 }
+
 
 // Ищет длину импульса в алфавите и возвращает индекс найденного элемента
 // Если импульс с такой шириной не найден, он добавляется в конец и возвращается его индекс

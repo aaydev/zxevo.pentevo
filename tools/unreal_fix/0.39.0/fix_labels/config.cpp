@@ -14,6 +14,7 @@
 #include "fontatm2.h"
 #include "snapshot.h"
 #include "sndrender/sndcounter.h"
+#include "sndrender/dev_moonsound.h"
 #include "sound.h"
 #include "sdcard.h"
 #include "gs.h"
@@ -256,13 +257,36 @@ void load_ay_vols()
    }
 }
 
+#if (defined _MSC_VER)
+int strcasecmp(char const *s1, char const *s2)
+{
+	return ::_stricmp(s1, s2);
+}
+#endif
+
+
 void load_config(const char *fname)
 {
    char line[FILENAME_MAX];
    load_errors = 0;
 
-   GetModuleFileName(nullptr, ininame, sizeof ininame);
-   strlwr(ininame); *(unsigned*)(strstr(ininame, ".exe")+1) = WORD4('i','n','i',0);
+   GetModuleFileName(nullptr, ininame, sizeof(ininame));
+
+   //strlwr(ininame); // WHAT'S THIS FOR???
+   
+   // this was a flawed code since strstr searches FIRST occurence!
+   //*(unsigned*)(strstr(ininame, ".exe")+1) = WORD4('i','n','i',0);
+
+   // make default config name: for EXENAME64.exe or EXENAME.exe that will be EXENAME.ini
+   size_t ininame_len = strlen(ininame);
+   const char const_64_exe[] = "64.exe";
+   const char const_exe[] = ".exe";
+   const char const_ini[] = ".ini";
+   //
+   if( !strcasecmp(ininame + ininame_len - sizeof(const_64_exe) + 1, const_64_exe) )
+   	memcpy(ininame + ininame_len - sizeof(const_64_exe) + 1, const_ini, sizeof(const_ini)); // fix last "64.exe" to ".ini"
+   else if( !strcasecmp(ininame + ininame_len - sizeof(const_exe) + 1, const_exe) )
+   	memcpy(ininame + ininame_len - sizeof(const_exe) + 1, const_ini, sizeof(const_ini)); // fix last ".exe" to ".ini"
 
    if (fname && *fname) {
       char *dst = strrchr(ininame, '\\');
@@ -339,6 +363,8 @@ void load_config(const char *fname)
    GetPrivateProfileString(rom, "GS", nil, conf.gs_rom_path, sizeof conf.gs_rom_path, ininame);
    addpath(conf.gs_rom_path);
    #endif
+   GetPrivateProfileString(rom, "MOONSOUND", nil, conf.moonsound_rom_path, sizeof conf.moonsound_rom_path, ininame);
+   addpath(conf.moonsound_rom_path);
    addpath(conf.atm1_rom_path);
    addpath(conf.atm2_rom_path);
    addpath(conf.atm3_rom_path);
@@ -593,6 +619,8 @@ void load_config(const char *fname)
        conf.sound.saa1099 = SAA_ZXM;
    else if(!strnicmp(line, "TFMpro", 6))
        conf.sound.saa1099 = SAA_TFM_PRO;
+   conf.sound.moonsound = GetPrivateProfileInt(sound, "MoonSound", 0, ininame);
+   conf.sound.moonsound_vol = GetPrivateProfileInt(sound, "MoonSoundVol", 4000, ininame);
 
    #ifdef MOD_GS
    conf.sound.gs_vol = int(GetPrivateProfileInt(sound, "GSVol", 8000, ininame));
@@ -887,6 +915,12 @@ static void apply_memory()
        }
    }
    #endif
+
+   if (zxmmoonsound.load_rom(conf.moonsound_rom_path))
+   {
+       errmsg("failed to load MoonSound ROM, MoonSound disabled\n");
+       conf.sound.moonsound = 0;
+   }
 
    if (conf.ramsize != 128 && conf.ramsize != 256 && conf.ramsize != 512 && conf.ramsize != 1024 && conf.ramsize != 4096)
       conf.ramsize = 0;

@@ -1,0 +1,47 @@
+
+; LAST UPDATE: 19.07.2020 savelij
+
+; загрузчик с SD карты
+SDCARDBOOT	DI
+		LD HL,ERS_FLAGS
+		SET B_RUN_FAT,(HL)		; работать будем с FAT
+	RST8 _COM_DEV,_KOL_VOL
+		LD A,E
+		AND A
+		JP Z,_STUPID
+		LD HL,ADR_CAT-0X100		; адрес куда положить таблицу найденных разделов
+		PUSH HL
+	RST8 _COM_DEV,_GET_FNDVOLUME		; получение таблицы найденных разделов
+		PUSH DE
+		LD A,E
+		DEC A
+	RST8 _COM_DEV,_SET_VOL
+	RST8 _COM_FAT,_ROOT_DIR
+		POP DE
+		DEC E
+		LD L,E
+		LD H,0
+		ADD HL,HL
+		ADD HL,HL
+		ADD HL,HL
+		POP DE
+		ADD HL,DE
+		LD A,(HL)
+		CP _SD_SDZ
+		JP NZ,RESTART
+		LD HL,BOOTNAME
+	RST8 _COM_FAT,_FIND_NAME
+		JP C,_STUPID
+		LD DE,0X0B			; нужен байт по смещению
+		ADD HL,DE			; для определения файл или директория
+		LD A,(HL)			; из этого байта нужен один бит
+		SBC HL,DE
+		AND 0X10			; проверили
+		JP NZ,RESTART			; это директория
+		LD A,7
+	RST8 _COM_FAT,_POS_FILES
+		LD HL,BUF_FILEITEM
+	RST8 _COM_FAT,_READ_DIR			; получили описатель по установленному номеру
+		JP GO_RUN_HOB			; если это файл, то запускаем кодовый блок
+
+BOOTNAME	DZ "SD_BOOT.$C"

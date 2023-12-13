@@ -1,0 +1,1025 @@
+
+; LAST UPDATE: 24.02.2023 savelij
+
+PAGE
+		TITLE "main.a80"
+
+		include ../../macros.a80
+		include ../../define.a80
+		include ../../global_vars.a80
+		include ../../ports_ide.a80
+		include ../../basic_tokens.a80
+		include ../../bas_trd_vars.a80
+		include ../../tmpkeys.a80
+		include ../../version.a80
+		include ../../nums_devices.a80
+		include ../../ports_ngs.a80
+
+TO_DOS		EQU 0x3D2F
+
+ INIT_VAR 0xC000
+ SETVAR ADR_CAT,	0xC00		; адрес буфера для дискеты или образа
+ SETVAR ADR_CAT_FAT,	0x800		; адрес буфера найденных файлов на FAT
+ SETVAR ADR_CAT_SCRH,	0x1000		; адрес буфера для поиска файлов
+ SETVAR BUFTSC,		0x180		; 180 таблица адресов строк экрана		F700
+ SETVAR MOUSE_BUFF,	0x10		; 10 буфер сохранения под мышью
+ SETVAR COLBUF,		0x20		; 20 буфер сохранения цвета
+ SETVAR BUF_FILEITEM,	0x20		; 20 буфер описателя файла
+ SETVAR BUF_RDSEC,	0x200		; 200 буфер сектора при проверке файлов		F900
+ SETVAR BUF_RDPATH,	0x100		; 100 буфер текущего пути			FB00
+ SETVAR BUF_LEVDIR,	0x400		; 400 буфер уровней дир для файлового окна	FC00
+ SETVAR BUF_LINESWIN,	0x200		; 200 буфер для описателей курсора под мышью
+
+H_FILE		EQU 16			; ширина окна для вывода файлов c TR-DOS
+V_FILE		EQU 24			; высота окна для вывода файлов c TR-DOS
+FV_FILE		EQU 26			; ширина окна для вывода файлов c FAT
+FV_FILE6	EQU ((FV_FILE-3)*8)/6	; ширина окна для вывода файлов с FAT в знакоместах 6х8
+FH_FILE		EQU 24			; высота окна для вывода файлов с FAT
+WIDE		EQU 1			; два пробела с боков
+
+CMOS_ON		EQU 0x80
+CMOS_OFF	EQU 0
+
+		ORG 0x6000
+		DI
+		CALL CLEAR_128K
+		LD A,0x10
+		CALL SET_7FFD			; включение басика48 и страницы 0
+		CALL ADRTSC			; создание таблицы адресов строк экрана
+	RST8 _MOUNTER,_GET_VIRT_BITS
+	RST8 _COM_DEV,_DEVFIND
+		JR C,START3
+	RST8 _MOUNTER,_FIND_MOUNTED
+START3
+	RST8 _COM_DEV,_CONTROL_SD
+		EI
+		HALT
+		DI
+		LD H,0
+		CALL READCMOS			; чтение секунд для определения наличия кмос
+		INC L
+		LD HL,ERS_FLAGS
+		JR NZ,START2			; если прочиталось 0xFF, то
+		RES B_CLOCK_ON,(HL)		; кмос не найден
+		JR START1
+
+START2		SET 2,(HL)			; кмос найден
+START4		CALL SET_MODES
+START1		CALL DETECTMOUSE		; определение наличия мыши
+		CALL GLUDIN			; бумкнули в AY
+		CALL MOUSE			; опрос мыши
+		LD HL,0x807C
+		LD (ARXY),HL			; установка дефолтной позиции мыши при старте
+		CALL DISK_NONE
+		CALL SYSTEM
+		CALL RESET_VG			; сброс вгшки и установка перехватчика ошибок dos
+RESTART		DI
+		LD A,0x10
+		CALL SET_7FFD			; включили басик48 и страничку 0
+		CALL TURBO_7MHZ
+		CALL SYSTEM
+		RES 3,(IY+55)
+		LD SP,0x6000
+		LD HL,0x3E00
+		PUSH HL
+		LD HL,0x1303
+		PUSH HL				; сформировали дно стека
+		LD (ERR_SP),SP			; занесли текущий адрес в переменые басика
+		LD (TEK_SP),SP
+		CALL S_FACE			; вывод на экран основного вида
+		LD IX,MAINMENU
+	RST8 _WINW
+		RES 5,(IY+1)			; на клавиатуре ничего не нажато
+		LD H,HDD_TIMEOUT
+		CALL READCMOS
+		RRCA
+		RRCA
+		RRCA
+		RRCA
+		AND 0x0F
+		LD (SCRSAV.TIMEOUT),A
+		CALL RESET_SCREENSAVER
+
+	IFDEF TESTEMUFDD
+; test
+	PEC_ON M_SHADOW_BF
+	EVOPORT WIN_P2,RAM_DATARAMD
+	EVOPORT WIN_P2,ZXSTD_CPU2
+	PEC_OFF M_SHADOW_BF!0xFF
+
+		LD HL,VIRT_REAL_DRIVE << 8
+		CALL WRITECMOS
+		LD HL,ADR_TXT_BOOT
+		JP RUNFILE1
+
+ADR_TXT_BOOT	DB "boot    "
+; test
+	ENDIF
+
+; вход в главный цикл опроса управления
+_RULILKA	EI	
+		LD A,(ERS_FLAGS)
+		AND M_MOUSE_ON			; проверка наличия мыши
+		JR Z,_RULNMO
+; FIX колесо мыши
+MKEYPR		EI
+		HALT
+		LD A,HIGH (MOUSE_KEYS)
+		IN A,(LOW (MOUSE_KEYS))
+		CPL
+		AND 7
+		JR NZ,MKEYPR
+		CALL SAVE2X2			; если меню напечатали поверх стрелки
+_RULNMO		CALL SET_ADR_ATR		; установка нового адреса для цветной полоски
+		JR MAINLOP
+
+; нажата стрелка вверх
+UP		CALL CURSOR_UP			; сменили текущий пункт на -1
+		JR SET_POS1			
+
+; нажата стрелка вправо
+RIGHT		BIT 1,(IX+_FLAGS)		; проверка просто меню или файловое
+		PUSH AF				; сохранили результат проверки
+		CALL NZ,PAGEDN			; если файловое, то листание страничное
+		POP AF				; восстановили результат проверки
+		JR NZ,SET_POS1			; если файловое продолжаем
+		LD A,(IX+_NUM_KOL_L)
+		AND A
+		JR Z,SET_POS
+		DEC A				; иначе переход курсора на последний пункт
+		JR SET_POS			; изменяем положение курсора и продолжаем
+
+; нажата стрелка вниз
+DOWN		CALL CURSOR_DOWN		; сменили текущий пункт на +1
+		JR SET_POS1
+
+; нажата стрелка влево
+LEFT		BIT 1,(IX+_FLAGS)		; проверка просто меню или файловое
+		PUSH AF				; сохранили результат проверки
+		CALL NZ,PAGEUP			; если файловое, то листание страничное
+		POP AF				; восстановили результат проверки
+		JR NZ,SET_POS1			; если файловое продолжаем
+		XOR A				; иначе переход курсора на первый пункт
+SET_POS		LD (IX+_NUM_PKT),A		; изменили позицию курсора
+		LD (IX+_TEK_PKT_L),A
+		LD (IX+_TEK_PKT_H),0		; изменили номер выбранного пункта
+SET_POS1	CALL COLOR_CURSOR		; перерисовка цветной полоски меню
+SET_POS2	CALL GLUDIN			; бумкнули в AY
+MAINLOP
+		CALL CHECK_SCREENSAVER
+	RST8 _COM_DEV,_CONTROL_SD		; проверка наличия SD карт и обновление индикаторов
+		LD A,(ERS_FLAGS)
+		AND M_MOUSE_ON			; проверка наличия мыши
+		JP Z,MAINNMO
+		LD HL,(ARXY)			; старая координата мыши
+		PUSH HL
+		CALL MOUSE			; опрос портов мыши
+		POP BC
+		AND A
+		SBC HL,BC
+		JR Z,NO_SELECT			; не было движения мыши
+		CALL RESTORE_KOSHAK		; было движение мыши, сброс счетчиков кошака
+		CALL MOUOPT			; проверка наведения мыши на заданное окно
+NO_SELECT	LD BC,MOUSE_KEYS
+		IN A,(C)			; опрос нажатия кнопок мыши
+		AND 7
+		CP 6
+		JR Z,PRESS_MOUSE		; если нажата левая кнопка мыши
+		CP 5
+		JP Z,RESTART			; если нажата правая кнопка мыши
+		CALL PRINTTIME			; обновили время если изменилось
+		EI
+		HALT
+		CALL REST2X2			; восстановили кусок экранаа под мышью
+		CALL DRAW_MOUSE			; нарисовали курсор мыши
+		JR MAINQMO			; продолжение опроса
+
+PRESS_MOUSE	CALL OPMSPL
+		AND A
+		JR Z,CP_MOUSE4
+		LD (LAST_K),A
+		CALL TIMELP
+		JR SELECT_KEY
+
+CP_MOUSE4	CALL MOUOPT			; проверка попадания мыши в пределы текущего окна
+		JR C,MAINNMO			; не попали и едем далее
+		LD L,(IX+_ADR_HOTKEY_L)
+		LD H,(IX+_ADR_HOTKEY_H)
+		LD A,H
+		OR L
+		JR Z,ENTER			; списка хоткеев нет, переходим по номеру пункта
+		LD E,(IX+_NUM_PKT)		; взяли номер пункта куда попали мышью
+		LD D,0
+		ADD HL,DE			; адрес хоткея выбранного пункта
+		LD DE,LAST_K
+		LDI				; эмитация нажатия заданной кнопки
+		JR ENTER
+		
+MAINNMO		CALL PRINTTIME			; обновление времени, если в оно обновилось
+		EI
+		HALT
+MAINQMO		BIT 5,(IY+1)			; проверка нажатия кнопок клавиатуры
+		CALL Z,CP_TIME_KOSHAK		; если не нажато ничего, проверяем счетчик кошака
+		JP Z,MAINLOP			; продолжаем опрос управления
+		CALL 0x1F54			; проверка на BREAK
+		JP NC,RESTART			; если BREAK нажат перезапускаемся
+SELECT_KEY	CALL GLUDIN
+	 	CALL RESTORE_KOSHAK		; нажато нечто на клаве, сброс счетчика кошака
+		CALL RESET_SCREENSAVER
+		RES 5,(IY+1)			; на клавиатуре ничего не нажато
+		LD HL,LAST_K
+		LD A,(HL)			; взяли нажатую клавишу
+		LD B,0
+		LD HL,MAIN_KEYS
+		LD C,(HL)			; количество доступных кнопок
+		LD D,C
+		INC HL
+		CPIR
+		JR NZ,NOMAINKEYS		; ничего не нашли, далее смотрим кнопки текущего окна
+						; нажато что-то из главных кнопок, доступных всегда
+		LD HL,ADREXEKEYS
+		LD A,D				; количество кнопок в таблице -1
+		SUB C				; получили выбранный номер
+		DEC A
+		JR JUMP2HL
+
+; проверка хоткеев в текущем окне
+NOMAINKEYS	LD L,(IX+_ADR_HOTKEY_L)
+		LD H,(IX+_ADR_HOTKEY_H)
+		LD C,A
+		LD A,H
+		OR L
+		JP Z,MAINLOP			; если списка нет, продолжаем опрос
+		LD A,C
+		LD C,(IX+_V_SIZE)
+		LD E,(HL)
+		INC HL
+		DEC C				; количество кнопок
+		DEC C				; высота окна -2
+		LD D,C
+		LD B,0
+		CPIR				; сканирование списка заданных клавиш
+		JR NZ,OSTAT_KEYS
+		LD A,D				; высота окна
+		SUB C
+		DEC A				; получили номер нажатой кнопки и -1
+		LD (IX+_NUM_PKT),A		; номер пункта в окне
+		LD (IX+_TEK_PKT_L),A		; номер нажатой клавиши по указанному списку
+ENTER		LD A,(ERS_FLAGS)
+		AND M_MOUSE_ON
+		CALL NZ,TIMELP			; обновление времени если оно изменилось	
+		CALL REST2X2			; стерли курсор мыши
+		CALL GLUDIN			; бумкнули в AY
+		LD A,(IX+_NUM_PKT)		; номер из списка который вызвать
+JUMP2HL1	LD L,(IX+_ADR_PRG_L)
+		LD H,(IX+_ADR_PRG_H)		; взяли список адресов 1 из которых будем вызывать
+JUMP2HL		ADD A,A
+		ADD A,L
+		LD L,A
+		ADC A,H
+		SUB L
+		LD H,A
+		LD A,(HL)
+		INC HL
+		LD H,(HL)
+		LD L,A
+		JP (HL)
+
+OSTAT_KEYS	EX AF,AF'
+		LD A,E
+		SUB D
+		JP Z,MAINLOP
+		LD C,A
+		EX AF,AF'
+		CPIR
+		JP NZ,MAINLOP
+		LD A,E
+		SUB C
+		DEC A
+		JR JUMP2HL1
+
+; изменение режима памяти
+CHNGMODE	LD HL,MEMMODE
+		DEC (HL)			; сменили режим памяти
+		JP P,CHNGMODEY
+		LD (HL),2			; если перешли через 0, то выставили режим 48
+CHNGMODEY	LD A,(ERS_FLAGS)
+		AND M_CLOCK_ON			; проверка наличия кмоса
+		RET Z
+		LD A,(ERS_FLAGS)
+		AND M_EMU_TAPE
+		RLCA
+		RLCA
+		LD L,A
+		LD A,(MEMMODE)
+		OR L
+		LD L,A
+CHNGMODEY1	LD A,(SYSREG1)
+		AND 0x10
+		RLCA
+		RLCA
+		RLCA
+		OR L
+		LD C,A
+		LD H,CMOS_BYTE_01
+		CALL READCMOS
+		AND %01111100
+		OR C
+CHANGE_MODES	LD L,A
+		CALL WRITECMOS			; сохранили в кмос измененый режим
+		CALL REST2X2
+		CALL SET_MODES
+		CALL PRT_MODES
+		LD A,(ERS_FLAGS)
+		AND M_MOUSE_ON
+		JP Z,MAINLOP
+		CALL DRAW_MOUSE
+		CALL TIMELP
+		JP MAINLOP
+
+; изменение режима турбо 0=3,5MHZ, 1=7MHZ, 2-14MHZ
+CHNGTURBO	LD HL,TURBO_NUM
+		INC (HL)			; сменили turbo режим
+		LD A,(HL)
+		CP 3
+		JR C,CHNGTURBO1
+		LD (HL),0			; если перешли через 0, то выставили режим 14MHZ
+CHNGTURBO1	LD A,(HL)
+		AND A
+		LD DE,0x1000
+		JR Z,CHNGTURBO2
+		DEC A
+		LD DE,0
+		JR Z,CHNGTURBO2
+		LD DE,0X10*0X100+M_TURBO14
+CHNGTURBO2	LD A,D
+		LD HL,SYSREG1
+		LD A,(HL)
+		AND %11101111			; инверсия бита турборежима
+		OR D
+		LD (HL),A
+		LD H,CMOS_BYTE_00
+		CALL READCMOS
+		AND M_TURBO14!0XFF
+		OR E
+		LD L,A
+		LD H,CMOS_BYTE_00
+		CALL WRITECMOS
+		JP CHNGMODEY
+
+CHNGTAPMODE	LD H,CMOS_BYTE_00
+		CALL READCMOS
+		XOR M_EMUL_TAPE
+		JR CHANGE_MODES
+
+CHNGGLUKMOD	LD H,CMOS_BYTE_00
+		CALL READCMOS
+		AND MKOL_MODES!0xFF
+		LD C,A
+		LD A,L
+		AND MKOL_MODES
+		INC A
+		CP KOL_MODES
+		JR C,CHNGGLUKMOD1
+		XOR A
+CHNGGLUKMOD1	OR C
+		LD L,A
+		JR CHANGE_MODES
+
+EN_AUTOMNT	LD H,CMOS_BYTE_01
+		CALL READCMOS
+		XOR M_AUTOMOUNT
+		JP CHANGE_MODES
+
+EN_LOADFONT	LD H,CMOS_BYTE_00
+		CALL READCMOS
+		XOR M_RELOAD_FONT
+		JP CHANGE_MODES
+
+SET_TYPEFONT	LD H,CMOS_BYTE_00
+		CALL READCMOS
+		XOR M_TYPE_FONT
+		PUSH AF
+		PUSH HL
+		AND M_TYPE_FONT
+		JR Z,SETTYPEFONT
+		LD A,1
+SETTYPEFONT
+	RST8 _SETUP_FONT
+		POP HL
+		POP AF
+		JP CHANGE_MODES
+
+; включение/выключениe отображения часов
+CMOS_ONOFF	LD A,(ERS_FLAGS)
+		AND M_CLOCK_ON			; проверка наличия кмоса
+		JP Z,MAINLOP
+		LD H,CMOS_BYTE_01
+		CALL READCMOS
+		XOR M_CLOCK_VIEW
+		LD L,A
+		PUSH AF
+		LD H,CMOS_BYTE_01
+		CALL WRITECMOS
+		POP AF
+		AND M_CLOCK_VIEW
+		JP Z,MAINLOP
+		LD HL,TIME_OFF
+	RST8 _PRINT_MESSAGE
+		JP MAINLOP
+
+;включение/выключение курсора мыши
+MOUSE_ONOFF	LD HL,ERS_FLAGS
+		LD A,(HL)
+		XOR M_MOUSE_ON			; инверсия отображения мыши
+		LD (HL),A
+		AND M_MOUSE_ON
+		CALL NZ,DETECTMOUSE		; если включили, проверяем наличие
+		CALL NC,REST2X2			; если мышь не найдена, то выключаем отображение
+		JP MAINLOP
+
+;ожидание нажатия чего-нибудь после ошибки
+EXIT4ERROR	RES 5,(IY+1)			; на клавиатуре ничего не нажато
+		LD BC,MOUSE_KEYS
+		IN D,(C)
+E4E1		CALL PRINTTIME
+		EI
+		HALT
+		BIT 5,(IY+1)
+		JR NZ,E4E3
+		LD A,(ERS_FLAGS)
+		AND M_MOUSE_ON
+		JR NZ,E4E1
+		LD A,HIGH (MOUSE_KEYS)
+		IN A,(LOW (MOUSE_KEYS))
+		CP D
+		JR Z,E4E1
+E4E2		EX AF,AF'
+		CALL TIMELP
+		EX AF,AF'
+		RRA
+		RET
+
+E4E3		XOR A
+		IN A,(0XFE)
+		CPL
+		AND 0x1F
+		JR NZ,E4E3
+		LD (LAST_K),A
+		RES 5,(IY+1)			; на клавиатуре ничего не нажато
+		RET
+
+; печать текущего выбранного дисковода
+PRT_DRV_SYM	LD A,(TRD_5CF8)
+		ADD A,"A"
+		LD (TXT_DRIVE),A
+		LD HL,TRDDRV_MODE
+	RST8 _PRINT_MESSAGE
+		RET
+
+; распечатка текущего режима
+PRT_MODES	LD HL,SPEED_MODE
+	RST8 _PRINT_MESSAGE
+		LD HL,MEM_MODE
+	RST8 _PRINT_MESSAGE
+		LD HL,EMUTAPLOAD
+	RST8 _PRINT_MESSAGE
+		LD HL,SET_RESET
+	RST8 _PRINT_MESSAGE
+		LD HL,ROMLOADFONT
+	RST8 _PRINT_MESSAGE
+		LD HL,TYPESFONT
+	RST8 _PRINT_MESSAGE
+		LD HL,TXT_AUTOMOUNT
+	RST8 _PRINT_MESSAGE
+		RET
+
+; распечатка текущего виртуального дисковода
+PRT_VIRTDRV
+	RST8 _MOUNTER,_GET_VIRT_BITS
+		LD D,A
+		LD H,VIRT_REAL_DRIVE
+		CALL READCMOS
+		AND 3
+		LD B,A
+		INC B
+		ADD A,'A'
+		LD C,A
+		LD A,%10000000
+.L1		RLCA
+		DJNZ .L1
+		AND D
+		LD HL,VIRT_DRIVE
+		JR NZ,PRTVIRTDRV2
+		LD (HL)," "
+		INC HL
+		LD (HL),C
+		INC HL
+		LD (HL)," "
+		JR PRTVIRTDRV1
+
+PRTVIRTDRV2	LD (HL),"o"
+		INC HL
+		LD (HL),"f"
+		INC HL
+		LD (HL),"f"
+PRTVIRTDRV1	LD HL,VIRTUAL_DRV
+	RST8 _PRINT_MESSAGE
+		LD HL,ADR_CAT
+	RST8  _MOUNTER,_GET_MOUNTED
+		LD HL,ADR_CAT
+		LD DE,MNT_DRV_A
+		CALL COPY_MNTNAME
+		LD L,0x40
+		LD DE,MNT_DRV_B
+		CALL COPY_MNTNAME
+		LD L,0x80
+		LD DE,MNT_DRV_C
+		CALL COPY_MNTNAME
+		LD L,0xC0
+		LD DE,MNT_DRV_D
+		CALL COPY_MNTNAME
+		CALL GET_RAMD_NAME
+		LD HL,MOUNTED_DRV
+	RST8 _PRINT_MESSAGE
+		RET
+
+COPY_MNTNAME	PUSH HL
+		LD A,(HL)
+		AND A
+		JR NZ,COPY_MNTNAME1
+		LD HL,TXT_NONE
+		LD BC,0x0C
+		JR COPY_MNTNAME3
+
+COPY_MNTNAME1	LD BC,8
+		LDIR
+		LD A,"."
+		LD (DE),A
+		INC DE
+		LD C,3
+COPY_MNTNAME3	LDIR
+		POP HL
+		RET
+
+; получение имени файла загруженного в рамдиск
+GET_RAMD_NAME
+	PEC_ON M_SHADOW_BF
+		LD BC,WIN_P2
+		LD A,RAM_RAMDISK
+		OUT (C),A
+		LD DE,CPU2+0x3DFF
+		LD A,(DE)
+		AND A
+		JR Z,GRN1
+		LD HL,GRN1
+		PUSH HL
+		LD HL,IN_RAMDISK
+		LD B,8
+		CALL GRN2
+		LD B,3
+		LD (HL),"."
+		INC HL
+GRN2		LD A,(DE)
+		LD (HL),A
+		DEC D
+		INC HL
+		DJNZ GRN2
+		RET
+
+GRN1		LD BC,WIN_P2
+		LD A,ZXSTD_CPU2
+		OUT (C),A
+	PEC_OFF M_SHADOW_BF
+		RET
+
+; вывод основного меню и надписей
+S_FACE		LD A,7
+		CALL CLS
+		LD HL,TXTFULLSCR
+	RST8 _PRINT_MESSAGE
+	RST8 _VERSION
+		BIT B_INCORRECTFPGA,A
+		JR Z,.L1
+		RES B_INCORRECTFPGA,A
+		AND A
+		JR Z,.L1
+		LD HL,INCORRECTFPGA
+	RST8 _PRINT_MESSAGE
+.L1		CALL PRT_DRV_SYM		; печать текущего дисковода
+		CALL PRT_MODES			; печать текущего режима
+		CALL PRT_VIRTDRV		; печать текущего виртуального дисковода
+		XOR A
+		JP DRAW_KOSHAK			; вывод 0 фазы кошака
+
+SET_EFF7_A_	LD A,(SYSREG1)
+SET_EFF7	LD BC,PENT_CONF
+		OUT (C),A
+		RET
+
+SET_7FFD_0	LD A,0x10
+SET_7FFD	PUSH BC
+		LD BC,CONF_128
+		OUT (C),A
+		POP BC
+		RET
+
+MEMSET		CALL CLEAR_128K
+		LD A,(TURBO_NUM)		; установка TURBO режима
+		AND A
+		LD DE,0x10A3			; 3,5MHZ ports EFF7 BIT4=1 xx77 BIT3=0
+		JR Z,MEMSET01
+		DEC A
+		LD DE,0xA3			; 7MHZ ports EFF7 BIT4=0 xx77 BIT3=0
+		JR Z,MEMSET01
+		LD DE,0x10AB			; 14MHZ ports EFF7 BIT4=1 xx77 BIT3=1
+MEMSET01	LD BC,0xFF77
+	PEC_ON M_SHADOW_BF
+		OUT (C),E
+	PEC_OFF M_SHADOW_BF
+		LD A,D
+		CALL SET_EFF7
+		LD A,(MEMMODE)
+		AND A
+		RET Z				; режим полной памяти
+MEMSET1		DEC A
+		JR Z,MEMORY48
+; включение режима BASIC128
+ON_BIT128	LD A,(SYSREG1)
+		AND 0x10
+		ADD A,4
+		CALL SET_EFF7
+		JR SET_7FFD_0
+
+; включение режима BASI48
+MEMORY48	CALL ON_BIT128
+		LD A,0x30
+		JR SET_7FFD
+
+; чтение CMOS и изменение сообщений для вывода на экран об установленных режимах
+SET_MODES	LD H,0x0B			; читать режим счета часов
+		CALL READCMOS
+		RES 2,L				; принудительно включаем бинарный счет
+		CALL WRITECMOS			; сохраняем изменения
+		LD H,CMOS_BYTE_01		; читаем установки турбо и памяти
+		CALL READCMOS
+		AND M_TURBO357
+		RRCA
+		RRCA
+		RRCA
+		LD (SYSREG1),A			; содержимое для записи в порт EFF7
+		LD B,A
+		LD A,L
+		AND _128K | _48K | _1MB
+		LD (MEMMODE),A			; выбранный режим памяти
+		LD H,CMOS_BYTE_00
+		CALL READCMOS			; читаем основные установки
+		LD C,A
+		AND M_TURBO14
+		LD HL,TURBO_NUM			; номер турбо режима
+		LD (HL),2			; режим 14МГЦ
+		JR NZ,SETMODES04
+		LD A,B
+		DEC (HL)			; режим 7МГЦ
+		AND 0x10
+		JR Z,SETMODES04
+		DEC (HL)			; режим 3,5МГЦ
+SETMODES04	LD A,(HL)			; взяли текущий турбо режим
+		ADD A,A
+		ADD A,A
+		LD E,A
+		LD D,0
+		LD HL,TXTTURBOMODE		; текст турбо режимов
+		ADD HL,DE			; перешли на нужный текст
+		LD DE,TXT_SPEED
+		LD A,C
+		LDI
+		LDI
+		LDI
+		LDI				; перенесли для вывода экран
+		LD C,A
+		AND M_EMUL_TAPE
+		LD HL,EMTAPLOAD
+		CALL SET_ONOFF			; перенос символов для вывода на экран, ON или OFF
+		LD A,C
+		AND M_RELOAD_FONT
+		XOR M_RELOAD_FONT
+		LD HL,EROMLOADFONT
+		CALL SET_ONOFF			; перенос символов для вывода на экран, ON или OFF
+		LD A,C
+		AND M_TYPE_FONT
+		PUSH BC
+		LD HL,TXTMODTYPE
+		LD BC,5
+		JR Z,SET_FONT2
+		ADD HL,BC
+SET_FONT2	LD DE,ETYPESFONT
+		LDIR
+		POP BC
+		LD A,C
+		AND MKOL_MODES
+		CP KOL_MODES
+		JR C,SETMODES03
+		XOR A
+SETMODES03	LD L,A
+		ADD A,A
+		ADD A,L
+		ADD A,A
+		ADD A,A
+		LD H,0
+		LD L,A
+		LD DE,TXT_RESETTO
+		ADD HL,DE
+		LD DE,TXT_RESET
+		LD A,C
+		LD BC,0x0C
+		LDIR
+		LD C,A
+		AND M_PRINTER_AY
+		LD HL,ETXT_AYPRINTER
+		CALL SET_ONOFF			; перенос символов для вывода на экран, ON или OFF
+SETMODES02	LD A,(MEMMODE)
+		AND A
+		LD HL,T_ALL
+		JR Z,SETMODES01			; all memory
+		LD HL,T_48
+		DEC A
+		JR Z,SETMODES01			; 48K
+		LD HL,T_128			; 128K
+SETMODES01	LD DE,TXT_MEM			; режим памяти
+		LD A,C
+		LD BC,3
+		LDIR
+		LD H,CMOS_BYTE_01
+		CALL READCMOS
+		PUSH AF
+		AND M_AUTOMOUNT
+		LD HL,ETXT_AUTOMOUNT
+		CALL SET_ONOFF
+		POP AF
+; для резидента HONEY COMANDER
+		AND M_REZIDENT
+		LD HL,TXT_REZIDENT
+		CALL SET_ONOFF
+		LD H,CMOS_BYTE_03
+		CALL READCMOS
+		AND M_KILL_REZIDENT
+		LD HL,TXT_KILLREZID
+		CALL SET_ONOFF
+		LD A,(ERS_FLAGS)
+		AND M_CLOCK_ON
+		RET Z
+		LD DE,VERS_CONF
+		LD L,0
+		CALL GET_VERS_EVO		; версия базовой конфигурации
+		LD DE,VERS_BOOT
+		LD L,1
+		JP GET_VERS_EVO			; версия AVRBOOT
+
+; перенос символов для вывода на экран, ON или OFF
+SET_ONOFF	LD DE,"n "
+		JR NZ,SET_ONOFF1
+		LD DE,"ff"
+SET_ONOFF1	LD (HL),D
+		INC HL
+		LD (HL),E
+		RET
+
+TURBO_7MHZ	LD E,0xA3
+		LD BC,0xFF77
+	PEC_ON M_SHADOW_BF
+		OUT (C),E
+	PEC_OFF M_SHADOW_BF
+		XOR A
+		JP SET_EFF7
+
+	IF 1
+; BC=BC/DE
+DIVIDE16	LD HL,0
+		LD A,0x11
+.L1		RL C
+		RL B
+		DEC A
+		RET Z
+		ADC HL,HL
+		JR NC,.L2
+		OR A
+		SBC HL,DE
+		JR .L1
+
+.L2		SBC HL,DE
+		JR NC,.L3
+		ADD HL,DE
+.L3		CCF
+		JR .L1
+		
+MULT		PUSH BC
+		LD A,B
+		LD HL,0
+		LD B,0x10
+.L1		ADD HL,HL
+		RL C
+		RLA	
+		JR NC,.L2
+		ADD HL,DE
+		JR NC,.L2
+		INC C
+		JR NZ,.L2
+		INC A
+.L2		DJNZ .L1
+		EX DE,HL
+		LD L,C
+		LD H,A
+		POP BC
+		RET	
+	ENDIF
+
+	IF 0
+;=============================
+;	16-bit multiply
+;	Tim Paterson
+;=============================
+MULTIPLY16	ld hl,0
+MUL_HLBC_DE	ld a,b
+		ld b,0x11
+		jr .l1
+
+.l2		jr nc,.l3
+		add hl,de
+.l3		rr h
+		rr l
+.l1		rra
+		rr c
+		djnz .l2
+		ld b,a
+		ret
+
+;=============================
+;	16-bit divide
+;	Tim Paterson
+;=============================
+;Делит HLBC на DE
+;на выходе HL - остаток, BC - частное
+DIVIDE16	ld hl,0
+DIV_HLBC_DE	ld a,b
+		ld b,0x10
+		rl c
+		rla
+.l1		rl l
+		rl h
+		jr c,.l2
+		sbc hl,de
+		jr nc,.l3
+		add hl,de
+.l3		ccf
+.l4		rl c
+		rla
+		djnz .l1
+		ld b,a
+		ret
+
+.l2		or a
+		sbc hl,de
+		jr .l4
+	ENDIF
+
+		include conf_down.a80
+		include menu_execute.a80
+		include call_cmos.a80
+		include menu_data.a80
+		include fat_boot.a80
+		include mouse.a80
+		include window.a80
+		include call_trdos.a80
+		include koshak.a80
+		include pc_keys_test.a80
+		include bmp_view.a80
+		include conf_up.a80
+		include flasher.a80
+
+KOSHAK		binclude kot_anim.bin,9
+ICON		binclude icon.bin,9
+                        
+BAS_VAR		binclude bas_var.bin
+EBAS_VAR
+
+CLEAR_128K	DI
+		LD HL,0
+		LD A,0x17
+		CALL CLEAR128K0
+		LD A,0x16
+		CALL CLEAR128K0
+		LD A,0x14
+		CALL CLEAR128K0
+		LD A,0x13
+		CALL CLEAR128K0
+		LD A,0x11
+		CALL CLEAR128K0
+		LD A,0x10
+CLEAR128K0	LD (TEMP_SAVE_SP),SP
+		LD BC,CONF_128
+		OUT (C),A
+		LD SP,0
+		LD B,0x80
+CLEAR128K1	REPT 64
+		PUSH HL
+		ENDM
+		DJNZ CLEAR128K1
+		LD SP,0
+TEMP_SAVE_SP	EQU $-2
+		RET
+
+; установка переменных басика и тырдоса, установка выбранного дисковода
+SYSTEM		LD HL,BAS_VAR
+		LD DE,KSTATE0
+		LD BC,EBAS_VAR-BAS_VAR
+		LDIR				; установка стандартных переменных BASIC и TR-DOS
+GET_DRV_SYM	LD A,(ERS_FLAGS)		; проверяем наличие кмоса
+		AND M_CLOCK_ON
+		JR Z,SET_DRIVE
+		LD H,VIRT_REAL_DRIVE
+		CALL READCMOS
+		RRCA
+		RRCA
+		AND 3
+SETUP_DRIVE	LD (DRV_SYM),A			; установка выбранного реального дисковода
+SET_DRIVE	LD A,(DRV_SYM)			; изменение системных переменных для диска
+		LD (TRD_5D19),A
+		LD (TRD_5CF6),A
+		LD L,A
+		LD H,A
+		LD (TRD_5CF8),HL
+		OR 0x3C
+		LD (TRD_5D16),A
+		RET
+
+GLUDIN		LD H,CMOS_BYTE_01
+		CALL READCMOS
+		AND M_SOUNDKEYS
+		RET Z
+		LD HL,DIN+0x0D
+		LD A,0x0D
+GLUDIN1		LD BC,0xFFFD
+		OUT (C),A
+		LD B,0xBF
+		OUTD
+		SUB 1
+		JR NC,GLUDIN1
+		RET
+
+SHUT2AY		LD H,CMOS_BYTE_01
+		CALL READCMOS
+		AND M_SOUNDKEYS
+		RET Z
+		LD DE,0x0E00
+SHUT2AY1	DEC D
+		LD H,D
+		LD L,E
+		CALL SHUT2AY2
+		JR NZ,SHUT2AY1			; для первых никронов
+		LD HL,0x073F
+SHUT2AY2	LD BC,0xFFFD
+		OUT (C),H
+		LD B,0xBF
+		OUT (C),L
+		RET
+
+TIMELP		CALL PRINTTIME
+		LD A,HIGH (MOUSE_KEYS)
+		IN A,(LOW (MOUSE_KEYS))		; кнопки мыши
+		CPL
+		AND 7
+		JR NZ,TIMELP			; пока не отпустят
+		RET
+
+; запуск PERFECT COMMANDER
+PERFECT		DI
+		LD SP,0xC000
+	PEC_ON M_SHADOW_BF
+		LD BC,WIN_A0
+		LD A,ROM_RST81
+		OUT (C),A
+		LD HL,(ADR_PERFECT)
+		LD DE,0x5B00
+		CALL UNPACK
+		LD BC,WIN_A0
+		LD A,0x83
+		OUT (C),A
+	PEC_OFF M_SHADOW_BF
+		LD A,0xC9
+		LD (0x66D2),A
+		LD SP,0x5FE4
+		JP 0x8A1D
+
+ISDOS_BOOT	LD HL,ISDOS_BOOT1
+		LD DE,0x5E00
+		LD BC,ISDOS_BOOT2-ISDOS_BOOT1
+		LDIR
+		JP 0x5E00
+
+		include hdd_detect.a80
+
+ISDOS_BOOT1	include isdos_boot.a80
+ISDOS_BOOT2
+
+SEL_FAT_DRV	; адрес создания текста, адресов вызывов и списка горячих клавиш меню выбора разделов FAT

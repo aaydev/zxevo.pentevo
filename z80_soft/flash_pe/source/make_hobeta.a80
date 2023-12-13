@@ -1,7 +1,7 @@
 	
-;LAST UPDATE: 16.02.2014 savelij
+; LAST UPDATE: 10.01.2023 savelij
 
-		include ../../../rom/macros.a80
+		include macros.a80
 
 ADRWORK		EQU 0X6000
 UNPACKER	EQU 0X5B00
@@ -26,8 +26,8 @@ UNPACKER	EQU 0X5B00
 		INC HL
 		RET
 
-DEPACK		include ../../../rom/dec40.a80
-BINAR		binclude flash_pe_pack.rom
+DEPACK		include dec40.a80
+BINAR		binclude rom/flash_pe_pack.rom
 EBINAR
 
 		DUPL 0X100-LOW ($),0

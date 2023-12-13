@@ -1,0 +1,33 @@
+
+;LAST UPDATE: 06.10.2017 savelij
+
+;[структура записи директории]
+ INIT_VAR
+ SETVAR _DIR_Name,8			; 8 имя файла
+ SETVAR _DIR_Ext,3			; 3 расширение файла
+ SETVAR _DIR_Attr,BYTE			; 1 аттрибуты файла
+ SETVAR _DIR_NTRes,BYTE			; 1 зарезервированно
+ SETVAR _DIR_CrtTimeTenth,BYTE		; 1 миллисекунды времени создания файла
+ SETVAR _DIR_CrtTime,WORD		; 2 время создания файла
+ SETVAR _DIR_CrtDate,WORD		; 2 дата создания файла
+ SETVAR _DIR_LstAccDate,WORD		; 2 дата последнего обращения к файлу
+ SETVAR _DIR_FstClusHI,WORD		; 2 старшее слово номера кластера
+ SETVAR _DIR_WrtTime,WORD		; 2 время последней записи
+ SETVAR _DIR_WrtDate,WORD		; 2 дата последней записи
+ SETVAR _DIR_FstClusLO,WORD		; 2 младшее слово номера кластера
+ SETVAR _DIR_FileSize,DWORD		; 4 размер файла
+ SETVAR _DIR_StructSize,0;0X20		;   размер структуры
+;флаги=биты=============
+	BITMASK DIR_AttrReadOnly,	0
+	BITMASK DIR_Hidden,		1
+	BITMASK DIR_System,		2
+	BITMASK DIR_VolumeID,		3
+	BITMASK DIR_Directory,		4
+	BITMASK DIR_Archive,		5
+	BITMASK DIR_Device,		7
+;флаги=маски============
+M_DIR_AttrLongName	EQU M_DIR_AttrReadOnly | \
+			    M_DIR_Hidden | \
+			    M_DIR_System | \
+			    M_DIR_VolumeID
+;=======================

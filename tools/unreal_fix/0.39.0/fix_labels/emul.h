@@ -197,9 +197,9 @@ struct CONFIG
    struct
    {
       unsigned fq, ayfq, saa1099fq;
-      int covoxFB, covoxDD, sd, saa1099;
+      int covoxFB, covoxDD, sd, saa1099, moonsound;
       int beeper_vol, micout_vol, micin_vol, ay_vol, aydig_vol,
-          covoxFB_vol, covoxDD_vol, sd_vol, gs_vol, bass_vol;
+          covoxFB_vol, covoxDD_vol, sd_vol, gs_vol, bass_vol, moonsound_vol;
       VOID_FUNC do_sound;
       unsigned char enabled, gsreset, dsprimary;
       unsigned char ay_chip, ay_scheme, ay_stereo, ay_vols, ay_samples;
@@ -264,6 +264,7 @@ struct CONFIG
 //[vv]   char kay_rom_path[FILENAME_MAX];
    char plus3_rom_path[FILENAME_MAX];
    char quorum_rom_path[FILENAME_MAX];
+   char moonsound_rom_path[FILENAME_MAX];
 
    #ifdef MOD_GSZ80
    unsigned gs_ramsize;

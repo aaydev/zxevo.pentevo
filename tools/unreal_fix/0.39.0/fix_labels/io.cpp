@@ -8,6 +8,7 @@
 #include "atm.h"
 #include "profi.h"
 #include "sndrender/sndcounter.h"
+#include "sndrender/dev_moonsound.h"
 #include "sound.h"
 #include "gs.h"
 #include "sdcard.h"
@@ -84,6 +85,15 @@ void out(unsigned port, unsigned char val)
        return;
    }
    #endif
+
+   // ZXM-MoonSound
+   if (conf.sound.moonsound &&
+       (conf.mem_model == MM_PROFI ? !(comp.pDFFD & 0x80) : 1) &&
+       (((p1 & 0xFC) == 0xC4) || ((p1 & 0xFE) == 0xC2)))
+   {
+       if (zxmmoonsound.write(port, val))
+           return;
+   }
 
    // z-controller
    if (conf.zc && (port & 0xFF) == 0x57 )
@@ -816,6 +826,17 @@ __inline unsigned char in1(unsigned port)
        return in_gs(p1);
    #endif
 
+   // ZXM-MoonSound
+   if (conf.sound.moonsound &&
+       (conf.mem_model == MM_PROFI ? !(comp.pDFFD & 0x80) : 1) &&
+       (((p1 & 0xFC) == 0xC4) || ((p1 & 0xFE) == 0xC2)))
+   {
+       u8 val = 0xFF;
+
+       if (zxmmoonsound.read(port, val))
+           return val;
+   }
+
    // z-controller
    if (conf.zc && (port & 0xFF) == 0x57)
    {
@@ -954,7 +975,7 @@ __inline unsigned char in1(unsigned port)
          {
             if ((port & 0xA044) == (0xDFBA & 0xA044)) return cmos_read(); // clock
             if ((port & 0xA044) == (0xFFBA & 0xA044)) return comp.nvram.out; // SMUC system port
-            if ((port & 0xA044) == (0x7FBA & 0xA044)) return comp.p7FBA | 0x3F;
+            if ((port & 0xA044) == (0x7FBA & 0xA044)) return comp.p7FBA | 0x37; // was 0x3F, bit 3 seems to be used in profrom to indicate presence of HDD (Muchkin)
             if ((port & 0xA044) == (0x5FBA & 0xA044)) return 0x3F;
             if ((port & 0xA044) == (0x5FBE & 0xA044)) return 0x57;
             if ((port & 0xA044) == (0x7FBE & 0xA044)) return 0x57;

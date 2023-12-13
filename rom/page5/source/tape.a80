@@ -1,0 +1,101 @@
+
+;LAST UPDATE: 31.07.2017 savelij
+
+TAPE_EMUL	LD H,CMOS_BYTE_00
+		CALL READCMOS
+		AND M_EMUL_TAPE
+		JR NZ,EMULOADTAP
+		LD A,(RREG_A)
+		LD (RREG_C),A
+		CP A
+		PUSH AF
+		POP HL
+		LD (RREG_F),HL
+		RET
+
+EMULOADTAP	LD A,(CPU6+2)			;ŽŒ… ‘’€ˆ–› ƒ„… €—ˆ€…’‘Ÿ ‘‹…„“ž™ˆ‰ ‹ŽŠ
+		LD IYL,A
+		ADD A,RAM_TAPE
+		LD BC,WIN_P5
+		OUT (C),A			;…€‹œ€Ÿ ‘’€ˆ–€ Ž’Š“„€ €’œ
+		LD HL,(CPU6)			;‘Œ…™…ˆ… ‚ ‘’€ˆ–…
+		LD DE,(RREG_IXL)		;€„…‘ Š“„€ ‹Ž†ˆ’œ
+		LD A,D
+		EXX
+		LD BC,WIN_P6
+		CP 0X80
+		LD A,0XFA			;„‹Ÿ „ˆ€€‡Ž€ €„…‘Ž‚ ‡€ƒ“‡Šˆ 4000-7FFF
+		JR C,ELT01
+		LD A,0XFD			;„‹Ÿ „ˆ€€‡Ž€ €„…‘Ž ‡€ƒ“‡Šˆ 8000 ˆ ‚›˜…
+ELT01		OUT (C),A
+		LD IYH,A			;ŽŒ… ‘’€ˆ–› ‚ ŠŽ’Ž“ž ……Ž‘ˆŒ
+		EXX
+		LD A,0X40			;„‹Ÿ „ˆ€€‡Ž€ €„…‘Ž‚ 4000-7FFF ƒ“‡ˆŒ € 4000 ‚›˜…
+		JR C,ELT02
+		LD A,0				;„‹Ÿ „ˆ€€‡Ž€ €„…‘Ž‚ 8000 ˆ ‚›˜… €„…‘ ‡€ƒ“‡Šˆ … Œ…Ÿ…Œ
+ELT02		ADD A,D
+		LD D,A				;…€‹œ›‰ €„…‘ “Š‹€„Šˆ
+		SET 6,H
+		LD C,(HL)
+		INC HL
+		LD B,(HL)			;‚‡Ÿ‹ˆ €‡Œ… ‹ŽŠ€ „‹Ÿ ‡€ƒ“‡Šˆ
+		INC HL
+		INC HL				;Ž“‘Š€…Œ ”‹€ƒŽ‚›‰ €‰’
+		DEC BC
+		DEC BC				;ƒ“‡ˆ’œ € 2 €‰’€ Œ…œ˜… (Œˆ“‘ ”‹€ƒŽ‚›‰ €‰’ ˆ CRC)
+ELT07		LDI
+		JP PO,ELT05
+		LD A,D
+		CP 0XC0
+		JR C,ELT06
+		LD A,IYH
+		CP 0XFA
+		JR NZ,ELT06
+		LD A,0XFD
+		LD IYH,A
+		EXX
+		LD B,HIGH (WIN_P6)
+		OUT (C),A
+		EXX
+		LD D,0X80
+ELT06		LD A,H
+		CP 0X80
+		JR C,ELT07
+		INC IYL
+		LD A,IYL
+		ADD A,RAM_TAPE
+		EXX
+		LD B,HIGH (WIN_P5)
+		OUT (C),A
+		EXX
+		LD H,0X40
+		JR ELT07
+		
+ELT05		INC HL				;Ž“‘Š ŠŽ’Ž‹œŽ‰ ‘“ŒŒ› ‹ŽŠ€
+		RES 6,H
+		EVOPORT WIN_P5,0XFA		;‚…“‹ˆ ‘’€ˆ–“ ‚ 1 ŽŠ… Ž…–ˆŽ‚€ˆŸ
+		LD B,HIGH (WIN_P6)
+		XOR A
+		OUT (C),A			;‚Š‹ž—ˆ‹ˆ Ž‘‹…„žž ‘’€ˆ–“
+		LD (CPU6),HL			;‚…“‹ˆ ‘Œ…™…ˆ… ‚ ‘’€ˆ–… „‹Ÿ ‡€ƒ“‡Šˆ
+		LD A,IYL
+		LD (CPU6+2),A			;‚…“‹ˆ ‚ ……Œ…“ž ŽŒ… ’…Š“™…‰ ‘’€ˆ–› ‡€ƒ“‡Šˆ
+		LD HL,(RREG_IXL)
+		LD DE,(RREG_E)
+		ADD HL,DE
+		LD (RREG_IXL),HL
+		LD HL,0
+		LD (RREG_E),HL
+		LD HL,RREG_F
+		RES 6,(HL)
+		SET 0,(HL)
+		RET
+
+TAPE_INIT	XOR A
+		LD HL,CPU6
+		LD (HL),A
+		INC L
+		LD (HL),A
+		INC L
+		LD (HL),A
+		RET

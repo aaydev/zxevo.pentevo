@@ -1,0 +1,111 @@
+
+; LAST UPDATE: 07.09.2022 savelij
+
+K_P_P		EQU 0X50BD			; адрес вывода монохрома
+K_P_A		EQU 0X5ABD			; адрес вывода атрибутов
+
+DRAW_KOSHAK	PUSH AF
+		ADD A,A
+		LD L,A
+		LD E,A
+		LD H,0
+		LD D,H
+		ADD HL,HL
+		ADD HL,HL
+		ADD HL,HL
+		ADD HL,DE
+		ADD HL,HL
+		ADD HL,HL
+		LD DE,KOSHAK
+		ADD HL,DE
+		LD DE,K_P_P
+		LD C,3
+DRAWK2		LD B,8
+DRAWK1		LD A,(HL)
+		LD (DE),A
+		INC HL
+		INC E
+		LD A,(HL)
+		LD (DE),A
+		INC HL
+		INC E
+		LD A,(HL)
+		LD (DE),A
+		INC HL
+		DEC E
+		DEC E
+		INC D
+		DJNZ DRAWK1
+		LD A,0X20
+		ADD A,E
+		LD E,A
+		LD A,D
+		SUB 8
+		LD D,A
+		DEC C
+		JR NZ,DRAWK2
+		LD HL,0X4747			; цвет кошака
+		LD (K_P_A),HL
+		LD (K_P_A+1),HL
+		LD (K_P_A+0X20),HL
+		LD (K_P_A+0X21),HL
+		LD (K_P_A+0X40),HL
+		LD (K_P_A+0X41),HL
+		POP AF
+		RET
+
+CP_TIME_KOSHAK	PUSH AF
+		BIT 3,(IY+55)
+		JR Z,CPTK2
+		LD A,(WAITINGL)
+		INC A
+		LD (WAITINGL),A
+		CP 0X0C				; счетчик задержки перерисовки кошака
+		JR C,CPTK1
+		XOR A
+		LD (WAITINGL),A
+		LD A,(NUMKOSHAK)
+		INC A
+		LD (NUMKOSHAK),A
+		CALL DRAW_KOSHAK
+		CP 9				; максимальный номер спрайта кошака
+		JR C,CPTK1
+		XOR A
+		LD (NUMKOSHAK),A
+;		LD HL,ZEVOK
+;		INC (HL)
+		CALL DRAW_KOSHAK
+		RES 3,(IY+55)			; запрет анимации кошака
+		JR CPTK4
+
+CPTK2		LD HL,(WAITINGH)
+		INC HL
+		LD (WAITINGH),HL
+		LD A,H
+		AND 2
+		JR Z,CPTK1;5
+CPTK3		SET 3,(IY+55)			; счетчик досчитал, разрешение анимации кошака
+CPTK4		LD HL,0
+		LD (WAITINGH),HL
+;CPTK5		LD A,(ZEVOK)
+;		CP 6
+;		JR C,CPTK1
+;		CALL RESTORE_KOSHAK
+;		XOR A
+;		LD (ZEVOK),A
+;		CALL START_SONGLN
+CPTK1		POP AF
+		RET
+
+RESTORE_KOSHAK	RES 3,(IY+55)
+		XOR A
+		LD (ZEVOK),A
+		LD A,(NUMKOSHAK)
+		AND A
+		RET Z
+		XOR A
+		LD H,A
+		LD L,A
+		LD (WAITINGH),HL
+		LD (WAITINGL),HL
+		JP DRAW_KOSHAK

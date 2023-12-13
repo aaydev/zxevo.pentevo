@@ -1,0 +1,474 @@
+
+; LAST UPDATE: 07.07.2021 savelij
+
+		include ../../macros.a80
+		include ../../define.a80
+		include ../../global_vars.a80
+		include ../../ports_ngs.a80
+		include ../../sdcomand.a80
+		include ../../ports_ide.a80
+		include ../../nums_devices.a80
+
+DRV_VAR		EQU 0X4000
+
+		ORG DRV_VAR+0X200
+ INIT_VAR $
+		include ../../fat_vars.a80
+
+		ORG DRV_VAR+0X300
+
+BUF_512_	EQU DRV_VAR			;200 ÅìîÖê ëÖäíéêÄ
+NUM_DEVICE	EQU DRV_VAR+0X2FF		;1 çéåÖê ìëíêéâëíÇÄ Ñãü áÄèìëäÄ äéÑÄ
+MAS_SLA		EQU NUM_DEVICE-1		;1 åÄëäÄ Ñãü MASTER/SLAVE
+LOADSCS1	EQU MAS_SLA-2			;2 ÄÑêÖë ÇõáõÇÄÖåéÉé ÑêÄâÇÖêÄ
+LENGHT		EQU LOADSCS1-2			;2 ÑãàçÄ îÄâãÄ Ç ÅÄâíÄï
+
+;[íéóäÄ ÇïéÑÄ]
+;çÄ ÇïéÑÖ: A-çéåÖê ÇõÅêÄççéÉé ìëíêéâëíÇÄ
+;	BCDE-çéåÖê äãÄëíÖêÄ áÄèìëäÄÖåéÉé îÄâãÄ
+		DI
+		LD A,(NUM_DEVICE)
+		CP _SD_SDZ
+		LD HL,READ_SD			;ÑêÄâÇÖê SD ZC äÄêíõ		
+		JR Z,SETLOADER
+		CP _SD_SDG
+		LD HL,READNGS			;ÑêÄâÇÖê SD NGS äÄêíõ
+		JR Z,SETLOADER
+		CP _HDD_NEMO_MASTER
+		LD HL,RD_HDDN			;ÑêÄâÇÖê HDD NEMO
+		JR Z,SETLOADER
+		CP _HDD_SMUC_MASTER
+		LD HL,RD_HDDS			;ÑêÄâÇÖê HDD SMUC
+		JR Z,SETLOADER
+		CP _HDD_DIVIDE_MASTER
+		LD HL,RD_HDDD			;ÑêÄâÇÖê HDD DIVIDE
+		JR Z,SETLOADER
+		LD HL,RD_HDDP			;ÑêÄâÇÖê HDD PROFI
+SETLOADER	LD (LOADSCS1),HL		;ìëíÄçéÇàãà ÄÑêÖë óàíÄãäà ëÖäíéêéÇ
+		LD A,(MAS_SLA)
+		AND A
+		LD A,0XE0
+		JR Z,SETMASL
+		LD A,0XF0
+SETMASL		LD (MAS_SLA),A
+		LD BC,(FILE_SRC+0X14)
+		LD (AFILCLS+2),BC
+		LD DE,(FILE_SRC+0X1A)
+		LD (AFILCLS),DE
+		LD A,(FILE_SRC+9)
+		CP "P"
+		JP Z,RUNSPG2			;èÖêÖïéÑ çÄ áÄèìëä SPG îÄâãÄ
+		CP "N"
+		JP Z,RUNSNA			;èÖêÖïéÑ çÄ áÄèìëä SNA îÄâãÄ
+		CALL REALSEC			;èêÖéÅêÄáéÇÄãà Ç çéåÖê ëÖäíéêÄ
+		CALL LOADLST			;áÄÉêìáàãà Ç ÅìîÖê
+		EXX
+		LD HL,(BUF_512_+9)
+		LD (0X5D45),HL			;ÄÑêÖë ëíÄêíÄ äéÑÄ
+		LD HL,(BUF_512_+0X0B)
+		LD (LENGHT),HL			;ìëíÄçéÇäÄ Ñãàçõ îÄâãÄ Ç ÅÄâíÄï
+		LD DE,0X11
+		ADD HL,DE			;èêéèìëä HOBETA áÄÉéãéÇäÄ
+		LD A,L
+		AND A
+		JR Z,READ01			;Öëãà åãÄÑòàâ ÅÄâí çÖ 0
+		INC H				;ëíÄêòàâ +1
+READ01		LD A,H
+		SRL A				;ÑÖãàå çÄ 2 àÅé çÄ îÄíÖ ëÖäíéê 512 ÅÄâí
+		ADC A,0				;ìóàíõÇÄÖå óÖí/çÖóÖí
+		DEC A				;èÖêÇõâ ëÖäíéê áÄÉêìÜÖç, Éêìáàíú çÄ 1 åÖçúòÖ
+		EXX
+		JP Z,LDIRBUF			;Öëãà ëÖäíéê 1 èÖêÖçéë à áÄèìëä
+		DEC A
+		LD IXL,A			;áÄèéåçàãà äéãàóÖëíÇé ëÖäíéêéÇ-1
+		JP Z,READ08			; •·´® ‰†©´ ¢´•ß ¢ 2 ·•™‚Æ‡†
+		EXX
+		CALL LD_ONES			;èÖêÖçéë éëíÄíäéÇ èÖêÇéÉé ëÖäíéêÄ
+		PUSH DE				;ÄÑêÖë äìÑÄ ÑÄãÖÖ Éêìáàíú
+		EXX
+		LD HL,1				;éÑàç ëÖäíéê ìÜÖ áÄÉêìÜÖç
+		ADD HL,DE			;ÑÄãÖÖ Éêìáàíú ëé ëãÖÑìûôÖÉé ëÖäíéêÄ 
+		EX DE,HL
+		JR NC,READ04
+		INC BC				;BCDE=BCDE+1
+READ04		POP HL				;Ç HL ÄÑêÖë Ñãü èêéÑéãÜÖçàü áÄÉêìáäà
+		LD IY,(SecPerClus)		;LY=äéã-Çé ëÖäíéêéÇ Ç äãÄëíÖêÖ
+		LD A,IXL
+		CP IYL				;ëÖäíéêéÇ éëíÄãéëú åÖçúòÖ óÖå Ç äãÄëíÖêÖ
+		JR C,READ02			;èÖêÖïéÑ çÄ ÑéáÄÉêìáäì éëíÄíäÄ ëÖäíéêéÇ
+		INC IXL
+		LD A,IYL
+		CP 2
+		JR C,READ07
+		DEC A
+		JR READ05
+
+READ07		PUSH HL
+		LD DE,(AFILCLS)
+		LD BC,(AFILCLS + 2)
+		CALL RDFATZP			;èéãìóàíú çéåÖê ëãÖÑìûôÖÉé äãÄëíÖêÄ
+		LD (AFILCLS),DE
+		LD (AFILCLS + 2),BC
+		CALL LST_CLS			;èêéÇÖêäÄ çÄ éäéçóÄçàÖ FAT ñÖèéóäà
+		POP HL
+		JR C,RUNLOAD			;Öëãà äãÄëíÖêÄ áÄäéçóàãàëú, íé áÄèìëä áÄÉêìÜÖççéÉé
+		PUSH HL
+		CALL REALSEC			;èêÖéÅêÄáéÇÄçàÖ çéåÖêÄ äãÄëíÖêÄ Ç çéåÖê ëÖäíéêÄ
+		POP HL
+		LD A,IXL			;ëäéãúäé ëÖäíéêéÇ éëíÄãéëú áÄÉêìáàíú
+		CP IYL				;ëêÄÇçàÇÄÖå ë êÄáåÖêéå äãÄëíÖêÄ
+		JR C,READ02			;Öëãà éëíÄãéëú áÄÉêìáàíú ëÖäíéêéÇ åÖçúòÖ óÖå Ç äãÄëíÖêÖ, íé ÑéáÄÉêìÜÄÖå éëíÄíéä
+		LD A,IYL			;ëäéãúäé ëÖäíéêéÇ áÄÉêìÜÄíú
+READ05		CALL LOADSCS			;áÄÉêìáäÄ ëÖäíéêéÇ
+		LD A,IXL			;ëäéãúäé ëÖäíéêéÇ ÇëÖÉé áÄÉêìÜÄíú
+		SUB IYL				;åàçìë ëäéãúäé ëÖäíéêéÇ íéãúäé óíé áÄÉêìáàãà
+		JR Z,RUNLOAD			;ëÖäíéêÄ äéçóàãàëú, èÖêÖïéÑàå çÄ áÄèìëä
+		LD IXL,A			;ëäéãúäé ëÖäíéêéÇ éëíÄãéëú áÄÉêìáàíú
+		JR READ07			;èêéÑéãÜÄÖå áÄÉêìáäì
+
+; ‡†ß¨•‡ ™Æ§† ¢ Hobeta ¨•≠•• 2 ·•™‚Æ‡Æ¢
+; ™ÆØ®‡„•¨ Â¢Æ·‚ Ø•‡¢Æ£Æ ·•™‚Æ‡† ® §Æ£‡„¶†•¨ ®ß ¢‚Æ‡Æ£Æ · Ø•‡•≠Æ·Æ¨
+READ08		EXX
+		CALL LD_ONES
+		PUSH DE
+		EXX
+		POP HL
+		LD IXL,1
+		JR READ03
+
+;áÄÉêìáäÄ äéãàóÖëíÇÄ ëÖäíéêéÇ, Öëãà éëíÄãéëú åÖçÖÖ êÄáåÖêÄ äãÄëíÖêÄ
+READ02		AND A
+		JR Z,READ03
+		CALL LOADSCS
+READ03		PUSH HL
+		LD A,IXL
+		LD L,A
+		LD H,0
+		ADD HL,DE
+		EX DE,HL
+		JR NC,READ06
+		INC BC
+READ06		CALL LOADLST
+		LD BC,(LENGHT)
+		EX DE,HL
+		LD HL,0X11
+		ADD HL,BC
+		LD B,H
+		LD C,L
+		EX DE,HL
+		POP DE
+		LD A,B
+		AND 1
+		LD B,A
+		OR C
+		JR Z,RUNLOAD
+		LDIR
+;[áÄèìëä áÄÉêìÜÖççéÉé]
+RUNLOAD		LD HL,0X2758
+		EXX
+		LD IY,0X5C3A
+		EI
+		JP 0X1B7D			;áÄèìëä èÖêÖçÖëÖççéâ ÅÖâëàä èêéÉà
+
+LDIRBUF		LD HL,0X200-0X11
+		LD DE,(BUF_512_+0X0B)
+		AND A
+		SBC HL,DE
+		JR NC,LDIRBUF1
+		CALL LD_ONES
+		JP RUNLOAD
+
+LDIRBUF1	LD HL,BUF_512_+0X11
+		LD DE,(BUF_512_+9)
+		LD BC,(BUF_512_+0X0B)
+		LDIR
+		JP RUNLOAD
+
+;[èÖêÖçéë äìëäÄ àá ìÜÖ áÄÉêìÜÖççéÉé ëÖäíéêÄ, Öëãà îÄâã=501 ÅÄâí à åÖçÖÖ]
+LD_ONES		LD HL,BUF_512_+0X11
+		LD DE,(BUF_512_+9)
+		LD BC,0X200-0X11
+		LDIR
+		RET
+
+;[áÄÉêìáàíú ëÖäíéêÄ ë ÇõÅêÄççéÉé ìëíêéâëíÇÄ]
+LOADSCS		PUSH HL
+		LD HL,(LOADSCS1)
+		EX (SP),HL
+		RET
+
+; Á‚•≠®• ‰†©´†
+; BCDE - ≠Æ¨•‡ ™´†·‚•‡† Æ‚™„§† £‡„ß®‚Ï
+; IXL - ‡†ß¨•‡ ™´†·‚•‡† 
+; IXH - ¢‡•¨•≠≠Î• Ø•‡•¨•≠≠Î•
+; IYL - ™Æ´®Á•·‚¢Æ ·•™‚Æ‡Æ¢ §´Ô ß†£‡„ß™®
+; IYH - ·¨•È•≠®• ¢ ™´†·‚•‡•
+LD_FILE		PUSH BC				;ëíÄêòàÖ 16 Åàí çéåÖêÄ äãÄëíÖêÄ
+		PUSH DE				;åãÄÑòàÖ 16 Åàí çéåÖêÄ äãÄëíÖêÄ
+		PUSH HL				;ëéïêÄçàãà ÄÑêÖë áÄÉêìáäà
+		CALL REALSEC			;èÖêÖÇÖãà çéåÖê äãÄëíÖêÄ Ç çéåÖê ëÖäíéêÄ
+		LD IX,(SecPerClus)
+		LD A,IYH			;ëåÖôÖçàÖ Ç äãÄëíÖêÖ
+		LD L,A
+		LD H,0
+		ADD HL,DE
+		EX DE,HL
+		JR NC,LDFILE1
+		INC BC				;BCDE=çéåÖê ëÖäíéêÄ éíäìÑÄ Éêìáàíú
+LDFILE1		LD A,IYL			;äéãàóÖëíÇé ëÖäíéêéÇ Ñãü áÄÉêìáäà
+		CP IXL				;êÄáåÖê äãÄëíÖêÄ
+		JP C,LDFILE2
+		LD A,IXL			;êÄáåÖê äãÄëíÖêÄ
+LDFILE2		ADD A,IYH			;ëåÖôÖçàÖ Ç äãÄëíÖêÖ
+		CP IXL				;êÄáåÖê äãÄëíÖêÄ
+		LD A,IYL			;äéãàóÖëíÇé ëÖäíéêéÇ Ñãü áÄÉêìáäà
+		JP C,LDFILE5
+		LD A,IXL			;êÄáåÖê äãÄëíÖêÄ
+		SUB IYH				;ëåÖôÖçàÖ Ç äãÄëíÖêÖ
+LDFILE5		LD IXH,A			;TEMP VAR, ëäéãúäé ëÖäíéêéÇ ëÖâóÄë Éêìáàå
+		POP HL				;ÇéëëíÄçéÇàãà ÄÑêÖë áÄÉêìáäà
+		CALL LOADSCS			;áÄÉêìáàãà ëÖäíéêÄ
+		POP DE
+		POP BC				;ÇéëëíÄçéÇàãà çéåÖê äãÄëíÖêÄ
+		LD A,IYH			;ëåÖôÖçàÖ Ç äãÄëíÖêÖ
+		ADD A,IXH			;TEMP VAR
+		CP IXL				;êÄáåÖê äãÄëíÖêÄ
+		JP C,LDFILE3
+		SUB IXL				;êÄáåÖê äãÄëíÖêÄ
+LDFILE3		LD IYH,A			;ëåÖôÖçàÖ Ç äãÄëíÖêÖ
+		JP C,LDFILE4
+		PUSH HL				;ëéïêÄçàãà ÄÑêÖë áÄÉêìáäà
+		CALL RDFATZP			;èêéóàíÄãà çéåÖê ëãÖÑìûôÖÉé äãÄëíÖêÄ
+		CALL LST_CLS			;èêéÇÖêàãà, Ä åéÜÖí ùíé èéëãÖÑçàâ äãÄëíÖê?
+		POP HL				;ÇéëëíÄçéÇàãà ÄÑêÖë áÄÉêìáäà
+		RET C				;Öëãà èéëãÖÑçàâ, ÇõïéÑàå
+LDFILE4		LD A,IYL			;äéãàóÖëíÇé ëÖäíéêéÇ Ñãü áÄÉêìáäà
+		SUB IXH				;TEMP VAR
+		RET Z
+		LD IYL,A			;äéãàóÖëíÇé ëÖäíéêéÇ Ñãü áÄÉêìáäà
+		JP NZ,LD_FILE
+		RET
+
+;[èêéÇÖêäÄ çéåÖêÄ äãÄëíÖêÄ]
+LST_CLS		LD A,(FATType)
+		AND A
+		JR NZ,LST_CL1
+		LD HL,0X0FF7
+		SBC HL,DE
+		RET
+
+LST_CL1		DEC A
+		JR NZ,LST_CL2
+		LD HL,0XFFF7
+		SBC HL,DE
+		RET
+
+LST_CL2		LD HL,0X0FFF
+		SBC HL,BC
+		RET NZ
+		LD HL,0XFFF7
+		SBC HL,DE
+		RET
+
+;[óíÖçàÖ ëãÖÑìûôÖÉé äãÄëíÖêÄ]
+RDFATZP		LD A,(FATType)
+		AND A
+		JR Z,RDFATS0
+		DEC A
+		JR Z,RDFATS1
+		EX DE,HL
+		ADD HL,HL
+		EX DE,HL
+		LD HL,0
+		ADC HL,BC
+		ADD HL,BC		; HLDE = BCDE * 2
+		LD A,E
+		LD E,D
+		LD D,L
+		LD C,H
+		LD B,0
+		CALL RDFATS2
+		INC HL
+		LD C,(HL)
+		INC HL
+		LD B,(HL)
+		RET
+
+RDFATS1		LD BC,0
+		LD A,E
+		LD E,D
+		LD D,C
+RDFATS2		PUSH AF
+		PUSH BC
+		LD HL,NumSecFAT1
+		CALL BCDEHLP
+		CALL LOADLST
+		POP BC
+		POP AF
+		LD E,A
+		LD D,0
+		ADD HL,DE
+		ADD HL,DE
+		LD E,(HL)
+		INC HL
+		LD D,(HL)
+		RET
+
+RDFATS0		LD H,D
+		LD L,E
+		ADD HL,HL
+		ADD HL,DE
+		SRL H
+		RR L
+		LD A,E
+		LD E,H
+		LD D,0
+		LD B,D
+		LD C,D
+		SRL E
+		PUSH AF
+		PUSH HL
+		LD DE,(NumSecFAT1)
+		LD BC,(NumSecFAT1 + 2)
+		CALL LOADLST
+		POP BC
+		LD A,B
+		AND 1
+		LD B,A
+		ADD HL,BC
+		LD B,(HL)
+		INC HL
+		LD A,H
+		CP HIGH (BUF_512)+2
+		JR NZ,RDFATS4
+		PUSH BC
+		LD BC,0
+		INC DE
+		CALL LOADLST
+		POP BC
+RDFATS4		POP AF
+		LD D,(HL)
+		LD E,B
+		LD BC,0
+		RRA
+		JR NC,RDFATS3
+	REPT 4
+		SRL D
+		RR E
+	ENDM
+RDFATS3		LD A,D
+		AND 0X0F
+		LD D,A
+		RET
+
+;[èêÖéÅêÄáéÇÄçàÖ çéåÖêÄ äãÄëíÖêÄ]
+;ÇõóàëãÖçàÖ êÖÄãúçéÉé ëÖäíéêÄ
+;çÄ ÇïéÑÖ BCDE=çéåÖê FAT
+;çÄ ÇõïéÑÖ BCDE=ÄÑêÖë ëÖäíéêÄ
+REALSEC		LD A,B
+		OR C
+		OR D
+		OR E
+		JR NZ,REALSE1
+		LD DE,(NumSecRootDir)
+		LD BC,(NumSecRootDir + 2)
+		RET
+
+REALSE1		LD HL,0XFFFE
+		EX DE,HL
+		ADD HL,DE
+		EX DE,HL
+		INC HL
+		ADC HL,BC			;çéåÖê äãÄëíÖêÄ-2
+		LD A,(SecPerClus)
+		JR REALSE2
+
+REALSE3		SLA E
+		RL D
+		RL L
+		RL H
+REALSE2		RRCA
+		JR NC,REALSE3			;ìåçéÜàãà çÄ êÄáåÖê äãÄëíÖêÄ
+		LD B,H
+		LD C,L
+		LD HL,FirstSecData
+		JP BCDEHLP			;èêàÅÄÇàãà ëåÖôÖçàÖ éí çÄóÄãÄ êÄáÑÖãÄ
+
+;[BCDE/512]
+BCDE200		LD E,D
+		LD D,C
+		LD C,B
+		LD B,0
+		LD A,2
+		JR BCDE_A
+
+;[BCDE>>A=BCDE]
+BCDE_A1		SRL B
+		RR C
+		RR D
+		RR E
+BCDE_A		RRCA
+		JR NC,BCDE_A1
+		RET
+
+;[(ADR)-BCDE=BCDE]
+BCDEHLM		LD A,(HL)
+		INC HL
+		SUB E
+		LD E,A
+		LD A,(HL)
+		INC HL
+		SBC A,D
+		LD D,A
+		LD A,(HL)
+		INC HL
+		SBC A,C
+		LD C,A
+		LD A,(HL)
+		SBC A,B
+		LD B,A
+		RET
+
+;[(ADR)+BCDE=BCDE]
+BCDEHLP		LD A,(HL)
+		INC HL
+		ADD A,E
+		LD E,A
+		LD A,(HL)
+		INC HL
+		ADC A,D
+		LD D,A
+		LD A,(HL)
+		INC HL
+		ADC A,C
+		LD C,A
+		LD A,(HL)
+		ADC A,B
+		LD B,A
+		RET
+
+;[HLDE+BC=HLDE]
+HLDEPBC		EX DE,HL
+		ADD HL,BC
+		EX DE,HL
+		LD BC,0
+		ADC HL,BC
+		RET
+
+;[áÄÉêìáäÄ ëÖäíéêÄ Ç ÅìîÖê]
+LOADLST		LD HL,BUF_512_
+		PUSH HL
+		LD A,1
+		CALL LOADSCS
+		POP HL
+		RET
+
+;[INCLUDES]
+		include drivers/drv_zc.a80
+		include drivers/drv_neogs.a80
+		include drivers/drv_nemo.a80
+		include drivers/drv_smuc.a80
+		include drivers/drv_divide.a80
+		include drivers/drv_profi.a80
+		include spg2_run.a80
+		include sna_run.a80

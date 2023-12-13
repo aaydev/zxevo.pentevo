@@ -1,0 +1,74 @@
+
+; LAST UPDATE: 24.09.2022 savelij
+
+	TITLE "addon2.a80 ROM_RST80"
+
+		PHASE CPU0
+		JP $
+
+		DUPL 0x0008 - $,0xFF
+		JP $
+
+		DUPL 0x0010 - $,0xFF
+		JP $
+
+		DUPL ADR_SEL_ROM - $,0xFF
+		OUT (C),A
+		NOP
+		RET
+
+		DUPL 0x0018 - $,0xFF
+		JP $
+
+		DUPL 0x0020 - $,0xFF
+		JP $
+
+		DUPL 0x0028 - $,0xFF
+		JP $
+
+		DUPL 0x0030 - $,0xFF
+		JP CALL2PAGE
+
+		DUPL 0x0038 - $,0xFF
+		EI
+		RET
+
+		DUPL 0x003E - $,0xFF
+		EI
+		RET
+
+		DUPL 0x0080 - $,0xFF
+		binclude ../../dec40.bin
+
+		DUPL 0x00FF - $,0xFF
+		DW 0x0038
+
+UNPACK_STS      EVOPORT WIN_P3,RAM_STS
+                LD HL,STS_PACK
+                LD DE,CPU3
+                JP UNPACK
+
+UNP_MICRO_BOOT	LD HL,MICRO_BOOT
+		LD DE,DRV_VAR + 0x300
+		CALL UNPACK			; распаковали FAT BOOT
+		LD HL,BUF_TEKVOL
+		LD DE,(RREG_L)
+		LD BC,0x100
+		LDIR				; скопировали переменные FAT драйвера выбранного раздела
+		RET
+
+		include fontread.a80
+
+MICRO_BOOT	binclude ../../fat_boot/micro_boot_fat_pack.rom
+
+CP866_FONT	binclude 866_code_pack.bin
+ATM_FONT	binclude atm_code_pack.bin
+
+STS_PACK	binclude ../../sts/sts_pack.rom
+
+FREE_ADDON2	EQU 0x3FF6 - $
+
+		DUPL FREE_ADDON2,0xFF
+		DW FREE_ADDON2			; размер свободного места
+		DB "ADDON2"
+		DW DATA_VERS

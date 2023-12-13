@@ -1,0 +1,246 @@
+
+; LAST UPDATE: 09.11.2022 savelij
+
+; описатель окна (адрес в IX)
+; +00 X координата
+; +01 Y координата
+; +02 V высота
+; +03 H ширина
+; +04 C цвет
+; +05 C цвет курсора
+; +06 F флаговый
+; +07 N номер пункта в окне
+;   бит 7-0=байты 8-9 текущий пункт меню, 
+;         1=байты 8-9 адрес хранения
+; +08 | текущий
+; +09 | пункт меню
+; +0A : количество  
+; +0B : пунктов меню
+; +0C | адрес 
+; +0D | текста
+; +0E : список адресов
+; +0F : подпрограмм
+; +10 | адрес списка активных
+; +11 | зон для мыши         
+; +12 : адрес списка
+; +13 : горячих клавиш
+
+; формат флагового байта окна
+; IX+6
+; 7-0-нет, 1-есть нижний заголовок
+; 6-0-с рамкой,1-без рамки
+; 5-0-нет, 1-есть верхний заголовок
+; 4-0-нет, 1-есть текст
+; 3-0-меню, 1-показ файлов
+; 2-
+; 1-
+; 0-
+
+; раскладка байт выделений
+; +0 флаговый
+;     7 при активности установлен
+;     6 установлен, не выделяется
+;     5 установлен, вызов вектора
+;     4
+;     3 \
+;     2  } форма курсора
+;     1  } при попадании
+;     0 /
+; +1 X координата
+; +2 Y координата
+; +3 V высота
+; +4 H ширина
+; +5 K код клавиши
+
+;===================MAIN MENU===================
+MAIN_MENU	DB 0x04,0x04,LOW ((EMAINMENU1-MAINMENU1)/2)+2,0x20,0x0F,0x1F,%00100000,0x80
+		DW DAT_MAIN_MENU,((EMAINMENU1-MAINMENU1)/2)
+		DW TXT_MAINMENU,MAINMENU1,MOUSE_MAINMENU,MAINMKEYS
+
+TXT_MAINMENU	DB 0x17,0xFF,"MAGIC Service"
+		DB 0x0D," 0.Continue program"
+		DB 0x0D," S.Setup"
+	IF BUILD_DEBUG=1
+		DB 0x0D," D.Debugger STS"
+		DB 0x0D," F.File browser"
+	ENDIF
+		DB 0
+
+	IF BUILD_DEBUG=1
+MAINMKEYS	DB LOW (MAINMENU1-$-1),"0sdf"
+	ELSE
+MAINMKEYS	DB LOW (MAINMENU1-$-1),"0s"
+	ENDIF
+
+MAINMENU1	DW CONTINUE_PROG
+		DW SETUP
+	IF BUILD_DEBUG=1
+		DW DEBUGGER
+		DW FILE_BROWSER
+	ENDIF
+EMAINMENU1
+
+MOUSE_MAINMENU	DB 0xFF
+;===================MAIN MENU===================
+
+;==================SETUP MENU===================
+SETUP_MENU	DB 0x06,0x06,((ESETUPMENU1-SETUPMENU1)/2)+2,0x20,0x0F,0x1F,%00100000,0x80
+		DW DAT_SETUP_MENU,((ESETUPMENU1-SETUPMENU1)/2)
+		DW TXT_SETUPMENU,SETUPMENU1,MOUSE_SETUPMENU,SETUPKEYS
+
+TXT_SETUPMENU	DB 1,0x17,0xFF,"Setup"
+		DB 0x0D," 0.Main menu"
+		DB 0x0D," W.Turbo  \x2"
+		DW TURBO_MODE
+		DB 0x0D," M.Memory  \x2"
+		DW MEMORY_MODE
+; для резидента HONEY COMANDER
+		DB "\r R.Resident Honey Cmd  \x2"
+		DW REZIDENT_MODE
+		DB "\r K.Kill rezident       \x2"
+		DW TXT_KILLREZID
+		DB 0
+
+; для резидента HONEY COMANDER
+SETUPKEYS	DB LOW (SETUPMENU1-$-1),"0wmrk"
+
+SETUPMENU1	DW RESTART_MAIN
+		DW SET_TURBO
+		DW SET_MEMORY
+; для резидента HONEY COMANDER
+		DW SET_REZIDENT
+		DW KILL_REZID
+ESETUPMENU1
+
+MOUSE_SETUPMENU	DB 0xFF
+;==================SETUP MENU===================
+
+;================DEVICE NOT FOUND===============
+DEV_NOTFOUND	DB 0x15,0x08,0x05,0x18,0x17,0x1F,%00000000,0x00
+		DW 0,0
+		DW TXT_DEVNOTFOUND,0,0,0
+
+TXT_DEVNOTFOUND	DB 0x0D,"   Device not found"
+		DB 0x0D,0x0D,"   Press any key ...",0
+;================DEVICE NOT FOUND===============
+
+;====================NO FILES===================
+NOFILES		DB 0x00,0x00,0x03,0x1A,0x17,0x1F,%00000000,0x00
+		DW 0,0
+		DW TXT_NOFILES,0,0,0
+
+TXT_NOFILES	DB 0x0D," Files or DIR not found",0
+;====================NO FILES===================
+
+;==================SELECT DRIVE=================
+SEL_DRIVE	DB 0x010,0x08,0x00,0x1A,BLACK<<3+WHITE,MAGENTA<<3+WHITE,%00100000
+ESEL_DRIVE
+
+TXT_SELDRIVES	DB 0x17,0xFF,"Select drives"
+ETXT_SELDRIVES
+;==================SELECT DRIVE=================
+
+;==================FILE BROWSER=================
+FILESBROWSER	DB 0x00,0x00,V_FILES,H_FILES,BLUE<<3+WHITE,BLUE<<3+BR_PAPER,%10101000,0xC0
+		DW DAT_FILEBROWS,0
+		DW TXT_FILEBROWS,SEL_FILEBROWS,MOUS_FILEBROWS,KEYS_FILEBROWS
+
+TXT_FILEBROWS	DB 0x17,0xFF,"File browser"
+		DB 0x16,V_FILES-1,2,"D.Drive select  ENTER.Select",0;  V.SCL/TRD view",0
+
+KEYS_FILEBROWS	DB LOW (SEL_FILEBROWS-$-1)
+		REPT V_FILES-2
+		DB 0x0D
+		ENDM
+		DB "dv"
+
+SEL_FILEBROWS	REPT V_FILES-2
+		DW SELECT_FILE
+		ENDM
+		DW SELECT_DRIVE
+		DW SCLTRD_VIEW
+
+MOUS_FILEBROWS	DB 0,0x00,V_FILES-1,0x01,H_FILES/2-1,"d"
+		DB 0,H_FILES/2-1,V_FILES-1,0x01,H_FILES/2,0x0D
+		DB 0xFF
+;==================FILE BROWSER=================
+
+;=========================IMAGE FDI ERROR================================
+LDFDIERROR	DB (H_FILES-0x14)/2,0x08,0x04,0x14,0x17,0x00,%00000000,0
+		DW 0,0
+		DW TXT_LDFDIERR,0,0,0
+
+TXT_LDFDIERR	DB 0x17,0xFF,0x0D," FDI image error",0x0D," Press any key",0
+;=========================IMAGE FDI ERROR================================
+
+;================COLOR EXT FILES================
+LEGEND_EXT	DB 0x3E,0x06,0x08,0x09,BLACK<<3+WHITE,0,0,0
+		DW 0,0
+		DW TXT_LEGENDEXT,0,0,0
+
+TXT_LEGENDEXT	DB 0x0D,0x17,BR_INK+BLACK<<3+WHITE,"  DIR"
+		DB 0x0D,0x17,BR_INK+BLACK<<3+GREEN,"  TRD"
+		DB 0x0D,0x17,BR_INK+BLACK<<3+YELLOW,"  SCL"
+		DB 0x0D,0x17,BR_INK+BLACK<<3+YELLOW,"  FDI"
+		DB 0x0D,0x17,BR_INK+BLACK<<3+RED,"  TAP"
+		DB 0x0D,0x17,BR_INK+BLACK<<3+CYAN,"Unknown",0
+;================COLOR EXT FILES================
+
+;==================монтировать или загружать в рамдиск===================
+SEL_MOUNT	DB (H_FILES-0x0E)/2,0x07,LOW ((SELMOUNT2-SELMOUNT1)/2)+2,0x0E,BLACK<<3+WHITE,BLUE<<3+BR_PAPER,%00100000,0x80
+		DW DAT_MOUNT,((SELMOUNT2-SELMOUNT1)/2)
+		DW SELMOUNTTXT,SELMOUNT1,0,SELMOUNTKEYS
+SELMOUNTTXT	DB 0x17,0xFF,"Mounter"
+		DB 0x0D," L.Ramdisk"
+		DB 0x0D," 1.Mount A:"
+		DB 0x0D," 2.Mount B:"
+		DB 0x0D," 3.Mount C:"
+		DB 0x0D," 4.Mount D:",0
+
+SELMOUNTKEYS	DB LOW (SELMOUNT1-$-1),"l1234"
+
+SELMOUNT1	DW LOADIMAGES
+		DW MOUNT_A
+		DW MOUNT_B
+		DW MOUNT_C
+		DW MOUNT_D
+SELMOUNT2
+;==================монтировать или загружать в рамдиск===================
+
+;		     1  2  3  4
+FILES_EXT	DB "TRDSCLFDITAP",0
+FILES_EXT_ALL	EQU $-1
+EFILES_EXT
+
+COLOR_EXT	DB CYAN,GREEN,YELLOW,YELLOW,RED,MAGENTA
+
+TXT_TURBO	DB " 7.0 3.514.0"
+TXT_ONOFF	DB "on "
+TXT_MEMORY	DB "off 48128"
+
+; список клавиш проверяемых всегда
+MAIN_KEYS	DB LOW (EMAIN_KEYS-$-1)," ",0x07,0x08,0x09,0x0A,0x0B,0x0D
+EMAIN_KEYS
+
+ADREXEKEYS	DW ENTER			;SPACE
+		DW RESTART			;EDIT
+		DW PAGEUP			;0x08
+		DW PAGEDN			;0x09
+		DW CURSOR_DOWN			;0x0A
+		DW CURSOR_UP			;0x0B
+		DW ENTER			;0x0D
+EADREXEKEYS
+
+; текст для отображения найденных разделов, по 16 байт строка
+TXT4MENU_DEVICE	   ;1234567890123456
+		DB ".ZContr  SDCard:"		;4
+		DB ".NeoGS   SDCard:"		;5
+		DB ".HDDNemo MASTER:"		;6-MASTER
+		DB ".HDDSmuc MASTER:"		;7-SLAVE
+		DB ".HDDNemo  SLAVE:"		;6-MASTER
+		DB ".HDDSmuc  SLAVE:"		;7-SLAVE
+
+; тип раздела
+TXT4MENU_TYPE	DB "FAT12"
+		DB "FAT16"
+		DB "FAT32"

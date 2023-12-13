@@ -1,0 +1,689 @@
+
+; LAST UPDATE: 04.10.2022 savelij
+
+		TITLE "call_trdos.a80"
+
+ INIT_VAR 1
+ SETVAR ERR_NO_TRDOS_DISK
+ SETVAR ERR_DISK_ERROR
+ SETVAR ERR_NO_DISK
+ SETVAR ERR_DISK_READ_ONLY
+
+
+SEL_FILES_WIN	LD HL,ERS_FLAGS
+		BIT B_VIEW_IMG,(HL)
+		JP Z,RESTART
+		JP FILES_BROWSE
+
+VIEW_IMAGE	DI
+		LD BC,ADR_CAT_FAT
+		LD L,(IX+_TEK_PKT_L)
+		LD H,(IX+_TEK_PKT_H)
+		ADD HL,HL
+		ADD HL,BC
+		LD C,(HL)
+		INC HL
+		LD B,(HL)			; получили текущий выбранный номер
+		LD A,6
+	RST8 _COM_FAT,_POS_FILES		; установка внутреннего указателя FAT драйвера
+		LD HL,BUF_FILEITEM
+	RST8 _COM_FAT,_READ_DIR			; получили описатель по установленному номеру
+		LD DE,0x0B
+		ADD HL,DE
+		LD A,(HL)
+		SBC HL,DE
+		AND 0x10
+		JP NZ,_RULILKA			; попытка просмотра директории
+		PUSH HL
+		CALL REST_COLCURS		; стирание цветного курсора
+		CALL REST2X2			; восстановление экрана под курсором мыши
+		POP HL
+		CALL CPETR3			; проверка расширения
+		JP Z,_RULILKA			;попытка просмотра не поддерживаемого расширения (SCL, TRD ONLY)
+
+		LD (TYPE_FILE),A
+		PUSH AF
+	RST8 _COM_FAT,_OPEN_FILE
+		POP AF
+		DEC A
+		LD HL,ADR_CAT			; TYPE_FILE = 1 - TRD
+		JR Z,VIEWIMG1
+		LD HL,ADR_CAT+0x200		; TYPE_FILE = 2 - SCL
+VIEWIMG1	PUSH AF
+		LD A,5
+	RST8 _COM_FAT,_READ_FILE
+		POP AF
+		JR Z,VIEWIMG3
+		LD DE,ADR_CAT
+		LD HL,ADR_CAT+0x200+8
+		LD A,(HL)
+		PUSH AF
+		INC HL
+VIEWIMG2	LD BC,0x0E
+		LDIR
+		INC DE
+		INC DE
+		DEC A
+		JR NZ,VIEWIMG2
+		LD HL,ADR_CAT+0x0A00
+		SCF
+		SBC HL,DE
+		LD B,H
+		LD C,L
+		LD H,D
+		LD L,E
+		INC DE
+		LD (HL),0
+		LDIR
+		LD HL,DSKINFO
+		LD DE,ADR_CAT+0x8E1
+		LD BC,DSK_END-DSKINFO
+		LDIR
+		POP AF
+		LD (ADR_CAT+0x8E4),A
+VIEWIMG3	LD HL,ERS_FLAGS
+		RES B_RUN_FAT,(HL)		; вывод окна для TR-DOS
+		SET B_VIEW_IMG,(HL)		; просмотр образа TR-DOS
+
+		JP VIEW_ALL
+
+GLUBOOT		LD HL,ERS_FLAGS
+		RES B_RUN_FAT,(HL)		; запуск с дискеты
+		RES B_VIEW_IMG,(HL)		; работа с реальным каталогом TR-DOS
+		LD A,(DRV_SYM)
+		LD C,1
+		CALL FTR_DOS
+		LD HL,ADR_CAT
+		LD DE,8
+		LD BC,0x0105
+		CALL FTR_DOS;TO_DOS4BAS			;загрузили 9 сектор
+		LD A,(ADR_CAT+0xE7)
+		CP 0x10				; проверка на признак TR_DOS
+		JP NZ,CMP_VIRTUAL		; ошибка, диск не TR-DOS
+		LD HL,ADR_CAT
+		LD DE,0
+		LD BC,0x0905
+		CALL FTR_DOS;TO_DOS4BAS			;загрузка TR-DOS диры
+		LD A,(ADR_CAT+0x8E7)
+		CP 0x10				; проверка на признак TR_DOS
+		JP NZ,_STUPID
+VIEW_ALL	LD IX,ADR_CAT
+		LD DE,0x10
+		LD A,(ADR_CAT+0x8E4)
+		AND A
+		JP Z,NO_BAS
+		LD B,A				; сколько файлов надо просмотреть
+		LD C,0				; обнуление счетчика найденного
+		EXX
+		PUSH IX
+		POP DE
+		EXX
+FIND_BASIC	LD A,(IX+8)
+		CP "B"				; ищем только басик файлы
+		JR NZ,FINDBAS1
+		LD A,(IX+0)
+		DEC A				; проверка на удаленный файл
+		JR Z,FINDBAS1
+		EXX
+		PUSH IX
+		POP HL				; откуда переносить описатель
+		LD BC,0x10
+		LDIR
+		EXX
+		INC C
+FINDBAS1	ADD IX,DE
+		DJNZ FIND_BASIC
+		LD IX,WIN_FILES			; окно для вывода басик файлов
+OUT_HOB		LD (IX+_NUM_PKT),0
+		LD (IX+_NUM_KOL_L),C
+		LD (IX+_NUM_KOL_H),B		; полное количество найденного
+		LD (IX+_TEK_PKT_L),0
+		LD (IX+_TEK_PKT_H),0		; обнуляем позицию файлов и курсора
+REOUT_HOB	LD A,B
+		OR C				; проверка количества найденного
+		JP Z,NO_BAS			; если 0, то нет басиков
+		LD HL,ERS_FLAGS
+		RES 2,(IY+55)			; предположительно файлов менее высоты окна
+		LD A,B
+		AND A
+		LD A,V_FILE-2
+		JR NZ,FINDBAS2			; если более 256 файлов, то полная высота окна
+		LD A,C
+		CP V_FILE-1
+		JR C,FINDBAS2
+		SET 2,(IY+55)			; файлов больше высоты окна
+		LD A,V_FILE-2
+FINDBAS2	LD C,A
+		ADD A,2
+		LD (IX+_V_SIZE),A		; установка вычисленной высоты окна
+		LD (IX+_H_SIZE),H_FILE		; установка ширины окна
+FINDBAS6	BIT B_RUN_FAT,(HL)
+		JR Z,FINDBAS5			; если работа с TR-DOS, то переходим на вывод окна
+		LD A,C
+		CP FH_FILE-1
+		JR C,FINDBAS9
+		LD C,FH_FILE-2
+FINDBAS9	LD A,C
+		LD (KOL4OUT),A
+		LD (IX+_V_SIZE),FH_FILE
+		LD (IX+_H_SIZE),FV_FILE
+	RST8 _WINW
+		JR FINDBAS7
+
+FINDBAS5	LD A,(ERS_FLAGS)
+		AND M_RUN_FAT
+		JR NZ,FINDBAS8
+		LD (IX+_H_SIZE),H_FILE-4
+FINDBAS8
+	RST8 _WINW
+FINDBAS7	CALL OUT_TEK_DIR		; выводим кусочек директории
+		JP _RULILKA
+
+; вывод части директории с указанной позиции
+OUT_TEK_DIR	LD L,(IX+_TEK_PKT_L)		; вывод диры TR-DOS диска
+		LD H,(IX+_TEK_PKT_H)		; получили номер текущей позиции
+		LD E,(IX+_NUM_PKT)		; получили позицию курсора в окне
+		XOR A
+		LD D,A
+		SBC HL,DE			; вычислили позицию файла с которого будем выводить
+		ADD HL,HL
+		LD A,(ERS_FLAGS)
+		AND M_RUN_FAT
+		JR NZ,OUT_TEK_FAT		; переход если для FAT
+; вывод для TR-DOS файлов
+		LD DE,ADR_CAT
+		ADD HL,HL
+		ADD HL,HL
+		ADD HL,HL			; умножили на размер описателя
+		ADD HL,DE			; вычислили адрес описателя с которого будем выводить
+		LD C,(IX+_V_SIZE)
+		DEC C
+		DEC C				; вычислили сколько выводить
+		LD D,(IX+_X_COORD)
+		LD E,(IX+_Y_COORD)
+		INC D
+		INC D
+		INC E				; вычислили позицию вывода на экран
+FINDBAS3	LD B,8				; печатаем только имя
+		PUSH DE
+FINDBAS4	LD A,(HL)
+		INC HL
+		CALL PRT_SYM
+		DJNZ FINDBAS4
+		LD DE,8				; 8 символов напечатали, остальные 8 пропускаем
+		ADD HL,DE
+		POP DE
+		INC E
+		DEC C
+		JR NZ,FINDBAS3			; если не кончились переходим на печать следующего имени
+		RET
+
+; вывод диры на FAT
+OUT_TEK_FAT	LD DE,ADR_CAT_FAT
+		ADD HL,DE
+		LD D,(IX+_X_COORD)
+		LD E,(IX+_Y_COORD)
+		INC D
+		INC E				; вычислили позицию вывода на экран
+		LD C,0
+KOL4OUT		EQU $-1
+OTF2		PUSH BC
+		LD C,(HL)
+		INC HL
+		LD B,(HL)
+		INC HL
+		PUSH HL
+		PUSH DE
+		LD A,6
+	RST8 _COM_FAT,_POS_FILES
+		LD HL,BUF_FILEITEM
+	RST8 _COM_FAT,_READ_DIR
+		POP DE
+		PUSH DE
+		LD BC,0x0B
+		ADD HL,BC
+		LD A,(HL)
+		SBC HL,BC
+		AND 0x10
+		LD A,0				; символ папки
+		JR NZ,OTF4
+		LD A,1				; символ файла
+OTF4		CALL PRTSPECSYM
+		LD HL,OUT_NAME_FILET
+	RST8 _COM_FAT,_GET_LONGNAME
+		LD (LONG_NAME),A
+		CALL FILENAME8_3
+		POP DE
+		POP HL
+		POP BC
+		INC E
+		DEC C
+		JR NZ,OTF2
+		RET
+
+FILENAME8_3	LD A,(ERS_FLAGS)
+		AND M_RUN_FAT
+		JR NZ,OTF5
+		LD B,8
+OTF1		LD A,(HL)
+		INC HL
+		CALL PRT_SYM
+		DJNZ OTF1
+		RET
+
+OTF5		EX DE,HL
+		LD A,H
+		ADD A,A
+		ADD A,A
+		ADD A,A
+		LD H,A
+		INC H
+		LD (OUT_NAME_FILE+1),HL
+		LD HL,OUT_NAME_FILET
+		LD BC,0
+LONG_NAME	EQU $-2
+		LD A,FV_FILE6
+		CP C
+		JR Z,OTF7
+		JR NC,OTF6
+		EX DE,HL
+		LD HL,FV_FILE6
+		ADD HL,DE
+		LD (HL),">"
+		INC HL
+		LD (HL),0
+		JR OTF7
+
+OTF6		SUB C
+		ADD HL,BC
+		LD C,A
+		LD D,H
+		LD E,L
+		INC DE
+		LD (HL)," "
+		LDIR
+		XOR A
+		LD (DE),A
+OTF7		LD HL,OUT_NAME_FILE
+	RST8 _PRINT_MESSAGE
+		RET
+
+NO_BAS		LD HL,ERS_FLAGS
+		BIT B_VIEW_IMG,(HL)
+		JP NZ,FILES_BROWSE
+		LD IX,NOBASIC
+	RST8 _WINW
+		JP _RULILKA
+
+RUNFILE		DI
+		CALL SHUT2AY			; бумкалка в AY
+		LD HL,ERS_FLAGS
+		BIT B_VIEW_IMG,(HL)
+		JR Z,RUNFILE2
+		LD IX,FAT_FILES
+		LD HL,ERS_FLAGS
+		SET B_VIEW_IMG,(HL)
+		JP RUN_HOB			; переход на загрузку и запуск из SCL образа
+
+RUNFILE2	LD L,(IX+_TEK_PKT_L)
+		LD H,(IX+_TEK_PKT_H)		; номер выбранного файла
+		LD DE,ADR_CAT
+		ADD HL,HL
+		ADD HL,HL
+		ADD HL,HL
+		ADD HL,HL
+		ADD HL,DE			; откуда имя файла взять
+RUNFILE1	LD DE,RUNNAM
+		LD BC,8
+		LDIR
+		LD HL,0x3E08+0xA7
+		LD DE,0xFFFF
+		LD C,0xA8			; 21 символ UDG
+		LDDR
+		LD HL,RUN_BASIC
+		LD DE,0x5D3B
+		LD BC,ERUN_BASIC-RUN_BASIC
+		LDIR				; перенос бейсик проги для запуска
+		CALL MEMSET			; выставили режим компа
+		CALL FOR_RUN
+		EI
+		LD BC,0xFF56
+		CALL 0x1EB7
+		LD HL,0x1B7D			; запуск перенесенной бейсик проги
+		PUSH HL
+		LD HL,0x6000
+		LD DE,0x6001
+		LD BC,0xFF00-0x6000
+		LD (HL),0
+		JP 0x33C3
+
+FOR_RUN		SET 3,(IY+1)
+		LD IY,ERR_NR
+		LD (IY),0xFF
+		SET 7,(IY+1)
+		RES 4,(IY+1)
+		LD HL,0x2758
+		EXX
+		LD A,0xC9
+		LD (TRD_5CC2),A
+		LD HL,0
+		LD (NEWPPC),HL
+		XOR A
+		LD (NSPPS),A
+		RET
+
+; круговой перебор имени дисковода 1-4 (A-D)
+NEXTDRIVE	LD A,(TXT_DRIVE)		; взяли букву текущего дисковода
+		INC A				; +1, то есть выбрали следующий по порядку
+		SUB 0x10			; превратили в номер
+		CP "5"				; если превысили 4
+		JR C,SELDRV1
+		SUB 4				; то изменили на номер первый
+		JR SELDRV1
+
+NEXTVIRT	LD HL,MAINLOP
+		PUSH HL
+		LD A,(ERS_FLAGS)
+		AND M_CLOCK_ON
+		RET Z
+		LD H,VIRT_REAL_DRIVE
+		CALL READCMOS
+		AND 3				; A = сдвинутый номер виртуального дисковода
+		INC A
+		CP 4
+		JR C,NEXTVIRT1
+		XOR A
+NEXTVIRT1	LD D,A				; сохранили виртуальный дисковод
+		LD A,L
+		AND %11111100			; A = сбросили старый номер виртуального дисковода
+		OR D				; добавили новый номер виртуального дисковода
+		LD L,A
+		CALL WRITECMOS			; сохранили номер реального и виртуального дисковода
+;	RST8 _MOUNTER,_MOUNT_RAMDISK		; монтирование рамдиска
+		CALL REST2X2
+		CALL PRT_VIRTDRV
+		LD A,(ERS_FLAGS)
+		AND M_MOUSE_ON
+		RET Z
+		JP DRAW_MOUSE
+
+; изменение номера дисковода и сохранение в кмосе если таковой обнаружен
+SELDRV		LD A,(LAST_K)			; взяли номер дисковода
+SELDRV1		SUB "1"				; обратили в бинарный вид для записи в переменную
+		LD HL,MAINLOP			; адрес куда вернуться после записи
+		PUSH HL
+SELDRVPP	LD (DRV_SYM),A			; сохранили новый номер реального дисковода
+		RLCA
+		RLCA
+		LD D,A				; сдвинутый номер виртуального дисковода
+		LD A,(ERS_FLAGS)
+		AND M_CLOCK_ON
+		RET Z				; если кмос не найден, выходим
+		LD H,VIRT_REAL_DRIVE
+		CALL READCMOS
+		AND %11110011			; сбросили старый номер реального дисковода
+		OR D				; добавили новый номер реального дисковода
+		LD L,A
+		CALL WRITECMOS			; сохраняем в кмосе
+		CALL SET_DRIVE			; установка изменения
+		CALL REST2X2			; восстановили под курсором мыши
+		CALL PRT_DRV_SYM		; перепечатали строку о дисководах
+		LD A,(ERS_FLAGS)
+		AND M_MOUSE_ON
+		RET Z
+		JP DRAW_MOUSE			; нарисовали мышь на старом месте
+
+; FIX mouse key if no mouse
+ONERNCLS	LD A,(ERS_FLAGS)
+		AND M_MOUSE_ON
+		JR Z,ONERNC1
+		LD A,0xFA
+		IN A,(0xDF)
+		RRA
+		JP NC,_STUPID
+ONERNC1		POP AF
+		EX (SP),HL
+		RET
+
+SET_DOS_PAGE	PUSH HL
+DOSIX		PUSH IX
+		JP TO_DOS
+
+; проверка наличия маркера рамдиска, при отсуствии создание диска на 640КБ
+DISK_NONE
+	PEC_ON M_SHADOW_BF
+		LD A,RAM_RAMDISK
+		LD BC,WIN_P1
+		OUT (C),A
+		LD HL,0x7FFF
+		LD A,(HL)
+		DEC H
+		CP "R"
+		JR NZ,DISK_NONE1
+		LD A,(HL)
+		CP "D"
+DISK_NONE1	EX AF,AF'
+		LD A,ZXSTD_CPU1
+		OUT (C),A
+	PEC_OFF M_SHADOW_BF
+		EX AF,AF'
+		LD HL,ERS_FLAGS
+		RES B_LOAD_IMG,(HL)
+		JP NZ,CREATE_TRDRAM		; маркер не обнаружен, создать
+		RET
+
+DIV10	LD D,0x30-1
+	INC D
+	SUB 0x0A
+	JR NC,$-3
+	ADD A,0x0A+0x30
+	RET
+
+_RETRY	LD A,"R"
+	JR $+4
+
+_IGNORE	LD A,"I"
+	LD HL,0x3F7E
+	EX (SP),HL
+	DI
+	JP TO_DOS
+
+; вызов вместо 0x3D13
+FTR_DOS	;jp 0x3D13
+		PUSH HL
+		LD HL,(ERR_SP)
+		LD (DOSVARS.TMP_ERR_SP),HL
+		LD HL,DSK_ERR_CAPTURE
+		LD (TRD_5CC3),HL
+		LD HL,DERROR
+		EX (SP),HL
+		LD (ERR_SP),SP
+		EX AF,AF'
+		LD A,0xC3
+		LD (TRD_5CC2),A
+		XOR A
+		LD (TRD_5D0F),A
+		LD (TRD_5D10),A
+		LD (DOSVARS.DSKERR),A
+		LD (DOSVARS.COPY_1F),A
+		DEC A
+		LD (ERR_NR),A
+		LD A,(TRD_5D19)
+		LD (TRD_5CF6),A
+		EX AF,AF'
+		JP 0x3D13
+
+; возврат из 0x3D13 и проверка на ошибку
+DERROR		DI
+		LD HL,(DOSVARS.TMP_ERR_SP)
+		LD (ERR_SP),HL
+		LD A,(TRD_5D16)
+		AND 3
+		LD (TRD_5D19),A
+		LD HL,TRD_5CC2
+		LD (HL),0xC9
+		LD HL,(DOSVARS.COPY_1F)
+		LD A,(TRD_5D0F)
+		LD H,A
+		LD A,L
+		AND A
+		JR NZ,.L1
+		LD A,H
+		AND A
+		RET Z				; ошибок нет
+.L1		LD A,H
+		LD C,ERR_NO_DISK
+		CP 6				; нет диска
+		JR Z,.L2
+		LD C,ERR_DISK_READ_ONLY
+		LD A,0x40
+		AND L
+		JR NZ,.L2
+		LD A,(TRD_5CF4)
+		CP 8
+		JR NZ,.L2
+		LD C,ERR_DISK_ERROR		; ошибка диска
+.L2		LD A,C
+		LD (DOSVARS.DSKERR),A
+		CP ERR_DISK_ERROR
+		PUSH AF
+		CALL Z,STOPDSK
+		POP AF
+		LD IX,(DOSVARS.CURR_IX)
+		LD A,H
+		CP 6
+		RET NZ
+		JP _STUPID			; диска нет
+
+; остановка дискеты
+STOPDSK		LD A,(TRD_5D16)
+		PUSH AF
+		XOR 3
+		CALL .L1
+		POP AF
+.L1		LD HL,0x02B9
+		PUSH HL
+		JP 0x3D2F
+
+; перехват адреса 0x5CC2
+DSK_ERR_CAPTURE
+		DI
+		POP DE
+		LD HL,0x0D6B
+		AND A
+		SBC HL,DE
+		JR NZ,.L1
+		LD A,B
+		LD (DOSVARS.COPY_1F),A
+		RET
+
+.L1		LD HL,0x10
+		AND A
+		SBC HL,DE
+		RET Z
+		LD HL,0x1A1B
+		AND A
+		SBC HL,DE
+		RET Z
+		AND A
+		LD HL,0x028E
+		SBC HL,DE
+		SCF
+		RET Z
+		LD HL,0x031E
+		AND A
+		SBC HL,DE
+		SCF
+		RET Z
+		LD HL,0x1F54
+		AND A
+		SBC HL,DE
+		SCF
+		RET Z
+		LD HL,0x0333
+		AND A
+		SBC HL,DE
+		JR Z,RAI
+		PUSH DE
+		LD HL,(TRD_5D02)
+		LD DE,(TRD_5D04)
+		RET
+
+	IF 0
+; перехват дисковой ошибки для обработки
+ONERR		EX (SP),HL
+		PUSH AF
+
+		PUSH DE
+		PUSH HL
+		LD DE,0x1303
+		AND A
+		SBC HL,DE
+		POP HL
+		POP DE
+		JR Z,ONERR1
+		PUSH DE
+		PUSH HL
+		LD DE,0x0D6B
+		AND A
+		SBC HL,DE
+		POP HL
+		POP DE
+		JR NZ,ONERNCLS
+;		LD A,H
+;		CP HIGH (0x0D6B)
+;		JR NZ,ONERNCLS
+;		LD A,L
+;		CP LOW (0x0D6B)
+;		JR NZ,ONERNCLS
+
+ONERR1		POP HL
+		POP HL
+		POP HL
+		POP HL
+		POP HL
+	ENDIF
+RAI
+		EI
+		CALL GLUDIN
+		LD HL,TRD_5CF4
+		LD A,(HL)			; взяли номер сектора
+		INC A
+		CALL DIV10
+		LD (NUM_SEC_TXT+1),A
+		LD A,D
+		LD (NUM_SEC_TXT),A
+		INC HL
+		LD A,(HL)			; взяли номер трека
+		SRL A
+		LD E,A
+		ADC A,"0"
+		SUB E
+		LD (SIDE_DISK),A		; сторона диска
+		LD A,E
+		CALL DIV10
+		LD (NUM_TRK_TXT+1),A
+		LD A,D
+		LD (NUM_TRK_TXT),A
+		LD IX,DSK_ERR			; окно выводим полностью
+	RST8 _WINW
+		JP _RULILKA
+
+RESET_VG	LD C,0xFF
+		XOR A
+		LD IX,0x3FF0			; OUT (C),A
+		CALL DOSIX
+		LD A,(DRV_SYM)
+		OR 0x3C
+		LD HL,0x2A53
+		CALL SET_DOS_PAGE		; установка DOS страницы
+		LD A,0x68			; шаг назад
+		LD C,0x1F
+		JP DOSIX
+;		LD HL,DSTUPID
+;		LD (ERR_SP),HL
+;		LD A,0xC3
+;		LD (TRD_5CC2),A
+;		LD HL,ONERR
+;		LD (TRD_5CC3),HL
+;		RET

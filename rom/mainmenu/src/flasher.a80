@@ -1,0 +1,265 @@
+
+
+PGM_BYTE
+        ; programs byte to the given location
+        ; address in EHL (512kB only)
+        ; byte in A
+
+        ; preserves BC,DE,HL
+
+        ; returns carry=1 if error
+
+        PUSH    DE
+        PUSH    HL
+        PUSH    AF
+
+        LD      E,0X00
+        LD      HL,0X0555
+        LD      A,0XAA
+        CALL    WRBYTE
+
+        LD      HL,0X2AA
+        LD      A,0X55
+        CALL    WRBYTE
+
+        LD      HL,0X555
+        LD      A,0XA0
+        CALL    WRBYTE
+
+        POP     AF
+        POP     HL
+        POP     DE
+        CALL    WRBYTE
+
+        JP      ERR_END ; wait for end/error as always
+
+sendCmd:
+	ld bc,0xfff7
+	ld a,0x3f & (~(1))
+	out (c),a
+	ld a,0xaa
+	ld (0x1555 + 0xc000),a
+	
+	ld a,0x3f & (~(0))
+	out (c),a
+	ld a,0x55
+	ld (0x2aaa + 0xc000),a
+	
+	ld a,0x3f & (~(1))
+	out (c),a
+	ld a,e
+	ld (0x1555 + 0xc000),a
+	ret
+	
+rom_read_id ; out: hl - ChipID
+
+	ld e,0xf0
+	call sendCmd
+		
+	ld e,0x90
+	call sendCmd
+	
+	LD      A,87
+	DEC     A
+	JR      NZ,$-1
+	
+	ld hl,(0xc000)
+	
+	ld e,0xf0
+	call sendCmd
+	
+	ret
+
+erase_all_chip
+	ld e,0xf0
+	call sendCmd
+	
+	ld e,0x80
+	call sendCmd
+	
+	ld e,0x10
+	call sendCmd
+	
+	;now wait 100uS @ 14MHz to start actual block erase
+
+	LD      A,87
+	DEC     A
+	JR      NZ,$-1
+	
+	ld hl, 0xc000
+	
+ERASE_ALL_LOOP
+	ld a,(hl)
+	xor (hl)
+	jr	nz,ERASE_ALL_LOOP
+	
+	ld e,0xf0
+	call sendCmd
+	
+	ret
+
+
+ERASE_BLK
+        ; erases 64kB block of ROM.
+        ; block address is given in EHL (any addr in block)
+
+        ; returns carry=1 if error
+
+        ; BC,DE,HL are preserved
+
+
+        PUSH    DE
+        PUSH    HL
+
+        LD      E,0X00
+        LD      HL,0X0555
+        LD      A,0XAA
+        CALL    WRBYTE
+
+        LD      HL,0X2AA
+        LD      A,0X55
+        CALL    WRBYTE
+
+        LD      HL,0X555
+        LD      A,0X80
+        CALL    WRBYTE
+
+        LD      A,0XAA
+        CALL    WRBYTE
+
+        LD      HL,0X2AA
+        LD      A,0X55
+        CALL    WRBYTE
+
+        POP     HL
+        POP     DE
+        LD      A,0X30
+        CALL    WRBYTE
+
+        ;now wait 100uS @ 14MHz to start actual block erase
+
+        LD      A,87
+        DEC     A
+        JR      NZ,$-1
+
+        ; then wait for erase end
+ERR_END
+        CALL    WAIT_END
+
+        RET     NC ; if no error - return
+
+        ; send read/reset command to ROM
+
+        LD      A,0XF0
+        CALL    WRBYTE
+
+        ;then wait 10uS @ 14MHz
+
+        LD      A,9
+        DEC     A
+        JR      NZ,$-1
+
+        SCF 
+        RET ; set error condition
+
+WAIT_END;wait for ROM to end op or to indicate error
+
+        PUSH    BC
+
+WE_REPEAT
+        CALL    RDBYTE
+        LD      B,A
+
+        CALL    RDBYTE
+        XOR     B
+
+        BIT     6,A
+        JR      Z,WE_END ; no toggle - end! (carry is clear)
+
+        BIT     5,A
+        JR      NZ,WE_REPEAT ; if toggle and error bit toggles -
+                             ; repeat reading
+
+        BIT     5,B ; toggle, error bit is set - error!
+        JR      Z,WE_REPEAT ; otherwise - just toggle, wait more
+
+;WE_ERROR
+        SCF 
+
+WE_END  POP     BC
+        RET 
+
+WRBYTE  ; writes given in A byte to rom at address EHL
+        ; in a range 0..512kB
+
+        ; assumes shadow ports are on
+        ; uses paging in 0XC000..0XFFFF window
+
+        ; preserves A,BC,DE,HL
+
+        PUSH    BC
+        PUSH    AF
+
+        LD      A,E
+        AND     7 ; 512kB only
+        LD      B,A
+
+        LD      A,H
+        AND     0XC0
+        OR      B
+
+        RLCA 
+        RLCA 
+
+        CPL 
+        AND     0X3F
+;;;;;;;;OR      0X00
+
+        LD      BC,WIN_A3;0XFFF7
+        OUT     (C),A    ; page is done
+
+        LD      A,H
+        OR      0XC0
+        LD      B,A
+        LD      A,L
+        LD      C,A
+
+        POP     AF
+        LD      (BC),A
+
+        POP     BC
+        RET 
+
+RDBYTE  ; read byte (same as WRBYTE), reads in A
+
+        PUSH    BC
+
+
+        LD      A,E
+        AND     7 ; 512kB only
+        LD      B,A
+
+        LD      A,H
+        AND     0XC0
+        OR      B
+
+        RLCA 
+        RLCA 
+
+        CPL 
+        AND     0X3F
+;;;;;;;;OR      0X00
+
+        LD      BC,WIN_A3;0XFFF7
+        OUT     (C),A    ; page is done
+
+        LD      A,H
+        OR      0XC0
+        LD      B,A
+        LD      A,L
+        LD      C,A
+
+        LD      A,(BC)
+
+        POP     BC
+        RET 

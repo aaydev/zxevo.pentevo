@@ -1,0 +1,14 @@
+
+; LAST UPDATE: 24.02.2023 savelij
+
+; версия в бинарном виде ERS
+VERSBIN		EQU 0x00005911
+
+	IFDEF DOS_FE
+VERSBIOS	EQU "0.59.12 FE "
+	ELSE
+VERSBIOS	EQU "0.59.12 "
+	ENDIF
+
+; версия DOS
+VERS_DOS	EQU "0.57"

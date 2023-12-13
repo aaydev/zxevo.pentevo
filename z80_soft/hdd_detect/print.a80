@@ -1,0 +1,206 @@
+
+; LAST UPDATE: 24.07.2023 savelij
+
+PRINT_MSG	LD A,(HL)
+		INC HL
+		AND A
+		RET Z
+		CALL .CODES
+		JR PRINT_MSG
+
+.CODES		CP ' '
+		JR NC,PRINT_A_
+		CP 0x0D
+		JR NZ,.COD16
+; перевод строки
+		EXX
+		LD HL,VVARS.PPOS_X
+		LD (HL),0
+		INC HL
+		INC (HL)
+		EXX
+		RET
+
+.COD16		CP 0x16
+		JR NZ,.COD17
+; установка позиции печати
+; 0x16 X (0..41) Y (0..23)
+		LD A,(HL)
+		INC HL
+		LD (VVARS.PPOS_X),A
+		LD A,(HL)
+		INC HL
+		LD (VVARS.PPOS_Y),A
+		RET
+
+.COD17		CP 0x17
+		RET NZ
+		LD A,(HL)
+		INC HL
+		LD (VVARS.COLOR_TEXT),A
+		RET
+
+; рисование символа 6x8
+PRINT_A_	PUSH HL
+		EXX
+		LD L,A
+		LD H,0
+		ADD HL,HL
+		ADD HL,HL
+		ADD HL,HL
+		LD DE,FONT
+		ADD HL,DE
+		PUSH HL
+		LD HL,VVARS.PPOS_X
+		LD E,(HL)		; X
+		INC (HL)		; следующий X
+		INC HL
+		LD A,(HL)		; Y
+		ADD A,A
+		ADD A,A
+		ADD A,A			; Y координата в таблице адресов экрана
+		LD B,A
+		LD A,E
+		ADD A,A			; *2
+		ADD A,A			; *4
+		ADD A,E			; *5
+		ADD A,E			; *6
+		LD D,A
+		EX AF,AF'
+		LD A,D
+		SRL A
+		SRL A
+		SRL A
+		LD C,A			; X смещение
+		LD H,HIGH (BUFTSC)
+		LD L,B
+		LD A,(HL)
+		ADD A,C
+		LD E,A
+		INC H
+		LD D,(HL)
+		POP HL
+		EX AF,AF'
+		AND 7
+		JP NZ,.L0
+; POS = 0	0000 0011 1111 1111
+	REPT 8
+		LD A,(DE)
+		AND %00000011
+		OR (HL)
+		LD (DE),A
+		INC D
+		INC HL
+	ENDM
+		JP .RET
+
+; POS = 2	1100 0000 1111 1111
+.L0		SUB 2
+		JP NZ,.L1
+	REPT 8
+		LD A,(HL)
+		RRA
+		RRA
+		LD C,A
+		LD A,(DE)
+		AND %11000000
+		OR C
+		LD (DE),A
+		INC D
+		INC HL
+	ENDM
+		JP .RET
+
+; POS = 4	1111 0000 0011 1111
+.L1		SUB 2
+		JP NZ,.L2
+	REPT 8
+		LD C,0
+		LD A,(HL)
+		RRA
+		RRA
+		RRA
+		RR C
+		RRA
+		RR C
+		LD B,A
+		LD A,(DE)
+		AND %11110000
+		OR B
+		LD (DE),A
+		INC E
+		LD A,(DE)
+		AND %00111111
+		OR C
+		LD (DE),A
+		DEC E
+		INC D
+		INC HL
+	ENDM
+		JP .RET
+
+; POS = 6	1111 1100 0000 1111
+.L2
+	REPT 8
+		LD B,0
+		LD A,(HL)
+		ADD A,A
+		RL B
+		ADD A,A
+		RL B
+		LD C,A
+		LD A,(DE)
+		AND %11111100
+		OR B
+		LD (DE),A
+		INC E
+		LD A,(DE)
+		AND %00001111
+		OR C
+		LD (DE),A
+		DEC E
+		INC D
+		INC HL
+	ENDM
+.RET
+		LD A,(VVARS.COLOR_TEXT)
+		LD C,A
+		INC A
+		JR Z,.RET1
+		DEC D
+		LD A,D
+		RRCA
+		RRCA
+		RRCA
+		AND 3
+		OR 0x58
+		LD D,A
+		EX DE,HL
+		LD (HL),C
+.RET1		
+		EXX
+		POP HL
+		RET
+
+; генерация адресов экрана
+FADRTSC		LD B,0x18
+		LD DE,0x4000
+		LD HL,BUFTSC
+.L1		LD C,8
+.L2		LD (HL),E
+		INC H
+		LD (HL),D
+		DEC H
+		INC L
+		INC D
+		DEC C
+		JR NZ,.L2
+		LD A,0x20
+		ADD A,E
+		LD E,A
+		JR C,.L3
+		LD A,D
+		SUB 8
+		LD D,A
+.L3		DJNZ .L1
+		RET

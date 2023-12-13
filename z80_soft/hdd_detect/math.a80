@@ -1,0 +1,259 @@
+
+; LAST UPDATE: 26.07.2023 savelij
+
+; перевод BCDE в HEX строку и возврат в HL адреса буфера
+HEX2TXT		LD HL,TXT_HEX
+		PUSH HL
+		LD A,B
+		CALL HEX2HL
+		LD A,C
+		CALL HEX2HL
+		LD A,D
+		CALL HEX2HL
+		LD A,E
+		CALL HEX2HL
+		LD (HL),0
+		POP HL
+		RET
+
+; перевод A в HEX и укладка в адрес HL
+HEX2HL		LD B,A
+		RRCA
+		RRCA
+		RRCA
+		RRCA
+		CALL .L1
+		LD A,B
+.L1		AND 0x0F
+		ADD A,'0'
+		CP '9'+1
+		JR C,.L2
+		ADD A,7
+.L2		LD (HL),A
+		INC HL
+		RET
+
+; перевод (64 бит) числа в десятичную систему и текстовый вид
+FHEX8DEC	EXX
+		LD HL,TXT_DEC
+		PUSH HL
+		PUSH HL
+		LD (BUF_IN_DIGIT + 6),BC
+		LD (BUF_IN_DIGIT + 4),DE
+		EXX
+		LD (BUF_IN_DIGIT + 2),BC
+		LD (BUF_IN_DIGIT + 0),DE
+		LD HL,CHISLA._8_
+	REPT 5
+		CALL BCDEBCDEMHL
+	ENDM
+		JR FHEX6DEC.L1
+
+; перевод (48 бит) числа в десятичную систему и текстовый вид
+FHEX6DEC	EXX
+		LD HL,TXT_DEC
+		PUSH HL
+		PUSH HL
+		LD BC,0
+		LD (BUF_IN_DIGIT + 6),BC
+		LD (BUF_IN_DIGIT + 4),DE
+		EXX
+		LD (BUF_IN_DIGIT + 2),BC
+		LD (BUF_IN_DIGIT + 0),DE
+.L1		LD HL,CHISLA._6_
+	REPT 14
+		CALL BCDEBCDEMHL
+	ENDM
+		LD A,(BUF_IN_DIGIT)
+		ADD A,'0'
+		JR FHEX4DEC.L5
+
+; перевод (32 бита) числа в десятичную систему и текстовый вид
+FHEX4DEC	EXX
+		LD HL,TXT_DEC
+		PUSH HL
+		PUSH HL
+		EXX
+		LD HL,CHISLA._4_
+	REPT 5
+		CALL BCDEMHL
+	ENDM
+; для 16 битного числа
+.L4		CALL BCDEMHL
+		CALL BCDEMHL
+; для 8 битного числа
+.L1		CALL BCDEMHL
+		CALL BCDEMHL
+		LD A,'0'
+		ADD A,E
+.L5		EXX
+		LD (HL),A
+		INC HL
+		LD (HL),0
+		EXX
+		POP HL
+.L2		LD A,(HL)
+		CP '0'
+		JR NZ,.L3
+		LD (HL),' '
+		INC HL
+		LD A,(HL)
+		AND A
+		JR NZ,.L2
+.L3		POP HL
+		RET
+
+; перевод (16 бит) числа в десятичную систему и текстовый вид
+FHEX2DEC	EXX
+		LD HL,TXT_DEC
+		PUSH HL
+		PUSH HL
+		EXX
+		LD HL,CHISLA._2_
+		LD BC,0
+		JR FHEX4DEC.L4
+
+; перевод (8 бит) числа в десятичную систему и текстовый вид
+FHEX1DEC	EXX
+		LD HL,TXT_DEC
+		PUSH HL
+		PUSH HL
+		EXX
+		LD HL,CHISLA._1_
+		LD BC,0
+		LD D,B
+		JR FHEX4DEC.L1
+
+CHISLA
+; 64 бита	   18446744073709551615
+._8_		DQ 10000000000000000000
+		DQ  1000000000000000000
+		DQ   100000000000000000
+		DQ    10000000000000000
+		DQ     1000000000000000
+; 48 бит	   281474976710655
+._6_		DQ      100000000000000
+		DQ       10000000000000
+		DQ        1000000000000
+		DQ         100000000000
+		DQ          10000000000
+		DQ           1000000000
+		DQ            100000000
+		DQ             10000000
+		DQ              1000000
+		DQ               100000
+		DQ                10000
+		DQ                 1000
+		DQ                  100
+		DQ                   10
+		
+; 32 бита	   4294967295
+._4_		DD 1000000000
+		DD  100000000
+		DD   10000000
+		DD    1000000
+		DD     100000
+; 16 бит	   65535
+._2_		DD      10000
+		DD       1000
+; 8 бит		   255
+._1_		DD        100
+		DD         10
+
+BUF_IN_DIGIT	DQ 0
+
+; BCDE'BCDE - (ADR) = BCDE
+BCDEBCDEMHL	LD DE,BUF_IN_DIGIT
+		XOR A
+		EX AF,AF'
+		LD BC,-8
+.L1		
+		LD A,(DE)
+		SUB (HL)
+		LD (DE),A
+		INC HL
+		INC DE
+	REPT 7
+		LD A,(DE)
+		SBC A,(HL)
+		LD (DE),A
+		INC HL
+		INC DE
+	ENDM
+		EX AF,AF'
+		EX DE,HL
+		ADD HL,BC
+		EX DE,HL
+		ADD HL,BC
+		INC A
+		EX AF,AF'
+		JP NC,.L1
+		LD A,(DE)
+		ADD A,(HL)
+		LD (DE),A
+		INC HL
+		INC DE
+	REPT 7
+		LD A,(DE)
+		ADC A,(HL)
+		LD (DE),A
+		INC HL
+		INC DE
+	ENDM
+		JR BCDEMHL.L2
+
+; BCDE - (ADR) = BCDE
+BCDEMHL		XOR A
+		EX AF,AF'
+.L1		LD A,E
+		SUB (HL)
+		INC HL
+		LD E,A
+		LD A,D
+		SBC A,(HL)
+		INC HL
+		LD D,A
+		LD A,C
+		SBC A,(HL)
+		INC HL
+		LD C,A
+		LD A,B
+		SBC A,(HL)
+		LD B,A
+		DEC HL
+		DEC HL
+		DEC HL
+		EX AF,AF'
+		INC A
+		EX AF,AF'
+		JP NC,.L1
+		LD A,(HL)
+		ADD A,E
+		LD E,A
+		INC HL
+		LD A,(HL)
+		ADC A,D
+		LD D,A
+		INC HL
+		LD A,(HL)
+		ADC A,C
+		LD C,A
+		INC HL
+		LD A,(HL)
+		ADC A,B
+		LD B,A
+		DEC HL
+		DEC HL
+		DEC HL
+		INC HL
+		INC HL
+		INC HL
+		INC HL
+.L2		EXX
+		EX AF,AF'
+		DEC A
+		ADD A,'0'
+		LD (HL),A
+		INC HL
+		EXX
+		RET

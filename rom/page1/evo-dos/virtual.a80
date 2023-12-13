@@ -1,0 +1,935 @@
+
+; LAST UPDATE: 09.10.2022 savelij
+
+		TITLE "virtual.a80"
+
+		DB 0xFF				; DCU
+
+; копирование 256 байт
+COPY_BLOCK
+	REPT 128				; копирование блока 256 байт
+		LDI
+	ENDM
+COPYHBLOCK
+	REPT 126
+		LDI
+	ENDM
+		JR COPY_BLOCK1
+		
+		DW 0xFFFF			; для вектора прерываний IM 2 I=9
+
+COPY_BLOCK1	LDI
+		LDI
+		RET
+
+; номера внутренних функций
+ INIT_VAR
+ SETVAR _OUT_1F
+ SETVAR _OUT_3F
+ SETVAR _OUT_5F
+ SETVAR _OUT_7F
+ SETVAR _OUT_FF
+ SETVAR _OUTI
+ SETVAR _IN_1F
+ SETVAR _IN_3F
+ SETVAR _IN_5F
+ SETVAR _IN_7F
+ SETVAR _IN_FF
+ SETVAR _INI
+ SETVAR _OUT_C_D
+ SETVAR _IN_H_C
+ SETVAR _WR_RD_SECT
+ SETVAR _CMP_RAMDISK
+; SETVAR _SET_VIRT_BITS
+
+ SETVAR WOUTCA
+ SETVAR WWRITE_SEC_
+ SETVAR WREAD_SEC_
+ SETVAR WINI_RET
+
+; адреса внутренних функций
+; с возвратом в место вызова
+W_DATA		DW W_OUT1F			; запись порта 1F
+		DW W_OUT3F			; запись порта 3F
+		DW W_OUT5F			; запись порта 5F
+		DW W_OUT7F			; запись порта 7F
+		DW W_OUTFF			; запись порта FF
+		DW W_OUTI			; OUTI
+		DW W_IN1F			; чтение порта 1F
+		DW W_IN3F			; чтение порта 3F
+		DW W_IN5F			; чтение порта 5F
+		DW W_IN7F			; чтение порта 7F
+		DW W_INFF			; чтение порта FF
+		DW W_INI			; INI
+		DW W_OUTCD			; запись регистра 'D' в порт 'BC'
+		DW W_INHC			; чтение в регистр 'H' из порта 'BC'
+		DW READ_WRITE_SEC		; чтение/запись сектора
+		DW CMP_RAM_DISK			; проверка RAM диска
+;		DW SET_VIRT_BITS		; установка переменной считанной из RST 8
+EW_DATA
+; без возврата в место вызова
+		DW W_OUTCA			; запись регистра 'A' в порт 'BC'
+		DW WRITE_SEC_			; запись сектора без возврата в адрес вызова
+		DW READ_SEC_			; чтение сектора без возврата в адрес вызова
+		DW W_INI			; INI без возврата в адрес вызова
+
+TEXT4VIRTDRV	DB 0x16,ZASTV_Y+2,1
+TXT4VIRTDRV	DC "Virtual Drive: "
+ETXT4VIRTDRV
+
+DOS_NOEMUL	DB ROM_BAS48 | 0x80		; страница DOS с эмуляцией только для 3D13
+DOS_EMUL	DB ROM_ADD_BAS48 | 0x80		; страница DOS с полным перехватом портов
+
+NUM_ALT_PAGE
+	IF EMU3D2F=1
+		DB ROM_ADD_BAS48 | 0x80
+	ELSE
+		DB ROM_BAS48 | 0x80
+	ENDIF
+
+; обработчик RST 30
+RST30_WORK	EX (SP),HL
+		PUSH AF
+		PUSH BC
+		LD A,I
+	        JP PE,RST30_WORK1
+		LD A,I
+RST30_WORK1	DI
+		PUSH AF
+		LD A,(NUM_ALT_PAGE)		; номер текущей страницы ПЗУ
+		PUSH AF
+		AND 0x3E			; номер реальной страницы без зависимости
+		LD BC,WIN_A0
+		OUT (C),A
+		LD B,HIGH (WIN_P0)
+		LD A,RAM_EVODOS
+		OUT (C),A
+		IN A,(PEVO_CONF)
+		LD (WR_BF),A
+		OR 1
+		OUT (PEVO_CONF),A
+		POP AF
+		LD (TEK_ROMPAGE),A
+		LD A,(HL)
+		LD (DOS_STEK),SP
+		LD SP,DOS_STEK
+		PUSH HL				; положили HL = адрес возврата
+		PUSH DE
+		LD HL,(DOS_STEK)
+		LD DE,REG_IF
+	REPT 8
+		LDI
+	ENDM
+		LD HL,EXIT_RST30
+		PUSH HL				; положили адрес завершения
+		LD HL,W_DATA
+		ADD A,A
+		ADD A,L		
+		LD L,A
+		LD A,(HL)
+		INC L
+		LD H,(HL)
+		LD L,A
+		JP (HL)
+
+EXIT_RST30	LD HL,REG_IF
+		LD DE,(DOS_STEK)
+	REPT 8
+		LDI
+	ENDM
+		POP DE
+		POP HL
+		LD SP,(DOS_STEK)
+		LD A,(HL)
+		INC HL
+		CP LOW ((EW_DATA-W_DATA) / 2)
+		JR C,EXIT_RST302
+		LD HL,FOR_RET			; адрес выхода без возврата в место вызова
+EXIT_RST302	PUSH HL
+		LD HL,(COPY_VIRT_BITS)
+		LD A,(MASK_MNT_DRV)
+		AND L
+		LD A,ROM_ADD_BAS48 | 0x80	; страница для 3D2F
+		JR NZ,EXIT_RST305		; выбор ROM 3D2F если есть примонтированный
+		LD HL,(VIRT_DRIVE)		; или проверка для рамдиска
+		LD A,(MASK_WRK_DRV)
+		CP L
+		LD A,ROM_ADD_BAS48 | 0x80	; страница для 3D2F
+		JR Z,EXIT_RST305
+		LD A,ROM_BAS48 | 0x80		; страницы для 3D13
+EXIT_RST305	LD HL,(WR_BF)
+		LD BC,WIN_A0
+EXIT_RST303	CALL WR_BYTE_RET
+		LD A,L
+		POP HL
+		OUT (PEVO_CONF),A
+		POP AF
+		JP PO,EXIT_RST304
+		EI
+EXIT_RST304	POP BC
+		POP AF
+		EX (SP),HL
+		RET
+
+; запись "A" в порт 0x1F
+W_OUT1F		LD A,(REG_A)
+		LD (WR_1F),A
+		AND %11110000
+		RRCA
+		RRCA
+		RRCA
+		ADD A,LOW (.TABL_CMD)
+		LD L,A
+		ADC A,HIGH (.TABL_CMD)
+		SUB L
+		LD H,A
+		LD A,(HL)
+		INC HL
+		LD H,(HL)
+		LD L,A
+		JP (HL)
+
+.TABL_CMD	DW .CMD_00
+		DW .CMD_10
+		DW .CMD_20
+		DW .CMD_30
+		DW .CMD_40
+		DW .CMD_50
+		DW .CMD_60
+		DW .CMD_70
+		DW .CMD_80
+		DW .CMD_90
+		DW .CMD_A0
+		DW .CMD_B0
+		DW .CMD_C0
+		DW .CMD_D0
+		DW .CMD_E0
+		DW .CMD_F0
+
+; 00-0F команда восстановления
+.CMD_00		XOR A
+		LD (PORT_3F),A
+		LD (PORT_5F),A
+		OUT (0x3F),A
+		OUT (0x5F),A
+		JR .INFF_BIT6
+
+; 10-1F команда поиска
+.CMD_10		LD A,(PORT_7F)
+		LD (PORT_3F),A	
+		OUT (0x3F),A
+		CALL DISK_NONE
+		LD A,0x80
+		JR C,.INFF_BIT61
+.INFF_BIT6	XOR A
+.INFF_BIT61	LD (RD_1F),A
+		LD A,0xBF
+		LD (RD_FF),A
+		RET
+
+; 20-3F команда шаг в предыдущем направлении
+.CMD_20
+.CMD_30		LD A,(PORT_3F)
+.NAPRAVL	NOP
+		LD (PORT_3F),A
+		OUT (0x3F),A
+		JR .INFF_BIT6
+
+; 40-5F команда шаг вперед
+.CMD_40
+.CMD_50		LD A,(PORT_3F)
+		INC A
+		LD (PORT_3F),A	
+		OUT (0x3F),A
+		LD A,0x3C			; INC A
+		LD (.NAPRAVL),A
+		JR .INFF_BIT6
+
+; 60-7F команда шаг назад
+.CMD_60
+.CMD_70		LD A,(PORT_3F)
+		DEC A
+		LD (PORT_3F),A	
+		OUT (0x3F),A
+		LD A,0x3D			; DEC A
+		LD (.NAPRAVL),A
+;		JR .INFF_BIT6
+
+; 80-9F команда чтение сектора
+.CMD_80
+.CMD_90
+;		JR .INFF_BIT6
+
+; A0-BF команда запись сектора
+.CMD_A0
+.CMD_B0		JR .INFF_BIT6
+
+.INFF_BIT7	XOR A
+		LD (RD_1F),A
+		LD A,0x7F
+		LD (RD_FF),A
+		RET
+
+; C0-CF чтение адреса
+.CMD_C0		JR .INFF_BIT6
+
+; D0-DF принудительное прерывание
+.CMD_D0		LD A,0xBF
+		LD (RD_FF),A
+		RET
+
+; E0-EF чтение дорожки
+.CMD_E0
+.CMD_F0		JR .INFF_BIT6
+
+; запись "A" в порт 0x3F
+W_OUT3F		LD A,(REG_A)
+		LD (PORT_3F),A
+		OUT (0x3F),A
+		RET
+
+; запись "A" в порт 0x5F
+W_OUT5F		LD A,(REG_A)
+		LD (PORT_5F),A
+		OUT (0x5F),A
+		RET
+
+; запись "A" в порт 0x7F
+W_OUT7F		LD A,(REG_A)
+		LD (PORT_7F),A
+		OUT (0x7F),A
+		RET
+
+; запись "A" в порт 0xFF
+W_OUTFF 	LD A,(REG_A)
+		LD (WR_FF),A
+		OUT (0xFF),A
+		AND 3
+		LD (MASK_WRK_DRV),A		; номер дисковода
+		INC A
+		LD B,A
+		LD A,%10000000
+.L1		RLCA
+		DJNZ .L1
+		LD (MASK_MNT_DRV),A		; маска смонтированного дисковода
+		RET
+
+; запись "A" в порт (C)
+W_OUTCA 	LD A,(REG_A)
+W_OUTCA1	LD D,A
+		LD BC,(REG_C)			; если порт не TR-DOS
+		LD A,C
+; определение в какой порт запись
+		CP 0x1F
+		JP Z,W_OUT1F
+		CP 0x3F
+		JR Z,W_OUT3F
+		CP 0x5F
+		JR Z,W_OUT5F
+		CP 0x7F
+		JR Z,W_OUT7F
+		CP 0xFF
+		JR Z,W_OUTFF
+		CP LOW (WIN_A0)
+		JR Z,W_OUTCA3
+W_OUTCA4	OUT (C),D
+		RET
+
+; запись в порты ATM/PENTEVO
+W_OUTCA3	LD A,B
+		LD HL,BB_CPU1
+		CP HIGH (WIN_A1)
+		JR Z,W_OUTCA2
+		CP HIGH (WIN_P2)
+		JR Z,W_OUTCA2
+		LD HL,BB_CPU2
+		CP HIGH (WIN_A2)
+		JR Z,W_OUTCA2
+		CP HIGH (WIN_P2)
+		JR NZ,W_OUTCA4
+W_OUTCA2	LD E,B
+		PUSH DE
+		PUSH HL
+		CALL READ_WCPU12
+		POP HL
+		POP DE
+		LD (HL),D
+		INC HL
+		LD (HL),E
+		JP WRITE_WCPU12
+
+; запись "D" в порт (C)
+W_OUTCD		LD A,(IREG_D)
+		JR W_OUTCA1
+
+; передача байта, команда OUTI
+W_OUTI		LD HL,(BUFF_SECT)
+		EXX
+		LD A,(HL)
+		INC HL
+		EXX
+		LD (HL),A
+		INC HL
+		LD (BUFF_SECT),HL
+		RET
+
+; чтение порта 0x1F
+W_IN1F		LD A,(WR_1F)
+		AND %11110000
+		CP 0x10
+		JR C,.L1
+		CP 0x20
+		JR C,.L3
+		CP 0x80
+		JR C,.L5
+		CP 0xD0
+		JR Z,.L1
+		XOR A
+		JR .L2
+
+.L5		LD A,(PORT_3F)
+		AND A
+		JR NZ,.L1
+		LD A,%00100100
+		JR .L6
+
+.L3		LD A,(.INDEX)
+		XOR %00000100
+		JR .L4
+
+.L1		LD A,0x24
+.INDEX		EQU $-1
+.L4		XOR %00000010
+.L6		LD (.INDEX),A
+.L2		LD (RD_1F),A
+		LD (REG_A),A
+		RET
+
+; чтение порта 0x3F
+W_IN3F		LD A,(PORT_3F)
+		LD (REG_A),A
+		RET
+
+; чтение порта 0x5F
+W_IN5F		LD A,(PORT_5F)
+		LD (REG_A),A
+		RET
+
+; чтение порта 0x7F
+W_IN7F		LD A,(PORT_7F)
+		LD (REG_A),A
+		RET
+
+; чтение порта 0xFF
+W_INFF		LD A,(RD_FF)
+		LD (REG_A),A
+		RET
+
+; чтение в "H" из (С)
+W_INHC		LD A,(REG_C)
+; определение из какого порта чтение
+W_INHC1		CP 0x1F
+		JR NZ,W_INHC2
+		LD A,(RD_1F)
+		LD (REG_H),A
+		RET
+
+W_INHC2		CP 0x3F
+		JR NZ,W_INHC3
+		LD A,(PORT_3F)
+		LD (REG_H),A
+		RET
+	
+W_INHC3		CP 0x5F
+		JR NZ,W_INHC4
+		LD A,(PORT_5F)
+		LD (REG_H),A
+		RET
+	
+W_INHC4		CP 0x7F
+		JR NZ,W_INHC5
+		LD A,(PORT_7F)
+		LD (REG_H),A
+		RET
+	
+W_INHC5		CP 0xFF
+		JR NZ,W_INHC6
+		LD A,(WR_FF)
+		LD (REG_H),A
+		RET
+
+W_INHC6		LD BC,(REG_C)
+		IN A,(C)
+		LD (REG_H),A
+		RET
+
+; чтение INI
+W_INI		LD A,(RD_1F)
+		LD HL,(REG_L)
+		LD (HL),A
+		INC HL
+		DEC B
+		LD (REG_L),HL
+		RET
+
+;[ЧТЕНИЕ СЕКТОРА ИЛИ ПОРТОВ]
+READ_SEC_	LD A,(WR_1F)
+		AND 0x0F0
+		CP 0x80
+		JP C,W_OUT1F.INFF_BIT6
+		CP 0xC0
+		JR NZ,READ_SEC_1
+		LD A,(PORT_3F)
+		LD HL,(REG_L)
+		LD (HL),A
+		INC HL
+		DEC B
+		LD A,(PORT_5F)
+		LD (HL),A
+		INC HL
+		DEC B
+		LD (REG_L),HL
+		RET
+
+; чтение/запись сектора
+; IXL = 0 - чтение, = FF - запись
+READ_WRITE_SEC	PUSH IX
+		JR WRITE_SEC_1
+
+; чтение сектора
+READ_SEC_1	PUSH IX
+		LD IXL,0
+		JR WRITE_SEC_1
+
+; запись сектора
+WRITE_SEC_	PUSH IX
+		LD IXL,0xFF
+WRITE_SEC_1	CALL READ_WCPU12
+		CALL W_WR_RD_SECT
+		LD IX,0x8090
+		LD (REG_F),IX			; эмуляция флага успешного чтения/записи сектора
+		CALL WRITE_WCPU12
+		POP IX
+		RET
+
+FIND_SECTOR	LD BC,WIN_A1
+		LD A,0x40
+		OUT (C),A
+		LD B,HIGH (WIN_P1)
+		LD A,RAM_RAMDISK
+		OUT (C),A			; страница заголовков рамдиска
+		LD A,(PORT_3F)			; взяли номер трека
+		ADD A,A				; сторон 2
+		LD C,A
+		LD A,(WR_FF)
+		AND 0x10			; проверка какая сторона диска
+		JR NZ,.L1
+		INC C				; для стороны 1
+.L1		LD B,HIGH (CPU1) + 2		; адрес начала инфы о секторах на дорожке
+		LD A,(PORT_5F)			; взяли номер сектора
+		LD L,A
+		LD H,0
+.L3		LD A,(BC)
+		LD D,A				; взяли номер сектора
+		INC B
+		LD A,(BC)
+		LD E,A				; взяли размер сектора
+		INC B
+		LD A,D
+		AND A
+		SCF
+		RET Z
+		LD A,L
+		CP D
+		RET Z
+		LD A,E
+		ADD A,H
+		LD H,A
+		JR .L3
+
+; чтение или запись сектора рамдиска
+W_WR_RD_SECT	LD A,(WR_FF)
+		AND 3
+		INC A
+		LD B,A
+		LD A,%10000000
+.L1		RLCA
+		DJNZ .L1
+		LD B,A
+		LD A,(COPY_VIRT_BITS)
+		AND B
+		JP NZ,WR_RD_SEC_M		; работа с примонтированным образом
+		CALL FIND_SECTOR
+		JR NC,.L2
+; сектор не найден, на выход
+		LD A,0x10			; устанавливаем ошибку ВГ сектор не найден
+		JP W_IN1F.L2			
+
+.L2		LD A,E
+		RRCA
+		LD (PORT_7F),A			; размер найденного сектора
+		LD L,0
+		LD E,L
+		SRL H
+		RR L				; HL = смещение в блоках до найденного сектора
+		LD B,HIGH (CPU1)
+		LD A,(BC)
+		LD D,A
+		ADD HL,DE			; HL = смещение от начала страницы в блоках
+		INC B
+		LD A,(BC)
+		LD C,A				; смещение в страницах от начала рамдиска
+		LD A,H
+		CP HIGH (CPU1)
+		JR C,.L5
+		SUB 0x40
+		LD H,A
+		INC C
+; HL = смещение в странице до начала сектора
+.L5		LD A,C				; смещение до номера страницы, где указанный сектор начинается
+		ADD A,RAM_DATARAMD		; прибавили номер начала рамдиск и +1. в 0 странице рамдиска описатели секторов
+		LD IXH,A			; сохранили номер вычисленной страницы
+		LD DE,(REG_L)
+		LD BC,(BB_CPU1)
+		LD A,C
+		LD C,LOW (WIN_A0)
+		OUT (C),A			; вернули стандартную 5 страницу
+.S9		LD A,D				; проверка границы откуда/куда копировать
+		CP HIGH (CPU2)
+		PUSH DE
+		LD DE,CPU1+HIGH (WIN_P1)
+		LD BC,WIN_A1			; если верхние 32кб озу, то нужно включить в 1 окне проецирования
+		JR NC,.S1
+		LD DE,CPU2+HIGH (WIN_P2)
+		LD B,HIGH (WIN_A2)		; если нижние 32кб озу, то нужно включить во 2 окне проецирования
+.S1		LD A,0x40
+		OUT (C),A
+		LD B,E
+		LD A,IXH			; номер вычисленной страницы озу
+		OUT (C),A			; включили вычисленную страницу
+		LD B,D				; старший байт адреса начала включенной страницы
+		POP DE
+		LD A,B
+		ADD A,H
+		LD H,A
+		LD A,IXL
+		AND A
+		JR NZ,.I1
+		LD A,D
+		INC A
+		JR NZ,.I1
+		LD A,E
+		AND A
+		JR Z,.I1
+		NEG
+		LD C,A
+		LD B,0
+		LDIR
+		NEG
+		LD C,A
+.I2		EX DE,HL
+		ADD HL,BC
+		EX DE,HL
+		ADD HL,BC
+		LD A,(PORT_7F)
+		JP .S8_
+
+.I1		LD A,D
+		CP HIGH (CPU1)
+		JR NC,.I3
+		LD A,(PORT_7F)
+		AND A
+		LD BC,0x80
+		JR Z,.I2
+		LD BC,0x100
+		JR .I2
+
+.I3		CP HIGH (CPU2)			; проверка перехода границы страниц
+		JP NC,.S3			; если выше то сразу копируем
+		CP HIGH (CPU2)-1
+		JP C,.S3			; если ниже так же сразу копируем
+		LD A,E
+		AND A				; если сектор полностью укладывется до границы, то сразу копируем
+		JR Z,.S3			; иначе принудительно копируем в два приема
+		LD A,IXL			; чтение или запись?
+		AND A
+		LD A,E				; младший байт адрес в блоке
+		JR Z,.S4
+		EX DE,HL			; для записи меняем направление
+.S4		NEG
+		LD C,A				; копируем остаток до конца блока
+		LD B,0
+		LDIR
+		NEG
+		PUSH AF				; спрятали сколько осталось копировать из начала следующего блока
+		LD BC,(BB_CPU2)
+		LD A,C
+		LD C,LOW (WIN_A0)
+		OUT (C),A
+		LD B,HIGH (WIN_A1)
+		LD A,0x40
+		OUT (C),A
+		LD B,HIGH (WIN_P1)
+		LD A,IXH
+		OUT (C),A			; вычисленную страницу включаем в 1 окне проецирования
+		LD A,IXL			; чтение или запись
+		AND A
+		JR Z,.S5
+		LD A,D				; для записи
+		SUB 0x40			; изменили адрес куда копировать на другое окно проецирования
+		LD D,A
+		JR .S6
+
+.S5		LD A,H				; для чтения  
+		SUB 0x40			; изменили адрес куда копировать на другое окно проецирования 
+		LD H,A
+.S6		POP AF
+		LD C,A				; сколько осталось скопировать байт
+		LD B,0
+		LDIR
+		LD A,(PORT_7F)
+		JR .S8_
+
+.S3		LD A,IXL			; чтение или запись
+		AND A
+		JR Z,.S7
+		EX DE,HL			; для записи меняем направление
+.S7		LD A,(PORT_7F)
+		AND A
+		JR NZ,.S8
+		CALL COPYHBLOCK			; для сектора размером 128 байт копируем половину и выходим
+.ECOPY_BLOCK	LD A,IXL
+		AND A
+		JR Z,.ECOPY_BLOCK1
+		EX DE,HL
+.ECOPY_BLOCK1	LD (REG_L),DE
+		RET
+
+.S8		CALL COPY_BLOCK			; для сектора 256 байт копируем весь и выходим
+.S8_		DEC A
+		JR Z,.ECOPY_BLOCK
+		LD (PORT_7F),A
+		LD A,IXL
+		AND A
+		JR Z,.S0
+		EX DE,HL
+.S0		LD A,0x3F
+		AND H
+		LD H,A
+		JP .S9
+
+CP_TYPEDRIVE	PUSH BC
+		PUSH HL
+		LD H,VIRT_REAL_DRIVE
+		CALL READCMOS
+		POP HL
+		AND 3
+		LD B,A
+		LD A,(TRD_5CF6)
+		CP B
+		POP BC
+		RET
+
+; установка переменных текущего привода
+SET_DRIVENAME	LD H,VIRT_REAL_DRIVE
+		CALL READCMOS
+		RRCA
+		RRCA
+		AND 3
+		LD (TRD_5D19),A
+		LD (TRD_5CF6),A
+		OR 0x3C
+		LD (TRD_5D16),A
+		RET
+
+; форматирование ram диска
+FORMAT_RAM	LD A,(TRD_5CF6)
+		LD B,A
+		INC B
+		LD A,%00001000
+		RLCA
+		DJNZ $-1
+		LD B,A
+;		LD A,(COPY_VIRT_BITS)
+		RST8D _MOUNTER,_GET_VIRT_BITS
+		LD (COPY_VIRT_BITS),A
+		AND B
+		JR NZ,FORMAT_RAM3		; если бит=1 формат примонтированного образа
+		CALL CP_TYPEDRIVE
+		RET NZ				; выход для формата рельного диска
+		CALL CREATE_TRDTABL		; формат рамдиска 
+		XOR A
+		RET
+
+FORMAT_RAM3	LD HL,TRD_5D25
+		LD DE,TRD_5D26
+		LD BC,0xFF
+		LD (HL),B
+		LDIR
+		LD D,B
+		LD E,B
+		LD B,0x10
+FORMAT_RAM1	PUSH BC
+		PUSH DE
+		LD B,1
+		LD HL,TRD_5D25
+		CALL COM_06
+		POP DE
+		POP BC
+		INC E
+		DJNZ FORMAT_RAM1
+		XOR A
+		RET
+
+; проверка наличия маркера рамдиска
+CMP_RAM_DISK	CALL READ_WCPU12
+		LD BC,WIN_P1
+		LD A,RAM_RAMDISK
+		OUT (C),A
+		LD HL,CPU1+0x3FFF
+		LD D,(HL)
+		DEC H
+		LD E,(HL)			; взяли байты для проверки маркера
+		CALL WRITE_WCPU12
+		LD HL,"RD"
+		AND A
+		SBC HL,DE
+		RET Z				; если маркер на месте, то рамдиск не создаем
+; создание чистого рамдиска
+CREATE_TRDTABL	LD BC,WIN_P1
+		LD A,RAM_RAMDISK		; нужна страница начала рамдиска, где будет таблица описателей
+		OUT (C),A
+		LD HL,CPU1
+		PUSH HL
+		LD DE,CPU1+1
+		LD BC,0x3FFF
+		LD (HL),L
+		LDIR				; очистили страницу
+		POP DE				; адрес начала 
+		LD HL,0				; смещение в блоках и страницах
+		LD A,0xA0
+ELT2		PUSH AF
+		LD BC,0x1000			; счетчик номеров секторов и их номера
+		LD A,L
+		RRCA
+		RRCA
+		LD (DE),A			; смещение в блоках дорожки в странице
+		INC D
+		LD A,H
+		LD (DE),A			; смещение в страницах до дорожки
+		INC D
+ELT1		INC C
+		LD A,C
+		LD (DE),A			; номер сектора
+		INC D
+		LD A,2
+		LD (DE),A			; размер сектора
+		INC D
+		DJNZ ELT1			; вносим в таблицу все номера секторов с размерами
+		LD D,HIGH (CPU1)		; вернули указатель в начало
+		INC E				; для следующей дорожки
+		LD BC,0x40
+		ADD HL,BC			; переход к следующей дорожке
+		POP AF
+		DEC A
+		JR NZ,ELT2			; повторяем для всех дорожек
+		LD HL,CPU1+0x3FFF
+		LD (HL),"R"			; вносим маркер рамдиска
+		DEC H
+		LD (HL),"D"
+		LD BC,WIN_P1
+		LD A,RAM_DATARAMD
+		OUT (C),A
+		LD HL,CPU1
+		LD DE,CPU1+1
+		LD BC,0x0FFF
+		LD (HL),L
+		LDIR
+		LD HL,DSKINFO
+		LD DE,CPU1+0x8E1
+		LD BC,DSK_END-DSKINFO
+		LDIR
+		LD BC,WIN_A1
+		LD A,0x7A
+		OUT (C),A
+		RET
+
+; восстановление конфигурации окон проецирования 1,2
+WRITE_WCPU12	LD BC,(BB_CPU1)
+		LD A,C
+		LD C,LOW (WIN_A0)
+		OUT (C),A
+		LD BC,(BB_CPU2)
+		LD A,C
+		LD C,LOW (WIN_A0)
+		OUT (C),A
+		RET
+
+; чтение конфигурации окон проецирования 1,2
+READ_WCPU12	LD BC,RD_RAMNROM
+		IN L,(C)			; биты RAM & ROM
+		INC B
+		IN H,(C)			; биты DOS & 7FFD
+		ADD HL,HL
+		LD B,HIGH (RD_1WINA1)
+		IN A,(C)
+		CP 0xC0
+		JR NC,RST30_01
+		LD E,A
+		LD D,HIGH (WIN_P1)
+		JR RST30_02
+
+RST30_01	RLCA
+		RLCA
+		SLA L
+		RRA
+		SLA H
+		RRA
+		LD E,A
+		LD D,HIGH (WIN_A1)
+RST30_02	LD (BB_CPU1),DE
+		INC B
+		IN A,(C)
+		CP 0xC0
+		JR NC,RST30_03
+		LD E,A
+		LD D,HIGH (WIN_P2)
+		JR RST30_04
+
+RST30_03	RLCA
+		RLCA
+		SLA L
+		RRA
+		SLA H
+		RRA
+		LD E,A
+		LD D,HIGH (WIN_A2)
+RST30_04	LD (BB_CPU2),DE
+		RET
+
+DISK_NONE	PUSH HL
+		PUSH BC
+		CALL READ_WCPU12
+		LD BC,WIN_A1
+		LD A,0x40
+		OUT (C),A
+		LD B,HIGH (WIN_P1)
+		LD A,RAM_RAMDISK
+		OUT (C),A
+		LD HL,CPU1+0x3FFF
+		LD A,(HL)
+		DEC H
+		CP "R"
+		SCF
+		JR NZ,DISK_NONE1
+		LD A,(HL)
+		CP "D"
+		SCF
+		JR NZ,DISK_NONE1
+		XOR A
+DISK_NONE1	PUSH AF
+		CALL WRITE_WCPU12
+		POP AF
+		POP BC
+		POP HL
+		RET

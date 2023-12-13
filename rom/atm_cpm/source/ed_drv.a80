@@ -1,0 +1,142 @@
+
+;LAST UPDATE: 31.12.2016 savelij
+
+; ÑêÄâÇÖê ùãÖäíêéççéÉé ÑàëäÄ
+
+ED_DRV	DW      ED_RES
+	DW      ED_SEEK
+	DW      ED_FRM
+	DW      ED_REC
+	DW      ED_RD
+	DW      ED_NOP
+	DW      ED_WR
+
+;-------------------------
+; äéåÄçÑõ çÖ Çõèéãçüûíëü
+ED_RES:
+ED_REC:
+ED_NOP
+;	CALL    TST_RT
+        XOR     A
+        RET
+
+;-------------------------
+ED_SEEK: LD     A,(RQCYL)
+         LD     (ED_CYL),A
+         XOR    A
+         RET
+
+;-------------------------
+; ÇõóàëãÖçàÖ ÄÑêÖëÄ
+ED_ADR	BIT ED_INI,(IX-_TST_IS1)
+		CALL NZ,ED_INIT
+		ld		a,~RAM_RAMDISK
+        RST     18H
+        EX      AF,AF'
+		ld		hl,(ED_CYL)
+		ld		h,0xc2
+		LD      de,(RQSECT)      
+		inc e
+		ld d,0
+		ld b,126
+ED_ADR_LOOP:
+		ld a,(hl)
+		cp e
+		jr z,ED_ADR_END
+		inc h
+		ld a,(hl)
+		add a,d
+		ld d,a
+		inc h
+		djnz ED_ADR_LOOP
+        EX      AF,AF'
+		rst 0x18
+		JR ED_ERRA1
+ED_ADR_END:	
+		ld e,0
+		srl d
+		rr e
+		ld h,0xc0
+		ld a,(hl)
+		add a,d
+		ld d,a
+		inc h
+		ld a,RAM_DATARAMD
+		add a,(hl)
+		set 7,d
+		bit 6,d
+		jr z,ED_ADR_NINC
+		res 6,d
+		inc a
+ED_ADR_NINC:
+        EX      AF,AF'
+		rst 0x18
+        RET
+
+ED_INIT:RES     ED_INI,(IX-_TST_IS1)
+        XOR     A
+        CALL    ED_PG
+        RST     18H
+        EX      AF,AF'
+        LD      A,0E5H
+        JP      ED_CLR
+
+;-------------------------
+; óíÖçàÖ
+ED_LDIR:
+		ld		a,0x06
+		in		a,(0xbe)
+        EX      AF,AF'
+		push 	bc
+		ld 		bc,WIN_P2
+		out 	(c),a
+		pop 	bc
+		ldir
+        EX      AF,AF'
+		ld 		bc,WIN_P2
+		out 	(c),a
+		ret
+;-------------------------
+; 
+ED_RD:  CALL    ED_ADR          ; COPY FROM HL ...
+        EX      DE,HL
+        LD      BC,256
+        LD      DE,(DCBUF)      ; ... TO DE 128 BYTE
+		call 	ED_LDIR
+        EI
+        XOR     A
+        RET
+
+ED_ERRA1: POP   AF
+ED_ERRA:LD      A,_ADRERR
+        RET
+
+;------------------------
+; áÄèàëú
+ED_WR:  CALL    ED_ADR          ; COPY TO HL ...
+        LD      BC,256
+        LD      HL,(DCBUF)     
+		call 	ED_LDIR
+        EI
+        XOR     A
+        RET
+
+;----------------------------
+; FORMAT
+ED_FRM: LD      A,(RQCYL)
+        DEC     A
+		JP 		M,ED_ERRA
+        CALL    ED_PG
+        RST     18H
+        EX      AF,AF'
+        LD      A,(RQBLN)
+ED_CLR  LD      HL,0C000H
+        LD      DE,0C001H
+        LD      BC,03FFFH
+        LD      (HL),A
+        LDIR
+        EX      AF,AF'
+        RST     18H
+        EI
+        XOR     A
+        RET

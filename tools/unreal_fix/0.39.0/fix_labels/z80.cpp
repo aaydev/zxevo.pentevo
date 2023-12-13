@@ -7,6 +7,7 @@
 #include "tape.h"
 #include "debug.h"
 #include "sndrender/sndcounter.h"
+#include "sndrender/dev_moonsound.h"
 #include "sound.h"
 #include "atm.h"
 #include "gs.h"
@@ -159,6 +160,7 @@ void reset(ROM_MODE mode)
    ay[0].reset();
    ay[1].reset();
    Saa1099.reset();
+   zxmmoonsound.reset();
 
    if (conf.sound.ay_scheme == AY_SCHEME_CHRV)
    {

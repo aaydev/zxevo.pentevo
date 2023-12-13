@@ -20,7 +20,7 @@ RC=$(TOOLPREFIX)-windres
 CXX=$(CXX_COMPILER)
 LNK=$(CXX_COMPILER)
 
-CFLAGS_COMMON=-D_CRT_SECURE_NO_DEPRECATE -DUSE_SND_EXTERNAL_BUFFER -D_PREFIX_ -DMOD_SSE2 -std=c++14 -Wno-attributes 
+CFLAGS_COMMON=-D_CRT_SECURE_NO_DEPRECATE -DUSE_SND_EXTERNAL_BUFFER -D_PREFIX_ -DMOD_SSE2 -std=c++14 -Wno-attributes -I.
 
 ifdef AMD64
 ARCH=-march=x86-64 -msse -msse2 -mno-mmx
@@ -61,7 +61,8 @@ SRCS=emul.cpp std.cpp atm.cpp cheat.cpp config.cpp dbgbpx.cpp dbgcmd.cpp dbglabl
 
 # sndrender sources
 SRCS+=sndrender/saa1099.cpp sndrender/sndbuffer.cpp sndrender/sndchip.cpp \
-      sndrender/sndcounter.cpp sndrender/sndrender.cpp sndrender/emul_2203.cpp
+      sndrender/sndcounter.cpp sndrender/sndrender.cpp sndrender/emul_2203.cpp \
+      sndrender/dev_moonsound.cpp sndrender/ymf262.cpp sndrender/ymf278.cpp
 
 # z80 sources
 SRCS+=z80/daa_tabs.cpp z80/op_cb.cpp z80/op_dd.cpp z80/op_ddcb.cpp z80/op_ed.cpp \
@@ -72,8 +73,11 @@ NAMES=$(SRCS:.cpp=)
 
 PCH=std.h.gch
 
+ifdef AMD64
+EXE=x32/emul64.exe
+else
 EXE=x32/emul.exe
-
+endif
 
 
 

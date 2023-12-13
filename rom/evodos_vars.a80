@@ -1,0 +1,62 @@
+
+;LAST UPDATE: 04.08.2019 savelij
+
+ INIT_VAR ADR_RST8END-0X50
+
+ SETVAR IREG_E,		BYTE		;1
+ SETVAR IREG_D,		BYTE		;1
+ SETVAR IREG_L,		BYTE		;1
+ SETVAR IREG_H,		BYTE		;1
+ SETVAR DOS_STEK,	WORD		;2 СОХРАНЕНИЕ ОСНОВНОГО СТЕКА И ДНО ВНУТРЕННЕГО СТЕКА
+; SETVAR BYTE_DRIVE,	BYTE		;1 ТЕКУЩЕЕ СОСТОЯНИЕ ВИРТУЛЬНОГО/ТЕКУЩЕГО/ПРИМОНТИРОВАННОГО ДИСКА
+ SETVAR WR_1F,		BYTE		;1 КОПИЯ ЗАПИСАННОГО В ПОРТ 1F (РЕГИСТР КОМАНД)
+ SETVAR RD_1F,		BYTE		;1 ОТВЕТ ДЛЯ ЧТЕНИЯ ИЗ ПОРТА 1F
+ SETVAR PORT_3F,	BYTE		;1 ЗНАЧЕНИЕ ПОРТА 3F
+ SETVAR PORT_5F,	BYTE		;1 ЗНАЧЕНИЕ ПОРТА 5F
+ SETVAR PORT_7F,	BYTE		;1 ЗНАЧЕНИЕ ПОРТА 7F
+ SETVAR WR_FF,		BYTE		;1 КОПИЯ ЗАПИСАННОГО В ПОРТ FF
+ SETVAR RD_FF,		BYTE		;1 ОТВЕТ ДЛЯ ЧТЕНИЯ ИЗ ПОРТА FF
+ SETVAR BUFF_SECT,	WORD		;2 АДРЕС ЧТЕНИЯ/ЗАПИСИ СЕКТОРА
+ SETVAR ADDR_RET,	WORD		;2 АДРЕС ВОЗВРАТА
+ SETVAR REG_IF,		BYTE		;1
+ SETVAR REG_I,		BYTE		;1
+ SETVAR REG_C,		BYTE		;1 
+ SETVAR REG_B,		BYTE		;1
+ SETVAR REG_F,		BYTE		;1
+ SETVAR REG_A,		BYTE		;1
+ SETVAR REG_L,		BYTE		;1 АДРЕС ЗАГРУЗКИ/ЗАПИСИ
+ SETVAR REG_H,		BYTE		;1
+ SETVAR WR_BF,		BYTE		;1
+ SETVAR WR_77,		BYTE		;1
+ SETVAR WR_EFF7,	BYTE		;1
+ SETVAR WR_7FFD,	BYTE		;1
+ SETVAR WR_DOS7FFD,	BYTE		;1
+ SETVAR WR_RAMNROM,	BYTE		;1
+ SETVAR WR_1WINA3,	BYTE		;1
+ SETVAR WR_1WINA2,	BYTE		;1
+ SETVAR WR_1WINA1,	BYTE		;1
+ SETVAR WR_1WINA0,	BYTE		;1
+ SETVAR WR_0WINA3,	BYTE		;1
+ SETVAR WR_0WINA2,	BYTE		;1
+ SETVAR WR_0WINA1,	BYTE		;1
+ SETVAR WR_0WINA0,	BYTE		;1
+ SETVAR BB_CPU1,	BYTE		;1 БАЙТ ДЛЯ ЗАПИСИ В ОКНО CPU1
+ SETVAR BP_CPU1,	BYTE		;1 СТАРШИЙ БАЙТ АДРЕСА ПОРТА CPU1
+ SETVAR BB_CPU2,	BYTE		;1 БАЙТ ДЛЯ ЗАПИСИ В ОКНО CPU2
+ SETVAR BP_CPU2,	BYTE		;1 СТАРШИЙ БАЙТ АДРЕСА ПОРТА CPU2
+ SETVAR MINT_STACK,	WORD		;2
+ SETVAR TEK_ROMPAGE,	BYTE		;1
+ SETVAR MASK_WRK_DRV,	BYTE		;1 номер дисковода в порту FF
+ SETVAR MASK_MNT_DRV,	BYTE		;1 битовая маска примонтированного диска
+ SETVAR VIRT_DRIVE,	BYTE		;1 номер виртуального диска из CMOS
+ SETVAR REAL_DRIVE,	BYTE		;1 номер реального диска из CMOS
+ SETVAR COPY_VIRT_BITS,	BYTE		;1
+; SETVAR VIRT_REAL_DRV,	BYTE		;1
+ SETVAR OLD_PORT_BF,	BYTE		;1
+ SETVAR SECTOR_SIZE,	BYTE		;1
+ SETVAR RDWR_MODE,	BYTE		;1
+ SETVAR RDWR_PAGE,	BYTE		;1
+ SETVAR FLAG_RW_BREAK,	BYTE		;1
+ SETVAR TEMP_SP,	WORD		;2
+ SETVAR SAVED_RAM,	0X10		;10
+END_VARS

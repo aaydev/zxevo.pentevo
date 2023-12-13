@@ -1,6 +1,6 @@
-// ZX-Evo Base Configuration (c) NedoPC 2008,2009,2010,2011,2012,2013,2014
+// ZX-Evo SDLoad Configuration (c) NedoPC 2023
 //
-// fetches video data for renderer
+// fetch/display data from internal EABs
 
 /*
     This file is part of ZX-Evo Base Configuration firmware.
@@ -21,108 +21,83 @@
     If not, see <http://www.gnu.org/licenses/>.
 */
 
-`include "../include/tune.v"
+module video_fetch
+(
+	input  wire clk,
+	input  wire rst_n,
 
-module video_fetch(
+	input  wire pix_stb,
 
-	input  wire        clk, // 28 MHz clock
+	input  wire i_hsync,
+	input  wire i_vsync,
+	input  wire i_hpix,
+	input  wire i_vpix,
 
-
-	input  wire        cend,     // general
-	input  wire        pre_cend, //        synchronization
-
-	input  wire        vpix, // vertical window
-
-	input  wire        fetch_start, // fetching start and stop
-	input  wire        fetch_end,   //
-
-	output reg         fetch_sync,     // 1 cycle after cend
+	input  wire v_init,
+	input  wire h_init,
+	input  wire h_step,
+	input  wire h_char,
 
 
-	input  wire [15:0] video_data,   // video data receiving from dram arbiter
-	input  wire        video_strobe, //
-	output reg         video_go, // indicates need for data
 
-	output reg  [63:0] pic_bits // picture bits -- data for renderer
+	// char/attr memory read
+	output wire        char_r_rdena, // marks valid char_r_addr
+	output wire [11:0] char_r_addr,
+	input  wire [ 7:0] char_r_data, // 1 cycle latency
 
-	// currently, video_fetch assigns that there are only 1/8 and 1/4
-	// bandwidth. !!needs correction for higher bandwidths!!
-
+	// font memory read
+	output wire [ 9:0] font_r_addr,
+	input  wire [ 7:0] font_r_data, // 1 cycle latency
 
 );
-	reg [3:0] fetch_sync_ctr; // generates fetch_sync to synchronize
-	                          // fetch cycles (each 16 dram cycles long)
-	                          // fetch_sync coincides with cend
 
-	reg [1:0] fetch_ptr; // pointer to fill pic_bits buffer
-	reg       fetch_ptr_clr; // clears fetch_ptr
+	localparam CHAR_ADDR_INIT = 12'h000;
+	localparam CHAR_LINE_ADD  = 12'd60;
+
+	localparam ATTR_ADDR_INIT = 12'h9C0;
+	localparam ATTR_LINE_ADD  = 12'd40;
+
+	reg [11:0] char_line_addr;
+	reg [11:0] attr_line_addr;
+
+	reg [11:0] char_addr;
+
+	reg [11:0] attr_addr;
+	reg [2:0] attr_phase;
 
 
-	reg [15:0] fetch_data [0:3]; // stores data fetched from memory
 
-	// fetch window
+
 	always @(posedge clk)
-		if( fetch_start && vpix )
-			video_go <= 1'b1;
-		else if( fetch_end )
-			video_go <= 1'b0;
-
-
-
-	// fetch sync counter
-	always @(posedge clk) if( cend )
+	if( pix_stb )
 	begin
-		if( fetch_start )
-			fetch_sync_ctr <= 0;
-		else
-			fetch_sync_ctr <= fetch_sync_ctr + 1;
+		if( v_init )
+			char_line_addr <= CHAR_ADDR_INIT;
+		else if( h_step )
+			char_line_addr <= char_line_addr + CHAR_LINE_ADD;
+	end
+	//
+	always @(posedge clk)
+	if( pix_stb )
+	begin
+		if( h_init )
+			char_addr <= char_line_addr;
+		else if( h_char )
+			char_addr <= char_addr + 12'd1;
 	end
 
 
-	// fetch sync signal
 	always @(posedge clk)
-		if( (fetch_sync_ctr==1) && pre_cend )
-			fetch_sync <= 1'b1;
-		else
-			fetch_sync <= 1'b0;
-
-
-
-	// fetch_ptr clear signal
-	always @(posedge clk)
-		if( (fetch_sync_ctr==0) && pre_cend )
-			fetch_ptr_clr <= 1'b1;
-		else
-			fetch_ptr_clr <= 1'b0;
-
-
-	// buffer fill pointer
-	always @(posedge clk)
-		if( fetch_ptr_clr )
-			fetch_ptr <= 0;
-		else if( video_strobe )
-			fetch_ptr <= fetch_ptr + 1;
-
-
-
-	// store fetched data
-	always @(posedge clk) if( video_strobe )
-		fetch_data[fetch_ptr] <= video_data;
-
-
-	// pass fetched data to renderer
-	always @(posedge clk) if( fetch_sync )
+	if( pix_stb )
 	begin
-		pic_bits[ 7:0 ] <= fetch_data[0][15:8 ];
-		pic_bits[15:8 ] <= fetch_data[0][ 7:0 ];
-		pic_bits[23:16] <= fetch_data[1][15:8 ];
-		pic_bits[31:24] <= fetch_data[1][ 7:0 ];
-		pic_bits[39:32] <= fetch_data[2][15:8 ];
-		pic_bits[47:40] <= fetch_data[2][ 7:0 ];
-		pic_bits[55:48] <= fetch_data[3][15:8 ];
-		pic_bits[63:56] <= fetch_data[3][ 7:0 ];
+		if( v_init )
+			attr_line_addr <= ATTR_ADDR_INIT;
+		else if( h_step )
+			attr_line_addr <= attr_line_addr + ATTR_LINE_ADD;
 	end
+
+
+
 
 endmodule
-
 

@@ -467,8 +467,8 @@ static UINT8 FM_STATUS_FLAG(FM_ST *ST)
 {
 	if( ST->BusyExpire > 0)
 	{
-		if( (ST->BusyExpire - FM_GET_TIME_NOW()) > 0)
-			return ST->status | 0x80;	/* with busy */
+		if ((ST->BusyExpire - FM_GET_TIME_NOW()) > 0)
+			return (UINT8(ST->status) | UINT8(0x80));	/* with busy */
 		/* expire */
 		ST->BusyExpire = 0;
 	}

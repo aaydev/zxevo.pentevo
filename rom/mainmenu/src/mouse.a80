@@ -1,0 +1,267 @@
+
+;LAST UPDATE: 03.05.2019 savelij
+
+;[‘Ž•€…ˆ… Š“‘Š€ Š€€]
+SAVE2X2		LD HL,(ADR_REST)
+		LD DE,MOUSE_BUFF
+		LD B,8
+SAVE2X21	LD A,(HL)
+		LD (DE),A
+		INC DE
+		INC L
+		LD A,(HL)
+		LD (DE),A
+		INC DE
+		DEC L
+		CALL INC_H
+		DJNZ SAVE2X21
+		RET
+
+;[‚Ž‘‘’€Ž‚‹…ˆ… Š“‘Š€ Š€€]
+REST2X2		LD HL,0
+ADR_REST	EQU $-2
+		LD DE,MOUSE_BUFF
+		LD B,8
+REST2X21	LD A,(DE)
+		LD (HL),A
+		INC DE
+		INC L
+		LD A,(DE)
+		LD (HL),A
+		INC DE
+		DEC L
+		CALL INC_H
+		DJNZ REST2X21
+		RET
+
+;[„…’…Š’ €‹ˆ—ˆŸ Œ›˜ˆ]
+DETECTMOUSE	LD HL,ERS_FLAGS
+		LD BC,MOUSE_X
+		LD E,0X20
+		EI
+		HALT
+		IN D,(C)		;1.‘’€ˆ‹œŽ‘’œ X
+SETMOU1		IN A,(C)
+		CP D
+		JR NZ,SETMOU2
+		DEC E
+		JR NZ,SETMOU1		;2.KEYS<>X
+		LD B,HIGH (MOUSE_KEYS);DEC B
+		IN A,(C)
+		CP D
+		JR Z,SETMOU2		;3.KEYS&7=7(LION17)
+		CPL
+		AND 7
+		SET B_MOUSE_ON,(HL)
+		RET Z
+SETMOU2		RES B_MOUSE_ON,(HL)
+		SCF
+		RET
+
+;[ŽŽ‘ ……Œ…™…ˆŸ Œ›˜ˆ]
+MOUSE		LD HL,(ARXY)
+		LD DE,0			;D=Y ŠŽŽ„ˆ€’€, E=X ŠŽŽ„ˆ€’€
+MOUPOS		EQU $-2
+		LD BC,MOUSE_X
+		IN A,(C)		;—’…ˆ… ŠŽŽ„ˆ€’› X
+		LD (MOUPOS),A
+		SUB E
+		JR Z,MOUNX
+		JP P,MOUPX
+		ADD A,L
+		JR C,$+3
+		XOR A
+		LD L,A
+		JR MOUNX
+
+MOUPX		ADD A,L
+		JR C,$+6
+		CP 0XF9
+		JR C,$+4
+		LD A,0XF9
+		LD L,A
+MOUNX		LD BC,MOUSE_Y		;—’…ˆ… ŠŽŽ„ˆ€’› Y
+		IN A,(C)
+		LD (MOUPOS+1),A
+		SUB D
+		JR Z,MOUNY
+		NEG
+		JP P,MOUPY
+		ADD A,H
+		JR C,$+3
+		XOR A
+		LD H,A
+		JR MOUNY
+
+MOUPY		ADD A,H
+		JR C,$+6
+		CP 0XB8
+		JR C,$+4
+		LD A,0XB8
+		LD H,A
+MOUNY		LD (ARXY),HL
+		RET
+
+MOUOPT		LD H,(IX+_Y_COORD)
+		LD L,(IX+_X_COORD)
+		LD DE,(ARXY)
+		LD B,3
+		SRL D
+		SRL E
+		DJNZ $-4
+		LD A,E
+		CP L
+		RET C			;Š“‘Ž ‹…‚…… ŽŠ€
+		LD A,L
+		ADD A,(IX+_H_SIZE)
+		DEC A
+		CP E
+		RET C			;Š“‘Ž €‚…… ŽŠ€
+		LD A,D
+		INC H
+		CP H
+		RET C			;Š“‘Ž ‚›˜… ŽŠ€ ˆ‹ˆ € ‚…•…‰ Ž‹Ž‘Š…
+		LD A,H
+		ADD A,(IX+_V_SIZE)
+		SUB 3
+		CP D
+		RET C			;Š“‘Ž ˆ†… ŽŠ€ ˆ‹ˆ € Ž‘‹…„…‰ Ž‹Ž‘Š…
+;Š“‘Ž ‚ …„…‹€• €Ž—…‰ Ž‹€‘’ˆ
+		LD A,(IX+_NUM_KOL_H)
+		AND A
+		JR NZ,.L1		
+		OR (IX+_NUM_KOL_L)
+		JR Z,.L1
+;Ž‚…Š€ „‹Ÿ ŠŽ‹ˆ—…‘’‚€ “Š’Ž‚ Œ…œ˜… ‚›‘Ž’› ŽŠ€ - 2
+		PUSH HL
+		LD L,A
+		LD H,(IX+_NUM_KOL_H)
+		LD A,D
+		SUB (IX+_Y_COORD)
+		LD C,A
+		LD B,0
+		AND A
+		SBC HL,BC
+		POP HL
+		RET C
+
+.L1		LD A,D
+		SUB H
+		LD C,A
+		LD L,(IX+_TEK_PKT_L)
+		LD H,(IX+_TEK_PKT_H)
+		LD B,0
+		LD D,B
+		LD E,(IX+_NUM_PKT)
+		SBC HL,DE
+		ADD HL,BC
+		LD (IX+_TEK_PKT_L),L
+		LD (IX+_TEK_PKT_H),H
+		LD (IX+_NUM_PKT),C
+		JP COLOR_CURSOR
+
+;[ˆ‘Ž‚€ˆ… Š“‘Ž€ Œ›˜ˆ]
+DRAW_MOUSE	LD BC,0
+ARXY		EQU $-2
+		LD A,B
+		CALL 8881
+		LD (REST2X2+1),HL
+		PUSH HL
+		CALL SAVE2X2
+		LD A,6
+_MORG		EQU $-1
+		INC A
+		LD HL,ERS_FLAGS
+		CP 0X0C
+		JR NZ,_MORG3
+		LD A,M_NUM_CURSOR
+		XOR (HL)
+		LD (HL),A
+		XOR A
+_MORG3		LD (_MORG),A
+		LD A,(ARXY)
+		AND 7
+		CPL
+		ADD A,9
+		LD C,A
+		LD A,(ERS_FLAGS)
+		AND M_NUM_CURSOR
+		LD HL,SPRAR
+		JR Z,_MORG2
+		LD HL,SPRAR2
+_MORG2		LD B,8
+		POP DE
+PRAR0		PUSH BC
+		LD B,C
+		LD C,(HL)
+		INC HL
+		PUSH HL
+		LD L,(HL)
+		EX DE,HL
+		LD A,0XFF
+		LD D,0
+PRAR1		SCF
+		RL C
+		RLA
+		SLA E
+		RL D
+		DJNZ PRAR1
+		AND (HL)
+		OR D
+		LD (HL),A
+		INC L
+		LD A,(HL)
+		AND C
+		OR E
+		LD (HL),A
+		DEC L
+		CALL INC_H
+		EX DE,HL
+		POP HL
+		INC HL
+		POP BC
+		DJNZ PRAR0
+		RET
+
+;[Œ…‘’ŽŽ‹Ž†…ˆ… Š“‘Ž€]
+OPMSPL		LD E,(IX+_ADR_MOUSE_L)
+		LD D,(IX+_ADR_MOUSE_H)
+		LD A,D
+		OR E
+		RET Z			;€„…‘ Žˆ‘€’…‹…‰ … ‡€„€
+		PUSH IX
+		PUSH DE
+		POP IX
+		LD HL,(ARXY)		;H=Y, L=X
+		SRL H
+		SRL H
+		SRL H
+		SRL L
+		SRL L
+		SRL L			;HL=HL/8
+.NXTPOS2	LD A,(IX+0)
+		INC A
+		JR Z,.ENDWI		;ŠŽ…– ‘ˆ‘Š€
+		LD A,L
+		CP (IX+1)
+		JR C,.NXTPOS1		;Š“‘Ž ‹…‚……
+		LD A,(IX+1)
+		ADD A,(IX+4)
+		DEC A
+		CP L
+		JR C,.NXTPOS1		;Š“‘Ž €‚……
+		LD A,H
+		CP (IX+2)
+		JR C,.NXTPOS1		;Š“‘Ž ‚›˜…
+		LD A,(IX+2)
+		ADD A,(IX+3)
+		DEC A
+		CP H
+		JR C,.NXTPOS1		;Š“‘Ž ˆ†…
+		LD A,(IX+5)		;Ž‹“—ˆ‹ˆ ŠŽ„ ŠŽŠˆ  
+.ENDWI		POP IX			;Ž€‹ˆ ‚ ‡€„€“ž ‡Ž“
+		RET			;‚›•Ž„ˆŒ
+
+.NXTPOS1	LD DE,6			;ŽŠ€ ˆŠ“„€ … Ž€‹ˆ
+		ADD IX,DE		;……•Ž„ˆŒ Š Ž‚…Š… ‘‹…„“™…ƒŽ
+		JR .NXTPOS2

@@ -1,0 +1,532 @@
+
+; LAST UPDATE: 23.10.2022 savelij
+
+	TITLE "addons.a80 ROM_RST82"
+
+DRV_VAR		EQU 0x4000
+
+		PHASE 0
+		JP $
+
+		DUPL ADR_SEL_ROM-$,0xFF
+		OUT (C),A
+		NOP
+		RET
+
+		DUPL 0x0030-$,0xFF
+		JP CALL2PAGE
+
+		DUPL 0x0038-$,0xFF		; 0038
+		PUSH HL
+		LD HL,(ADR_INT)
+		EX (SP),HL
+		RET
+
+		EI
+		RET
+
+		JP UNPACK_DOS_FE
+		JP INST_SONGLN
+
+		DUPL 0x0080-$,0xFF
+		binclude ../../dec40.bin
+
+		DUPL 0x00FF-$,0xFF
+		DW 0x0038
+
+; ============================SD карта удалена============================
+SDCARD_LOST	DB 0x08,0x08,0x04,0x10,0x17,0,%00000000,0
+		DW 0,0
+		DW TXT_SDLOST,0,0,0
+TXT_SDLOST	DB 0x17,0xFF,0x0D,3,"SD card lost",0x0D,3,"Press RESET",0
+; ============================SD карта удалена============================
+
+; ========================мышиный курсор в двух видах=====================
+SPRAR		DB 0x3F,0x00,0x1F,0x40,0x0F,0x60,0x07,0x50,0x03,0x48,0x01,0x4C,0x01,0x70,0x07,0x00
+SPRAR2		DB 0x3F,0x00,0x1F,0x40,0x0F,0x60,0x07,0x70,0x03,0x78,0x01,0x7C,0x01,0x70,0x07,0x00
+; ========================мышиный курсор в двух видах=====================
+
+		DUPL 0x0200-$,0xFF
+CHARS		binclude altstd.bin
+
+BUFTSC		DW 0x4000,0x4100,0x4200,0x4300,0x4400,0x4500,0x4600,0x4700
+		DW 0x4020,0x4120,0x4220,0x4320,0x4420,0x4520,0x4620,0x4720
+		DW 0x4040,0x4140,0x4240,0x4340,0x4440,0x4540,0x4640,0x4740
+		DW 0x4060,0x4160,0x4260,0x4360,0x4460,0x4560,0x4660,0x4760
+		DW 0x4080,0x4180,0x4280,0x4380,0x4480,0x4580,0x4680,0x4780
+		DW 0x40A0,0x41A0,0x42A0,0x43A0,0x44A0,0x45A0,0x46A0,0x47A0
+		DW 0x40C0,0x41C0,0x42C0,0x43C0,0x44C0,0x45C0,0x46C0,0x47C0
+		DW 0x40E0,0x41E0,0x42E0,0x43E0,0x44E0,0x45E0,0x46E0,0x47E0
+                                                                      
+		DW 0x4800,0x4900,0x4A00,0x4B00,0x4C00,0x4D00,0x4E00,0x4F00
+		DW 0x4820,0x4920,0x4A20,0x4B20,0x4C20,0x4D20,0x4E20,0x4F20
+		DW 0x4840,0x4940,0x4A40,0x4B40,0x4C40,0x4D40,0x4E40,0x4F40
+		DW 0x4860,0x4960,0x4A60,0x4B60,0x4C60,0x4D60,0x4E60,0x4F60
+		DW 0x4880,0x4980,0x4A80,0x4B80,0x4C80,0x4D80,0x4E80,0x4F80
+		DW 0x48A0,0x49A0,0x4AA0,0x4BA0,0x4CA0,0x4DA0,0x4EA0,0x4FA0
+		DW 0x48C0,0x49C0,0x4AC0,0x4BC0,0x4CC0,0x4DC0,0x4EC0,0x4FC0
+		DW 0x48E0,0x49E0,0x4AE0,0x4BE0,0x4CE0,0x4DE0,0x4EE0,0x4FE0
+                                                                      
+		DW 0x5000,0x5100,0x5200,0x5300,0x5400,0x5500,0x5600,0x5700
+		DW 0x5020,0x5120,0x5220,0x5320,0x5420,0x5520,0x5620,0x5720
+		DW 0x5040,0x5140,0x5240,0x5340,0x5440,0x5540,0x5640,0x5740
+		DW 0x5060,0x5160,0x5260,0x5360,0x5460,0x5560,0x5660,0x5760
+		DW 0x5080,0x5180,0x5280,0x5380,0x5480,0x5580,0x5680,0x5780
+		DW 0x50A0,0x51A0,0x52A0,0x53A0,0x54A0,0x55A0,0x56A0,0x57A0
+		DW 0x50C0,0x51C0,0x52C0,0x53C0,0x54C0,0x55C0,0x56C0,0x57C0
+		DW 0x50E0,0x51E0,0x52E0,0x53E0,0x54E0,0x55E0,0x56E0,0x57E0
+                                                                      
+BUFTSC1		DW 0xC000,0xC100,0xC200,0xC300,0xC400,0xC500,0xC600,0xC700
+		DW 0xC020,0xC120,0xC220,0xC320,0xC420,0xC520,0xC620,0xC720
+		DW 0xC040,0xC140,0xC240,0xC340,0xC440,0xC540,0xC640,0xC740
+		DW 0xC060,0xC160,0xC260,0xC360,0xC460,0xC560,0xC660,0xC760
+		DW 0xC080,0xC180,0xC280,0xC380,0xC480,0xC580,0xC680,0xC780
+		DW 0xC0A0,0xC1A0,0xC2A0,0xC3A0,0xC4A0,0xC5A0,0xC6A0,0xC7A0
+		DW 0xC0C0,0xC1C0,0xC2C0,0xC3C0,0xC4C0,0xC5C0,0xC6C0,0xC7C0
+		DW 0xC0E0,0xC1E0,0xC2E0,0xC3E0,0xC4E0,0xC5E0,0xC6E0,0xC7E0
+                                                                      
+		DW 0xC800,0xC900,0xCA00,0xCB00,0xCC00,0xCD00,0xCE00,0xCF00
+		DW 0xC820,0xC920,0xCA20,0xCB20,0xCC20,0xCD20,0xCE20,0xCF20
+		DW 0xC840,0xC940,0xCA40,0xCB40,0xCC40,0xCD40,0xCE40,0xCF40
+		DW 0xC860,0xC960,0xCA60,0xCB60,0xCC60,0xCD60,0xCE60,0xCF60
+		DW 0xC880,0xC980,0xCA80,0xCB80,0xCC80,0xCD80,0xCE80,0xCF80
+		DW 0xC8A0,0xC9A0,0xCAA0,0xCBA0,0xCCA0,0xCDA0,0xCEA0,0xCFA0
+		DW 0xC8C0,0xC9C0,0xCAC0,0xCBC0,0xCCC0,0xCDC0,0xCEC0,0xCFC0
+		DW 0xC8E0,0xC9E0,0xCAE0,0xCBE0,0xCCE0,0xCDE0,0xCEE0,0xCFE0
+                                                                      
+		DW 0xD000,0xD100,0xD200,0xD300,0xD400,0xD500,0xD600,0xD700
+		DW 0xD020,0xD120,0xD220,0xD320,0xD420,0xD520,0xD620,0xD720
+		DW 0xD040,0xD140,0xD240,0xD340,0xD440,0xD540,0xD640,0xD740
+		DW 0xD060,0xD160,0xD260,0xD360,0xD460,0xD560,0xD660,0xD760
+		DW 0xD080,0xD180,0xD280,0xD380,0xD480,0xD580,0xD680,0xD780
+		DW 0xD0A0,0xD1A0,0xD2A0,0xD3A0,0xD4A0,0xD5A0,0xD6A0,0xD7A0
+		DW 0xD0C0,0xD1C0,0xD2C0,0xD3C0,0xD4C0,0xD5C0,0xD6C0,0xD7C0
+		DW 0xD0E0,0xD1E0,0xD2E0,0xD3E0,0xD4E0,0xD5E0,0xD6E0,0xD7E0
+
+; адреса начал строк монохрома текстмода (левый, правый)
+TBUFTSC		DW 0xC1C0,0xD1C0	; 00
+		DW 0xC200,0xD200	; 01
+		DW 0xC240,0xD240	; 02
+		DW 0xC280,0xD280	; 03
+		DW 0xC2C0,0xD2C0	; 04
+		DW 0xC300,0xD300	; 05
+		DW 0xC340,0xD340	; 06
+		DW 0xC380,0xD380	; 07
+		DW 0xC3C0,0xD3C0	; 08
+		DW 0xC400,0xD400	; 09
+		DW 0xC440,0xD440	; 10
+		DW 0xC480,0xD480	; 11
+		DW 0xC4C0,0xD4C0	; 12
+		DW 0xC500,0xD500	; 13
+		DW 0xC540,0xD540	; 14
+		DW 0xC580,0xD580	; 15
+		DW 0xC5C0,0xD5C0	; 16
+		DW 0xC600,0xD600	; 17
+		DW 0xC640,0xD640	; 18
+		DW 0xC680,0xD680	; 19
+		DW 0xC6C0,0xD6C0	; 20
+		DW 0xC700,0xD700	; 21
+		DW 0xC740,0xD740	; 22
+		DW 0xC780,0xD780	; 23
+		DW 0xC7C0,0xD7C0	; 24
+
+; адреса начал строк цвета текстмода (левый, правый)
+TBUFTSC_C	DW 0xF1C0,0xE1C1	; 00
+		DW 0xF200,0xE201	; 01
+		DW 0xF240,0xE241	; 02
+		DW 0xF280,0xE281	; 03
+		DW 0xF2C0,0xE2C1	; 04
+		DW 0xF300,0xE301	; 05
+		DW 0xF340,0xE341	; 06
+		DW 0xF380,0xE381	; 07
+		DW 0xF3C0,0xE3C1	; 08
+		DW 0xF400,0xE401	; 09
+		DW 0xF440,0xE441	; 10
+		DW 0xF480,0xE481	; 11
+		DW 0xF4C0,0xE4C1	; 12
+		DW 0xF500,0xE501	; 13
+		DW 0xF540,0xE541	; 14
+		DW 0xF580,0xE581	; 15
+		DW 0xF5C0,0xE5C1	; 16
+		DW 0xF600,0xE601	; 17
+		DW 0xF640,0xE641	; 18
+		DW 0xF680,0xE681	; 19
+		DW 0xF6C0,0xE6C1	; 20
+		DW 0xF700,0xE701	; 21
+		DW 0xF740,0xE741	; 22
+		DW 0xF780,0xE781	; 23
+		DW 0xF7C0,0xE7C1	; 24
+
+RD_SET_PAL	IN A,(0xFF)
+		AND %00111111
+		PUSH AF
+		LD HL,(ADR_INT)
+		PUSH HL
+		LD HL,EI_RET
+		LD (ADR_INT),HL
+		LD DE,0xAF0F			; дальше сохраняем текущую палитру
+		LD BC,0xBD77
+		OUT (C),D			; включение текстмода
+		LD HL,(ADR_PALITRA)
+		LD BC,RD_PALITRA
+		EI
+		HALT
+		DI
+.L3		LD A,E
+		BIT 3,E
+		OUT (0xFE),A
+		JR Z,.L4
+		OUT (0xF6),A
+.L4		IN A,(C)
+		LD (HL),A
+		INC HL
+		DEC E
+		JP P,.L3			; палитру сохранили
+		LD HL,MAGIC_PAL
+		LD E,0x0F
+.L1		LD A,E
+		BIT 3,E
+		OUT (0xFE),A
+		JR Z,.L2
+		OUT (0xF6),A
+.L2		LD A,(HL)
+		INC HL
+		OR %00001100
+		OUT (0xFF),A
+		DEC E
+		JP P,.L1
+		LD BC,0xFF77
+		OUT (C),D
+		POP HL
+		LD (ADR_INT),HL
+		POP AF
+		OUT (0xFF),A
+		RET
+
+MAGIC_PAL	DB 0x0C,0x2D,0x4E,0x6F,0x9C,0xBD,0xDE,0xFF
+		DB 0xEC,0xED,0xEE,0xEF,0xFC,0xFD,0xFE,0xFF
+
+; палитра для SPECTRUM режима
+TRSTPAL		DB 0x00,0x21,0x42,0x63,0x90,0xB1,0xD2,0xF3
+		DB 0xE0,0xE1,0xE2,0xE3,0xF0,0xF1,0xF2,0xF3
+
+SETUP_PAL1	LD HL,(RREG_L)
+		LD DE,EXTERN_PAL-CPU6
+		LD BC,0x10
+	ROMCALL LDIR_BYTES,ROM_RST83
+		LD HL,EXTERN_PAL
+		JR RESTOREPAL1
+
+SETUP_PAL	LD A,(RREG_A)
+		AND A
+		JR NZ,SETUP_PAL1
+		LD HL,TRSTPAL
+RESTOREPAL1	LD (ADR_PALITRA),HL
+RESTORE_PAL	IN A,(0xFF)
+		AND %00111111
+		PUSH AF
+		LD HL,(ADR_INT)
+		PUSH HL
+		LD HL,EI_RET
+		LD (ADR_INT),HL
+		LD HL,(ADR_PALITRA)
+		LD DE,0xAF0F
+		LD BC,0xBD77			; доступ к палитре
+		OUT (C),D			; вкл.PAL
+		EI
+		HALT
+		DI
+.L1		LD A,E
+		BIT 3,E
+		OUT (0xFE),A
+		JR Z,$+4
+		OUT (0xF6),A
+		LD A,(HL)
+		INC HL
+		OR %00001100
+		OUT (0xFF),A
+		DEC E
+		JP P,.L1
+		LD BC,0xFF77
+		OUT (C),D
+		POP HL
+		LD (ADR_INT),HL
+		POP AF
+		OUT (0xFF),A
+		RET
+
+PRINT_REGS	LD E,(IX)
+		INC IX
+		LD D,(IX)
+		INC IX
+PRTT_HL_	LD A,H
+		CALL PRTT_A
+		LD A,L
+PRTT_A		PUSH AF
+		RRCA
+		RRCA
+		RRCA
+		RRCA
+		CALL PRTT_A_1
+		POP AF
+PRTT_A_1	AND 0x0F
+		CP 0x0A
+		CCF
+		ADC A,"0"
+		DAA
+		AND 0x7F
+		JP PRTT_A_
+
+PRINT_REG	LD E,(IX)
+		INC IX
+		LD D,(IX)
+		INC IX
+		JR PRTT_A
+
+COORDINAT_REGS	DW Y_OFFSET +  1 + (X_OFFSET + 3      ) * 0x100	; SP
+		DW Y_OFFSET +  1 + (X_OFFSET + 3 +  9 ) * 0x100	; PC
+		DW Y_OFFSET +  2 + (X_OFFSET + 3      ) * 0x100	; IR
+		DW Y_OFFSET +  3 + (X_OFFSET + 3      ) * 0x100	; AF
+		DW Y_OFFSET +  3 + (X_OFFSET + 3 +  9 ) * 0x100	; AF'
+		DW Y_OFFSET +  4 + (X_OFFSET + 3      ) * 0x100	; BC
+		DW Y_OFFSET +  4 + (X_OFFSET + 3 +  9 ) * 0x100	; BC'
+		DW Y_OFFSET +  5 + (X_OFFSET + 3      ) * 0x100	; DE
+		DW Y_OFFSET +  5 + (X_OFFSET + 3 +  9 ) * 0x100	; DE'
+		DW Y_OFFSET +  6 + (X_OFFSET + 3      ) * 0x100	; HL
+		DW Y_OFFSET +  6 + (X_OFFSET + 3 +  9 ) * 0x100	; HL'
+		DW Y_OFFSET +  7 + (X_OFFSET + 3      ) * 0x100	; IX
+		DW Y_OFFSET +  7 + (X_OFFSET + 3 +  9 ) * 0x100	; IY
+		DW Y_OFFSET +  8 + (X_OFFSET + 5      ) * 0x100	; INT EI/DI
+		DW Y_OFFSET +  8 + (X_OFFSET + 3 + 10 ) * 0x100	; INT IM 1/2
+		DW Y_OFFSET + 11 + (X_OFFSET + 6      ) * 0x100	; CPU3 MAP0
+		DW Y_OFFSET + 11 + (X_OFFSET + 6 +  3 ) * 0x100	; CPU3 MAP1
+		DW Y_OFFSET + 12 + (X_OFFSET + 6      ) * 0x100	; CPU6 MAP0
+		DW Y_OFFSET + 12 + (X_OFFSET + 6 +  3 ) * 0x100	; CPU6 MAP1
+		DW Y_OFFSET + 13 + (X_OFFSET + 6      ) * 0x100	; CPU5 MAP0
+		DW Y_OFFSET + 13 + (X_OFFSET + 6 +  3 ) * 0x100	; CPU5 MAP1
+		DW Y_OFFSET + 14 + (X_OFFSET + 6      ) * 0x100	; CPU0 MAP0
+		DW Y_OFFSET + 14 + (X_OFFSET + 6 +  3 ) * 0x100	; CPU0 MAP1
+		DW Y_OFFSET + 16 + (X_OFFSET + 5      ) * 0x100	; PORT 7FFD
+		DW Y_OFFSET + 17 + (X_OFFSET + 5      ) * 0x100	; PORT EFF7
+		DW Y_OFFSET + 18 + (X_OFFSET + 0      ) * 0x100	; PORT XX77
+		DW Y_OFFSET + 18 + (X_OFFSET + 0 +  5 ) * 0x100	; BYTE IN PORT XX77
+		DW Y_OFFSET + 19 + (X_OFFSET + 5      ) * 0x100	; PORT BF
+		DW Y_OFFSET + 20 + (X_OFFSET + 5      ) * 0x100	; BIT DOS ENABLE
+		DW Y_OFFSET + 16 + (X_OFFSET + 5 +  6 ) * 0x100 ; FF
+		DW Y_OFFSET + 17 + (X_OFFSET + 5 +  6 ) * 0x100 ; 7F
+		DW Y_OFFSET + 18 + (X_OFFSET + 5 +  6 ) * 0x100 ; 5F
+		DW Y_OFFSET + 19 + (X_OFFSET + 5 +  6 ) * 0x100 ; 3F
+		DW Y_OFFSET + 20 + (X_OFFSET + 5 +  6 ) * 0x100 ; 1F
+		DW Y_OFFSET + 21 + (X_OFFSET + 5 +  1 ) * 0x100 ; ADR BREAK
+
+PRT_PORTREGS	LD A,MAGIC_COLOR
+		LD (TXT_COLOR),A
+		LD IX,COORDINAT_REGS
+		LD HL,(NMI_SAVE_SP)
+		CALL PRINT_REGS			; SP
+		LD HL,(NADRRET_L)
+		CALL PRINT_REGS			; PC
+		LD A,(NREG_I)
+		LD H,A
+		LD A,(NREG_R)
+		LD L,A
+		CALL PRINT_REGS			; IR
+		LD HL,(NREG_F)
+		CALL PRINT_REGS			; AF
+		LD HL,(NREG_FF)
+		CALL PRINT_REGS			; AF'
+		LD HL,(NREG_C)
+		CALL PRINT_REGS			; BC
+		LD HL,(NREG_CC)
+		CALL PRINT_REGS			; BC'
+		LD HL,(NREG_E)
+		CALL PRINT_REGS			; DE
+		LD HL,(NREG_EE)
+		CALL PRINT_REGS			; DE'
+		LD HL,(NREG_L)
+		CALL PRINT_REGS			; HL
+		LD HL,(NREG_LL)
+		CALL PRINT_REGS			; HL'
+		LD HL,(NREG_IXL)
+		CALL PRINT_REGS			; IX
+		LD HL,(NREG_IYL)
+		CALL PRINT_REGS			; IY
+		LD A,(INT_MODE)
+		ADD A,"0"
+		CALL PRINT_1NUM			; INT ON/OFF
+		LD A,(NUM_IM)
+		ADD A,"1"
+		CALL PRINT_1NUM			; IM 1/2
+		LD A,(B0_CPU3)
+		CALL PRINT_REG			; CPU3 MAP0
+		LD A,(B1_CPU3)
+		CALL PRINT_REG			; CPU3 MAP1
+		LD A,(B0_CPU2)
+		CALL PRINT_REG			; CPU6 MAP0
+		LD A,(B1_CPU2)
+		CALL PRINT_REG			; CPU6 MAP1
+		LD A,(B0_CPU1)
+		CALL PRINT_REG			; CPU5 MAP0
+		LD A,(B1_CPU1)
+		CALL PRINT_REG			; CPU5 MAP1
+		LD A,(B0_CPU0)
+		CALL PRINT_REG			; CPU0 MAP0
+		LD A,(B1_CPU0)
+		CALL PRINT_REG			; CPU0 MAP1
+	READ_7FFD
+		CALL PRINT_REG			; PORT 7FFD
+		LD A,(N_EFF7)
+		CALL PRINT_REG			; PORT EFF7
+		LD A,(N_77)
+		AND %11100000
+		RRCA
+		LD B,A
+		RRCA
+		RRCA
+		RRCA
+		RRCA
+		OR B
+		OR 0xBC
+		CALL PRINT_REG			; PORT XX77
+		LD A,(N_77)
+		AND 0x0F
+		CALL PRINT_REG			; BYTE IN PORT XX77
+		LD A,(N_BF)
+		CALL PRINT_REG			; PORT BF
+		LD A,(N_77)
+		AND 0x10
+		RRCA
+		RRCA
+		RRCA
+		RRCA
+		ADD A,"0"
+		CALL PRINT_1NUM
+		IN A,(0xFF)
+		AND %00111111
+		CALL PRINT_REG
+		IN A,(0x7F)
+		CALL PRINT_REG
+		IN A,(0x5F)
+		CALL PRINT_REG
+		IN A,(0x3F)
+		CALL PRINT_REG
+		IN A,(0x1F)
+		CALL PRINT_REG
+		LD BC,BREAK_HIGH
+		IN H,(C)
+		LD B,HIGH (BREAK_LOW)
+		IN L,(C)
+		JP PRINT_REGS
+
+PRINT_1NUM	LD E,(IX)
+		INC IX
+		LD D,(IX)
+		INC IX
+		JP PRTT_A_
+
+; установка режимов
+SET_MODE	LD A,(RREG_A)
+ISET_MODE	AND A
+		JR Z,SET_MODE4
+		LD E,A
+		LD (TEK_MODES),A		; сохранили устанавливаемые режимы
+		AND A				; если 0 то получение режима
+		JR Z,SET_MODE4;2
+		BIT 3,A
+		JR Z,.L4
+; установка номера экрана
+		AND %00000111
+		LD D,A
+		LD A,(B_PORT77)
+		AND %11111000
+		OR D
+		LD (B_PORT77),A			; установили видео режим в порту xx77
+.L4		LD A,E
+		RRCA
+		RRCA
+		RRCA
+		RRCA
+		LD E,A				; сейчас биты 1-0 содержат турбо режим
+		RRCA
+		RRCA
+		AND 3				; взяли биты турборежима
+		JR Z,.L3			; если 0 то режим турбо не меняем
+; смена турборежима
+		EXX
+		DEC A				; 1
+		LD HL,0x0010			; TURBO 3,5 MHZ
+		JR Z,.L2
+		DEC A				; 2
+		LD HL,0x0000			; TURBO 7,0 MHZ
+		JR Z,.L2
+		LD HL,0x0800			; TURBO 14 MHZ
+.L2		LD A,(R_EFF7)
+		AND %11101111
+		OR L
+		LD (R_EFF7),A			; установили турбо для порта EFF7
+		LD A,(B_PORT77)
+		AND %11110111
+		OR H
+		LD (B_PORT77),A			; установили турбо режим для порта xx77
+		EXX
+.L3		LD A,E
+		AND 3				; выделили биты режима памяти
+		JR Z,SET_MODE4			; если 0 то режим памяти не меняем
+; смена режима памяти
+		DEC A
+		LD HL,0x0000			; память 1024К
+		JR Z,.L1
+		DEC A
+		LD HL,0x2004			; память 48К
+		JR Z,.L1
+		LD HL,0x0004			; память 128К
+.L1		LD A,(R_7FFD)
+		AND %11011111
+		OR H
+		LD (R_7FFD),A
+		LD A,(R_EFF7)
+		AND %11111011
+		OR L
+		LD (R_EFF7),A
+		RET
+
+SET_MODE4	LD A,(TEK_MODES)
+		LD (RREG_A),A
+		RET
+
+; дефолтные значения для кмос
+;		    ED   EC   EB   EA   E9   E8
+CMOS_DEFAULT	DB 0x04,0x82,0x00,0x00,0x00,0x00
+ECMOS_DEFAULT
+
+INST_SONGLN     LD HL,SONGLNBIN
+                LD DE,0xC000
+                JP UNPACK
+
+SONGLNBIN       binclude songln_pack.bin
+		include tape.a80
+		include ay_printer.a80
+		include txtmode_proc.a80
+		include window.a80
+		include selector.a80
+		include input_keys.a80
+		include mouse.a80
+		include file_browser.a80
+		include call_trdos.a80
+		include call_cmos.a80
+
+		PHASE $+CPU3
+UNPACK_DOS_FE	LD HL,PACK_DOS_FE
+		LD DE,CPU2
+		JP UNPACK+CPU3
+
+PACK_DOS_FE	binclude ../../page1/dos_fe_pack.rom
+		DEPHASE
+
+FREE_ADDONS	EQU 0x3FF6-$
+
+		DUPL FREE_ADDONS,0xFF
+		DW FREE_ADDONS			; размер свободного места
+		DB "ADDONS"
+		DW DATA_VERS
+		DEPHASE

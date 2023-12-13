@@ -1,0 +1,4 @@
+#!/bin/bash
+
+	vlog -sv -vopt -O5 +acc -incr ckgen.sv tb_sync.sv ../video_sync.v
+

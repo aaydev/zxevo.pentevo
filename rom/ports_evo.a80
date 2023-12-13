@@ -1,0 +1,60 @@
+
+; LAST UPDATE: 01.10.2022 savelij
+
+; порты памяти
+WIN_P0		EQU 0x37F7			; адрес 0 страницы проецирования PENTEVO
+WIN_P1		EQU 0x77F7			; адрес 1 страницы проецирования PENTEVO
+WIN_P2		EQU 0xB7F7			; адрес 2 страницы проецирования PENTEVO
+WIN_P3		EQU 0xF7F7			; адрес 3 страницы проецирования PENTEVO
+WIN_R0		EQU 0x3BF7			; адрес защиты от записи в окне 0
+WIN_R1		EQU 0x7BF7			; адрес защиты от записи в окне 1
+WIN_R2		EQU 0xBBF7			; адрес защиты от записи в окне 2
+WIN_R3		EQU 0xFBF7			; адрес защиты от записи в окне 3
+WIN_A0		EQU 0x3FF7			; адрес 0 страницы проецирования ATM
+WIN_A1		EQU 0x7FF7			; адрес 1 страницы проецирования ATM
+WIN_A2		EQU 0xBFF7			; адрес 2 страницы проецирования ATM
+WIN_A3		EQU 0xFFF7			; адрес 3 страницы проецирования ATM
+PEVO_CONF	EQU 0xBF			; адрес порта конфига PENTEVO
+CMOSD_SET_ADR	EQU 0xDEF7			; адрес порта установки адреса CMOS ячейки из DOS
+CMOSD_RD_WR	EQU 0xBEF7			; адрес порта чтения/записи байт CMOS из доса
+CMOS_SET_ADR	EQU 0xDFF7			; адрес порта установки адреса CMOS ячейки
+CMOS_RD_WR	EQU 0xBFF7			; адрес порта чтения/записи байт CMOS
+PENT_CONF	EQU 0xEFF7			; адрес порта конфига режима пентагона
+CONF_128	EQU 0x7FFD			; адрес порта конфига 128 памяти
+MOUSE_X		EQU 0xFBDF			; адрес порта X координаты мыши
+MOUSE_Y		EQU 0xFFDF			; адрес порта Y координаты мыши
+MOUSE_KEYS	EQU 0xFADF			; адрес порта кнопок мыши
+
+; порты RS232
+RS232_IO	EQU 0xF8EF
+RS232_DIV_L	EQU 0xF8EF
+RS232_IRQ_ENA	EQU 0xF9EF
+RS232_DIV_H	EQU 0xF9EF
+RS232_IRQ_ID	EQU 0xFAEF
+RS232_LINE_CTRL	EQU 0xFBEF
+RS232_MDM_CTRL	EQU 0xFCEF
+RS232_LINE_STAT	EQU 0xFDEF
+RS232_MDM_STAT	EQU 0xFEEF
+RS232_WORK_REG	EQU 0xFFEF
+
+; порты для чтения портов конфигурации
+EXIT_PORT	EQU 0xBE
+LBASE		EQU 0xBD
+RD_0WINA0	EQU 0x00 << 8 + LBASE		; адрес порта 0 окна проецирования 0 мапера
+RD_0WINA1	EQU 0x01 << 8 + LBASE		; адрес порта 1 окна проецирования 0 мапера
+RD_0WINA2	EQU 0x02 << 8 + LBASE		; адрес порта 2 окна проецирования 0 мапера
+RD_0WINA3	EQU 0x03 << 8 + LBASE		; адрес порта 3 окна проецирования 0 мапера
+RD_1WINA0	EQU 0x04 << 8 + LBASE		; адрес порта 0 окна проецирования 1 мапера
+RD_1WINA1	EQU 0x05 << 8 + LBASE		; адрес порта 1 окна проецирования 1 мапера
+RD_1WINA2	EQU 0x06 << 8 + LBASE		; адрес порта 2 окна проецирования 1 мапера
+RD_1WINA3	EQU 0x07 << 8 + LBASE		; адрес порта 3 окна проецирования 1 мапера
+RD_RAMNROM	EQU 0x08 << 8 + LBASE		; адрес порта битов RAM & ROM
+RD_DOS7FFD	EQU 0x09 << 8 + LBASE		; адрес порта битов DOS & 7FFD
+RD_7FFD		EQU 0x0A << 8 + LBASE		; адрес порта 0x7FFD
+RD_EFF7		EQU 0x0B << 8 + LBASE		; адрес порта 0xEFF7
+RD_77		EQU 0x0C << 8 + LBASE		; адрес порта xx77
+RD_PALITRA	EQU 0x0D << 8 + LBASE		; адрес порта палитры
+BREAK_LOW	EQU 0x10 << 8 + LBASE		; младший байт адреса порта на чтение адреса BREAK
+BREAK_HIGH	EQU 0x11 << 8 + LBASE		; старший байт адреса порта на чтение адреса BREAK
+WR_BLOCK	EQU 0x12 << 8 + LBASE		; защита от записи
+FDD_EMU_PORT	EQU 0x13 << 8 + LBASE		; порт эмулятора дисковода

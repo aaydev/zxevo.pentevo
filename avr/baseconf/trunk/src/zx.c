@@ -365,10 +365,18 @@ void to_zx(UBYTE scancode, UBYTE was_E0, UBYTE was_release)
 			//Del
 			case 0x71:
 				//Ctrl-Alt-Del pressed
+#ifdef LOGENABLE
+	char log_kb_ctrl_status[] = "DL.. ..\r\n";
+	log_kb_ctrl_status[2] = ((kb_ctrl_status >> 4) <= 9 )?'0'+(kb_ctrl_status >> 4):'A'+(kb_ctrl_status >> 4)-10;
+	log_kb_ctrl_status[3] = ((kb_ctrl_status & 0x0F) <= 9 )?'0'+(kb_ctrl_status & 0x0F):'A'+(kb_ctrl_status & 0x0F)-10;
+	log_kb_ctrl_status[5] = ((kb_ctrl_mapped >> 4) <= 9 )?'0'+(kb_ctrl_mapped >> 4):'A'+(kb_ctrl_mapped >> 4)-10;
+	log_kb_ctrl_status[6] = ((kb_ctrl_mapped & 0x0F) <= 9 )?'0'+(kb_ctrl_mapped & 0x0F):'A'+(kb_ctrl_mapped & 0x0F)-10;
+	to_log(log_kb_ctrl_status);
+#endif
 				if ( ( !was_release ) &&
 					 /*( !(kb_status & KB_CTRL_ALT_DEL_MAPPED_MASK) ) &&*/
-					 ( (kb_ctrl_status&(~kb_ctrl_mapped)&(KB_LCTRL_MASK|KB_RCTRL_MASK)) !=0 ) &&
-					 ( (kb_ctrl_status&(~kb_ctrl_mapped)&(KB_LALT_MASK|KB_RALT_MASK)) !=0 ) )
+					 ( (kb_ctrl_status&/*(~kb_ctrl_mapped)&*/(KB_LCTRL_MASK|KB_RCTRL_MASK)) !=0 ) &&
+					 ( (kb_ctrl_status&/*(~kb_ctrl_mapped)&*/(KB_LALT_MASK|KB_RALT_MASK)) !=0 ) )
 				{
 					//hard reset
 					flags_register |= FLAG_HARD_RESET;

@@ -1,0 +1,53 @@
+::video mode from baseconf::
+
+60hz TV: positive polarity both,
+hsync period  1792
+hsync on time 132
+vsync period  469504 (262 lines)
+vsync on time 3896, begins with hsync
+
+hblank begins 40 clocks before hsync, ends 180 clocks after (zeros on output)
+vblank begins 4 hsync periods before vsync, ends 16 hsync periods after end of vsync
+
+
+60hz VGA: positive polarity both,
+hsync period  896
+hsync on time 106
+vsync period  469504 (524 lines)
+vsync on time 3896, begins next clock after hsync
+
+hblank begins 18 clocks before hsync
+hblank ends 52 clocks after hsync
+
+=================================================
+font format: 6x6, 2 EABs, format as defined in mkfont.py
+
+frame buffer format: 8 EABS, 4096 bytes.
+
+overall:
+ 60x40 chars
+
+chars:
+ placed compact in memory, total 60x40 = 2400 (0x960) bytes, each line is 60 bytes long
+ start offset = 0
+ charcodes allowed: 32..255
+
+attrs:
+ 5 bits per attr, packed compactly in sequential bytes:
+
+bytes: b7 b6 b5 b4 b3 b2 b1 b0 | b7 b6 b5 b4 b3 b2 b1 b0 | b7 b6 b5 b4 b3 b2 b1 b0 | b7 b6 b5 b4 b3 b2 b1 b0 | b7 b6 b5 b4 b3 b2 b1 b0 |
+attrs: a4 a3 a2 a1 a0                  a4 a3 a2 a1 a0                  a4 a3 a2 a1   a0                a4 a3   a2 a1 a0
+                      a4 a3 a2   a1 a0                a4   a3 a2 a1 a0                  a4 a3 a2 a1 a0                  a4 a3 a2 a1 a0
+
+ each line has a size of 40 bytes in memory, only first 60 attrs (out of total 64) are used.
+ each line starts from left-aligned attr as in picture above
+ total 40*40 = 1600 (0x640) bytes
+ start offset = 0x9C0
+
+ attr format:
+ a4 a3 a2 a1 a0
+ b1 b0 p2 p1 p0
+
+ {b1,b0} == background color
+ {p2,p1,p0} == character color
+

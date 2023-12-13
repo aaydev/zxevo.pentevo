@@ -26,7 +26,7 @@ public:
 
 #define WORD4(a,b,c,d) (((unsigned)(a)) | (((unsigned)(b)) << 8) | (((unsigned)(c)) << 16) | (((unsigned)(d)) << 24))
 #define WORD2(a,b) ((a) | ((b)<<8))
-#define align_by(a,b) (((ULONG_PTR)(a) + ((b)-1)) & ~((b)-1))
+#define align_by(a,b) (((ULONG_PTR)(a) + ((b)-1)) & ~(((ULONG_PTR)(b))-1))
 #define hexdigit(a) ((a) < 'A' ? (a)-'0' : toupper(a)-'A'+10)
 
 extern const char nop;

@@ -47,7 +47,7 @@ const UBYTE joymaps[4][12]={
 #define JOY_MAP_SMB		(UBYTE *)joymaps[2]
 #define JOY_MAP_ELITE	(UBYTE *)joymaps[3]
 UBYTE * joymap = JOY_MAP_DEFAULT;
-#define J_WAIT 20
+#define J_WAIT 10
 
 volatile UBYTE gamepad_type = JOY_NEED_DETECT;
 volatile UWORD jkey_state = 0x0000;
@@ -57,7 +57,7 @@ void joystick_init(void){
 	
 	SEGA_SYNC_UP();
 	DDRA  = 0b00000100;
-	
+	_delay_us(50000);
 	//первый фронт клолка
 	_delay_us(J_WAIT);
 	//как минимум один из left/right должен быть в 1

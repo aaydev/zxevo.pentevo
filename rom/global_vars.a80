@@ -1,0 +1,303 @@
+
+; LAST UPDATE: 25.11.2022 savelij
+
+		include ports_evo.a80
+
+; страницы VIDEO RAM
+VMODE7_0	EQU LOW (-0x08)-1		; 0xF7 страница одностраничного текстмода 0 экран
+VMODE7_1	EQU LOW (-0x0A)-1		; 0xF5 страница одностраничного текстмода 1 экран
+VMODE6_0M	EQU LOW (-0x05)-1		; 0xFA страница ATM текстмода монохром 0 экран
+VMODE6_0C	EQU LOW (-0x01)-1		; 0xFE страница ATM текстмода цвет 0 экран
+VMODE6_1M	EQU LOW (-0x07)-1		; 0xF8 страница ATM текстмода монохром 1 экран
+VMODE6_1C	EQU LOW (-0x03)-1		; 0xFC страница ATM текстмода цвет 1 экран
+ZXSCR_0		EQU LOW (-0x05)-1		; 0xFA страница ZX экрана 0
+ZXSCR_1		EQU LOW (-0x07)-1		; 0xF8 страница ZX экрана 1
+
+; страницы памяти ZX стандарта
+ZXSTD_CPU1	EQU LOW (-0x05)-1; 0xFA		; страница 1 окна проецирования
+ZXSTD_CPU2	EQU LOW (-0x02)-1; 0xFD		; страница 2 окна проецирования
+
+; страницы RAM
+RAM_EVODOS	EQU 1				; страница копии EVO-DOS для перехвата
+RAM_FATVARS	EQU 2				; страница для переменых FAT
+RAM_BASIC	EQU 3				; страница BASIC стандартная версия
+RAM_PROFROM	EQU 4				; страница переменных PROFROM
+RAM_MOUNTER	EQU 5				; страница для монтирования образов
+RAM_STS		EQU 6				; страница для отладчика STS
+RAM_ADDSTS	EQU 7				; страница для отладки ROM
+RAM_SCR_FONT	EQU 8				; страница сохраненных экранов и фонтов
+RAM_TEMP	EQU 9				; страница всяких временных переменных
+RAM_RAMDISK	EQU 0x0A			; страница начала рамдиска
+RAM_DATARAMD	EQU 0x0B			; страница начала данных рамдиска
+RAM_TEMP2	EQU 0x3F			; страница сортировки файлов и просмотра содержимого образов
+RAM_FLASHER	EQU 0x40			; страница начала загрузки прошивки
+RAM_TAPE	EQU 0x60			; страница для загрузки TAP файла
+
+; страницы ROM
+ROM_ERS		EQU 0				; номер страницы ROM EVO RESET SERVICE
+ROM_BAS128	EQU 1				; номер страницы ROM BASIC 128
+ROM_DOS		EQU 2				; номер страницы ROM EVO-DOS для реальной дискеты
+ROM_BAS48	EQU 3				; номер страницы ROM BASIC 48
+
+ROM_MAINMENU	EQU 5				; номер страницы упакованного главное меню
+ROM_RST80	EQU 6				; номер страницы ROM RST 8
+ROM_RST81	EQU 7				; номер страницы ROM RST 8
+ROM_RST82	EQU 8				; номер страницы ROM RST 8
+ROM_RST83	EQU 9				; номер страницы ROM RST 8
+ROM_ADD_DOS	EQU 0x0A			; номер страницы ROM EVO-DOS для эмуляции
+ROM_ADD_BAS48	EQU 0x0B			; номер страницы ROM BASIC 48
+ROM_BAS48_STD	EQU 0x18			; номер страницы ROM BASIC 48 (стандартная версия)
+ROM_BAS128_STD	EQU 0x19			; номер страницы ROM BASIC 128 (стандартная версия)
+ROM_BAS48_128	EQU 0x1A			; номер страницы ROM BASIC 48 (стандартная версия для BASIC 128)
+ROM_ATMCPM	EQU 0x1B			; номер страницы ROM АТМ CP/M
+
+CONF4PROF	EQU 0x90			; стартовая страница для EVO PROFROM 128K
+CONF4GLUK	EQU 0x94			; стартовая страница для GLUK 64K
+CONF4CUSTOM	EQU 0x9C			; стартовая страница для пользовательской прошивки 64К
+
+CPU0		EQU 0x0000			; начало окна проецирования 0
+CPU1		EQU 0x4000			; начало окна проецирования 1
+CPU2		EQU 0x8000			; начало окна проецирования 2
+CPU3		EQU 0xC000			; начало окна проецирования 3
+
+; маска кнопок мыши
+ BITMASK MOUSE_M_KEY,	2
+ BITMASK MOUSE_R_KEY,	1
+ BITMASK MOUSE_L_KEY,	0
+_MOUSE_WHEEL	EQU %11110000
+
+; скорости RS232
+BAUD110		EQU 115200/110
+BAUD150		EQU 115200/150
+BAUD300		EQU 115200/300
+BAUD600		EQU 115200/600
+BAUD1200	EQU 115200/1200
+BAUD2400	EQU 115200/2400
+BAUD4800	EQU 115200/4800
+BAUD9600	EQU 115200/9600
+BAUD19200	EQU 115200/19200
+BAUD38400	EQU 115200/38400
+BAUD57600	EQU 115200/57600
+BAUD115200	EQU 115200/115200
+
+; одностраничный текстмод
+LSYM		EQU 0x01C0			; смещение в странице начала левых символов текстмода
+LATTR		EQU 0x31C0			; смещение в странице начала левых атрибутов символов
+RSYM		EQU 0x11C0			; смещение в странице начала правых символов текстмода
+RATTR		EQU 0x21C1			; смещение в странице начала правых атрибутов символов 
+
+; ATM текстмод
+ALSYM		EQU 0x01C0			; смещение в странице начала левых символов текстмода
+ALATTR		EQU 0x21C0			; смещение в странице начала левых атрибутов символов
+ARSYM		EQU 0x21C0			; смещение в странице начала правых символов текстмода
+ARATTR		EQU 0x01C1			; смещение в странице начала правых атрибутов символов
+
+; цвета и яркости
+BLACK		EQU 0
+BLUE		EQU 1
+RED		EQU 2
+MAGENTA		EQU 3
+GREEN		EQU 4
+CYAN		EQU 5
+YELLOW		EQU 6
+WHITE		EQU 7
+BR_INK		EQU 0x40
+BR_PAPER	EQU 0x80
+
+; цвета для ATM видеорежимов
+ BITMASK G_L,		7
+ BITMASK G_H,		4
+ BITMASK R_L,		6
+ BITMASK R_H,		1
+ BITMASK B_L,		5
+ BITMASK B_H,		0
+
+; маска порта 7FFD
+ BITMASK ZX_SCREEN,	3
+ BITMASK ZX_ROM,	4
+
+; маска порта 0xBF
+ BITMASK BREAK_BF,	4			; бит разрешения срабатывания BREAK на адресе
+ BITMASK NMI_BF,	3			; бит генерации NMI
+ BITMASK FONT_BF,	2			; бит разрешения изменения шрифта
+ BITMASK FLASH_BF,	1			; бит разрешения программирования FLASH
+ BITMASK SHADOW_BF,	0			; бит разрешения доступа к теневым портам
+
+; маска порта 0xEFF7
+ BITMASK PENT_CMOS,	7			; бит разрешения доступа к кмосу
+ BITMASK PENT_TURBO,	4			; турборежим пентагона
+
+; маски режимов
+MEMORY_ALL	EQU %00010000			; доступ к первому мегабайту через порт 0xEFF7
+MEMORY_48	EQU %00100000			; доступен только 48Kb памяти
+MEMORY_128	EQU %00110000			; доступно только 128Kb памяти
+TURBO_3		EQU %01000000			; частота процессора 3,5 МГц 
+TURBO_7		EQU %10000000			; частота процессора 7 МГц
+TURBO_14	EQU %11000000			; частота процессора 14 МГц
+NUM_EGA		EQU %00000000			; номер видеорежима для ATM порта (EGA МОД 320*200)
+NUM_APPMULTI	EQU %00000010			; номер видеорежима для ATM порта (АППАРАТНЫЙ МУЛЬТИКОЛОР 640*200)
+NUM_ZXSCR	EQU %00000011			; номер видеорежима для ATM порта (ZX SCREEN 6912)
+NUM_TXTATM	EQU %00000110			; номер видеорежима для ATM порта (ATM текстмод 80*25)
+NUM_TXTSCR	EQU %00000111			; номер видеорежима для ATM порта (одностраничный текстмод 80*25)
+
+SET_VIDEOMODE	EQU %00001000
+
+; номера видеорежимов с маской для записи в порт
+V_EGA		EQU NUM_EGA	 | 0xA0
+V_APPMULTI	EQU NUM_APPMULTI | 0xA0
+V_ZXSCR		EQU NUM_ZXSCR	 | 0xA0
+V_TXTATM	EQU NUM_TXTATM	 | 0xA0
+V_TXT1PAGE	EQU NUM_TXTSCR	 | 0xA0
+
+; маски отладчика
+ BITMASK DBG_ACTIV,	7			; активен отладчик
+ BITMASK TRACE_DBG,	6			; трассировка
+ BITMASK STEP_DBG,	5			; пошаговая отладка
+; BITMASK CASH_INST,	4			; установлен CASH REMEMBER
+; BITMASK CASH_ACTIV,	3			; активен CASH REMEMBER
+
+; смещения FDI образа
+FDI_TABLE_CYL	EQU 0x4000			; адрес таблицы начал дорожек в образе
+FDI_PAGE_START	EQU 0x40FF			; смещение в страницах начала секторов образа
+FDI_BYTE_SMESH	EQU 0x41FE			; смещение в байтах начала образа загруженного в рамдиск
+FDI_BLOCK_SMESH	EQU 0x41FF			; смещение в блоках (по 256 байт) начала секторов образа
+FDI_IMAGE1SECT	EQU 0x4400			; адрес загрузки первого сектора для определения смещения
+
+; ячейки в CMOS
+ INIT_VAR
+ SETVAR _CMOS_SECOND				; секунды
+ SETVAR _CMOS_SECOND_AL				; секунды будильника
+ SETVAR _CMOS_MINUTE				; минуты
+ SETVAR _CMOS_MINUTE_AL				; минуты будильника
+ SETVAR _CMOS_HOUR				; часы
+ SETVAR _CMOS_HOUR_AL				; часы будильника
+ SETVAR _CMOS_DAY				; день недели
+ SETVAR _CMOS_DAY_MONTH				; день месяца
+ SETVAR _CMOS_MONTH				; месяц
+ SETVAR _CMOS_YEAR				; год
+
+; номера ячеек CMOS и их содержимое
+CRCCMOSHIGH	EQU 0xEF			; старший байт CRC CMOS
+CRCCMOSLOW	EQU 0xEE			; младший байт CRC CMOS
+CMOS_BYTE_00	EQU 0xED			; адрес хранения в CMOS
+CMOS_BYTE_01	EQU 0xEC			; адрес хранения в CMOS
+VIRT_REAL_DRIVE	EQU 0xEB			; хранение номера реального и виртуального дисковода, тип DOS
+HDD_TIMEOUT	EQU 0xEA			; задержка опредения наличия винта после включения питания
+CMOS_BYTE_02	EQU 0xE9			; адрес хранения в CMOS
+CMOS_BYTE_03	EQU 0xE8			; адрес хранения в CMOS
+
+; ячейка CMOS 0xED CMOS_BYTE_00
+ BITMASK TURBO14,	7			; разрешение включения TURBO 14MHZ
+ BITMASK EMUL_TAPE,	6			; разрешение эмуляции загрузки с ленты
+ BITMASK PRINTER_AY,	5			; разрешение подмены драйвера печати в BASIC48
+ BITMASK RELOAD_FONT,	4			; разрешение перезагрузки шрифта при сбросе
+ BITMASK TYPE_FONT,	3			; выбор кодировки шрифта
+ BITMASK AUTO_TAPE,	2			; автозапуск TAP файлов
+
+; номера сбросов, биты 1-0 ячейки 0xED (CMOS_BYTE_00)
+ INIT_VAR
+ SETVAR RESET2EVOSERV				; сброс в EVO SERVICE
+ SETVAR RESET2GLUK				; сброс в GLUK SERVICE
+ SETVAR RESET2PROFROM				; сброс в PROFROM
+ SETVAR RESET2CUSTOM				; сброс в CUSTOM ROM
+
+; ячейка CMOS 0xEC CMOS_BYTE_01
+ BITMASK TURBO357,	7			; турбо режим 3,5 или 7 Мгц
+ BITMASK SD_NGS_ONOFF,	6			; включение/выключение доступа к SD КАРТЕ NEOGS
+ BITMASK AUTOMOUNT,	5			; вкл/выкл автомонтирования из файла
+ BITMASK CLOCK_VIEW,	4			; хранение отображение часов
+ BITMASK SOUNDKEYS,	3			; разрешение озвучивания нажатых клавиш
+ BITMASK REZIDENT,	2			; разрешение проверки наличия резидента
+
+; номера моделей памяти, биты 1-0 ячейки 0xEC (CMOS_BYTE_01)
+ INIT_VAR
+ SETVAR _1MB					; память 1 Мб
+ SETVAR _48K					; память 48 Кб
+ SETVAR _128K					; память 128 Кб
+
+KOL_MODES	EQU 4				; количество режимов сброса
+MKOL_MODES	EQU %00000011			; маска для количества режимов сброса
+
+; ячейка CMOS 0xEB
+ BITMASK ACCESSZCSD,	7			; разрешение доступа к ZC SD CARD
+ BITMASK ACCESSSDG,	6			; разрешения доступа к SD карте NEOGS
+ BITMASK ACCESSHDDM,	5			; разрешение доступа к HDD MASTER
+ BITMASK ACCESSHDDS,	4			; разрешение доступа к HDD SLAVE
+_REAL_DRIVE	EQU %00001100			; маска номера реального дисковода
+_VIRT_DRIVE	EQU %00000011			; маска номера виртуального дисковода
+
+; ячейка CMOS 0xE9
+ BITMASK AUTOBOOT,	7			; автостарт загружаемого устройства
+BOOTDEVICE	EQU %00000011			; номер загружаемого устройства
+
+; ячейка CMOS 0xE8
+ BITMASK KILL_REZIDENT,	7			; изменение резидента перед запуском
+
+; номера загружаемых устройств
+ INIT_VAR
+ SETVAR _FDD					; дисковод
+ SETVAR _HDD					; винчестер
+ SETVAR _SD					; SD карта
+
+_SD_NONE	EQU 0x80			; признак не вставленной карты
+
+; переменные для 0 окна проецирования
+DEBUG_ONOFF	EQU 0x0013			; вкл/выкл отладчика
+ADR_SEL_ROM	EQU 0x0014			; адрес переключения страниц ROM
+CONT_RST8	EQU 0x002C			; адрес продолжения обработки RST 8
+CONTINUE_MAGIC	EQU 0x0034			; адрес перехода продолжения обработчика MAGIC
+ADR_PERFECT	EQU 0x0036			; адрес расположения PERFECT COMANDER
+EI_RET		EQU 0x003E			; адрес расположения EI:RET
+UNP_DOS_FE	EQU 0x0040			; адрес распаковщика DOS FE
+UNP_SONGLN	EQU 0x0043			; адрес распаковки SONGLINES
+UNPACK		EQU 0x0080			; адрес распаковщика
+_BIOS_JUMPS	EQU 0x0100			; адрес начала таблицы переходов в драйверы девайсов
+ADRBRK_EMUTAP	EQU 0x0569			; адрес установки бряка для эмуляции загрузки TAP
+START_STS	EQU 0xC000			; адрес входа в отладчик
+ADR_RST8END	EQU 0x3CE8			; адрес возврата из RST 8
+ICALL2PAGE	EQU 0x8000			; адрес вызывов кода из другой страницы
+
+ INIT_VAR
+ SETVAR OFFSET_FNTSAVE,		0x800		; смещение в странице для сохранения считанного шрифта
+ SETVAR OFFSET_BUFSYM,		0x800		; смещение в странице текущего шрифта
+ SETVAR OFFSET_SCRSAVE,		0x1B00		; смещение в странице для сохранения экрана
+ SETVAR OFFSET_USBDRV,		0		; ??? смещение до начала USB драйвера
+
+BUF_512		EQU CPU3-0x200			; буфер сектора
+BUF_TABLVOL	EQU BUF_512-0x100		; буфер таблицы найденных разделов
+BUF_TEKVOL	EQU BUF_TABLVOL-0x100		; буфер выбранного раздела
+BUF_TDIRCLS	EQU BUF_TEKVOL-0x800		; буфер кластеров текущей директории
+BUF_256		EQU BUF_TDIRCLS-0x100		; буфер 256 байт для переносов
+BUF_PATH	EQU BUF_256-0x100		; буфер текущего пути
+MOUNT_DRIVES	EQU BUF_PATH-0x100		; буфер описателей примонтированных файлов
+BUF_LEVELDIR	EQU MOUNT_DRIVES-0x100		; буфер сохранения позиций окон при переходах по директориям
+BUF_WINPATH	EQU BUF_LEVELDIR-0x400		; буфер сохранения позиций в окне при хождении по директориям
+
+; переменные для менеджера устройств
+ INIT_VAR BUF_TABLVOL + 0xE0
+ SETVAR DEVICES,		0x10		; список обнаруженных девайсов
+ SETVAR GO_DEV,			WORD		; адрес вызова драйвера устройства
+ SETVAR KOLDVOL,		BYTE		; количество найденных разделов
+ SETVAR SETDVOL,		BYTE		; номер выбранного раздела
+ SETVAR ADRTEKV,		WORD		; адрес описателя текущего раздела
+ SETVAR SAVE_TEK_VOL,		BYTE		; временное сохранение текущего раздела
+ SETVAR TEK_TYPE,		BYTE		; временное хранение типа текущего устройства
+ SETVAR FLAGS_DRV,		BYTE		; флаговый байт драйверов
+;7 =0-драйвер SD карты NEOGS не установлен, =1-установлен
+;6
+;5
+;4
+;3
+;2
+;1 =0-SD ZC карта не обнаружена, 1-обнаружена
+;0 =0-SD NeoGS не обнаружена, 1-обнаружена
+CRC_DRVS	EQU BUF_TABLVOL + 0xFE		; контрольная сумма таблицы найденных разделов
+
+; переменные для 1 окна проецирования
+ INIT_VAR
+ SETVAR BUF_ALLVOL,		0x1000		; буфер переменных для всех разделов (16 MAX)
+ SETVAR MOUNT_CLS,		0x1000		; буфер кластеров примонтированных файлов
+ SETVAR TEK_BUFPATH,		0x1000		; буфер текущих путей на разделах
+ SETVAR BUF_PATHMOUNT,		0x400		; буфер путей для поиска примонтированных файлов
+ SETVAR BUF_DIRCEP,		0x100		; буфер цепочки текущей директории
+ SETVAR BUF_TEMPSEC,		0x200		; буфер сектора для загрузки образов
