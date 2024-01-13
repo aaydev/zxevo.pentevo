@@ -208,7 +208,7 @@ static void create_palette()
         u8(pl->ZB), u8(pl->NB), u8(pl->ZB), u8(pl->BB)  // BB
     };
 
-    for(unsigned i = 0; i < 0x100; i++)
+    for(unsigned i = 0; i < 0x100u; i++)
     {
         unsigned r0, g0, b0;
         if(temp.rflags & RF_GRAY)
@@ -639,7 +639,7 @@ void pixel_tables()
         hires_sc_tables();
     }
     
-if ((conf.mem_model == MM_ATM3) && ((comp.pBF&0x20) != 0)) { //added by Alone Coder 04.12.2021 (no ULAplus!!! no default palette!!! ATM3 only!!!):
+if ((conf.mem_model == MM_ATM3) && ((comp.pBF&0x20) != 0) && (temp.obpp == 32)) { //added by Alone Coder 04.12.2021 (no ULAplus!!! no default palette!!! ATM3 only!!!):
    PALETTE_OPTIONS *pl = &pals[conf.pal];
    //colorindex = comp.border_attr;
  for (u8 colorindex = 0; colorindex < 16; colorindex++) {
