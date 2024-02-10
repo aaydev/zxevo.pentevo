@@ -50,7 +50,7 @@ ifeq ($(OS),Windows_NT)
 	AVRSIZEOPT =
 	CP = copy /Y
 else
-	MAKEFW = ../../../../tools/make_fw/make_fw
+	MAKEFW = ../../../../../tools/make_fw/make_fw
 	AVRSIZEOPT = -C --mcu=${MCU}
 	CP = cp
 endif
