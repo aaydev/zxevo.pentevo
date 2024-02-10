@@ -33,7 +33,7 @@ module zdos(
 	input  wire        dos_turn_off,
 
 	input  wire        cpm_n,
-	input  wire        atm_pen2; // atm palette write enable
+	input  wire        atm_pen2, // atm palette write enable
 
 
 	output reg         dos,
