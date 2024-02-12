@@ -13,7 +13,7 @@
 #include <ctype.h>
 
 #include "bpemu.h"
-#include "endian.h"
+#include "be_le.h"
 #include "strutil.h"
 #include "asmdef.h"
 #include "asmpars.h"
@@ -25,6 +25,8 @@
 #include "errmsg.h"
 #include "codepseudo.h"
 #include "ibmfloat.h"
+#include "onoff_common.h"
+#include "chartrans.h"
 
 #include "codemn2610.h"
 
@@ -64,7 +66,6 @@ static ASSUMERec ASSUMEMN1613[ASSUMEMN1613Count] =
   { "TSR1", BaseRegVals + 3, 0, 15, 16, NULL }
 };
 
-#define FixedOrderCnt 6
 static tFixedOrder *FixedOrders;
 
 /*--------------------------------------------------------------------------*/
@@ -1015,16 +1016,30 @@ void IncMaxCodeLen(unsigned NumWords)
   SetMaxCodeLen((CodeLen + NumWords) * 2);
 }
 
-static void AppendWord(Word Data)
+static void AppendWord(Word data, Boolean *p_half_filled_word)
 {
   IncMaxCodeLen(1);
-  WAsmCode[CodeLen++] = Data;
+  WAsmCode[CodeLen++] = data;
+  *p_half_filled_word = False;
+}
+
+static void AppendByte(Byte data, Boolean *p_half_filled_word)
+{
+  if (*p_half_filled_word)
+  {
+    WAsmCode[CodeLen - 1] |= data & 0xff;
+    *p_half_filled_word = False;
+  }
+  else
+  {
+    AppendWord(data << 8, p_half_filled_word);
+    *p_half_filled_word = True;
+  }
 }
 
 static void DecodeDC(Word Code)
 {
-  Boolean OK, HalfFilledWord = False;
-  int z;
+  Boolean HalfFilledWord = False;
   TempResult t;
 
   UNUSED(Code);
@@ -1032,60 +1047,68 @@ static void DecodeDC(Word Code)
   as_tempres_ini(&t);
   if (ChkArgCnt(1, ArgCntMax))
   {
-    OK = True;
-    for (z = 1; z <= ArgCnt; z++)
-     if (OK)
-     {
-       EvalStrExpression(&ArgStr[z], &t);
-       if (mFirstPassUnknown(t.Flags) && (t.Typ == TempInt)) t.Contents.Int &= 0x7fff;
-       switch (t.Typ)
-       {
-         case TempInt:
-         ToInt:
-           if (ChkRange(t.Contents.Int, -32768, 65535))
-             AppendWord(t.Contents.Int);
-           else
-             OK = False;
-           HalfFilledWord = False;
-           break;
-         case TempString:
-         {
-           Word Trans;
-           int z2;
+    Boolean OK = True;
+    tStrComp *pArg;
 
-           if (MultiCharToInt(&t, 2))
-             goto ToInt;
+    forallargs(pArg, OK)
+    {
+      EvalStrExpression(pArg, &t);
+      if (mFirstPassUnknown(t.Flags) && (t.Typ == TempInt)) t.Contents.Int &= 0x7fff;
+      switch (t.Typ)
+      {
+        case TempInt:
+          if (Packing)
+          {
+            if (mFirstPassUnknown(t.Flags))
+              t.Contents.Int &= 127;
+            if (ChkRange(t.Contents.Int, -128, 255))
+              AppendByte(t.Contents.Int, &HalfFilledWord);
+            else
+              OK = False;
+          }
+          else
+          {
+          ToInt:
+            if (mFirstPassUnknown(t.Flags))
+              t.Contents.Int &= 32767;
+            if (ChkRange(t.Contents.Int, -32768, 65535))
+              AppendWord(t.Contents.Int, &HalfFilledWord);
+            else
+              OK = False;
+          }
+          break;
+        case TempString:
+        {
+          Word Trans;
+          int z2;
 
-           for (z2 = 0; z2 < (int)t.Contents.str.len; z2++)
-           {
-             Trans = CharTransTable[((usint) t.Contents.str.p_str[z2]) & 0xff];
-             if (HalfFilledWord)
-             {
-               WAsmCode[CodeLen - 1] |= Trans & 0xff;
-               HalfFilledWord = False;
-             }
-             else
-             {
-               AppendWord(Trans << 8);
-               HalfFilledWord = True;
-             }
-           }
-           break;
-         }
-         case TempFloat:
-         {
-           IncMaxCodeLen(2);
-           if (Double2IBMFloat(&WAsmCode[CodeLen], t.Contents.Float, False))
-             CodeLen += 2;
-           else
-             OK = False;
-           HalfFilledWord = False;
-           break;
-         }
-         default:
-           OK = False;
-       }
-     }
+          if (MultiCharToInt(&t, 2))
+            goto ToInt;
+
+          if (as_chartrans_xlate_nonz_dynstr(CurrTransTable->p_table, &t.Contents.str, pArg))
+            OK = False;
+          else
+            for (z2 = 0; z2 < (int)t.Contents.str.len; z2++)
+            {
+              Trans = ((usint) t.Contents.str.p_str[z2]) & 0xff;
+              AppendByte(Trans, &HalfFilledWord);
+            }
+          break;
+        }
+        case TempFloat:
+        {
+          IncMaxCodeLen(2);
+          if (Double2IBMFloat(&WAsmCode[CodeLen], t.Contents.Float, False))
+            CodeLen += 2;
+          else
+            OK = False;
+          HalfFilledWord = False;
+          break;
+        }
+        default:
+          OK = False;
+      }
+    }
     if (!OK)
        CodeLen = 0;
   }
@@ -1114,31 +1137,25 @@ static void DecodeDS(Word Index)
 /*--------------------------------------------------------------------------*/
 /* Codetabellen */
 
-static tFixedOrder *AddFixed(tFixedOrder *pOrder, const char *pName, Word Code, CPUVar MinCPU)
+static void AddFixed(const char *pName, Word Code, CPUVar MinCPU)
 {
-  Word Index = pOrder - FixedOrders;
-
-  if (Index >= FixedOrderCnt)
-    exit(255);
-  pOrder->Code = Code;
-  pOrder->MinCPU = MinCPU;
-  AddInstTable(InstTable, pName, Index, DecodeFixed);
-  return pOrder + 1;
+  order_array_rsv_end(FixedOrders, tFixedOrder);
+  FixedOrders[InstrZ].Code = Code;
+  FixedOrders[InstrZ].MinCPU = MinCPU;
+  AddInstTable(InstTable, pName, InstrZ++, DecodeFixed);
 }
 
 static void InitFields(void)
 {
-  tFixedOrder *pOrder;
-
-  FixedOrders = pOrder = (tFixedOrder*)malloc(sizeof(*FixedOrders) * FixedOrderCnt);
   InstTable = CreateInstTable(201);
 
-  pOrder = AddFixed(pOrder, "H"   , 0x2000 , CPUMN1610);
-  pOrder = AddFixed(pOrder, "RET" , 0x2003 , CPUMN1610);
-  pOrder = AddFixed(pOrder, "NOP" , NOPCode, CPUMN1610);
-  pOrder = AddFixed(pOrder, "PSHM", 0x170f , CPUMN1613);
-  pOrder = AddFixed(pOrder, "POPM", 0x1707 , CPUMN1613);
-  pOrder = AddFixed(pOrder, "RETL", 0x3f07 , CPUMN1613);
+  InstrZ = 0;
+  AddFixed("H"   , 0x2000 , CPUMN1610);
+  AddFixed("RET" , 0x2003 , CPUMN1610);
+  AddFixed("NOP" , NOPCode, CPUMN1610);
+  AddFixed("PSHM", 0x170f , CPUMN1613);
+  AddFixed("POPM", 0x1707 , CPUMN1613);
+  AddFixed("RETL", 0x3f07 , CPUMN1613);
 
   AddInstTable(InstTable, "PUSH", 0x2001, DecodeOneReg);
   AddInstTable(InstTable, "POP" , 0x2002, DecodeOneReg);
@@ -1274,7 +1291,7 @@ static void InitFields(void)
 static void DeinitFields(void)
 {
   DestroyInstTable(InstTable);
-  free(FixedOrders);
+  order_array_free(FixedOrders);
 }
 
 /*--------------------------------------------------------------------------*/
@@ -1282,12 +1299,18 @@ static void DeinitFields(void)
 
 static Boolean DecodeAttrPart_MN1610_Alt(void)
 {
-  return DecodeMoto16AttrSize(*AttrPart.str.p_str, &AttrPartOpSize, False);
+  if (strlen(AttrPart.str.p_str) > 1)
+  {
+    WrStrErrorPos(ErrNum_UndefAttr, &AttrPart);
+    return False;
+  }
+
+  return DecodeMoto16AttrSize(*AttrPart.str.p_str, &AttrPartOpSize[0], False);
 }
 
 static void MakeCode_MN1610_Alt(void)
 {
-  OpSize = (AttrPartOpSize != eSymbolSizeUnknown) ? AttrPartOpSize : eSymbolSize16Bit;
+  OpSize = (AttrPartOpSize[0] != eSymbolSizeUnknown) ? AttrPartOpSize[0] : eSymbolSize16Bit;
 
   /* Ignore empty instruction */
 
@@ -1311,7 +1334,7 @@ static void SwitchFrom_MN1610_Alt(void)
 
 static void SwitchTo_MN1610_Alt(void)
 {
-  PFamilyDescr FoundDescr;
+  const TFamilyDescr *FoundDescr;
 
   FoundDescr = FindFamilyByName("MN161x");
 
@@ -1341,6 +1364,8 @@ static void SwitchTo_MN1610_Alt(void)
     SegLimits[SegCode] = 0xffff;
     SegLimits[SegIO] = 0xff; /* no RDR/WTR insn */
   }
+
+  onoff_packing_add(False);
 
   DecodeAttrPart = DecodeAttrPart_MN1610_Alt;
   MakeCode = MakeCode_MN1610_Alt;

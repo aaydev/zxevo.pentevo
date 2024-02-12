@@ -2339,6 +2339,8 @@ static void InitFields(void)
   AddRel("JRULE", 0x23);
   AddRel("JRULT", 0x25);
   AddRel("JRV"  , (pCurrCPUProps->Core == eCoreSTM8) ? 0x29 : 0x00);
+
+  init_moto8_pseudo(InstTable, e_moto_8_be);
 }
 
 /*!------------------------------------------------------------------------
@@ -2358,14 +2360,19 @@ static void DeinitFields(void)
 
 static Boolean DecodeAttrPart_ST7(void)
 {
-  return DecodeMoto16AttrSize(*AttrPart.str.p_str, &AttrPartOpSize, False);
+  if (strlen(AttrPart.str.p_str) > 1)
+  {
+    WrStrErrorPos(ErrNum_UndefAttr, &AttrPart);
+    return False;
+  }
+  return DecodeMoto16AttrSize(*AttrPart.str.p_str, &AttrPartOpSize[0], False);
 }
 
 static void MakeCode_ST7(void)
 {
   CodeLen = 0;
   DontPrint = False;
-  OpSize = (AttrPartOpSize != eSymbolSizeUnknown) ? AttrPartOpSize : eSymbolSize8Bit;
+  OpSize = (AttrPartOpSize[0] != eSymbolSizeUnknown) ? AttrPartOpSize[0] : eSymbolSize8Bit;
   PrefixCnt = 0;
 
   /* zu ignorierendes */
@@ -2374,7 +2381,6 @@ static void MakeCode_ST7(void)
 
   /* Pseudoanweisungen */
 
-  if (DecodeMotoPseudo(True)) return;
   if (DecodeMoto16Pseudo(OpSize,True)) return;
 
   if (!LookupInstTable(InstTable, OpPart.str.p_str))
@@ -2417,9 +2423,7 @@ static void SwitchTo_ST7(void *pUser)
   SwitchFrom = DeinitFields;
   DissectBit = DissectBit_ST7;
   InitFields();
-  AddMoto16PseudoONOFF();
-
-  SetFlag(&DoPadding, DoPaddingName, False);
+  AddMoto16PseudoONOFF(False);
 }
 
 /*!------------------------------------------------------------------------

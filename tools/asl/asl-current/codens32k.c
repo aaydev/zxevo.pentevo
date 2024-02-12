@@ -19,6 +19,7 @@
 #include "asmsub.h"
 #include "asmpars.h"
 #include "asmallg.h"
+#include "onoff_common.h"
 #include "asmitree.h"
 #include "codevars.h"
 #include "codepseudo.h"
@@ -27,9 +28,6 @@
 #include "codepseudo.h"
 #include "intpseudo.h"
 #include "codens32k.h"
-
-#define CustomAvailCmdName "CUSTOM"
-#define CustomAvailSymName "CUSTOM"
 
 typedef enum
 {
@@ -83,9 +81,6 @@ typedef struct
 #ifdef __cplusplus
 #include "codens32k.hpp"
 #endif
-
-#define CtlRegCnt 13
-#define MMURegCnt 18
 
 #define MAllowImm (1 << 0)
 #define MAllowReg (1 << 1)
@@ -407,7 +402,7 @@ static Boolean DecodeCtlReg(const tStrComp *pArg, Word *pResult)
 {
   unsigned z;
 
-  for (z = 0; z < CtlRegCnt; z++)
+  for (z = 0; CtlRegs[z].pName; z++)
     if (!as_strcasecmp(pArg->str.p_str, CtlRegs[z].pName))
     {
       *pResult = CtlRegs[z].Code;
@@ -429,7 +424,7 @@ static Boolean DecodeMMUReg(const tStrComp *pArg, Word *pResult)
 {
   unsigned z;
 
-  for (z = 0; z < MMURegCnt; z++)
+  for (z = 0; MMURegs[z].pName; z++)
     if (!as_strcasecmp(pArg->str.p_str, MMURegs[z].pName))
     {
       if (!((MMURegs[z].Mask >> MomPMMU) & 1))
@@ -2677,8 +2672,7 @@ static void AddCondition(const char *pCondition, Word Code)
 
 static void AddCtl(const char *pName, Word Code, Boolean Privileged)
 {
-  if (InstrZ >= CtlRegCnt)
-    exit(255);
+  order_array_rsv_end(CtlRegs, tCtlReg);
   CtlRegs[InstrZ  ].pName      = pName;
   CtlRegs[InstrZ  ].Code       = Code;
   CtlRegs[InstrZ++].Privileged = Privileged;
@@ -2686,8 +2680,7 @@ static void AddCtl(const char *pName, Word Code, Boolean Privileged)
 
 static void AddMMU(const char *pName, Word Code, Word Mask, Boolean Privileged)
 {
-  if (InstrZ >= MMURegCnt)
-    exit(255);
+  order_array_rsv_end(MMURegs, tCtlReg);
   MMURegs[InstrZ  ].pName      = pName;
   MMURegs[InstrZ  ].Code       = Code;
   MMURegs[InstrZ  ].Mask       = Mask;
@@ -2699,7 +2692,6 @@ static void InitFields(void)
   InstTable = CreateInstTable(605);
   SetDynamicInstTable(InstTable);
 
-  CtlRegs = (tCtlReg*)calloc(CtlRegCnt, sizeof(*CtlRegs));
   InstrZ = 0;
   AddCtl("UPSR"   , 0x00, True );
   AddCtl("DCR"    , 0x01, True );
@@ -2714,8 +2706,8 @@ static void InitFields(void)
   AddCtl("PSR"    , 0x0d, False);
   AddCtl("INTBASE", 0x0e, True );
   AddCtl("MOD"    , 0x0f, False);
+  AddCtl(NULL     , 0   , False);
 
-  MMURegs = (tCtlReg*)calloc(MMURegCnt, sizeof(*MMURegs));
   InstrZ = 0;
   AddMMU("BPR0"   , 0x00, (1 << ePMMU16082) | (1 << ePMMU32082)                                        , True );
   AddMMU("BPR1"   , 0x01, (1 << ePMMU16082) | (1 << ePMMU32082)                                        , True );
@@ -2735,6 +2727,7 @@ static void InitFields(void)
   AddMMU("MCR"    , 0x09,                                                             (1 << ePMMU32532), True );
   AddMMU("IVAR0"  , 0x0e,                                         (1 << ePMMU32382) | (1 << ePMMU32532), True );/* w/o */
   AddMMU("IVAR1"  , 0x0f,                                         (1 << ePMMU32382) | (1 << ePMMU32532), True );/* w/o */
+  AddMMU(NULL     , 0, 0, False);
 
   AddCondition("EQ",  0);
   AddCondition("NE",  1);
@@ -2926,9 +2919,9 @@ static void InitFields(void)
   AddInstTable(InstTable, "WRVAL", 0x01 | (eSymbolSize32Bit << 8), DecodeRDVAL_WRVAL);
 
   AddInstTable(InstTable, "REG" , 0, CodeREG);
-  AddInstTable(InstTable, "BYTE"   , eIntPseudoFlag_AllowInt   , DecodeIntelDB);
-  AddInstTable(InstTable, "WORD"   , eIntPseudoFlag_AllowInt   , DecodeIntelDW);
-  AddInstTable(InstTable, "DOUBLE" , eIntPseudoFlag_AllowInt   , DecodeIntelDD);
+  AddInstTable(InstTable, "BYTE"   , eIntPseudoFlag_AllowInt | eIntPseudoFlag_AllowString , DecodeIntelDB);
+  AddInstTable(InstTable, "WORD"   , eIntPseudoFlag_AllowInt | eIntPseudoFlag_AllowString , DecodeIntelDW);
+  AddInstTable(InstTable, "DOUBLE" , eIntPseudoFlag_AllowInt | eIntPseudoFlag_AllowString , DecodeIntelDD);
   AddInstTable(InstTable, "FLOAT"  , eIntPseudoFlag_AllowFloat , DecodeIntelDD);
   AddInstTable(InstTable, "LONG"   , eIntPseudoFlag_AllowFloat , DecodeIntelDQ);
   AddInstTable(InstTable, "FPU"    , 0, CodeFPU);
@@ -3010,8 +3003,8 @@ static void InitFields(void)
 static void DeinitFields(void)
 {
   DestroyInstTable(InstTable);
-  free(CtlRegs);
-  free(MMURegs);
+  order_array_free(CtlRegs);
+  order_array_free(MMURegs);
 }
 
 /*--------------------------------------------------------------------------*/
@@ -3033,7 +3026,7 @@ static void MakeCode_NS32K(void)
 
   /* Pseudo Instructions */
 
-  if (DecodeIntelPseudo(True))
+  if (DecodeIntelPseudo(TargetBigEndian))
     return;
 
   if (!LookupInstTable(InstTable, OpPart.str.p_str))
@@ -3058,6 +3051,7 @@ static void InternSymbol_NS32K(char *pArg, TempResult *pResult)
     pResult->DataSize = Size;
     pResult->Contents.RegDescr.Reg = Reg;
     pResult->Contents.RegDescr.Dissect = DissectReg_NS32K;
+    pResult->Contents.RegDescr.compare = NULL;
   }
 }
 
@@ -3068,9 +3062,6 @@ static void InternSymbol_NS32K(char *pArg, TempResult *pResult)
 
 static void InitCode_NS32K(void)
 {
-  SetFlag(&PMMUAvail, PMMUAvailName, False);
-  SetFlag(&FPUAvail, FPUAvailName, False);
-  SetFlag(&CustomAvail, CustomAvailSymName, False);
   SetMomFPU(eFPUNone);
   SetMomPMMU(ePMMUNone);
 }
@@ -3099,7 +3090,7 @@ static Boolean ChkMoreZeroArg(void)
 
 static void SwitchTo_NS32K(void *pUser)
 {
-  PFamilyDescr pDescr = FindFamilyByName("NS32000");
+  const TFamilyDescr *pDescr = FindFamilyByName("NS32000");
 
   TurnWords = True;
   SetIntConstMode(eIntConstModeIntel);
@@ -3130,7 +3121,10 @@ static void SwitchTo_NS32K(void *pUser)
   IntConstModeIBMNoTerm = True;
   QualifyQuote = QualifyQuote_SingleQuoteConstant;
   InitFields();
-  AddONOFF(SupAllowedCmdName , &SupAllowed, SupAllowedSymName, False);
+  onoff_supmode_add();
+  onoff_bigendian_add();
+  if (!onoff_test_and_set(e_onoff_reg_custom))
+    SetFlag(&CustomAvail, CustomAvailSymName, False);
   AddONOFF(CustomAvailCmdName, &CustomAvail, CustomAvailSymName, False);
 }
 

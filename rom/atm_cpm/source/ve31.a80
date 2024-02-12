@@ -1,4 +1,6 @@
 
+; LAST UPDATE: 18.10.2023 savelij
+
 ;#INCLUDE "ALLVARS.ASH"
 
 _KB_INT:	RET
@@ -156,7 +158,7 @@ ENC_TABL
 
 
 PALT:      LD   L,-1
-           BIT  _KS_NUM,(IX-_KS_ASH)
+           BIT  B_KS_NUM,(IX-_KS_ASH)
            RET  NZ
            CP   "."
            JR   NZ,PALT_1
@@ -185,7 +187,7 @@ PCP:       CP   "@"
 TRP:       DB 0X88,	"`;',.[]",0X5C,"(v|b`h",0X7F,0
 ;ED_tab "`;',.[]",0X5C <"(v|b`h", 127,0> 1
 TRSP:      DB 0X8A,	"`;',.[]=",0X5C,"/",")V",0X5C,"B@H_+",0,"?"
-;ED_tab "`;',.[]=",0X5C,"/" <")V\B@H_+",0,"?"> 1
+;ED_tab "`;',.[]=",0X5C,"/" <")V0x5CB@H_+",0,"?"> 1
 TRLET:     DB 0,	"fiswuapr{oldxt}zjkyegmc~nq"
 ;ED_tab "fiswuapr{oldxt}zjkyegmc~nq"
 TCCTRL:    DB 0X81,	0X0D,0X0A

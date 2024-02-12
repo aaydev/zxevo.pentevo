@@ -19,6 +19,7 @@
 #include "asmsub.h"
 #include "asmpars.h"
 #include "asmallg.h"
+#include "onoff_common.h"
 #include "asmitree.h"
 #include "asmstructs.h"
 #include "codepseudo.h"
@@ -28,14 +29,8 @@
 
 #include "codeh8_5.h"
 
-#define OneOrderCount 13
-#define OneRegOrderCount 3
-#define RegEAOrderCount 9
-#define TwoRegOrderCount 3
-
 #define REG_SP 7
 #define REG_FP 6
-#define REG_MARK 8
 
 #define ModNone (-1)
 #define ModReg 0
@@ -121,8 +116,8 @@ static void SetOpSize(tSymbolSize NSize)
 
 static Boolean DecodeRegCore(const char *pArg, Byte *pResult)
 {
-  if (!as_strcasecmp(pArg, "SP")) *pResult = REG_SP | REG_MARK;
-  else if (!as_strcasecmp(pArg, "FP")) *pResult = REG_FP | REG_MARK;
+  if (!as_strcasecmp(pArg, "SP")) *pResult = REG_SP | REGSYM_FLAG_ALIAS;
+  else if (!as_strcasecmp(pArg, "FP")) *pResult = REG_FP | REGSYM_FLAG_ALIAS;
   else if ((strlen(pArg) == 2) && (as_toupper(*pArg) == 'R') && (pArg[1] >= '0') && (pArg[1] <= '7'))
     *pResult = pArg[1] - '0';
   else
@@ -144,9 +139,9 @@ static void DissectReg_H8_5(char *pDest, size_t DestSize, tRegInt Value, tSymbol
   switch (InpSize)
   {
     case eSymbolSize16Bit:
-      if (Value == (REG_SP | REG_MARK))
+      if (Value == (REG_SP | REGSYM_FLAG_ALIAS))
         as_snprintf(pDest, DestSize, "SP");
-      else if (Value == (REG_FP | REG_MARK))
+      else if (Value == (REG_FP | REGSYM_FLAG_ALIAS))
         as_snprintf(pDest, DestSize, "FP");
       else
         as_snprintf(pDest, DestSize, "R%u", (unsigned)Value);
@@ -174,7 +169,7 @@ static tRegEvalResult DecodeReg(const tStrComp *pArg, Byte *pResult, Boolean Mus
 
   if (DecodeRegCore(pArg->str.p_str, pResult))
   {
-    *pResult &= ~REG_MARK;
+    *pResult &= ~REGSYM_FLAG_ALIAS;
     return eIsReg;
   }
 
@@ -297,7 +292,7 @@ static void DecideAbsolute(LongInt Value, tSymbolSize Size, Boolean Unknown, Wor
       AdrVals[0] = Value & 0xff; AdrCnt = 1;
       break;
     case eSymbolSize16Bit:
-      if (Maximum)
+      if (MaxMode)
       {
         Base = AbsBank;
         Base <<= 16;
@@ -1543,7 +1538,7 @@ static void DecodePJMP_PJSR(Word IsPJMP)
   if (!ChkArgCnt(1, 1));
   else if (*AttrPart.str.p_str) WrError(ErrNum_UseLessAttr);
   else if (strcmp(Format, " ")) WrError(ErrNum_InvFormat);
-  else if (!Maximum) WrError(ErrNum_OnlyInMaxmode);
+  else if (!MaxMode) WrError(ErrNum_OnlyInMaxmode);
   else
   {
     tStrComp *pArg = &ArgStr[1], Arg;
@@ -1829,7 +1824,7 @@ static void AddRel(const char *NName, Word NCode)
 
 static void AddOne(const char *NName, Word NCode, Byte NMask, tSymbolSize NDef)
 {
-  if (InstrZ>=OneOrderCount) exit(255);
+  order_array_rsv_end(OneOrders, OneOrder);
   OneOrders[InstrZ].Code = NCode;
   OneOrders[InstrZ].SizeMask = NMask;
   OneOrders[InstrZ].DefSize = NDef;
@@ -1838,7 +1833,7 @@ static void AddOne(const char *NName, Word NCode, Byte NMask, tSymbolSize NDef)
 
 static void AddOneReg(const char *NName, Word NCode, Byte NMask, tSymbolSize NDef)
 {
-  if (InstrZ>=OneRegOrderCount) exit(255);
+  order_array_rsv_end(OneRegOrders, OneOrder);
   OneRegOrders[InstrZ].Code=NCode;
   OneRegOrders[InstrZ].SizeMask = NMask;
   OneRegOrders[InstrZ].DefSize = NDef;
@@ -1847,7 +1842,7 @@ static void AddOneReg(const char *NName, Word NCode, Byte NMask, tSymbolSize NDe
 
 static void AddRegEA(const char *NName, Word NCode, Byte NMask, tSymbolSize NDef)
 {
-  if (InstrZ >= RegEAOrderCount) exit(255);
+  order_array_rsv_end(RegEAOrders, OneOrder);
   RegEAOrders[InstrZ].Code = NCode;
   RegEAOrders[InstrZ].SizeMask = NMask;
   RegEAOrders[InstrZ].DefSize = NDef;
@@ -1856,7 +1851,7 @@ static void AddRegEA(const char *NName, Word NCode, Byte NMask, tSymbolSize NDef
 
 static void AddTwoReg(const char *NName, Word NCode, Byte NMask, tSymbolSize NDef)
 {
-  if (InstrZ >= TwoRegOrderCount) exit(255);
+  order_array_rsv_end(TwoRegOrders, OneOrder);
   TwoRegOrders[InstrZ].Code = NCode;
   TwoRegOrders[InstrZ].SizeMask = NMask;
   TwoRegOrders[InstrZ].DefSize = NDef;
@@ -1914,7 +1909,7 @@ static void InitFields(void)
   AddRel("BMI", 0x2b); AddRel("BGE", 0x2c); AddRel("BLT", 0x2d);
   AddRel("BGT", 0x2e); AddRel("BLE", 0x2f); AddRel("BSR", 0x0e);
 
-  InstrZ = 0; OneOrders = (OneOrder *) malloc(sizeof(OneOrder) * OneOrderCount);
+  InstrZ = 0;
   AddOne("CLR"  , 0x13, 3, eSymbolSize16Bit); AddOne("NEG"  , 0x14, 3, eSymbolSize16Bit);
   AddOne("NOT"  , 0x15, 3, eSymbolSize16Bit); AddOne("ROTL" , 0x1c, 3, eSymbolSize16Bit);
   AddOne("ROTR" , 0x1d, 3, eSymbolSize16Bit); AddOne("ROTXL", 0x1e, 3, eSymbolSize16Bit);
@@ -1923,19 +1918,19 @@ static void InitFields(void)
   AddOne("SHLR" , 0x1b, 3, eSymbolSize16Bit); AddOne("TAS"  , 0x17, 1, eSymbolSize8Bit);
   AddOne("TST"  , 0x16, 3, eSymbolSize16Bit);
 
-  InstrZ = 0; OneRegOrders = (OneOrder *) malloc(sizeof(OneOrder) * OneRegOrderCount);
+  InstrZ = 0;
   AddOneReg("EXTS", 0x11, 1, eSymbolSize8Bit);
   AddOneReg("EXTU", 0x12, 1, eSymbolSize8Bit);
   AddOneReg("SWAP", 0x10, 1, eSymbolSize8Bit);
 
-  InstrZ = 0; RegEAOrders = (OneOrder *) malloc(sizeof(OneOrder) * RegEAOrderCount);
+  InstrZ = 0;
   AddRegEA("ADDS" , 0x28, 3, eSymbolSize16Bit); AddRegEA("ADDX" , 0xa0, 3, eSymbolSize16Bit);
   AddRegEA("AND"  , 0x50, 3, eSymbolSize16Bit); AddRegEA("DIVXU", 0xb8, 3, eSymbolSize16Bit);
   AddRegEA("MULXU", 0xa8, 3, eSymbolSize16Bit); AddRegEA("OR"   , 0x40, 3, eSymbolSize16Bit);
   AddRegEA("SUBS" , 0x38, 3, eSymbolSize16Bit); AddRegEA("SUBX" , 0xb0, 3, eSymbolSize16Bit);
   AddRegEA("XOR"  , 0x60, 3, eSymbolSize16Bit);
 
-  InstrZ = 0; TwoRegOrders = (OneOrder *) malloc(sizeof(OneOrder) * TwoRegOrderCount);
+  InstrZ = 0;
   AddTwoReg("DADD", 0xa000, 1, eSymbolSize8Bit);
   AddTwoReg("DSUB", 0xb000, 1, eSymbolSize8Bit);
   AddTwoReg("XCH" ,   0x90, 2, eSymbolSize16Bit);
@@ -1953,10 +1948,10 @@ static void InitFields(void)
 static void DeinitFields(void)
 {
   free(Format);
-  free(OneOrders);
-  free(OneRegOrders);
-  free(RegEAOrders);
-  free(TwoRegOrders);
+  order_array_free(OneOrders);
+  order_array_free(OneRegOrders);
+  order_array_free(RegEAOrders);
+  order_array_free(TwoRegOrders);
   DestroyInstTable(InstTable);
 }
 
@@ -1977,6 +1972,7 @@ static void InternSymbol_H8_5(char *pArg, TempResult *pResult)
     pResult->DataSize = eSymbolSize16Bit;
     pResult->Contents.RegDescr.Reg = Erg;
     pResult->Contents.RegDescr.Dissect = DissectReg_H8_5;
+    pResult->Contents.RegDescr.compare = NULL;
   }
 }
 
@@ -2026,7 +2022,7 @@ static Boolean DecodeAttrPart_H8_5(void)
 
   if (*AttrPart.str.p_str)
   {
-    if (!DecodeMoto16AttrSize(*AttrPart.str.p_str, &AttrPartOpSize, False))
+    if (!DecodeMoto16AttrSize(*AttrPart.str.p_str, &AttrPartOpSize[0], False))
       return False;
   }
   return True;
@@ -2042,7 +2038,7 @@ static void MakeCode_H8_5(void)
 
   OpSize = eSymbolSizeUnknown;
   if (*AttrPart.str.p_str)
-    SetOpSize(AttrPartOpSize);
+    SetOpSize(AttrPartOpSize[0]);
 
   if (DecodeMoto16Pseudo(OpSize, True)) return;
 
@@ -2055,7 +2051,7 @@ static void MakeCode_H8_5(void)
 static Boolean ChkPC_H8_5(LargeWord Addr)
 {
   if (ActPC == SegCode)
-    return (Addr < (Maximum ? 0x1000000u : 0x10000u));
+    return (Addr < (MaxMode ? 0x1000000u : 0x10000u));
   else
     return False;
 }
@@ -2096,13 +2092,12 @@ static void SwitchTo_H8_5(void)
   QualifyQuote = QualifyQuote_SingleQuoteConstant;
   IntConstModeIBMNoTerm = True;
   InitFields();
-  AddONOFF("MAXMODE", &Maximum, MaximumName, False);
-  AddMoto16PseudoONOFF();
+  onoff_maxmode_add();
+  onoff_compmode_add();
+  AddMoto16PseudoONOFF(False);
 
   pASSUMERecs = ASSUMEH8_5s;
   ASSUMERecCnt = ASSUMEH8_5Count;
-
-  SetFlag(&DoPadding, DoPaddingName, False);
 }
 
 void codeh8_5_init(void)

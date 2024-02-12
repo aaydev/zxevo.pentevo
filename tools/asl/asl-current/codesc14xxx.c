@@ -19,6 +19,7 @@
 #include "asmitree.h"
 #include "codevars.h"
 #include "errmsg.h"
+#include "chartrans.h"
 
 #include "codesc14xxx.h"
 
@@ -33,8 +34,6 @@
 #define M_14421 (1 << 6)
 #define M_14422 (1 << 7)
 #define M_14424 (1 << 8)
-
-#define FixedOrderCnt 155
 
 typedef struct
 {
@@ -142,20 +141,21 @@ static void DecodeDS16(Word Code)
 
 static void DecodeDC(Word Code)
 {
-  int z;
-  Boolean OK;
   TempResult t;
-  char *p, *pEnd;
 
   UNUSED(Code);
 
   as_tempres_ini(&t);
   if (ChkArgCnt(1, ArgCntMax))
   {
-    z = 1; OK = TRUE; Toggle = FALSE;
-    while ((OK) && (z <= ArgCnt))
+    Boolean OK = True;
+    char *p, *pEnd;
+    tStrComp *pArg;
+
+    Toggle = FALSE;
+    forallargs(pArg, OK)
     {
-      EvalStrExpression(&ArgStr[z], &t);
+      EvalStrExpression(pArg, &t);
       switch (t.Typ)
       {
         case TempInt:
@@ -165,16 +165,18 @@ static void DecodeDC(Word Code)
             PutByte(t.Contents.Int);
           break;
         case TempString:
-          for (p = t.Contents.str.p_str, pEnd = p + t.Contents.str.len; p < pEnd; p++)
-            PutByte(CharTransTable[((usint) *p) & 0xff]);
+          if (as_chartrans_xlate_nonz_dynstr(CurrTransTable->p_table, &t.Contents.str, pArg))
+            OK = False;
+          else
+            for (p = t.Contents.str.p_str, pEnd = p + t.Contents.str.len; p < pEnd; p++)
+              PutByte(((usint) *p) & 0xff);
           break;
         case TempFloat:
-          WrStrErrorPos(ErrNum_StringOrIntButFloat, &ArgStr[z]);
+          WrStrErrorPos(ErrNum_StringOrIntButFloat, pArg);
           /* fall-through */
         default:
           OK = False;
       }
-      z++;
     }
     if (!OK)
       CodeLen = 0;
@@ -208,7 +210,7 @@ static void DecodeDW(Word Code)
 
 static void AddFixed(const char *NName, Byte NCode, Word NMask, Byte NMin, Byte NMax)
 {
-  if (InstrZ >= FixedOrderCnt) exit(255);
+  order_array_rsv_end(FixedOrders, FixedOrder);
   FixedOrders[InstrZ].CPUMask = NMask;
   FixedOrders[InstrZ].Code = NCode;
   FixedOrders[InstrZ].MinArg = NMin;
@@ -220,7 +222,6 @@ static void InitFields(void)
 {
   InstTable = CreateInstTable(301);
 
-  FixedOrders = (FixedOrder*) malloc(sizeof(FixedOrder) * FixedOrderCnt);
   InstrZ = 0;
 
   AddInstTable(InstTable, "DC", 0, DecodeDC);
@@ -399,7 +400,7 @@ static void InitFields(void)
 static void DeinitFields(void)
 {
   DestroyInstTable(InstTable);
-  free(FixedOrders);
+  order_array_free(FixedOrders);
 }
 
 /*---------------------------------------------------------------------------*/
@@ -426,7 +427,7 @@ static void SwitchFrom_sc14xxx(void)
 
 static void SwitchTo_sc14xxx(void)
 {
-  PFamilyDescr FoundDescr;
+  const TFamilyDescr *FoundDescr;
 
   FoundDescr = FindFamilyByName("SC14XXX");
 

@@ -9,7 +9,7 @@
 /*****************************************************************************/
 
 #include "stdinc.h"
-#include "endian.h"
+#include "be_le.h"
 #include <string.h>
 
 #include "strutil.h"
@@ -21,6 +21,9 @@
 #include "nls.h"
 #include "nlmessages.h"
 #include "tools.rsc"
+#ifdef _USE_MSH
+# include "tools.msh"
+#endif
 
 #include "toolutils.h"
 
@@ -37,7 +40,7 @@ const char *OutName = "STDOUT";   /* Pseudoname Output */
 
 static TMsgCat MsgCat;
 
-Boolean QuietMode;
+Boolean QuietMode, Verbose;
 
 /****************************************************************************/
 
@@ -85,26 +88,30 @@ void FormatError(const char *Name, const char *Detail)
   exit(3);
 }
 
-void ChkIO(const char *Name)
+static void wr_io_str(const char *p_name, const char *p_error_msg)
 {
-  int io;
-
-  io = errno;
-
-  if (io == 0)
-    return;
-
   fprintf(stderr, "%s%s%s\n",
           catgetmessage(&MsgCat, Num_IOErrAHeaderMsg),
-          Name,
+          p_name,
           catgetmessage(&MsgCat, Num_IOErrBHeaderMsg));
 
-  fprintf(stderr, "%s.\n", GetErrorMsg(io));
+  fprintf(stderr, "%s.\n", p_error_msg);
 
   fprintf(stderr, "%s\n",
           catgetmessage(&MsgCat, Num_ErrMsgTerminating));
 
   exit(2);
+}
+
+void ChkIO(const char *Name)
+{
+  if (errno)
+    wr_io_str(Name, GetErrorMsg(errno));
+}
+
+void chk_wr_read_error(const char *p_name)
+{
+  wr_io_str(p_name, errno ? GetErrorMsg(errno) : GetReadErrorMsg());
 }
 
 Word Granularity(Byte Header, Byte Segment)
@@ -152,18 +159,18 @@ void ReadRecordHeader(Byte *Header, Byte *CPU, Byte* Segment,
 #endif
 
   if (fread(Header, 1, 1, f) != 1)
-    ChkIO(Name);
+    chk_wr_read_error(Name);
   if ((*Header != FileHeaderEnd) && (*Header != FileHeaderStartAdr))
   {
     if ((*Header == FileHeaderDataRec) || (*Header == FileHeaderRDataRec) ||
         (*Header == FileHeaderRelocRec) || (*Header == FileHeaderRRelocRec))
     {
       if (fread(CPU, 1, 1, f) != 1)
-        ChkIO(Name);
+        chk_wr_read_error(Name);
       if (fread(Segment, 1, 1, f) != 1)
-        ChkIO(Name);
+        chk_wr_read_error(Name);
       if (fread(Gran, 1, 1, f) != 1)
-        ChkIO(Name);
+        chk_wr_read_error(Name);
     }
     else if (*Header <= 0x7f)
     {
@@ -347,7 +354,7 @@ void DestroyRelocInfo(PRelocInfo PInfo)
   free (PInfo);
 }
 
-CMDResult CMD_FilterList(Boolean Negate, const char *Arg)
+as_cmd_result_t CMD_FilterList(Boolean Negate, const char *Arg)
 {
   Byte FTemp;
   Boolean err;
@@ -356,7 +363,7 @@ CMDResult CMD_FilterList(Boolean Negate, const char *Arg)
   String Copy;
 
   if (*Arg == '\0')
-    return CMDErr;
+    return e_cmd_err;
   strmaxcpy(Copy, Arg, STRINGSIZE);
 
   do
@@ -366,7 +373,7 @@ CMDResult CMD_FilterList(Boolean Negate, const char *Arg)
       *p = '\0';
     FTemp = ConstLongInt(Copy, &err, 10);
     if (!err)
-      return CMDErr;
+      return e_cmd_err;
 
     for (Search = 0; Search < FilterCnt; Search++)
       if (FilterBytes[Search] == FTemp)
@@ -385,19 +392,19 @@ CMDResult CMD_FilterList(Boolean Negate, const char *Arg)
 
   DoFilter = (FilterCnt != 0);
 
-  return CMDArg;
+  return e_cmd_arg;
 }
 
-extern CMDResult CMD_Range(LongWord *pStartAddr, LongWord *pStopAddr,
-                           Boolean *pStartAuto, Boolean *pStopAuto,
-                           const char *Arg)
+as_cmd_result_t CMD_Range(LongWord *pStartAddr, LongWord *pStopAddr,
+                          Boolean *pStartAuto, Boolean *pStopAuto,
+                          const char *Arg)
 {
   const char *p;
   String StartStr;
   Boolean ok;
 
   p = strchr(Arg, '-');
-  if (!p) return CMDErr;
+  if (!p) return e_cmd_err;
 
   strmemcpy(StartStr, sizeof(StartStr), Arg, p - Arg);
   *pStartAuto = AddressWildcard(StartStr);
@@ -406,7 +413,7 @@ extern CMDResult CMD_Range(LongWord *pStartAddr, LongWord *pStopAddr,
   else
     *pStartAddr = ConstLongInt(StartStr, &ok, 10);
   if (!ok)
-    return CMDErr;
+    return e_cmd_err;
 
   *pStopAuto = AddressWildcard(p + 1);
   if (*pStopAuto)
@@ -414,20 +421,28 @@ extern CMDResult CMD_Range(LongWord *pStartAddr, LongWord *pStopAddr,
   else
     *pStopAddr = ConstLongInt(p + 1, &ok, 10);
   if (!ok)
-    return CMDErr;
+    return e_cmd_err;
 
   if (!*pStartAuto && !*pStopAuto && (*pStartAddr > *pStopAddr))
-    return CMDErr;
+    return e_cmd_err;
 
-  return CMDArg;
+  return e_cmd_arg;
 }
 
-CMDResult CMD_QuietMode(Boolean Negate, const char *Arg)
+as_cmd_result_t CMD_QuietMode(Boolean Negate, const char *Arg)
 {
   UNUSED(Arg);
 
   QuietMode = !Negate;
-  return CMDOK;
+  return e_cmd_ok;
+}
+
+as_cmd_result_t CMD_Verbose(Boolean Negate, const char *Arg)
+{
+  UNUSED(Arg);
+
+  Verbose = !Negate;
+  return e_cmd_ok;
 }
 
 Boolean FilterOK(Byte Header)
@@ -491,7 +506,12 @@ void toolutils_init(const char *ProgPath)
 {
   version_init();
 
-  opencatalog(&MsgCat, "tools.msg", ProgPath, MsgId1, MsgId2);
+#ifdef _USE_MSH
+  msg_catalog_open_buffer(&MsgCat, tools_msh_data, sizeof(tools_msh_data), MsgId1, MsgId2);
+  UNUSED(ProgPath);
+#else
+  msg_catalog_open_file(&MsgCat, "tools.msg", ProgPath, MsgId1, MsgId2);
+#endif
 
   FilterCnt = 0;
   DoFilter = False;

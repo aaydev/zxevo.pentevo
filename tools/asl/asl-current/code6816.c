@@ -43,10 +43,6 @@ typedef struct
   Word Code1, Code2;
 } EmuOrder;
 
-#define GenOrderCnt 66
-#define EmuOrderCnt 6
-#define RegCnt 7
-
 enum
 {
   ModNone = -1,
@@ -78,9 +74,19 @@ static LongInt Reg_EK;
 
 static GenOrder *GenOrders;
 static EmuOrder *EmuOrders;
-static const char **Regs;
 
 static CPUVar CPU6816;
+
+static const char Regs[][4] =
+{
+  "D",
+  "E",
+  "X",
+  "Y",
+  "Z",
+  "K",
+  "CCR"
+};
 
 /*-------------------------------------------------------------------------*/
 
@@ -508,7 +514,7 @@ static void DecodeExt(Word Code)
 
 static void DecodeStkMult(Word Index)
 {
-  int z, z2;
+  int z;
   Boolean OK;
 
   if (ChkArgCnt(1, ArgCntMax))
@@ -518,9 +524,10 @@ static void DecodeStkMult(Word Index)
     for (z = 1; z <= ArgCnt; z++)
       if (OK)
       {
-        z2 = 0;
+        const size_t RegCnt = as_array_size(Regs);
+        size_t z2 = 0;
         NLS_UpString(ArgStr[z].str.p_str);
-        while ((z2 < RegCnt) && (strcmp(ArgStr[z].str.p_str, Regs[z2])))
+        while ((z2 < RegCnt) && strcmp(ArgStr[z].str.p_str, Regs[z2]))
           z2++;
         if (z2 >= RegCnt)
         {
@@ -827,7 +834,7 @@ static void AddLRel(const char *NName, Word NCode)
 
 static void AddGen(const char *NName, tSymbolSize NSize, Word NCode, Word NExtCode, Byte NShift, Byte NMask)
 {
-  if (InstrZ >= GenOrderCnt) exit(255);
+  order_array_rsv_end(GenOrders, GenOrder);
   GenOrders[InstrZ].Code = NCode;
   GenOrders[InstrZ].ExtCode = NExtCode;
   GenOrders[InstrZ].Size = NSize;
@@ -853,7 +860,7 @@ static void AddExt(const char *NName, Word NCode)
 
 static void AddEmu(const char *NName, Word NCode1, Word NCode2)
 {
-  if (InstrZ >= EmuOrderCnt) exit(255);
+  order_array_rsv_end(EmuOrders, EmuOrder);
   EmuOrders[InstrZ].Code1 = NCode1;
   EmuOrders[InstrZ].Code2 = NCode2;
   AddInstTable(InstTable, NName, InstrZ++, DecodeEmu);
@@ -949,7 +956,7 @@ static void InitFields(void)
 
   AddLRel("LBEV", 0x3791); AddLRel("LBMV", 0x3790); AddLRel("LBSR", 0x27f9);
 
-  GenOrders = (GenOrder *) malloc(sizeof(GenOrder) * GenOrderCnt); InstrZ = 0;
+  InstrZ = 0;
   AddGen("ADCA", eSymbolSize8Bit , 0x43, 0xffff, 0x00, MModDisp8 | MModImm |              MModDisp16 | MModAbs | MModDispE);
   AddGen("ADCB", eSymbolSize8Bit , 0xc3, 0xffff, 0x00, MModDisp8 | MModImm |              MModDisp16 | MModAbs | MModDispE);
   AddGen("ADCD", eSymbolSize16Bit, 0x83, 0xffff, 0x20, MModDisp8 | MModImm |              MModDisp16 | MModAbs | MModDispE);
@@ -1025,7 +1032,7 @@ static void InitFields(void)
 
   AddExt("LDED", 0x2771); AddExt("LDHI", 0x27b0); AddExt("STED", 0x2773);
 
-  EmuOrders = (EmuOrder *) malloc(sizeof(EmuOrder) * EmuOrderCnt); InstrZ = 0;
+  InstrZ = 0;
   AddEmu("CLC", 0x373a, 0xfeff); AddEmu("CLI", 0x373a, 0xff1f); AddEmu("CLV", 0x373a, 0xfdff);
   AddEmu("SEC", 0x373b, 0x0100); AddEmu("SEI", 0x373b, 0x00e0); AddEmu("SEV", 0x373b, 0x0200);
 
@@ -1057,24 +1064,26 @@ static void InitFields(void)
   AddInstTable(InstTable, "DB", 0, DecodeMotoBYT);
   AddInstTable(InstTable, "DW", 0, DecodeMotoADR);
 
-  Regs = (const char **) malloc(sizeof(char *) * RegCnt);
-  Regs[0] = "D"; Regs[1] = "E"; Regs[2] = "X"; Regs[3] = "Y";
-  Regs[4] = "Z"; Regs[5] = "K"; Regs[6] = "CCR";
+  init_moto8_pseudo(InstTable, e_moto_8_be);
 }
 
 static void DeinitFields(void)
 {
-  free(GenOrders);
-  free(EmuOrders);
-  DestroyInstTable(InstTable);
-  free(Regs);
+  order_array_free(GenOrders);
+  order_array_free(EmuOrders);
+  DestroyInstTable(InstTable); InstTable = NULL;
 }
 
 /*-------------------------------------------------------------------------*/
 
 static Boolean DecodeAttrPart_6816(void)
 {
-  return DecodeMoto16AttrSize(*AttrPart.str.p_str, &AttrPartOpSize, False);
+  if (strlen(AttrPart.str.p_str) > 1)
+  {
+    WrStrErrorPos(ErrNum_UndefAttr, &AttrPart);
+    return False;
+  }
+  return DecodeMoto16AttrSize(*AttrPart.str.p_str, &AttrPartOpSize[0], False);
 }
 
 static void MakeCode_6816(void)
@@ -1086,7 +1095,7 @@ static void MakeCode_6816(void)
   /* Operandengroesse festlegen. ACHTUNG! Das gilt nur fuer die folgenden
      Pseudobefehle! Die Maschinenbefehle ueberschreiben diesen Wert! */
 
-  OpSize = AttrPartOpSize;
+  OpSize = AttrPartOpSize[0];
 
   /* zu ignorierendes */
 
@@ -1095,8 +1104,6 @@ static void MakeCode_6816(void)
 
   /* Pseudoanweisungen */
 
-  if (DecodeMotoPseudo(True))
-    return;
   if (DecodeMoto16Pseudo(OpSize, True))
     return;
 
@@ -1145,7 +1152,7 @@ static void SwitchTo_6816(void)
   MakeCode = MakeCode_6816;
   IsDef = IsDef_6816;
   SwitchFrom = SwitchFrom_6816;
-  AddMoto16PseudoONOFF();
+  AddMoto16PseudoONOFF(False);
 
   pASSUMERecs = ASSUME6816s;
   ASSUMERecCnt = ASSUME6816Count;

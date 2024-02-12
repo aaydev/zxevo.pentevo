@@ -1,101 +1,101 @@
 
-; LAST UPDATE: 07.07.2021 savelij
+; LAST UPDATE: 10.02.2024 savelij
 
-		include ../../macros.a80
-		include ../../define.a80
-		include ../../global_vars.a80
-		include ../../ports_ngs.a80
-		include ../../sdcomand.a80
-		include ../../ports_ide.a80
-		include ../../nums_devices.a80
+		include macros.a80
+		include define.a80
+		include global_vars.a80
+		include ports_ngs.a80
+		include sdcomand.a80
+		include ports_ide.a80
+		include nums_devices.a80
+		include fat_dir.a80
 
-DRV_VAR		EQU 0X4000
-
-		ORG DRV_VAR+0X200
- INIT_VAR $
+ INIT_VAR DRV_VAR
+ SETVAR BUF_512_,	0x200				; буфер сектора
 		include ../../fat_vars.a80
+ SETVAR_ALIGN
+ SUBVAR (WORD + WORD + BYTE + BYTE)
+ SETVAR LENGHT,		WORD				; длина файла в байтах
+ SETVAR LOADSCS1,	WORD				; адрес вызываемого драйвера
+ SETVAR MAS_SLA,	BYTE				; маска для MASTER/SLAVE
+ SETVAR NUM_DEVICE,	BYTE				; номер устройства для запуска кода
 
-		ORG DRV_VAR+0X300
-
-BUF_512_	EQU DRV_VAR			;200 БУФЕР СЕКТОРА
-NUM_DEVICE	EQU DRV_VAR+0X2FF		;1 НОМЕР УСТРОЙСТВА ДЛЯ ЗАПУСКА КОДА
-MAS_SLA		EQU NUM_DEVICE-1		;1 МАСКА ДЛЯ MASTER/SLAVE
-LOADSCS1	EQU MAS_SLA-2			;2 АДРЕС ВЫЗЫВАЕМОГО ДРАЙВЕРА
-LENGHT		EQU LOADSCS1-2			;2 ДЛИНА ФАЙЛА В БАЙТАХ
-
-;[ТОЧКА ВХОДА]
-;НА ВХОДЕ: A-НОМЕР ВЫБРАННОГО УСТРОЙСТВА
-;	BCDE-НОМЕР КЛАСТЕРА ЗАПУСКАЕМОГО ФАЙЛА
+		ORG INITVAR
+	
+; на входе: A - номер выбранного устройства
+;	 BCDE - номер кластера запускаемого файла
 		DI
 		LD A,(NUM_DEVICE)
 		CP _SD_SDZ
-		LD HL,READ_SD			;ДРАЙВЕР SD ZC КАРТЫ		
+		LD HL,READ_ZSD				; драйвер SD ZC карты		
 		JR Z,SETLOADER
 		CP _SD_SDG
-		LD HL,READNGS			;ДРАЙВЕР SD NGS КАРТЫ
+		LD HL,READ_NEOGS			; драйвер SD NGS карты
 		JR Z,SETLOADER
 		CP _HDD_NEMO_MASTER
-		LD HL,RD_HDDN			;ДРАЙВЕР HDD NEMO
+		LD HL,RD_HDD_NEMO			; драйвер HDD NEMO
+	IFDEF ALL_DRVS
 		JR Z,SETLOADER
 		CP _HDD_SMUC_MASTER
-		LD HL,RD_HDDS			;ДРАЙВЕР HDD SMUC
+		LD HL,RD_HDD_SMUC			; драйвер HDD SMUC
 		JR Z,SETLOADER
 		CP _HDD_DIVIDE_MASTER
-		LD HL,RD_HDDD			;ДРАЙВЕР HDD DIVIDE
+		LD HL,RD_HDD_DIVIDE			; драйвер HDD DIVIDE
 		JR Z,SETLOADER
-		LD HL,RD_HDDP			;ДРАЙВЕР HDD PROFI
-SETLOADER	LD (LOADSCS1),HL		;УСТАНОВИЛИ АДРЕС ЧИТАЛКИ СЕКТОРОВ
+		LD HL,RD_HDD_PROFI			; драйвер HDD PROFI
+	ENDIF
+SETLOADER	LD (LOADSCS1),HL			; установили адрес читалки секторов
 		LD A,(MAS_SLA)
 		AND A
-		LD A,0XE0
+		LD A,0xE0
 		JR Z,SETMASL
-		LD A,0XF0
+		LD A,0xF0
 SETMASL		LD (MAS_SLA),A
-		LD BC,(FILE_SRC+0X14)
+		LD BC,(FILE_SRC + _DIR_FstClusHI)
 		LD (AFILCLS+2),BC
-		LD DE,(FILE_SRC+0X1A)
+		LD DE,(FILE_SRC + _DIR_FstClusLO)
 		LD (AFILCLS),DE
-		LD A,(FILE_SRC+9)
+		LD A,(FILE_SRC + _DIR_Ext + 1)
 		CP "P"
-		JP Z,RUNSPG2			;ПЕРЕХОД НА ЗАПУСК SPG ФАЙЛА
+		JP Z,RUNSPG2				; переход на запуск SPG файла
 		CP "N"
-		JP Z,RUNSNA			;ПЕРЕХОД НА ЗАПУСК SNA ФАЙЛА
-		CALL REALSEC			;ПРЕОБРАЗОВАЛИ В НОМЕР СЕКТОРА
-		CALL LOADLST			;ЗАГРУЗИЛИ В БУФЕР
+		JP Z,RUNSNA				; переход на запуск SNA файла
+		CALL REALSEC				; преобразовали в номер сектора
+		CALL LOADLST				; загрузили в буфер
 		EXX
-		LD HL,(BUF_512_+9)
-		LD (0X5D45),HL			;АДРЕС СТАРТА КОДА
-		LD HL,(BUF_512_+0X0B)
-		LD (LENGHT),HL			;УСТАНОВКА ДЛИНЫ ФАЙЛА В БАЙТАХ
-		LD DE,0X11
-		ADD HL,DE			;ПРОПУСК HOBETA ЗАГОЛОВКА
+		LD HL,(BUF_512_ + _DIR_Ext + 1)
+		LD (0x5D45),HL				; адрес старта кода
+		LD HL,(BUF_512_ + _DIR_Attr)
+		LD (LENGHT),HL				; установка длины файла в байтах
+		LD DE,0x11
+		ADD HL,DE				; пропуск HOBETA заголовка
 		LD A,L
 		AND A
-		JR Z,READ01			;ЕСЛИ МЛАДШИЙ БАЙТ НЕ 0
-		INC H				;СТАРШИЙ +1
+		JR Z,READ01				; если младший байт не 0
+		INC H					; старший +1
 READ01		LD A,H
-		SRL A				;ДЕЛИМ НА 2 ИБО НА ФАТЕ СЕКТОР 512 БАЙТ
-		ADC A,0				;УЧИТЫВАЕМ ЧЕТ/НЕЧЕТ
-		DEC A				;ПЕРВЫЙ СЕКТОР ЗАГРУЖЕН, ГРУЗИТЬ НА 1 МЕНЬШЕ
+		SRL A					; делим на 2 ибо на FAT сектор 512 байт
+		ADC A,0					; учитываем чет/нечет
+		DEC A					; первый сектор загружен, грузить на 1 меньше
 		EXX
-		JP Z,LDIRBUF			;ЕСЛИ СЕКТОР 1 ПЕРЕНОС И ЗАПУСК
+		JP Z,LDIRBUF				; если сектор 1 перенос и запуск
 		DEC A
-		LD IXL,A			;ЗАПОМНИЛИ КОЛИЧЕСТВО СЕКТОРОВ-1
-		JP Z,READ08			; если файл влез в 2 сектора
+		LD IXL,A				; запомнили количество секторов - 1
+		JP Z,READ08				; если файл влез в 2 сектора
 		EXX
-		CALL LD_ONES			;ПЕРЕНОС ОСТАТКОВ ПЕРВОГО СЕКТОРА
-		PUSH DE				;АДРЕС КУДА ДАЛЕЕ ГРУЗИТЬ
+		CALL LD_ONES				; перенос остатков первого сектора
+		PUSH DE					; адрес куда далее грузить
 		EXX
-		LD HL,1				;ОДИН СЕКТОР УЖЕ ЗАГРУЖЕН
-		ADD HL,DE			;ДАЛЕЕ ГРУЗИТЬ СО СЛЕДУЮЩЕГО СЕКТОРА 
+		LD HL,1					; один сектор уже загружен
+		ADD HL,DE				; далее грузить со следующего сектора 
 		EX DE,HL
 		JR NC,READ04
-		INC BC				;BCDE=BCDE+1
-READ04		POP HL				;В HL АДРЕС ДЛЯ ПРОДОЛЖЕНИЯ ЗАГРУЗКИ
-		LD IY,(SecPerClus)		;LY=КОЛ-ВО СЕКТОРОВ В КЛАСТЕРЕ
+		INC BC					; BCDE = BCDE + 1
+READ04		POP HL					; в HL адрес для продолжения загрузки
+		LD IY,(SecPerClus)			; LY = количество секторов в кластере
 		LD A,IXL
-		CP IYL				;СЕКТОРОВ ОСТАЛОСЬ МЕНЬШЕ ЧЕМ В КЛАСТЕРЕ
-		JR C,READ02			;ПЕРЕХОД НА ДОЗАГРУЗКУ ОСТАТКА СЕКТОРОВ
+		CP IYL					; секторов осталось меньше чем в кластере
+		JR C,READ02				; переход на дозагрузку остатка секторов
 		INC IXL
 		LD A,IYL
 		CP 2
@@ -106,25 +106,25 @@ READ04		POP HL				;В HL АДРЕС ДЛЯ ПРОДОЛЖЕНИЯ ЗАГРУЗКИ
 READ07		PUSH HL
 		LD DE,(AFILCLS)
 		LD BC,(AFILCLS + 2)
-		CALL RDFATZP			;ПОЛУЧИТЬ НОМЕР СЛЕДУЮЩЕГО КЛАСТЕРА
+		CALL RD_NEXT_CLUSTER			; получить номер следующего кластера
 		LD (AFILCLS),DE
 		LD (AFILCLS + 2),BC
-		CALL LST_CLS			;ПРОВЕРКА НА ОКОНЧАНИЕ FAT ЦЕПОЧКИ
+		CALL CHECK_LAST_CLUSTER			; проверка на окончание FAT цепочки
 		POP HL
-		JR C,RUNLOAD			;ЕСЛИ КЛАСТЕРА ЗАКОНЧИЛИСЬ, ТО ЗАПУСК ЗАГРУЖЕННОГО
+		JR C,RUNLOAD				; если кластера закончились, то запуск загруженного
 		PUSH HL
-		CALL REALSEC			;ПРЕОБРАЗОВАНИЕ НОМЕРА КЛАСТЕРА В НОМЕР СЕКТОРА
+		CALL REALSEC				; преобразование номера кластера в номер сектора
 		POP HL
-		LD A,IXL			;СКОЛЬКО СЕКТОРОВ ОСТАЛОСЬ ЗАГРУЗИТЬ
-		CP IYL				;СРАВНИВАЕМ С РАЗМЕРОМ КЛАСТЕРА
-		JR C,READ02			;ЕСЛИ ОСТАЛОСЬ ЗАГРУЗИТЬ СЕКТОРОВ МЕНЬШЕ ЧЕМ В КЛАСТЕРЕ, ТО ДОЗАГРУЖАЕМ ОСТАТОК
-		LD A,IYL			;СКОЛЬКО СЕКТОРОВ ЗАГРУЖАТЬ
-READ05		CALL LOADSCS			;ЗАГРУЗКА СЕКТОРОВ
-		LD A,IXL			;СКОЛЬКО СЕКТОРОВ ВСЕГО ЗАГРУЖАТЬ
-		SUB IYL				;МИНУС СКОЛЬКО СЕКТОРОВ ТОЛЬКО ЧТО ЗАГРУЗИЛИ
-		JR Z,RUNLOAD			;СЕКТОРА КОНЧИЛИСЬ, ПЕРЕХОДИМ НА ЗАПУСК
-		LD IXL,A			;СКОЛЬКО СЕКТОРОВ ОСТАЛОСЬ ЗАГРУЗИТЬ
-		JR READ07			;ПРОДОЛЖАЕМ ЗАГРУЗКУ
+		LD A,IXL				; сколько секторов осталось загрузить
+		CP IYL					; сравниваем с размером кластера
+		JR C,READ02				; если осталось загрузить секторов меньше чем в кластере, то дозагружаем остаток
+		LD A,IYL				; сколько секторов загружать
+READ05		CALL LOADSCS				; загрузка секторов
+		LD A,IXL				; сколько секторов всего загружать
+		SUB IYL					; минус сколько секторов только что загрузили
+		JR Z,RUNLOAD				; сектора кончились, переходим на запуск
+		LD IXL,A				; сколько секторов осталось загрузить
+		JR READ07				; продолжаем загрузку
 
 ; размер кода в Hobeta менее 2 секторов
 ; копируем хвост первого сектора и догружаем из второго с переносом
@@ -136,7 +136,7 @@ READ08		EXX
 		LD IXL,1
 		JR READ03
 
-;ЗАГРУЗКА КОЛИЧЕСТВА СЕКТОРОВ, ЕСЛИ ОСТАЛОСЬ МЕНЕЕ РАЗМЕРА КЛАСТЕРА
+; загрузка количества секторов, если осталось менее размера кластера
 READ02		AND A
 		JR Z,READ03
 		CALL LOADSCS
@@ -151,7 +151,7 @@ READ03		PUSH HL
 READ06		CALL LOADLST
 		LD BC,(LENGHT)
 		EX DE,HL
-		LD HL,0X11
+		LD HL,0x11
 		ADD HL,BC
 		LD B,H
 		LD C,L
@@ -163,35 +163,35 @@ READ06		CALL LOADLST
 		OR C
 		JR Z,RUNLOAD
 		LDIR
-;[ЗАПУСК ЗАГРУЖЕННОГО]
-RUNLOAD		LD HL,0X2758
+; запуск загруженного
+RUNLOAD		LD HL,0x2758
 		EXX
-		LD IY,0X5C3A
+		LD IY,0x5C3A
 		EI
-		JP 0X1B7D			;ЗАПУСК ПЕРЕНЕСЕННОЙ БЕЙСИК ПРОГИ
+		JP 0x1B7D				; запуск перенесенной бейсик проги
 
-LDIRBUF		LD HL,0X200-0X11
-		LD DE,(BUF_512_+0X0B)
+LDIRBUF		LD HL,0x200 - 0x11
+		LD DE,(BUF_512_ + 0x0B)
 		AND A
 		SBC HL,DE
 		JR NC,LDIRBUF1
 		CALL LD_ONES
 		JP RUNLOAD
 
-LDIRBUF1	LD HL,BUF_512_+0X11
-		LD DE,(BUF_512_+9)
-		LD BC,(BUF_512_+0X0B)
+LDIRBUF1	LD HL,BUF_512_ + 0x11
+		LD DE,(BUF_512_ + 9)
+		LD BC,(BUF_512_ + 0x0B)
 		LDIR
 		JP RUNLOAD
 
-;[ПЕРЕНОС КУСКА ИЗ УЖЕ ЗАГРУЖЕННОГО СЕКТОРА, ЕСЛИ ФАЙЛ=501 БАЙТ И МЕНЕЕ]
-LD_ONES		LD HL,BUF_512_+0X11
-		LD DE,(BUF_512_+9)
-		LD BC,0X200-0X11
+; перенос куска из уже загруженного сектора, если файл = 501 байт и менее
+LD_ONES		LD HL,BUF_512_ + 0x11
+		LD DE,(BUF_512_ + 9)
+		LD BC,0x200-0x11
 		LDIR
 		RET
 
-;[ЗАГРУЗИТЬ СЕКТОРА С ВЫБРАННОГО УСТРОЙСТВА]
+; загрузить сектора с выбранного устройства
 LOADSCS		PUSH HL
 		LD HL,(LOADSCS1)
 		EX (SP),HL
@@ -203,102 +203,103 @@ LOADSCS		PUSH HL
 ; IXH - временные переменные
 ; IYL - количество секторов для загрузки
 ; IYH - смещение в кластере
-LD_FILE		PUSH BC				;СТАРШИЕ 16 БИТ НОМЕРА КЛАСТЕРА
-		PUSH DE				;МЛАДШИЕ 16 БИТ НОМЕРА КЛАСТЕРА
-		PUSH HL				;СОХРАНИЛИ АДРЕС ЗАГРУЗКИ
-		CALL REALSEC			;ПЕРЕВЕЛИ НОМЕР КЛАСТЕРА В НОМЕР СЕКТОРА
+LOAD_FILE	PUSH BC					; старшие 16 бит номера кластера
+		PUSH DE					; младшие 16 бит номера кластера
+		PUSH HL					; сохранили адрес загрузки
+		CALL REALSEC				; перевели номер кластера в номер сектора
 		LD IX,(SecPerClus)
-		LD A,IYH			;СМЕЩЕНИЕ В КЛАСТЕРЕ
+		LD A,IYH				; смещение в кластере
 		LD L,A
 		LD H,0
 		ADD HL,DE
 		EX DE,HL
-		JR NC,LDFILE1
-		INC BC				;BCDE=НОМЕР СЕКТОРА ОТКУДА ГРУЗИТЬ
-LDFILE1		LD A,IYL			;КОЛИЧЕСТВО СЕКТОРОВ ДЛЯ ЗАГРУЗКИ
-		CP IXL				;РАЗМЕР КЛАСТЕРА
-		JP C,LDFILE2
-		LD A,IXL			;РАЗМЕР КЛАСТЕРА
-LDFILE2		ADD A,IYH			;СМЕЩЕНИЕ В КЛАСТЕРЕ
-		CP IXL				;РАЗМЕР КЛАСТЕРА
-		LD A,IYL			;КОЛИЧЕСТВО СЕКТОРОВ ДЛЯ ЗАГРУЗКИ
-		JP C,LDFILE5
-		LD A,IXL			;РАЗМЕР КЛАСТЕРА
-		SUB IYH				;СМЕЩЕНИЕ В КЛАСТЕРЕ
-LDFILE5		LD IXH,A			;TEMP VAR, СКОЛЬКО СЕКТОРОВ СЕЙЧАС ГРУЗИМ
-		POP HL				;ВОССТАНОВИЛИ АДРЕС ЗАГРУЗКИ
-		CALL LOADSCS			;ЗАГРУЗИЛИ СЕКТОРА
+		JR NC,.L1
+		INC BC					; BCDE = номер сектора откуда грузить
+.L1		LD A,IYL				; количество секторов для загрузки
+		CP IXL					; размер кластера
+		JP C,.L2
+		LD A,IXL				; размер кластера
+.L2		ADD A,IYH				; смещение в кластере
+		CP IXL					; размер кластера
+		LD A,IYL				; количество секторов для загрузки
+		JP C,.L5
+		LD A,IXL				; размер кластера
+		SUB IYH					; смещение в кластере
+.L5		LD IXH,A				; TEMP VAR, сколько секторов сейчас грузим
+		POP HL					; восстановили адрес загрузки
+		CALL LOADSCS				; загрузили сектора
 		POP DE
-		POP BC				;ВОССТАНОВИЛИ НОМЕР КЛАСТЕРА
-		LD A,IYH			;СМЕЩЕНИЕ В КЛАСТЕРЕ
-		ADD A,IXH			;TEMP VAR
-		CP IXL				;РАЗМЕР КЛАСТЕРА
-		JP C,LDFILE3
-		SUB IXL				;РАЗМЕР КЛАСТЕРА
-LDFILE3		LD IYH,A			;СМЕЩЕНИЕ В КЛАСТЕРЕ
-		JP C,LDFILE4
-		PUSH HL				;СОХРАНИЛИ АДРЕС ЗАГРУЗКИ
-		CALL RDFATZP			;ПРОЧИТАЛИ НОМЕР СЛЕДУЮЩЕГО КЛАСТЕРА
-		CALL LST_CLS			;ПРОВЕРИЛИ, А МОЖЕТ ЭТО ПОСЛЕДНИЙ КЛАСТЕР?
-		POP HL				;ВОССТАНОВИЛИ АДРЕС ЗАГРУЗКИ
-		RET C				;ЕСЛИ ПОСЛЕДНИЙ, ВЫХОДИМ
-LDFILE4		LD A,IYL			;КОЛИЧЕСТВО СЕКТОРОВ ДЛЯ ЗАГРУЗКИ
-		SUB IXH				;TEMP VAR
+		POP BC					; восстановили номер кластера
+		LD A,IYH				; смещение в кластере
+		ADD A,IXH				; TEMP VAR
+		CP IXL					; размер кластера
+		JP C,.L3
+		SUB IXL					; размер кластера
+.L3		LD IYH,A				; смещение в кластере
+		JP C,.L4
+		PUSH HL					; сохранили адрес загрузки
+		CALL RD_NEXT_CLUSTER			; прочитали номер следующего кластера
+		CALL CHECK_LAST_CLUSTER			; проверили, а может это последний кластер?
+		POP HL					; восстановили адрес загрузки
+		RET C					; если последний, выходим
+.L4		LD A,IYL				; количество секторов для загрузки
+		SUB IXH					; TEMP VAR
 		RET Z
-		LD IYL,A			;КОЛИЧЕСТВО СЕКТОРОВ ДЛЯ ЗАГРУЗКИ
-		JP NZ,LD_FILE
+		LD IYL,A				; количество секторов для загрузки
+		JP NZ,LOAD_FILE
 		RET
 
-;[ПРОВЕРКА НОМЕРА КЛАСТЕРА]
-LST_CLS		LD A,(FATType)
+; проверка номера кластера
+CHECK_LAST_CLUSTER
+		LD A,(FATType)
 		AND A
-		JR NZ,LST_CL1
-		LD HL,0X0FF7
+		JR NZ,.L1
+		LD HL,0x0FF7
 		SBC HL,DE
 		RET
 
-LST_CL1		DEC A
-		JR NZ,LST_CL2
-		LD HL,0XFFF7
+.L1		DEC A
+		JR NZ,.L2
+		LD HL,0xFFF7
 		SBC HL,DE
 		RET
 
-LST_CL2		LD HL,0X0FFF
+.L2		LD HL,0x0FFF
 		SBC HL,BC
 		RET NZ
-		LD HL,0XFFF7
+		LD HL,0xFFF7
 		SBC HL,DE
 		RET
 
-;[ЧТЕНИЕ СЛЕДУЮЩЕГО КЛАСТЕРА]
-RDFATZP		LD A,(FATType)
+; чтение следующего кластера
+RD_NEXT_CLUSTER	LD A,(FATType)
 		AND A
-		JR Z,RDFATS0
+		JR Z,.L1
 		DEC A
-		JR Z,RDFATS1
+		JR Z,.L2
 		EX DE,HL
 		ADD HL,HL
 		EX DE,HL
 		LD HL,0
 		ADC HL,BC
-		ADD HL,BC		; HLDE = BCDE * 2
+		ADD HL,BC				; HLDE = BCDE * 2
 		LD A,E
 		LD E,D
 		LD D,L
 		LD C,H
 		LD B,0
-		CALL RDFATS2
+		CALL .L3
 		INC HL
 		LD C,(HL)
 		INC HL
 		LD B,(HL)
 		RET
 
-RDFATS1		LD BC,0
+.L2		LD BC,0
 		LD A,E
 		LD E,D
 		LD D,C
-RDFATS2		PUSH AF
+.L3		PUSH AF
 		PUSH BC
 		LD HL,NumSecFAT1
 		CALL BCDEHLP
@@ -314,7 +315,7 @@ RDFATS2		PUSH AF
 		LD D,(HL)
 		RET
 
-RDFATS0		LD H,D
+.L1		LD H,D
 		LD L,E
 		ADD HL,HL
 		ADD HL,DE
@@ -339,32 +340,32 @@ RDFATS0		LD H,D
 		LD B,(HL)
 		INC HL
 		LD A,H
-		CP HIGH (BUF_512)+2
-		JR NZ,RDFATS4
+		CP HIGH (BUF_512) + 2
+		JR NZ,.L4
 		PUSH BC
 		LD BC,0
 		INC DE
 		CALL LOADLST
 		POP BC
-RDFATS4		POP AF
+.L4		POP AF
 		LD D,(HL)
 		LD E,B
 		LD BC,0
 		RRA
-		JR NC,RDFATS3
+		JR NC,.L5
 	REPT 4
 		SRL D
 		RR E
 	ENDM
-RDFATS3		LD A,D
-		AND 0X0F
+.L5		LD A,D
+		AND 0x0F
 		LD D,A
 		RET
 
-;[ПРЕОБРАЗОВАНИЕ НОМЕРА КЛАСТЕРА]
-;ВЫЧИСЛЕНИЕ РЕАЛЬНОГО СЕКТОРА
-;НА ВХОДЕ BCDE=НОМЕР FAT
-;НА ВЫХОДЕ BCDE=АДРЕС СЕКТОРА
+; преобразование номера кластера
+; вычисление реального сектора
+; на входе:  BCDE = номер кластера
+; на выходе: BCDE = номер сектора
 REALSEC		LD A,B
 		OR C
 		OR D
@@ -374,12 +375,12 @@ REALSEC		LD A,B
 		LD BC,(NumSecRootDir + 2)
 		RET
 
-REALSE1		LD HL,0XFFFE
+REALSE1		LD HL,0xFFFE
 		EX DE,HL
 		ADD HL,DE
 		EX DE,HL
 		INC HL
-		ADC HL,BC			;НОМЕР КЛАСТЕРА-2
+		ADC HL,BC				; номер кластера - 2
 		LD A,(SecPerClus)
 		JR REALSE2
 
@@ -388,13 +389,13 @@ REALSE3		SLA E
 		RL L
 		RL H
 REALSE2		RRCA
-		JR NC,REALSE3			;УМНОЖИЛИ НА РАЗМЕР КЛАСТЕРА
+		JR NC,REALSE3				; умножили на размер кластера
 		LD B,H
 		LD C,L
 		LD HL,FirstSecData
-		JP BCDEHLP			;ПРИБАВИЛИ СМЕЩЕНИЕ ОТ НАЧАЛА РАЗДЕЛА
+		JP BCDEHLP				; прибавили смещение от начала раздела
 
-;[BCDE/512]
+; BCDE / 512
 BCDE200		LD E,D
 		LD D,C
 		LD C,B
@@ -402,7 +403,7 @@ BCDE200		LD E,D
 		LD A,2
 		JR BCDE_A
 
-;[BCDE>>A=BCDE]
+; BCDE >> A = BCDE
 BCDE_A1		SRL B
 		RR C
 		RR D
@@ -411,7 +412,7 @@ BCDE_A		RRCA
 		JR NC,BCDE_A1
 		RET
 
-;[(ADR)-BCDE=BCDE]
+; (ADR) - BCDE = BCDE
 BCDEHLM		LD A,(HL)
 		INC HL
 		SUB E
@@ -429,7 +430,7 @@ BCDEHLM		LD A,(HL)
 		LD B,A
 		RET
 
-;[(ADR)+BCDE=BCDE]
+; (ADR) + BCDE = BCDE
 BCDEHLP		LD A,(HL)
 		INC HL
 		ADD A,E
@@ -447,7 +448,7 @@ BCDEHLP		LD A,(HL)
 		LD B,A
 		RET
 
-;[HLDE+BC=HLDE]
+; HLDE + BC = HLDE
 HLDEPBC		EX DE,HL
 		ADD HL,BC
 		EX DE,HL
@@ -455,7 +456,7 @@ HLDEPBC		EX DE,HL
 		ADC HL,BC
 		RET
 
-;[ЗАГРУЗКА СЕКТОРА В БУФЕР]
+; загрузка сектора в буфер
 LOADLST		LD HL,BUF_512_
 		PUSH HL
 		LD A,1
@@ -463,12 +464,13 @@ LOADLST		LD HL,BUF_512_
 		POP HL
 		RET
 
-;[INCLUDES]
 		include drivers/drv_zc.a80
 		include drivers/drv_neogs.a80
 		include drivers/drv_nemo.a80
+	IFDEF ALL_DRVS
 		include drivers/drv_smuc.a80
 		include drivers/drv_divide.a80
 		include drivers/drv_profi.a80
+	ENDIF
 		include spg2_run.a80
 		include sna_run.a80

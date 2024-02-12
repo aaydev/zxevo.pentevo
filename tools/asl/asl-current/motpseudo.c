@@ -19,7 +19,7 @@
 #include <assert.h>
 
 #include "bpemu.h"
-#include "endian.h"
+#include "be_le.h"
 #include "ieeefloat.h"
 #include "strutil.h"
 #include "asmdef.h"
@@ -27,18 +27,15 @@
 #include "asmpars.h"
 #include "asmitree.h"
 #include "asmallg.h"
+#include "onoff_common.h"
+#include "chartrans.h"
 #include "asmcode.h"
 #include "errmsg.h"
+#include "aplfloat.h"
 
 #include "motpseudo.h"
 
 #define LEAVE goto func_exit
-
-/*****************************************************************************
- * Local Variables
- *****************************************************************************/
-
-static Boolean M16Turn = False;
 
 /*****************************************************************************
  * Local Functions
@@ -80,21 +77,19 @@ static Boolean CutRep(tStrComp *pDest, const tStrComp *pSrc, LongInt *pErg, tSym
   }
 }
 
-static void PutByte(Byte Value)
+static void PutByte(Byte Value, Boolean big_endian)
 {
   if ((ListGran() == 1) || (!(CodeLen & 1)))
     BAsmCode[CodeLen] = Value;
-  else if (M16Turn)
+  else if (big_endian)
     WAsmCode[CodeLen >> 1] = (((Word)BAsmCode[CodeLen -1]) << 8) | Value;
   else
     WAsmCode[CodeLen >> 1] = (((Word)Value) << 8) | BAsmCode[CodeLen -1];
   CodeLen++;
 }
 
-void DecodeMotoBYT(Word Index)
+void DecodeMotoBYT(Word big_endian)
 {
-  UNUSED(Index);
-
   if (ChkArgCnt(1, ArgCntMax))
   {
     ShortInt SpaceFlag = -1;
@@ -160,7 +155,7 @@ void DecodeMotoBYT(Word Index)
               LongInt z2;
 
               for (z2 = 0; z2 < Rep; z2++)
-                PutByte(t.Contents.Int);
+                PutByte(t.Contents.Int, big_endian);
             }
             break;
 
@@ -176,22 +171,26 @@ void DecodeMotoBYT(Word Index)
             if (MultiCharToInt(&t, 1))
               goto ToInt;
 
-            l = t.Contents.str.len;
-            TranslateString(t.Contents.str.p_str, l);
-
-            if (SetMaxCodeLen(CodeLen + (Rep * l)))
-            {
-              WrError(ErrNum_CodeOverflow);
+            if (as_chartrans_xlate_nonz_dynstr(CurrTransTable->p_table, &t.Contents.str, &Arg))
               OK = False;
-            }
             else
             {
-              LongInt z2;
-              int z3;
+              l = t.Contents.str.len;
 
-              for (z2 = 0; z2 < Rep; z2++)
-                for (z3 = 0; z3 < l; z3++)
-                  PutByte(t.Contents.str.p_str[z3]);
+              if (SetMaxCodeLen(CodeLen + (Rep * l)))
+              {
+                WrError(ErrNum_CodeOverflow);
+                OK = False;
+              }
+              else
+              {
+                LongInt z2;
+                int z3;
+
+                for (z2 = 0; z2 < Rep; z2++)
+                  for (z3 = 0; z3 < l; z3++)
+                    PutByte(t.Contents.str.p_str[z3], big_endian);
+              }
             }
             break;
           }
@@ -216,14 +215,14 @@ void DecodeMotoBYT(Word Index)
   }
 }
 
-static void PutADR(Word Value)
+static void PutADR(Word Value, Boolean big_endian)
 {
   if (ListGran() > 1)
   {
     WAsmCode[CodeLen >> 1] = Value;
     CodeLen += 2;
   }
-  else if (M16Turn)
+  else if (big_endian)
   {
     BAsmCode[CodeLen++] = Hi(Value);
     BAsmCode[CodeLen++] = Lo(Value);
@@ -235,10 +234,8 @@ static void PutADR(Word Value)
   }
 }
 
-void DecodeMotoADR(Word Index)
+void DecodeMotoADR(Word big_endian)
 {
-  UNUSED(Index);
-
   if (ChkArgCnt(1, ArgCntMax))
   {
     tStrComp *pArg, Arg;
@@ -302,8 +299,10 @@ void DecodeMotoADR(Word Index)
           case TempString:
             if (MultiCharToInt(&Res, 2))
               goto ToInt;
-            Cnt = Res.Contents.str.len;
-            TranslateString(Res.Contents.str.p_str, Res.Contents.str.len);
+            if (as_chartrans_xlate_nonz_dynstr(CurrTransTable->p_table, &Res.Contents.str, &Arg))
+              Res.Typ = TempNone;
+            else
+              Cnt = Res.Contents.str.len;
             break;
           case TempFloat:
             WrStrErrorPos(ErrNum_StringOrIntButFloat, &Arg);
@@ -330,14 +329,14 @@ void DecodeMotoADR(Word Index)
           switch (Res.Typ)
           {
             case TempInt:
-              PutADR(Res.Contents.Int);
+              PutADR(Res.Contents.Int, big_endian);
               break;
             case TempString:
             {
               unsigned z3;
 
               for (z3 = 0; z3 < Res.Contents.str.len; z3++)
-                PutADR(Res.Contents.str.p_str[z3]);
+                PutADR(Res.Contents.str.p_str[z3], big_endian);
               break;
             }
             default:
@@ -359,18 +358,14 @@ void DecodeMotoADR(Word Index)
   }
 }
 
-static void DecodeFCC(Word Index)
+void DecodeMotoDCM(Word big_endian)
 {
-  String SVal;
-  Boolean OK;
-  tStrComp *pArg, Arg;
-  int z3, l;
-  LongInt Rep,z2;
-  UNUSED(Index);
-
   if (ChkArgCnt(1, ArgCntMax))
   {
-    OK = True;
+    tStrComp *pArg, Arg;
+    Boolean OK = True;
+    LongInt Rep;
+    ShortInt SpaceFlag = -1;
 
     forallargs (pArg, OK)
     {
@@ -385,24 +380,152 @@ static void DecodeFCC(Word Index)
       if (!OK)
         break;
 
-      EvalStrStringExpression(&Arg, &OK, SVal);
-      if (OK)
+      if (!strcmp(Arg.str.p_str, "?"))
       {
-        if (SetMaxCodeLen(CodeLen + Rep * strlen(SVal)))
+        if (SpaceFlag == 0)
         {
-          WrError(ErrNum_CodeOverflow);
+          WrError(ErrNum_MixDBDS);
           OK = False;
         }
         else
         {
-          l = strlen(SVal);
-          TranslateString(SVal, l);
-          for (z2 = 0; z2 < Rep; z2++)
-            for (z3 = 0; z3 < l; z3++)
-              PutByte(SVal[z3]);
+          SpaceFlag = 1;
+          CodeLen += 4 * Rep;
         }
       }
+      else if (SpaceFlag == 1)
+      {
+        WrError(ErrNum_MixDBDS);
+        OK = False;
+      }
+      else
+      {
+        TempResult Res;
+        LongInt z2;
+        int ret;
+        Word buf[2];
+
+        SpaceFlag = 0;
+        as_tempres_ini(&Res);
+        EvalStrExpression(&Arg, &Res);
+
+        switch (Res.Typ)
+        {
+          case TempInt:
+            TempResultToFloat(&Res);
+            break;
+          case TempFloat:
+            break;
+          case TempString:
+            WrStrErrorPos(ErrNum_FloatButString, &Arg);
+            /* fall-through */
+          default:
+            Res.Typ = TempNone;
+            break;
+        }
+        if (TempNone == Res.Typ)
+        {
+          OK = False;
+          break;
+        }
+
+        if (SetMaxCodeLen(CodeLen + (Rep << 2)))
+        {
+          WrError(ErrNum_CodeOverflow);
+          OK = False;
+          break;
+        }
+
+        ret = Double_2_apl4(Res.Contents.Float, buf);
+        if (!check_apl_fp_dispose_result(ret, &Arg))
+        {
+          OK = False;
+          break;
+        }
+
+        for (z2 = 0; z2 < Rep; z2++)
+        {
+          PutADR(buf[0], big_endian);
+          PutADR(buf[1], big_endian);
+        }
+        as_tempres_free(&Res);
+      }
     }
+
+    if (!OK)
+      CodeLen = 0;
+    else
+    {
+      if (SpaceFlag)
+        DontPrint = True;
+      if (*LabPart.str.p_str)
+        SetSymbolOrStructElemSize(&LabPart, eSymbolSize16Bit);
+    }
+  }
+}
+
+static void DecodeFCC(Word big_endian)
+{
+  if (ChkArgCnt(1, ArgCntMax))
+  {
+    Boolean OK = True;
+    tStrComp *pArg, Arg;
+    TempResult t;
+
+    as_tempres_ini(&t);
+    forallargs (pArg, OK)
+    {
+      LongInt Rep;
+
+      if (!*pArg->str.p_str)
+      {
+        OK = FALSE;
+        WrError(ErrNum_EmptyArgument);
+        break;
+      }
+
+      OK = CutRep(&Arg, pArg, &Rep, NULL);
+      if (!OK)
+        break;
+
+      EvalStrExpression(&Arg, &t);
+      switch (t.Typ)
+      {
+        case TempString:
+        {
+          int l;
+
+          if (as_chartrans_xlate_nonz_dynstr(CurrTransTable->p_table, &t.Contents.str, &Arg))
+            OK = False;
+          else
+          {
+            l = t.Contents.str.len;
+            if (SetMaxCodeLen(CodeLen + Rep * l))
+            {
+              WrError(ErrNum_CodeOverflow);
+              OK = False;
+            }
+            else
+            {
+              LongInt z2;
+              int z3;
+
+              for (z2 = 0; z2 < Rep; z2++)
+                for (z3 = 0; z3 < l; z3++)
+                  PutByte(t.Contents.str.p_str[z3], big_endian);
+            }
+          }
+          break;
+        }
+        case TempNone:
+          OK = False;
+          break;
+        default:
+          WrStrErrorPos(ErrNum_ExpectString, &Arg);
+          OK = False;
+      }
+    }
+    as_tempres_free(&t);
 
     if (!OK)
       CodeLen = 0;
@@ -441,24 +564,40 @@ void DecodeMotoDFS(Word Index)
  * Global Functions
  *****************************************************************************/
 
-Boolean DecodeMotoPseudo(Boolean Turn)
+static PInstTable inst_table_moto8 = NULL;
+
+void init_moto8_pseudo(PInstTable p_inst_table, unsigned flags)
 {
-  static PInstTable InstTable = NULL;
+  if (!p_inst_table)
+    p_inst_table = inst_table_moto8 = CreateInstTable(23);
+  AddInstTable(p_inst_table, "BYT", !!(flags & e_moto_8_be), DecodeMotoBYT);
+  AddInstTable(p_inst_table, "FCB", !!(flags & e_moto_8_be), DecodeMotoBYT);
+  if (flags & e_moto_8_db)
+    AddInstTable(p_inst_table, "DB", !!(flags & e_moto_8_be), DecodeMotoBYT);
+  AddInstTable(p_inst_table, "ADR", !!(flags & e_moto_8_be), DecodeMotoADR);
+  AddInstTable(p_inst_table, "FDB", !!(flags & e_moto_8_be), DecodeMotoADR);
+  if (flags & e_moto_8_dw)
+    AddInstTable(p_inst_table, "DW", !!(flags & e_moto_8_be), DecodeMotoADR);
+  if (flags & e_moto_8_ddb)
+    AddInstTable(p_inst_table, "DDB", True, DecodeMotoADR);
+  if (flags & e_moto_8_dcm)
+    AddInstTable(p_inst_table, "DCM", True, DecodeMotoDCM);
+  AddInstTable(p_inst_table, "FCC", !!(flags & e_moto_8_be), DecodeFCC);
+  AddInstTable(p_inst_table, "DFS", 0, DecodeMotoDFS);
+  AddInstTable(p_inst_table, "RMB", 0, DecodeMotoDFS);
+  if (flags & e_moto_8_ds)
+    AddInstTable(p_inst_table, "DS", 0, DecodeMotoDFS);
+}
 
-  if (!InstTable)
-  {
-    InstTable = CreateInstTable(17);
-    AddInstTable(InstTable, "BYT", 0, DecodeMotoBYT);
-    AddInstTable(InstTable, "FCB", 0, DecodeMotoBYT);
-    AddInstTable(InstTable, "ADR", 0, DecodeMotoADR);
-    AddInstTable(InstTable, "FDB", 0, DecodeMotoADR);
-    AddInstTable(InstTable, "FCC", 0, DecodeFCC);
-    AddInstTable(InstTable, "DFS", 0, DecodeMotoDFS);
-    AddInstTable(InstTable, "RMB", 0, DecodeMotoDFS);
-  }
+Boolean decode_moto8_pseudo(void)
+{
+  return LookupInstTable(inst_table_moto8, OpPart.str.p_str);
+}
 
-  M16Turn = Turn;
-  return LookupInstTable(InstTable, OpPart.str.p_str);
+void deinit_moto8_pseudo(void)
+{
+  DestroyInstTable(inst_table_moto8);
+  inst_table_moto8 = NULL;
 }
 
 static void DigIns(char Ch, int Pos, Byte *pDest)
@@ -553,8 +692,9 @@ void ConvertMotoFloatDec(Double F, Byte *pDest, Boolean NeedsBig)
     WSwap(pDest, 12);
 }
 
-static void EnterByte(LargeWord b)
+static void EnterByte(LargeWord b, Boolean BigEndian)
 {
+  UNUSED(BigEndian);
   if (((CodeLen & 1) == 1) && (!HostBigEndian) && (ListGran() != 1))
   {
     BAsmCode[CodeLen    ] = BAsmCode[CodeLen - 1];
@@ -567,33 +707,60 @@ static void EnterByte(LargeWord b)
   CodeLen++;
 }
 
-static void EnterWord(LargeWord w)
+static void EnterWord(LargeWord w, Boolean BigEndian)
 {
   if (ListGran() == 1)
   {
-    BAsmCode[CodeLen    ] = Hi(w);
-    BAsmCode[CodeLen + 1] = Lo(w);
+    if (BigEndian)
+    {
+      BAsmCode[CodeLen    ] = Hi(w);
+      BAsmCode[CodeLen + 1] = Lo(w);
+    }
+    else
+    {
+      BAsmCode[CodeLen    ] = Lo(w);
+      BAsmCode[CodeLen + 1] = Hi(w);
+    }
   }
   else
     WAsmCode[CodeLen >> 1] = w;
   CodeLen += 2;
 }
 
-static void EnterPointer(LargeWord w)
+static void EnterPointer(LargeWord w, Boolean BigEndian)
 {
-  EnterByte((w >> 16) & 0xff);
-  EnterByte((w >>  8) & 0xff);
-  EnterByte((w      ) & 0xff);
+  if (BigEndian)
+  {
+    EnterByte((w >> 16) & 0xff, BigEndian);
+    EnterByte((w >>  8) & 0xff, BigEndian);
+    EnterByte((w      ) & 0xff, BigEndian);
+  }
+  else
+  {
+    EnterByte((w      ) & 0xff, BigEndian);
+    EnterByte((w >>  8) & 0xff, BigEndian);
+    EnterByte((w >> 16) & 0xff, BigEndian);
+  }
 }
 
-static void EnterLWord(LargeWord l)
+static void EnterLWord(LargeWord l, Boolean BigEndian)
 {
   if (ListGran() == 1)
   {
-    BAsmCode[CodeLen    ] = (l >> 24) & 0xff;
-    BAsmCode[CodeLen + 1] = (l >> 16) & 0xff;
-    BAsmCode[CodeLen + 2] = (l >>  8) & 0xff;
-    BAsmCode[CodeLen + 3] = (l      ) & 0xff;
+    if (BigEndian)
+    {
+      BAsmCode[CodeLen    ] = (l >> 24) & 0xff;
+      BAsmCode[CodeLen + 1] = (l >> 16) & 0xff;
+      BAsmCode[CodeLen + 2] = (l >>  8) & 0xff;
+      BAsmCode[CodeLen + 3] = (l      ) & 0xff;
+    }
+    else
+    {
+      BAsmCode[CodeLen    ] = (l      ) & 0xff;
+      BAsmCode[CodeLen + 1] = (l >>  8) & 0xff;
+      BAsmCode[CodeLen + 2] = (l >> 16) & 0xff;
+      BAsmCode[CodeLen + 3] = (l >> 24) & 0xff;
+    }
   }
   else
   {
@@ -603,26 +770,48 @@ static void EnterLWord(LargeWord l)
   CodeLen += 4;
 }
 
-static void EnterQWord(LargeWord q)
+static void EnterQWord(LargeWord q, Boolean BigEndian)
 {
   if (ListGran() == 1)
   {
+    if (BigEndian)
+    {
 #ifdef HAS64
-    BAsmCode[CodeLen    ] = (q >> 56) & 0xff;
-    BAsmCode[CodeLen + 1] = (q >> 48) & 0xff;
-    BAsmCode[CodeLen + 2] = (q >> 40) & 0xff;
-    BAsmCode[CodeLen + 3] = (q >> 32) & 0xff;
+      BAsmCode[CodeLen    ] = (q >> 56) & 0xff;
+      BAsmCode[CodeLen + 1] = (q >> 48) & 0xff;
+      BAsmCode[CodeLen + 2] = (q >> 40) & 0xff;
+      BAsmCode[CodeLen + 3] = (q >> 32) & 0xff;
 #else
-    /* TempResult is LargeInt, so sign-extend */
-    BAsmCode[CodeLen    ] =
-    BAsmCode[CodeLen + 1] =
-    BAsmCode[CodeLen + 2] =
-    BAsmCode[CodeLen + 3] = (q & 0x80000000ul) ? 0xff : 0x00;
+      /* TempResult is LargeInt, so sign-extend */
+      BAsmCode[CodeLen    ] =
+      BAsmCode[CodeLen + 1] =
+      BAsmCode[CodeLen + 2] =
+      BAsmCode[CodeLen + 3] = (q & 0x80000000ul) ? 0xff : 0x00;
 #endif
-    BAsmCode[CodeLen + 4] = (q >> 24) & 0xff;
-    BAsmCode[CodeLen + 5] = (q >> 16) & 0xff;
-    BAsmCode[CodeLen + 6] = (q >>  8) & 0xff;
-    BAsmCode[CodeLen + 7] = (q      ) & 0xff;
+      BAsmCode[CodeLen + 4] = (q >> 24) & 0xff;
+      BAsmCode[CodeLen + 5] = (q >> 16) & 0xff;
+      BAsmCode[CodeLen + 6] = (q >>  8) & 0xff;
+      BAsmCode[CodeLen + 7] = (q      ) & 0xff;
+    }
+    else
+    {
+      BAsmCode[CodeLen    ] = (q      ) & 0xff;
+      BAsmCode[CodeLen + 1] = (q >>  8) & 0xff;
+      BAsmCode[CodeLen + 2] = (q >> 16) & 0xff;
+      BAsmCode[CodeLen + 3] = (q >> 24) & 0xff;
+#ifdef HAS64
+      BAsmCode[CodeLen + 4] = (q >> 32) & 0xff;
+      BAsmCode[CodeLen + 5] = (q >> 40) & 0xff;
+      BAsmCode[CodeLen + 6] = (q >> 48) & 0xff;
+      BAsmCode[CodeLen + 7] = (q >> 56) & 0xff;
+#else
+      /* TempResult is LargeInt, so sign-extend */
+      BAsmCode[CodeLen + 4] =
+      BAsmCode[CodeLen + 5] =
+      BAsmCode[CodeLen + 6] =
+      BAsmCode[CodeLen + 7] = (q & 0x80000000ul) ? 0xff : 0x00;
+#endif
+    }
   }
   else
   {
@@ -640,12 +829,20 @@ static void EnterQWord(LargeWord q)
   CodeLen += 8;
 }
 
-static void EnterIEEE2(Word *pField)
+static void EnterIEEE2(Word *pField, Boolean BigEndian)
 {
   if (ListGran() == 1)
   {
-     BAsmCode[CodeLen    ] = Hi(pField[1]);
-     BAsmCode[CodeLen + 1] = Lo(pField[0]);
+    if (BigEndian)
+    {
+      BAsmCode[CodeLen    ] = Hi(pField[0]);
+      BAsmCode[CodeLen + 1] = Lo(pField[0]);
+    }
+    else
+    {
+      BAsmCode[CodeLen    ] = Lo(pField[0]);
+      BAsmCode[CodeLen + 1] = Hi(pField[0]);
+    }
   }
   else
   {
@@ -654,14 +851,24 @@ static void EnterIEEE2(Word *pField)
   CodeLen += 2;
 }
 
-static void EnterIEEE4(Word *pField)
+static void EnterIEEE4(Word *pField, Boolean BigEndian)
 {
   if (ListGran() == 1)
   {
-     BAsmCode[CodeLen    ] = Hi(pField[1]);
-     BAsmCode[CodeLen + 1] = Lo(pField[1]);
-     BAsmCode[CodeLen + 2] = Hi(pField[0]);
-     BAsmCode[CodeLen + 3] = Lo(pField[0]);
+    if (BigEndian)
+    {
+      BAsmCode[CodeLen    ] = Hi(pField[1]);
+      BAsmCode[CodeLen + 1] = Lo(pField[1]);
+      BAsmCode[CodeLen + 2] = Hi(pField[0]);
+      BAsmCode[CodeLen + 3] = Lo(pField[0]);
+    }
+    else
+    {
+      BAsmCode[CodeLen    ] = Lo(pField[0]);
+      BAsmCode[CodeLen + 1] = Hi(pField[0]);
+      BAsmCode[CodeLen + 2] = Lo(pField[1]);
+      BAsmCode[CodeLen + 3] = Hi(pField[1]);
+    }
   }
   else
   {
@@ -671,18 +878,32 @@ static void EnterIEEE4(Word *pField)
   CodeLen += 4;
 }
 
-static void EnterIEEE8(Word *pField)
+static void EnterIEEE8(Word *pField, Boolean BigEndian)
 {
   if (ListGran() == 1)
   {
-    BAsmCode[CodeLen    ] = Hi(pField[3]);
-    BAsmCode[CodeLen + 1] = Lo(pField[3]);
-    BAsmCode[CodeLen + 2] = Hi(pField[2]);
-    BAsmCode[CodeLen + 3] = Lo(pField[2]);
-    BAsmCode[CodeLen + 4] = Hi(pField[1]);
-    BAsmCode[CodeLen + 5] = Lo(pField[1]);
-    BAsmCode[CodeLen + 6] = Hi(pField[0]);
-    BAsmCode[CodeLen + 7] = Lo(pField[0]);
+    if (BigEndian)
+    {
+      BAsmCode[CodeLen    ] = Hi(pField[3]);
+      BAsmCode[CodeLen + 1] = Lo(pField[3]);
+      BAsmCode[CodeLen + 2] = Hi(pField[2]);
+      BAsmCode[CodeLen + 3] = Lo(pField[2]);
+      BAsmCode[CodeLen + 4] = Hi(pField[1]);
+      BAsmCode[CodeLen + 5] = Lo(pField[1]);
+      BAsmCode[CodeLen + 6] = Hi(pField[0]);
+      BAsmCode[CodeLen + 7] = Lo(pField[0]);
+    }
+    else
+    {
+      BAsmCode[CodeLen    ] = Lo(pField[0]);
+      BAsmCode[CodeLen + 1] = Hi(pField[0]);
+      BAsmCode[CodeLen + 2] = Lo(pField[1]);
+      BAsmCode[CodeLen + 3] = Hi(pField[1]);
+      BAsmCode[CodeLen + 4] = Lo(pField[2]);
+      BAsmCode[CodeLen + 5] = Hi(pField[2]);
+      BAsmCode[CodeLen + 6] = Lo(pField[3]);
+      BAsmCode[CodeLen + 7] = Hi(pField[3]);
+    }
   }
   else
   {
@@ -694,22 +915,40 @@ static void EnterIEEE8(Word *pField)
   CodeLen += 8;
 }
 
-static void EnterIEEE10(Word *pField)
+static void EnterIEEE10(Word *pField, Boolean BigEndian)
 {
   if (ListGran() == 1)
   {
-    BAsmCode[CodeLen    ] = Hi(pField[4]);
-    BAsmCode[CodeLen + 1] = Lo(pField[4]);
-    BAsmCode[CodeLen + 2] = 0;
-    BAsmCode[CodeLen + 3] = 0;
-    BAsmCode[CodeLen + 4] = Hi(pField[3]);
-    BAsmCode[CodeLen + 5] = Lo(pField[3]);
-    BAsmCode[CodeLen + 6] = Hi(pField[2]);
-    BAsmCode[CodeLen + 7] = Lo(pField[2]);
-    BAsmCode[CodeLen + 8] = Hi(pField[1]);
-    BAsmCode[CodeLen + 9] = Lo(pField[1]);
-    BAsmCode[CodeLen +10] = Hi(pField[0]);
-    BAsmCode[CodeLen +11] = Lo(pField[0]);
+    if (BigEndian)
+    {
+      BAsmCode[CodeLen    ] = Hi(pField[4]);
+      BAsmCode[CodeLen + 1] = Lo(pField[4]);
+      BAsmCode[CodeLen + 2] = 0;
+      BAsmCode[CodeLen + 3] = 0;
+      BAsmCode[CodeLen + 4] = Hi(pField[3]);
+      BAsmCode[CodeLen + 5] = Lo(pField[3]);
+      BAsmCode[CodeLen + 6] = Hi(pField[2]);
+      BAsmCode[CodeLen + 7] = Lo(pField[2]);
+      BAsmCode[CodeLen + 8] = Hi(pField[1]);
+      BAsmCode[CodeLen + 9] = Lo(pField[1]);
+      BAsmCode[CodeLen +10] = Hi(pField[0]);
+      BAsmCode[CodeLen +11] = Lo(pField[0]);
+    }
+    else
+    {
+      BAsmCode[CodeLen    ] = Lo(pField[0]);
+      BAsmCode[CodeLen + 1] = Hi(pField[0]);
+      BAsmCode[CodeLen + 2] = Lo(pField[1]);
+      BAsmCode[CodeLen + 3] = Hi(pField[1]);
+      BAsmCode[CodeLen + 4] = Lo(pField[2]);
+      BAsmCode[CodeLen + 5] = Hi(pField[2]);
+      BAsmCode[CodeLen + 6] = Lo(pField[3]);
+      BAsmCode[CodeLen + 7] = Hi(pField[3]);
+      BAsmCode[CodeLen + 8] = 0;
+      BAsmCode[CodeLen + 9] = 0;
+      BAsmCode[CodeLen +10] = Lo(pField[4]);
+      BAsmCode[CodeLen +11] = Hi(pField[4]);
+    }
   }
   else
   {
@@ -723,22 +962,40 @@ static void EnterIEEE10(Word *pField)
   CodeLen += 12;
 }
 
-static void EnterMotoFloatDec(Word *pField)
+static void EnterMotoFloatDec(Word *pField, Boolean BigEndian)
 {
   if (ListGran() == 1)
   {
-    BAsmCode[CodeLen    ] = Hi(pField[5]);
-    BAsmCode[CodeLen + 1] = Lo(pField[5]);
-    BAsmCode[CodeLen + 2] = Hi(pField[4]);
-    BAsmCode[CodeLen + 3] = Lo(pField[4]);
-    BAsmCode[CodeLen + 4] = Hi(pField[3]);
-    BAsmCode[CodeLen + 5] = Lo(pField[3]);
-    BAsmCode[CodeLen + 6] = Hi(pField[2]);
-    BAsmCode[CodeLen + 7] = Lo(pField[2]);
-    BAsmCode[CodeLen + 8] = Hi(pField[1]);
-    BAsmCode[CodeLen + 9] = Lo(pField[1]);
-    BAsmCode[CodeLen +10] = Hi(pField[0]);
-    BAsmCode[CodeLen +11] = Lo(pField[0]);
+    if (BigEndian)
+    {
+      BAsmCode[CodeLen    ] = Hi(pField[5]);
+      BAsmCode[CodeLen + 1] = Lo(pField[5]);
+      BAsmCode[CodeLen + 2] = Hi(pField[4]);
+      BAsmCode[CodeLen + 3] = Lo(pField[4]);
+      BAsmCode[CodeLen + 4] = Hi(pField[3]);
+      BAsmCode[CodeLen + 5] = Lo(pField[3]);
+      BAsmCode[CodeLen + 6] = Hi(pField[2]);
+      BAsmCode[CodeLen + 7] = Lo(pField[2]);
+      BAsmCode[CodeLen + 8] = Hi(pField[1]);
+      BAsmCode[CodeLen + 9] = Lo(pField[1]);
+      BAsmCode[CodeLen +10] = Hi(pField[0]);
+      BAsmCode[CodeLen +11] = Lo(pField[0]);
+    }
+    else
+    {
+      BAsmCode[CodeLen    ] = Lo(pField[0]);
+      BAsmCode[CodeLen + 1] = Hi(pField[0]);
+      BAsmCode[CodeLen + 2] = Lo(pField[1]);
+      BAsmCode[CodeLen + 3] = Hi(pField[1]);
+      BAsmCode[CodeLen + 4] = Lo(pField[2]);
+      BAsmCode[CodeLen + 5] = Hi(pField[2]);
+      BAsmCode[CodeLen + 6] = Lo(pField[3]);
+      BAsmCode[CodeLen + 7] = Hi(pField[3]);
+      BAsmCode[CodeLen + 8] = Lo(pField[4]);
+      BAsmCode[CodeLen + 9] = Hi(pField[4]);
+      BAsmCode[CodeLen +10] = Lo(pField[5]);
+      BAsmCode[CodeLen +11] = Hi(pField[5]);
+    }
   }
   else
   {
@@ -757,9 +1014,10 @@ static void Double_2_ieee2_wrap(Double Inp, Byte *pDest, Boolean BigEndian)
   (void)Double_2_ieee2(Inp, pDest, BigEndian);
 }
 
-void AddMoto16PseudoONOFF(void)
+void AddMoto16PseudoONOFF(Boolean default_padding_value)
 {
-  AddONOFF("PADDING", &DoPadding, DoPaddingName, False);
+  SetFlag(&DoPadding, DoPaddingName, default_padding_value);
+  AddONOFF(DoPaddingName, &DoPadding, DoPaddingName, False);
 }
 
 /*!------------------------------------------------------------------------
@@ -810,7 +1068,7 @@ static Word GetWSize(tSymbolSize OpSize)
  * \brief  decode DC.x instruction
  * ------------------------------------------------------------------------ */
 
-void DecodeMotoDC(tSymbolSize OpSize, Boolean Turn)
+void DecodeMotoDC(tSymbolSize OpSize, Boolean BigEndian)
 {
   ShortInt SpaceFlag;
   tStrComp *pArg, Arg;
@@ -819,15 +1077,13 @@ void DecodeMotoDC(tSymbolSize OpSize, Boolean Turn)
   Boolean OK;
   TempResult t;
   tSymbolFlags Flags;
-  void (*EnterInt)(LargeWord) = NULL;
+  void (*EnterInt)(LargeWord, Boolean) = NULL;
   void (*ConvertFloat)(Double, Byte*, Boolean) = NULL;
-  void (*EnterFloat)(Word*) = NULL;
+  void (*EnterFloat)(Word*, Boolean) = NULL;
   void (*Swap)(void*, int) = NULL;
   IntType IntTypeEnum = UInt1;
   FloatType FloatTypeEnum = Float32;
   Boolean PadBeforeStart = Odd(EProgCounter()) && DoPadding && (OpSize != eSymbolSize8Bit);
-
-  UNUSED(Turn);
 
   as_tempres_ini(&t);
   if (*LabPart.str.p_str)
@@ -993,7 +1249,7 @@ void DecodeMotoDC(tSymbolSize OpSize, Boolean Turn)
           }
           else
             for (z2 = 0; z2 < Rep; z2++)
-              EnterInt(t.Contents.Int);
+              EnterInt(t.Contents.Int, BigEndian);
           break;
         HandleFloat:
         case TempFloat:
@@ -1020,13 +1276,14 @@ void DecodeMotoDC(tSymbolSize OpSize, Boolean Turn)
             if (HostBigEndian && Swap)
               Swap((void*) TurnField, WSize);
             for (z2 = 0; z2 < Rep; z2++)
-              EnterFloat(TurnField);
+              EnterFloat(TurnField, BigEndian);
           }
           break;
         case TempString:
           if (MultiCharToInt(&t, (WSize < 8) ? WSize : 8))
             goto ToInt;
-          if (!EnterInt)
+          if (as_chartrans_xlate_nonz_dynstr(CurrTransTable->p_table, &t.Contents.str, &Arg)) { }
+          else if (!EnterInt)
           {
             if (ConvertFloat && EnterFloat)
             {
@@ -1042,10 +1299,10 @@ void DecodeMotoDC(tSymbolSize OpSize, Boolean Turn)
                   {
                     Word TurnField[8];
 
-                    ConvertFloat(CharTransTable[(usint) (*zp & 0xff)], (Byte *) TurnField, HostBigEndian);
+                    ConvertFloat((usint) (*zp & 0xff), (Byte *) TurnField, HostBigEndian);
                     if (HostBigEndian && Swap)
                       Swap((void*) TurnField, WSize);
-                    EnterFloat(TurnField);
+                    EnterFloat(TurnField, BigEndian);
                   }
               }
             }
@@ -1062,7 +1319,7 @@ void DecodeMotoDC(tSymbolSize OpSize, Boolean Turn)
           }
           else
             for (z2 = 0; z2 < Rep; z2++)
-              for (zp = t.Contents.str.p_str; zp < t.Contents.str.p_str + t.Contents.str.len; EnterInt(CharTransTable[((usint) *(zp++)) & 0xff]));
+              for (zp = t.Contents.str.p_str; zp < t.Contents.str.p_str + t.Contents.str.len; EnterInt(((usint) *(zp++)) & 0xff, BigEndian));
           break;
         case TempNone:
           OK = False;
@@ -1087,9 +1344,9 @@ func_exit:
   as_tempres_free(&t);
 }
 
-Boolean DecodeMoto16Pseudo(tSymbolSize OpSize, Boolean Turn)
+Boolean DecodeMoto16Pseudo(tSymbolSize OpSize, Boolean BigEndian)
 {
-  LongInt NewPC, HVal;
+  LongInt HVal;
   Boolean ValOK;
   tSymbolFlags Flags;
   Boolean PadBeforeStart;
@@ -1103,7 +1360,7 @@ Boolean DecodeMoto16Pseudo(tSymbolSize OpSize, Boolean Turn)
 
   if (Memo("DC"))
   {
-    DecodeMotoDC(OpSize, Turn);
+    DecodeMotoDC(OpSize, BigEndian);
     return True;
   }
 
@@ -1132,7 +1389,7 @@ Boolean DecodeMoto16Pseudo(tSymbolSize OpSize, Boolean Turn)
 
         if ((HVal == 0) && !OddSize)
         {
-          NewPC = EProgCounter() + WSize - 1;
+          LongWord NewPC = EProgCounter() + WSize - 1;
           NewPC -= NewPC % WSize;
           CodeLen = NewPC - EProgCounter();
           if (CodeLen == 0)

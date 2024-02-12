@@ -25,6 +25,7 @@ typedef Integ16 Integer;
 typedef Card32 LongWord;
 typedef Integ32 LongInt;
 #define PRILongInt PRIInteg32
+#define MaxLongInt 2147483647
 
 #ifdef HAS64
 typedef Card64 QuadWord;
@@ -52,7 +53,7 @@ typedef float Single;
 typedef Byte Boolean;
 
 #ifndef STRINGSIZE
-#define STRINGSIZE 1024
+# define STRINGSIZE 256
 #endif
 #define SHORTSTRINGSIZE 65
 

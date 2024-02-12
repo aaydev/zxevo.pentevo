@@ -19,7 +19,9 @@
 #include "asmsub.h"
 #include "asmpars.h"
 #include "asmallg.h"
+#include "onoff_common.h"
 #include "asmitree.h"
+#include "asmcode.h"
 #include "codepseudo.h"
 #include "intpseudo.h"
 #include "motpseudo.h"
@@ -42,11 +44,6 @@
 #define MModAbs (1 << ModAbs)
 
 #define REG_SP 7
-#define REG_MARK 16
-
-#define JBitOrderCnt 3
-#define RegOrderCnt 4
-#define RelOrderCount 17
 
 #define RETICode 0xd690
 
@@ -80,6 +77,7 @@ static ShortInt AdrMode;
 static Byte AdrPart,MemPart;
 static Byte AdrVals[4];
 static tSymbolSize OpSize;
+static Boolean DoBranchExt; /* automatically extend branches */
 
 #define ASSUMEXACount 1
 static ASSUMERec ASSUMEXAs[ASSUMEXACount] =
@@ -114,7 +112,7 @@ static tRegEvalResult DecodeRegCore(const char *pArg, tSymbolSize *pSize, Byte *
 
   if (!as_strcasecmp(pArg, "SP"))
   {
-    *pResult = REG_SP | REG_MARK;
+    *pResult = REG_SP | REGSYM_FLAG_ALIAS;
     *pSize = eSymbolSize16Bit;
     return eIsReg;
   }
@@ -208,14 +206,14 @@ static tRegEvalResult DecodeReg(const tStrComp *pArg, tSymbolSize *pSize, Byte *
   RegEvalResult = DecodeRegCore(pArg->str.p_str, pSize, pResult);
   if (RegEvalResult != eIsNoReg)
   {
-    *pResult &= ~REG_MARK;
+    *pResult &= ~REGSYM_FLAG_ALIAS;
     return RegEvalResult;
   }
 
   RegEvalResult = EvalStrRegExpressionAsOperand(pArg, &RegDescr, &EvalResult, eSymbolSizeUnknown, MustBeReg);
   if (RegEvalResult == eIsReg)
   {
-    *pResult = RegDescr.Reg & ~REG_MARK;
+    *pResult = RegDescr.Reg & ~REGSYM_FLAG_ALIAS;
     *pSize = EvalResult.DataSize;
   }
   return RegEvalResult;
@@ -260,11 +258,11 @@ static Boolean DecodeAdrIndirect(tStrComp *pArg, Word Mask)
     AdrPart = 0xff;
     do
     {
-      pSplit = QuotMultPos(ThisComp.str.p_str, "+-");
+      KillPrefBlanksStrComp(&ThisComp);
+      pSplit = indir_split_pos(ThisComp.str.p_str);
       NextNegFlag = (pSplit && (*pSplit == '-'));
       if (pSplit)
         StrCompSplitRef(&ThisComp, &RemComp, &ThisComp, pSplit);
-      KillPrefBlanksStrComp(&ThisComp);
       KillPostBlanksStrComp(&ThisComp);
 
       switch (DecodeReg(&ThisComp, &NSize, &Reg, False))
@@ -1919,12 +1917,18 @@ static void ForceAlign(void)
 
 static Boolean DecodeAttrPart_XA(void)
 {
+  if (strlen(AttrPart.str.p_str) > 1)
+  {
+    WrStrErrorPos(ErrNum_UndefAttr, &AttrPart);
+    return False;
+  }
+
   if (*AttrPart.str.p_str)
     switch (as_toupper(*AttrPart.str.p_str))
     {
-      case 'B': AttrPartOpSize = eSymbolSize8Bit; break;
-      case 'W': AttrPartOpSize = eSymbolSize16Bit; break;
-      case 'D': AttrPartOpSize = eSymbolSize32Bit; break;
+      case 'B': AttrPartOpSize[0] = eSymbolSize8Bit; break;
+      case 'W': AttrPartOpSize[0] = eSymbolSize16Bit; break;
+      case 'D': AttrPartOpSize[0] = eSymbolSize32Bit; break;
       default : WrStrErrorPos(ErrNum_UndefAttr, &AttrPart); return False;
     }
   return True;
@@ -1937,7 +1941,7 @@ static void MakeCode_XA(void)
    /* Operandengroesse */
 
   if (*AttrPart.str.p_str)
-    SetOpSize(AttrPartOpSize);
+    SetOpSize(AttrPartOpSize[0]);
 
   /* Labels muessen auf geraden Adressen liegen */
 
@@ -1972,7 +1976,7 @@ static void AddFixed(const char *NName, Word NCode)
 
 static void AddJBit(const char *NName, Word NCode)
 {
-  if (InstrZ >= JBitOrderCnt) exit(255);
+  order_array_rsv_end(JBitOrders, InvOrder);
   JBitOrders[InstrZ].Name = NName;
   JBitOrders[InstrZ].Inversion = 255;
   JBitOrders[InstrZ].Code = NCode;
@@ -1986,7 +1990,7 @@ static void AddStack(const char *NName, Word NCode)
 
 static void AddReg(const char *NName, Byte NMask, Byte NCode)
 {
-  if (InstrZ >= RegOrderCnt) exit(255);
+  order_array_rsv_end(RegOrders, RegOrder);
   RegOrders[InstrZ].Code = NCode;
   RegOrders[InstrZ].SizeMask = NMask;
   AddInstTable(InstTable, NName, InstrZ++, DecodeRegO);
@@ -1999,7 +2003,7 @@ static void AddRotate(const char *NName, Word NCode)
 
 static void AddRel(const char *NName, Word NCode)
 {
-  if (InstrZ >= RelOrderCount) exit(255);
+  order_array_rsv_end(RelOrders, InvOrder);
   RelOrders[InstrZ].Name = NName;
   RelOrders[InstrZ].Inversion = 255;
   RelOrders[InstrZ].Code = NCode;
@@ -2051,7 +2055,7 @@ static void InitFields(void)
   AddFixed("BKPT" , 0x00ff);
   AddFixed("RESET", 0xd610);
 
-  JBitOrders = (InvOrder *) malloc(sizeof(InvOrder) * JBitOrderCnt); InstrZ = 0;
+  InstrZ = 0;
   AddJBit("JB"  , 0x80);
   AddJBit("JBC" , 0xc0);
   AddJBit("JNB" , 0xa0);
@@ -2072,7 +2076,7 @@ static void InitFields(void)
   AddInstTable(InstTable, "OR"  , InstrZ++, DecodeALU);
   AddInstTable(InstTable, "XOR" , InstrZ++, DecodeALU);
 
-  RegOrders = (RegOrder *) malloc(sizeof(RegOrder) * RegOrderCnt); InstrZ = 0;
+  InstrZ = 0;
   AddReg("NEG" , 3, 0x0b);
   AddReg("CPL" , 3, 0x0a);
   AddReg("SEXT", 3, 0x09);
@@ -2086,7 +2090,7 @@ static void InitFields(void)
   AddRotate("RR" , 0xb0); AddRotate("RL" , 0xd3);
   AddRotate("RRC", 0xb7); AddRotate("RLC", 0xd7);
 
-  RelOrders = (InvOrder *) malloc(sizeof(InvOrder) * RelOrderCount); InstrZ = 0;
+  InstrZ = 0;
   AddRel("BCC", 0xf0); AddRel("BCS", 0xf1); AddRel("BNE", 0xf2);
   AddRel("BEQ", 0xf3); AddRel("BNV", 0xf4); AddRel("BOV", 0xf5);
   AddRel("BPL", 0xf6); AddRel("BMI", 0xf7); AddRel("BG" , 0xf8);
@@ -2105,9 +2109,9 @@ static void InitFields(void)
 
 static void DeinitFields(void)
 {
-  free(JBitOrders);
-  free(RegOrders);
-  free(RelOrders);
+  order_array_free(JBitOrders);
+  order_array_free(RegOrders);
+  order_array_free(RelOrders);
 
   DestroyInstTable(InstTable);
 }
@@ -2128,7 +2132,7 @@ static void InternSymbol_XA(char *pArg, TempResult *pResult)
   tSymbolSize Size;
 
   if (*AttrPart.str.p_str)
-    OpSize = AttrPartOpSize;
+    OpSize = AttrPartOpSize[0];
 
   if (DecodeRegCore(pArg, &Size, &Reg))
   {
@@ -2136,6 +2140,7 @@ static void InternSymbol_XA(char *pArg, TempResult *pResult)
     pResult->DataSize = Size;
     pResult->Contents.RegDescr.Reg = Reg;
     pResult->Contents.RegDescr.Dissect = DissectReg_XA;
+    pResult->Contents.RegDescr.compare = NULL;
   }
 }
 
@@ -2183,14 +2188,14 @@ static void SwitchTo_XA(void)
   InternSymbol = InternSymbol_XA;
   DissectReg = DissectReg_XA;
   SwitchFrom = DeinitFields; InitFields();
-  AddONOFF(SupAllowedCmdName, &SupAllowed,  SupAllowedSymName, False);
-  AddONOFF("BRANCHEXT", &DoBranchExt, BranchExtName , False);
-  AddMoto16PseudoONOFF();
+  onoff_supmode_add();
+  if (!onoff_test_and_set(e_onoff_reg_branchext))
+    SetFlag(&DoBranchExt, BranchExtSymName, False);
+  AddONOFF(BranchExtCmdName, &DoBranchExt, BranchExtSymName , False);
+  AddMoto16PseudoONOFF(False);
 
   pASSUMERecs = ASSUMEXAs;
   ASSUMERecCnt = ASSUMEXACount;
-
-  SetFlag(&DoPadding, DoPaddingName, False);
 }
 
 void codexa_init(void)

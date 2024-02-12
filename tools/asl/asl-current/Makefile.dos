@@ -1,10 +1,28 @@
+NULL=
+BLANK=$(NULL) $(NULL)
+
+# These may be overwritten in Makefile.def (and have to be for DOS...):
+
+RM=rm -f
+OOBJ=-o$(BLANK)
+EOBJ=-o$(BLANK)
+TARG_OOBJ=$(OOBJ)
+TARG_EOBJ=$(EOBJ)
+CURRDIR=./
+LIBM=-lm
+CHECK_TARG_CC=
+
+# assure binaries are the default target
+
+dft: binaries
+
 !include Makefile.def
 
-CURRDIR=.\\
-RM=del
-OBLANK=
+# targets built via this file use message catalogs in external .res files:
 
-ALLFLAGS = $(TARG_CFLAGS) -DINCDIR="$(INCDIR)" -DLIBDIR="$(LIBDIR)"
+!include makedefs.mx
+
+ALLFLAGS = $(TARG_CFLAGS) -I$(TARG_OBJDIR) $(DOS_MSX_FLAGS) -DINCDIR="$(INCDIR)"
 
 !include makedefs.files
 
@@ -19,68 +37,72 @@ all: binaries docs
 
 docs: docs_DE_notex docs_EN_notex
 
-$(ASLTARGET): $(AS_OBJECTS) $(ASM_OBJECTS) $(ST_OBJECTS) $(CODE_OBJECTS) $(NLS_OBJECTS)
+$(ASLTARGET): $(AS_OBJECTS) $(ASM_OBJECTS) $(ST_OBJECTS) $(CODE_OBJECTS) $(NLS_OBJECTS) $(AS_RC_OBJECTS)
         $(TARG_LD) @&&!
--ml $(OVR1FLAG) -e$(ASLTARGET)
+-ml $(OVR1FLAG) $(TARG_EOBJ)$(ASLTARGET)
 $(AS_OBJECTS) $(ASM_OBJECTS)
 $(ST_OBJECTS) $(NLS_OBJECTS)
-$(OVR2FLAG) $(CODE_OBJECTS)
+$(AS_RC_OBJECTS)
+$(LIBM) $(OVR2FLAG) $(CODE_OBJECTS)
 !
 
-$(PLISTTARGET): $(PLIST_OBJECTS) $(NLS_OBJECTS)
+$(PLISTTARGET): $(PLIST_OBJECTS) $(NLS_OBJECTS) $(PLIST_RC_OBJECTS)
         $(TARG_LD) @&&!
--ml -e$(PLISTTARGET)
+-ml $(TARG_EOBJ)$(PLISTTARGET)
 $(PLIST_OBJECTS) $(NLS_OBJECTS)
+$(PLIST_RC_OBJECTS)
 !
 
-$(ALINKTARGET): $(ALINK_OBJECTS) $(NLS_OBJECTS)
+$(ALINKTARGET): $(ALINK_OBJECTS) $(NLS_OBJECTS) $(ALINK_RC_OBJECTS)
         $(TARG_LD) @&&!
--ml -e$(ALINKTARGET)
+-ml $(TARG_EOBJ)$(ALINKTARGET)
 $(ALINK_OBJECTS) $(NLS_OBJECTS)
+$(ALINK_RC_OBJECTS)
 !
 
-$(PBINDTARGET): $(PBIND_OBJECTS) $(NLS_OBJECTS)
+$(PBINDTARGET): $(PBIND_OBJECTS) $(NLS_OBJECTS) $(PBIND_RC_OBJECTS)
         $(TARG_LD) @&&!
--ml -e$(PBINDTARGET)
+-ml $(TARG_EOBJ)$(PBINDTARGET)
 $(PBIND_OBJECTS) $(NLS_OBJECTS)
+$(PBIND_RC_OBJECTS)
 !
 
-$(P2HEXTARGET): $(P2HEX_OBJECTS) $(NLS_OBJECTS)
+$(P2HEXTARGET): $(P2HEX_OBJECTS) $(NLS_OBJECTS) $(P2HEX_RC_OBJECTS)
         $(TARG_LD) @&&!
--ml -e$(P2HEXTARGET)
+-ml $(TARG_EOBJ)$(P2HEXTARGET)
 $(P2HEX_OBJECTS)
 $(NLS_OBJECTS)
+$(P2HEX_RC_OBJECTS)
 !
 
-$(P2BINTARGET): $(P2BIN_OBJECTS) $(NLS_OBJECTS)
+$(P2BINTARGET): $(P2BIN_OBJECTS) $(NLS_OBJECTS) $(P2BIN_RC_OBJECTS)
         $(TARG_LD) @&&!
--ml -e$(P2BINTARGET)
-$(P2BIN_OBJECTS) $(NLS_OBJECTS)
+-ml $(TARG_EOBJ)$(P2BINTARGET)
+$(P2BIN_OBJECTS)
+$(NLS_OBJECTS)
+$(P2BIN_RC_OBJECTS)
 !
 
 $(RESCOMPTARGET): $(RESCOMP_OBJECTS)
-	$(LD) -ml -e$(RESCOMPTARGET) $(RESCOMP_OBJECTS) $(LDFLAGS)
+	$(LD) -ml $(EOBJ)$(RESCOMPTARGET) $(RESCOMP_OBJECTS) $(LDFLAGS)
 
 $(TEX2DOCTARGET): $(TEX2DOC_OBJECTS)
 	$(LD) @&&!
--ml -e$(TEX2DOCTARGET)
+-ml $(EOBJ)$(TEX2DOCTARGET)
 $(TEX2DOC_OBJECTS) $(LDFLAGS)
 !
 
 $(TEX2HTMLTARGET): $(TEX2HTML_OBJECTS)
 	$(LD) @&&!
--ml -e$(TEX2HTMLTARGET)
+-ml $(EOBJ)$(TEX2HTMLTARGET)
 $(TEX2HTML_OBJECTS) $(LDFLAGS)
 !
 
 $(UMLAUTTARGET): $(UMLAUT_OBJECTS)
-	$(LD) -ml -e$(UMLAUTTARGET) $(UMLAUT_OBJECTS) $(LDFLAGS)
+	$(LD) -ml $(EOBJ)$(UMLAUTTARGET) $(UMLAUT_OBJECTS) $(LDFLAGS)
 
 $(UNUMLAUTTARGET): $(UNUMLAUT_OBJECTS)
-	$(LD) -ml -e$(UNUMLAUTTARGET) $(UNUMLAUT_OBJECTS) $(LDFLAGS)
-
-check_targ_cc:
-	echo "" > check_targ_cc
+	$(LD) -ml $(EOBJ)$(UNUMLAUTTARGET) $(UNUMLAUT_OBJECTS) $(LDFLAGS)
 
 #---------------------------------------------------------------------------
 # special rules for objects dependant on string resource files
@@ -97,7 +119,8 @@ binaries: $(ALLMSGTARGETS)
 #---------------------------------------------------------------------------
 # Documentation
 
-INCFILES = doc_COM\\taborg*.tex doc_COM\\tabids*.tex doc_COM\\pscpu.tex doc_COM\\pscomm.tex doc_COM\\biblio.tex
+DOC_COM_DIR=doc_COM\\
+!include $(DOC_COM_DIR)makedefs.dok
 
 DOC_DE_DIR=doc_DE\\
 !include $(DOC_DE_DIR)makedefs.dok
@@ -126,6 +149,7 @@ clean: clean_doc
 	$(RM) $(OBJDIR)*$(HOST_OBJEXTENSION)
 	$(RM) $(TARG_OBJDIR)*$(TARG_OBJEXTENSION)
         $(RM) $(TARG_OBJDIR)*.msg
+	$(RM) $(TARG_OBJDIR)*.msh
 	$(RM) *.p
 	$(RM) testlog
 	$(RM) *.rsc

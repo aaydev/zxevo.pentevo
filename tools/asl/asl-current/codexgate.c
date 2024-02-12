@@ -13,7 +13,7 @@
 #include <string.h>
 
 #include "nls.h"
-#include "endian.h"
+#include "be_le.h"
 #include "strutil.h"
 #include "bpemu.h"
 #include "asmdef.h"
@@ -665,11 +665,14 @@ static void InitFields(void)
   AddInstTable(InstTable, "STW"  , 0x5800, DecodeMem);
 
   AddInstTable(InstTable, "REG", 0, CodeREG);
+
+  init_moto8_pseudo(NULL, e_moto_8_be);
 }
 
 static void DeinitFields(void)
 {
   DestroyInstTable(InstTable);
+  deinit_moto8_pseudo();
 }
 
 /*--------------------------------------------------------------------------*/
@@ -692,6 +695,7 @@ static void InternSymbol_XGATE(char *pArg, TempResult *pResult)
     pResult->DataSize = eSymbolSize16Bit;
     pResult->Contents.RegDescr.Reg = Reg;
     pResult->Contents.RegDescr.Dissect = DissectReg_XGATE;
+    pResult->Contents.RegDescr.compare = NULL;
   }
 }
 
@@ -708,7 +712,7 @@ static void MakeCode_XGATE(void)
 
   /* Pseudoanweisungen */
 
-  if (DecodeMotoPseudo(True))
+  if (decode_moto8_pseudo())
     return;
 
   /* Befehlszaehler ungerade ? */
@@ -733,7 +737,7 @@ static void SwitchFrom_XGATE(void)
 
 static void SwitchTo_XGATE(void)
 {
-  PFamilyDescr pDescr;
+  const TFamilyDescr *pDescr;
 
   TurnWords = True;
   SetIntConstMode(eIntConstModeMoto);

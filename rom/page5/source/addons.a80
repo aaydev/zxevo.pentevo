@@ -1,5 +1,5 @@
 
-; LAST UPDATE: 23.10.2022 savelij
+; LAST UPDATE: 12.02.2024 savelij
 
 	TITLE "addons.a80 ROM_RST82"
 
@@ -317,7 +317,8 @@ COORDINAT_REGS	DW Y_OFFSET +  1 + (X_OFFSET + 3      ) * 0x100	; SP
 		DW Y_OFFSET + 18 + (X_OFFSET + 5 +  6 ) * 0x100 ; 5F
 		DW Y_OFFSET + 19 + (X_OFFSET + 5 +  6 ) * 0x100 ; 3F
 		DW Y_OFFSET + 20 + (X_OFFSET + 5 +  6 ) * 0x100 ; 1F
-		DW Y_OFFSET + 21 + (X_OFFSET + 5 +  1 ) * 0x100 ; ADR BREAK
+		DW Y_OFFSET + 21 + (X_OFFSET + 5 +  2 ) * 0x100 ; ADR BREAK
+		DW Y_OFFSET + 22 + (X_OFFSET + 5 +  2 ) * 0x100 ; TURBO CURRENT
 
 PRT_PORTREGS	LD A,MAGIC_COLOR
 		LD (TXT_COLOR),A
@@ -416,7 +417,22 @@ PRT_PORTREGS	LD A,MAGIC_COLOR
 		IN H,(C)
 		LD B,HIGH (BREAK_LOW)
 		IN L,(C)
-		JP PRINT_REGS
+		CALL PRINT_REGS
+		LD BC,5
+		LD A,(N_77)
+		BIT 3,A
+		LD HL,TXT_FREQ
+		JR NZ,.L1
+		ADD HL,BC
+		LD A,(N_EFF7)
+		BIT 4,A
+		JR Z,.L1
+		ADD HL,BC
+.L1		LD E,(IX)
+		INC IX
+		LD D,(IX)
+		INC IX
+		JP PRTT_MSG
 
 PRINT_1NUM	LD E,(IX)
 		INC IX
@@ -427,15 +443,12 @@ PRINT_1NUM	LD E,(IX)
 ; установка режимов
 SET_MODE	LD A,(RREG_A)
 ISET_MODE	AND A
-		JR Z,SET_MODE4
+		JR Z,SET_MODE4			; если 0 то получение режима
 		LD E,A
 		LD (TEK_MODES),A		; сохранили устанавливаемые режимы
-		AND A				; если 0 то получение режима
-		JR Z,SET_MODE4;2
-		BIT 3,A
+		AND %00000111
 		JR Z,.L4
 ; установка номера экрана
-		AND %00000111
 		LD D,A
 		LD A,(B_PORT77)
 		AND %11111000
@@ -447,8 +460,6 @@ ISET_MODE	AND A
 		RRCA
 		RRCA
 		LD E,A				; сейчас биты 1-0 содержат турбо режим
-		RRCA
-		RRCA
 		AND 3				; взяли биты турборежима
 		JR Z,.L3			; если 0 то режим турбо не меняем
 ; смена турборежима
@@ -470,6 +481,8 @@ ISET_MODE	AND A
 		LD (B_PORT77),A			; установили турбо режим для порта xx77
 		EXX
 .L3		LD A,E
+		RRCA
+		RRCA
 		AND 3				; выделили биты режима памяти
 		JR Z,SET_MODE4			; если 0 то режим памяти не меняем
 ; смена режима памяти

@@ -9,6 +9,7 @@
 /*****************************************************************************/
 
 #include "stdinc.h"
+#include <string.h>
 
 #include "strutil.h"
 #include "asmdef.h"
@@ -186,6 +187,47 @@ void as_tempres_copy(TempResult *p_dest, const TempResult *p_src)
   p_dest->AddrSpaceMask = p_src->AddrSpaceMask;
   p_dest->DataSize = p_src->DataSize;
   p_dest->Relocs = p_src->Relocs;
+}
+
+/*!------------------------------------------------------------------------
+ * \fn     as_tempres_cmp(const TempResult *p_res1, const TempResult *p_res2)
+ * \brief  compare two values
+ * \param  p_res1, p_res2 values to compare
+ * \return -1/0/+1 for p_res1 </=/> p_res2
+ * ------------------------------------------------------------------------ */
+
+int as_tempres_cmp(const TempResult *p_res1, const TempResult *p_res2)
+{
+  if (p_res1->Typ != p_res2->Typ)
+    return -1;
+  switch (p_res1->Typ)
+  {
+    case TempString:
+      return as_nonz_dynstr_cmp(&p_res1->Contents.str, &p_res2->Contents.str);
+    case TempFloat:
+      if (p_res1->Contents.Float < p_res2->Contents.Float)
+        return -1;
+      else if (p_res1->Contents.Float > p_res2->Contents.Float)
+        return 1;
+      else
+        return 0;
+    case TempInt:
+      if (p_res1->Contents.Int < p_res2->Contents.Int)
+        return -1;
+      else if (p_res1->Contents.Int > p_res2->Contents.Int)
+        return 1;
+      else
+        return 0;
+    case TempReg:
+      if (p_res1->Contents.RegDescr.Reg < p_res2->Contents.RegDescr.Reg)
+        return -1;
+      else if (p_res1->Contents.RegDescr.Reg > p_res2->Contents.RegDescr.Reg)
+        return 1;
+      else
+        return 0;
+    default:
+      return 0;
+  }
 }
 
 /*!------------------------------------------------------------------------

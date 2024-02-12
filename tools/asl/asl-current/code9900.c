@@ -13,7 +13,7 @@
 #include <ctype.h>
 
 #include "strutil.h"
-#include "endian.h"
+#include "be_le.h"
 #include "bpemu.h"
 #include "nls.h"
 #include "chunks.h"
@@ -22,25 +22,15 @@
 #include "asmpars.h"
 #include "asmcode.h"
 #include "asmallg.h"
+#include "onoff_common.h"
 #include "asmitree.h"
 #include "codepseudo.h"
 #include "codevars.h"
 #include "ibmfloat.h"
+#include "chartrans.h"
 #include "errmsg.h"
 
 #include "code9900.h"
-
-#define Type11OrderCnt 12
-#define Type11aOrderCnt 2
-#define Type12OrderCnt 10
-#define Type15OrderCnt 1
-#define Type16OrderCnt 3
-#define Type17OrderCnt 2
-#define Type20OrderCnt 2
-#define SingOrderCnt 34
-#define ImmOrderCnt 6
-#define FixedOrderCnt 18
-#define RegOrderCnt 7
 
 #define CKPT_NOTHING 16
 
@@ -860,8 +850,6 @@ static void DecodeRTWP(Word Code)
 
 static void DecodeBYTE(Word Code)
 {
-  int z;
-  Boolean OK;
   TempResult t;
 
   UNUSED(Code);
@@ -869,20 +857,22 @@ static void DecodeBYTE(Word Code)
   as_tempres_ini(&t);
   if (ChkArgCnt(1, ArgCntMax))
   {
-    z = 1; OK = True;
-    do
+    Boolean OK = True;
+    tStrComp *pArg;
+
+    forallargs(pArg, OK)
     {
-      KillBlanks(ArgStr[z].str.p_str);
-      EvalStrExpression(&ArgStr[z], &t);
+      KillBlanks(pArg->str.p_str);
+      EvalStrExpression(pArg, &t);
       switch (t.Typ)
       {
         case TempInt:
           if (mFirstPassUnknown(t.Flags))
             t.Contents.Int &= 0xff;
-          if (!RangeCheck(t.Contents.Int, Int8)) WrError(ErrNum_OverRange);
+          if (!RangeCheck(t.Contents.Int, Int8)) WrStrErrorPos(ErrNum_OverRange, pArg);
           else if (SetMaxCodeLen(CodeLen + 1))
           {
-            WrError(ErrNum_CodeOverflow);
+            WrStrErrorPos(ErrNum_CodeOverflow, pArg);
             OK = False;
           }
           else
@@ -891,26 +881,29 @@ static void DecodeBYTE(Word Code)
         case TempString:
           if (SetMaxCodeLen(t.Contents.str.len + CodeLen))
           {
-            WrError(ErrNum_CodeOverflow);
+            WrStrErrorPos(ErrNum_CodeOverflow, pArg);
             OK = False;
           }
           else
           {
-            char *p, *pEnd = t.Contents.str.p_str + t.Contents.str.len;
+            char *p, *pEnd;
 
-            TranslateString(t.Contents.str.p_str, t.Contents.str.len);
-            for (p = t.Contents.str.p_str; p < pEnd; PutByte(*(p++)));
+            if (as_chartrans_xlate_nonz_dynstr(CurrTransTable->p_table, &t.Contents.str, pArg))
+              OK = False;
+            else
+            {
+              pEnd = t.Contents.str.p_str + t.Contents.str.len;
+              for (p = t.Contents.str.p_str; p < pEnd; PutByte(*(p++)));
+            }
           }
           break;
         case TempFloat:
-          WrStrErrorPos(ErrNum_StringOrIntButFloat, &ArgStr[z]);
+          WrStrErrorPos(ErrNum_StringOrIntButFloat, pArg);
           /* fall-through */
         default:
           OK = False;
       }
-      z++;
     }
-    while ((z <= ArgCnt) && (OK));
     if (!OK)
       CodeLen = 0;
   }
@@ -1027,8 +1020,7 @@ static void AddOne(const char *NName, Word NCode)
 
 static void AddSing(const char *NName, Word NCode, Byte Flags)
 {
-  if (InstrZ >= SingOrderCnt)
-    exit(42);
+  order_array_rsv_end(SingOrders, tOrder);
   SingOrders[InstrZ].Code = NCode;
   SingOrders[InstrZ].Flags = Flags;
   AddInstTable(InstTable, NName, InstrZ++, DecodeSing);
@@ -1056,8 +1048,7 @@ static void AddShift(const char *NName, Word NCode)
 
 static void AddImm(const char *NName, Word NCode, Word Flags)
 {
-  if (InstrZ >= ImmOrderCnt)
-    exit(42);
+  order_array_rsv_end(ImmOrders, tOrder);
   ImmOrders[InstrZ].Code = NCode << 4;
   ImmOrders[InstrZ].Flags = Flags;
   AddInstTable(InstTable, NName, InstrZ++, DecodeImm);
@@ -1065,8 +1056,7 @@ static void AddImm(const char *NName, Word NCode, Word Flags)
 
 static void AddReg(const char *NName, Word NCode, Word Flags)
 {
-  if (InstrZ >= RegOrderCnt)
-    exit(42);
+  order_array_rsv_end(RegOrders, tOrder);
   RegOrders[InstrZ].Code = NCode << 4;
   RegOrders[InstrZ].Flags = Flags;
   AddInstTable(InstTable, NName, InstrZ++, DecodeRegOrder);
@@ -1074,8 +1064,7 @@ static void AddReg(const char *NName, Word NCode, Word Flags)
 
 static void AddFixed(const char *NName, Word NCode, Word Flags)
 {
-  if (InstrZ >= FixedOrderCnt)
-    exit(42);
+  order_array_rsv_end(FixedOrders, tOrder);
   FixedOrders[InstrZ].Code = NCode;
   FixedOrders[InstrZ].Flags = Flags;
   AddInstTable(InstTable, NName, InstrZ++, DecodeFixed);
@@ -1083,8 +1072,7 @@ static void AddFixed(const char *NName, Word NCode, Word Flags)
 
 static void AddType11(const char *NName, Word NCode, Word Flags)
 {
-  if (InstrZ >= Type11OrderCnt)
-    exit(42);
+  order_array_rsv_end(Type11Orders, tOrder);
   Type11Orders[InstrZ].Code = NCode;
   Type11Orders[InstrZ].Flags = Flags;
   AddInstTable(InstTable, NName, InstrZ++, DecodeType11);
@@ -1092,8 +1080,7 @@ static void AddType11(const char *NName, Word NCode, Word Flags)
 
 static void AddType11a(const char *NName, Word NCode, Word Flags)
 {
-  if (InstrZ >= Type11aOrderCnt)
-    exit(42);
+  order_array_rsv_end(Type11aOrders, tOrder);
   Type11aOrders[InstrZ].Code = NCode;
   Type11aOrders[InstrZ].Flags = Flags;
   AddInstTable(InstTable, NName, InstrZ++, DecodeType11a);
@@ -1101,8 +1088,7 @@ static void AddType11a(const char *NName, Word NCode, Word Flags)
 
 static void AddType12(const char *NName, Word NCode, Word Flags)
 {
-  if (InstrZ >= Type12OrderCnt)
-    exit(42);
+  order_array_rsv_end(Type12Orders, tOrder);
   Type12Orders[InstrZ].Code = NCode;
   Type12Orders[InstrZ].Flags = Flags;
   AddInstTable(InstTable, NName, InstrZ++, DecodeType12);
@@ -1110,8 +1096,7 @@ static void AddType12(const char *NName, Word NCode, Word Flags)
 
 static void AddType15(const char *NName, Word NCode, Word Flags)
 {
-  if (InstrZ >= Type15OrderCnt)
-    exit(42);
+  order_array_rsv_end(Type15Orders, tOrder);
   Type15Orders[InstrZ].Code = NCode;
   Type15Orders[InstrZ].Flags = Flags;
   AddInstTable(InstTable, NName, InstrZ++, DecodeType15);
@@ -1119,8 +1104,7 @@ static void AddType15(const char *NName, Word NCode, Word Flags)
 
 static void AddType16(const char *NName, Word NCode, Word Flags)
 {
-  if (InstrZ >= Type16OrderCnt)
-    exit(42);
+  order_array_rsv_end(Type16Orders, tOrder);
   Type16Orders[InstrZ].Code = NCode;
   Type16Orders[InstrZ].Flags = Flags;
   AddInstTable(InstTable, NName, InstrZ++, DecodeType16);
@@ -1128,8 +1112,7 @@ static void AddType16(const char *NName, Word NCode, Word Flags)
 
 static void AddType17(const char *NName, Word NCode, Word Flags)
 {
-  if (InstrZ >= Type17OrderCnt)
-    exit(42);
+  order_array_rsv_end(Type17Orders, tOrder);
   Type17Orders[InstrZ].Code = NCode;
   Type17Orders[InstrZ].Flags = Flags;
   AddInstTable(InstTable, NName, InstrZ++, DecodeType17);
@@ -1137,8 +1120,7 @@ static void AddType17(const char *NName, Word NCode, Word Flags)
 
 static void AddType20(const char *NName, Word NCode, Word Flags)
 {
-  if (InstrZ >= Type20OrderCnt)
-    exit(42);
+  order_array_rsv_end(Type20Orders, tOrder);
   Type20Orders[InstrZ].Code = NCode;
   Type20Orders[InstrZ].Flags = Flags;
   AddInstTable(InstTable, NName, InstrZ++, DecodeType20);
@@ -1165,7 +1147,7 @@ static void InitFields(void)
   AddOne("COC" , 0x08); AddOne("CZC" , 0x09); AddOne("XOR" , 0x0a);
   AddOne("MPY" , 0x0e); AddOne("DIV" , 0x0f); AddOne("XOP" , 0x0b);
 
-  SingOrders = (tOrder*)malloc(sizeof(*SingOrders) * SingOrderCnt); InstrZ = 0;
+  InstrZ = 0;
   AddSing("B"   , 0x0440, eCoreAll);
   AddSing("BL"  , 0x0680, eCoreAll);
   AddSing("BLWP", 0x0400, eCoreAll);
@@ -1212,7 +1194,7 @@ static void InitFields(void)
   AddShift("SLA", 0x0a); AddShift("SRA", 0x08);
   AddShift("SRC", 0x0b); AddShift("SRL", 0x09);
 
-  ImmOrders = (tOrder*)malloc(sizeof(*ImmOrders) * ImmOrderCnt); InstrZ = 0;
+  InstrZ = 0;
   AddImm("AI"  , 0x022, eCoreAll);
   AddImm("ANDI", 0x024, eCoreAll);
   AddImm("CI"  , 0x028, eCoreAll);
@@ -1220,7 +1202,7 @@ static void InitFields(void)
   AddImm("ORI" , 0x026, eCoreAll);
   AddImm("BLSK", 0x00b, eCore990_12 | eCore99105 | eCore99110);
 
-  Type11Orders = (tOrder*)malloc(sizeof(*Type11Orders) * Type11OrderCnt); InstrZ = 0;
+  InstrZ = 0;
   AddType11("AM"  , 0x002a, eCore990_12 | eCore99105 | eCore99110);
   AddType11("SM"  , 0x0029, eCore990_12 | eCore99105 | eCore99110);
   AddType11("NRM" , 0x0c08, eCore990_12);
@@ -1234,14 +1216,14 @@ static void InitFields(void)
   AddType11("ORM" , 0x0027, eCore990_12);
   AddType11("ANDM", 0x0028, eCore990_12);
 
-  Type11aOrders = (tOrder*)malloc(sizeof(*Type11aOrders) * Type11aOrderCnt); InstrZ = 0;
+  InstrZ = 0;
   AddType11a("CR"  , 0x0301, eCore99110);
   AddType11a("MM"  , 0x0302, eCore99110);
 
   AddInstTable(InstTable, "SLAM", 0x001d, DecodeSLAM_SRAM);
   AddInstTable(InstTable, "SRAM", 0x001c, DecodeSLAM_SRAM);
 
-  RegOrders = (tOrder*)malloc(sizeof(*RegOrders) * RegOrderCnt); InstrZ = 0;
+  InstrZ = 0;
   AddReg("STST", 0x02c, eCoreAll);
   AddReg("LST" , 0x008, eCore9995 | eCore99105 | eCore99110 | eCore990_12);
   AddReg("STWP", 0x02a, eCoreAll);
@@ -1254,7 +1236,7 @@ static void InitFields(void)
   AddBit("TCMB", 0x0c0a);
   AddBit("TSMB", 0x0c0b);
 
-  FixedOrders = (tOrder*)malloc(sizeof(*FixedOrders) * FixedOrderCnt); InstrZ = 0;
+  InstrZ = 0;
   AddInstTable(InstTable, "RTWP", 0x0380, DecodeRTWP);
   AddFixed("IDLE", 0x0340, eCoreFlagSupMode | eCoreAll);
   AddFixed("RSET", 0x0360, eCoreFlagSupMode | (eCoreAll & ~eCore9940));
@@ -1274,7 +1256,7 @@ static void InitFields(void)
   AddFixed("CED" , 0x0c07, eCore990_12);
   AddFixed("XIT" , 0x0c0e, eCore990_12);
 
-  Type12Orders = (tOrder*)malloc(sizeof(*Type12Orders) * Type12OrderCnt); InstrZ = 0;
+  InstrZ = 0;
   AddType12("SNEB", 0x0e10, eCore990_12);
   AddType12("CRC" , 0x0e20, eCore990_12);
   AddType12("TS"  , 0x0e30, eCore990_12);
@@ -1286,21 +1268,21 @@ static void InitFields(void)
   AddType12("POPS", 0x00e0, eCore990_12);
   AddType12("PSHS", 0x00f0, eCore990_12);
 
-  Type15Orders = (tOrder*)malloc(sizeof(*Type15Orders) * Type15OrderCnt); InstrZ = 0;
+  InstrZ = 0;
   AddType15("IOF" , 0x0e00, eCore990_12);
 
-  Type16Orders = (tOrder*)malloc(sizeof(*Type16Orders) * Type16OrderCnt); InstrZ = 0;
+  InstrZ = 0;
   AddType16("INSF", 0x0c10, eCore990_12);
   AddType16("XV"  , 0x0c30, eCore990_12);
   AddType16("XF"  , 0x0c20, eCore990_12);
 
-  Type17Orders = (tOrder*)malloc(sizeof(*Type17Orders) * Type17OrderCnt); InstrZ = 0;
+  InstrZ = 0;
   AddType17("SRJ" , 0x0c0c, eCore990_12);
   AddType17("ARJ" , 0x0c0d, eCore990_12);
 
   AddInstTable(InstTable, "MOVA", 0x002b, DecodeMOVA);
 
-  Type20Orders = (tOrder*)malloc(sizeof(*Type20Orders) * Type20OrderCnt); InstrZ = 0;
+  InstrZ = 0;
   AddType20("SLSL", 0x0021, eCore990_12);
   AddType20("SLSP", 0x0020, eCore990_12);
 
@@ -1312,17 +1294,17 @@ static void InitFields(void)
 static void DeinitFields(void)
 {
   DestroyInstTable(InstTable);
-  free(SingOrders);
-  free(ImmOrders);
-  free(FixedOrders);
-  free(RegOrders);
-  free(Type11Orders);
-  free(Type11aOrders);
-  free(Type12Orders);
-  free(Type15Orders);
-  free(Type16Orders);
-  free(Type17Orders);
-  free(Type20Orders);
+  order_array_free(SingOrders);
+  order_array_free(ImmOrders);
+  order_array_free(FixedOrders);
+  order_array_free(RegOrders);
+  order_array_free(Type11Orders);
+  order_array_free(Type11aOrders);
+  order_array_free(Type12Orders);
+  order_array_free(Type15Orders);
+  order_array_free(Type16Orders);
+  order_array_free(Type17Orders);
+  order_array_free(Type20Orders);
 }
 
 /*-------------------------------------------------------------------------*/
@@ -1409,8 +1391,8 @@ static void SwitchTo_9900(void *pUser)
   IsDef = IsDef_9900;
   SwitchFrom = DeinitFields;
   InternSymbol = InternSymbol_9900;
-  AddONOFF("PADDING", &DoPadding , DoPaddingName , False);
-  AddONOFF(SupAllowedCmdName, &SupAllowed, SupAllowedSymName, False);
+  AddONOFF(DoPaddingName, &DoPadding , DoPaddingName , False);
+  onoff_supmode_add();
 
   InitFields();
 }

@@ -20,6 +20,7 @@
 #include "asmsub.h"
 #include "asmpars.h"
 #include "asmitree.h"
+#include "asmcode.h"
 #include "codepseudo.h"
 #include "intpseudo.h"
 #include "codevars.h"
@@ -32,8 +33,6 @@ typedef struct
   const char *Name;
   Byte Code;
 } CondRec;
-
-#define ConditionCnt 12
 
 enum
 {
@@ -53,6 +52,8 @@ enum
 
 #define AccReg 0
 #define WAReg 0
+
+#define COND_CODE_TRUE 6
 
 #define Reg8Cnt 8
 static const char Reg8Names[] = "AWCBEDLH";
@@ -139,10 +140,12 @@ static void DecodeAdr(const tStrComp *pArg, Byte Erl)
     FirstFlag = False;
     do
     {
-      EPos = QuotMultPos(Arg.str.p_str, "+-");
+      KillPrefBlanksStrCompRef(&Arg);
+      EPos = indir_split_pos(Arg.str.p_str);
       NNegFlag = EPos && (*EPos == '-');
       if (EPos)
         StrCompSplitRef(&Arg, &Remainder, &Arg, EPos);
+      KillPostBlanksStrComp(&Arg);
 
       for (z = 0; z < AdrRegCnt; z++)
         if (!as_strcasecmp(Arg.str.p_str, AdrRegs[z]))
@@ -292,16 +295,39 @@ static void CodeMem(Byte Entry, Byte Opcode)
   BAsmCode[1 + AdrCnt] = Opcode;
 }
 
-static int DecodeCondition(char *pCondStr, int Start)
+/*!------------------------------------------------------------------------
+ * \fn     decode_condition(const char *p_cond_str, Byte *p_cond_code)
+ * \brief  parse condition code
+ * \param  p_cond_str source argument
+ * \param  p_cond_code returns code if found
+ * \return True if found
+ * ------------------------------------------------------------------------ */
+
+static Boolean decode_condition(const char *p_cond_str, Byte *p_cond_code)
 {
-  int Condition;
+  int z;
 
-  NLS_UpString(pCondStr);
-  for (Condition = Start; Condition < ConditionCnt; Condition++)
-    if (!strcmp(ArgStr[1].str.p_str, Conditions[Condition].Name))
-      break;
+  for (z = 0; Conditions[z].Name; z++)
+    if (!as_strcasecmp(p_cond_str, Conditions[z].Name))
+    {
+      *p_cond_code = Conditions[z].Code;
+      return True;
+    }
 
-  return Condition;
+  return False;
+}
+
+/*!------------------------------------------------------------------------
+ * \fn     cond_code_tf(Byte cond_code)
+ * \brief  is condition code True or False?
+ * \param  cond_code code to check
+ * \return True if yes
+ * ------------------------------------------------------------------------ */
+
+static Boolean cond_code_tf(Byte cond_code)
+{
+  return (cond_code == COND_CODE_TRUE)
+      || (cond_code == 7);
 }
 
 /*--------------------------------------------------------------------------*/
@@ -1274,12 +1300,12 @@ static void DecodeJRS(Word Code)
 
   if (ChkArgCnt(2, 2))
   {
-    Integer AdrInt, Condition;
+    Integer AdrInt;
+    Byte cond_code;
     Boolean OK;
     tSymbolFlags Flags;
 
-    Condition = DecodeCondition(ArgStr[1].str.p_str, ConditionCnt - 2);
-    if (Condition >= ConditionCnt) WrStrErrorPos(ErrNum_UndefCond, &ArgStr[1]);
+    if (!decode_condition(ArgStr[1].str.p_str, &cond_code) || !cond_code_tf(cond_code)) WrStrErrorPos(ErrNum_UndefCond, &ArgStr[1]);
     else
     {
       AdrInt = EvalStrIntExpressionWithFlags(&ArgStr[2], Int16, &OK, &Flags) - (EProgCounter() + 2);
@@ -1289,7 +1315,7 @@ static void DecodeJRS(Word Code)
         else
         {
           CodeLen = 1;
-          BAsmCode[0] = ((Conditions[Condition].Code - 2) << 5) | (AdrInt & 0x1f);
+          BAsmCode[0] = ((cond_code - 2) << 5) | (AdrInt & 0x1f);
         }
       }
     }
@@ -1302,24 +1328,28 @@ static void DecodeJR(Word Code)
 
   if (ChkArgCnt(1, 2))
   {
-    Integer Condition, AdrInt;
+    Integer AdrInt;
+    Byte cond_code;
     Boolean OK;
     tSymbolFlags Flags;
 
-    Condition = (ArgCnt == 1) ? -1 : DecodeCondition(ArgStr[1].str.p_str, 0);
-    if (Condition >= ConditionCnt) WrStrErrorPos(ErrNum_UndefCond, &ArgStr[1]);
-    else
+    if (ArgCnt == 1)
+      cond_code = COND_CODE_TRUE;
+    else if (!decode_condition(ArgStr[1].str.p_str, &cond_code))
     {
-      AdrInt = EvalStrIntExpressionWithFlags(&ArgStr[ArgCnt], Int16, &OK, &Flags) - (EProgCounter() + 2);
-      if (OK)
+      WrStrErrorPos(ErrNum_UndefCond, &ArgStr[1]);
+      return;
+    }
+
+    AdrInt = EvalStrIntExpressionWithFlags(&ArgStr[ArgCnt], Int16, &OK, &Flags) - (EProgCounter() + 2);
+    if (OK)
+    {
+      if (((AdrInt < -128) || (AdrInt > 127)) && !mSymbolQuestionable(Flags)) WrError(ErrNum_JmpDistTooBig);
+      else
       {
-        if (((AdrInt < -128) || (AdrInt > 127)) && !mSymbolQuestionable(Flags)) WrError(ErrNum_JmpDistTooBig);
-        else
-        {
-          CodeLen = 2;
-          BAsmCode[0] = (Condition == -1) ?  0xfb : 0xd0 | Conditions[Condition].Code;
-          BAsmCode[1] = AdrInt & 0xff;
-        }
+        CodeLen = 2;
+        BAsmCode[0] = (ArgCnt == 1) ?  0xfb : 0xd0 | cond_code;
+        BAsmCode[1] = AdrInt & 0xff;
       }
     }
   }
@@ -1418,7 +1448,7 @@ static void AddFixed(const char *NName, Word NCode)
 
 static void AddCond(const char *NName, Byte NCode)
 {
-  if (InstrZ >= ConditionCnt) exit(255);
+  order_array_rsv_end(Conditions, CondRec);
   Conditions[InstrZ].Name = NName;
   Conditions[InstrZ++].Code = NCode;
 }
@@ -1462,13 +1492,14 @@ static void InitFields(void)
   AddFixed("SWI" , 0x00ff);
   AddFixed("NOP" , 0x0000);
 
-  Conditions = (CondRec *) malloc(sizeof(CondRec)*ConditionCnt); InstrZ = 0;
+  InstrZ = 0;
   AddCond("EQ", 0); AddCond("Z" , 0);
   AddCond("NE", 1); AddCond("NZ", 1);
   AddCond("CS", 2); AddCond("LT", 2);
   AddCond("CC", 3); AddCond("GE", 3);
   AddCond("LE", 4); AddCond("GT", 5);
-  AddCond("T" , 6); AddCond("F" , 7);
+  AddCond("T" , COND_CODE_TRUE); AddCond("F" , 7);
+  AddCond(NULL, 0);
 
   AddReg("DAA" , 0x0a);  AddReg("DAS" , 0x0b);
   AddReg("SHLC", 0x1c);  AddReg("SHRC", 0x1d);
@@ -1490,7 +1521,7 @@ static void DeinitFields(void)
 {
   DestroyInstTable(InstTable);
 
-  free(Conditions);
+  order_array_free(Conditions);
 }
 
 /*--------------------------------------------------------------------------*/

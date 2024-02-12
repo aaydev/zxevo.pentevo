@@ -1,5 +1,5 @@
 
-; LAST UPDATE: 22.10.2022 savelij
+; LAST UPDATE: 12.02.2024 savelij
 
 	TITLE "addon1.a80 ROM_RST81"
 
@@ -135,7 +135,7 @@ INSTALL_NMIRST
 		LD A,0xEF
 		IN A,(0xFE)
 		RRCA
-		JR NC,INSTALLNMIRST2
+		JR NC,.L2
 		LD IX,CPU2+STACK_NMI
 		LD HL,0x40
 		CALL CRC16_FAST			; считаем CRC на месте обработчика
@@ -146,13 +146,15 @@ INSTALL_NMIRST
 		POP BC				; вернули ранее посчитанное CRC
 		XOR A
 		SBC HL,BC			; сравнили
-		JR Z,INSTALLNMIRST1		; если совпало больше ничего не делаем
+		JR Z,.L1			; если совпало больше ничего не делаем
 	EVOPORT WIN_P3,RAM_PROFROM
 		LD HL,CPU0
 		CALL FILL_MEM			; очистка страницы ОЗУ PROFROM
 ; не совпало, первый запуск после включения питания или обработчики были испорчены
-INSTALLNMIRST2	LD HL,CPU3
+.L2		LD A,(HDDTIMEOUT)		; сохраняем ячейку вне зависимости от содежимого
+		LD HL,CPU3
 		CALL FILL_MEM			; очистка последней страницы RAM
+		LD (HDDTIMEOUT),A		; восстанавливаем ячейку
 		LD HL,CODE_NMIRST
 		LD DE,CPU6
 		LD BC,ENMI_SERVICE - ADR_SEL_ROM - CPU6
@@ -176,7 +178,7 @@ INSTALLNMIRST2	LD HL,CPU3
 		LD BC,CMOSD_RD_WR
 		IN A,(C)
 		LD (CPU2 + VIRT_BITS),A		; при ините монтируем только рамдиск
-INSTALLNMIRST1
+.L1
 	IF BUILD_DEBUG=1
 	ROMCALL UNPACK_STS,ROM_RST80
 	ENDIF
@@ -195,18 +197,21 @@ INSTALLNMIRST1
 		IN A,(C)
 		CP 0x50
 		LD A,1
-		JR Z,INSTALLNMIRST3
+		JR Z,.L3
+		LD A,(HDDTIMEOUT)
+		DEC A
+		JR Z,.L5			; если ячейка равна 1 задержку из CMOS игнорируем
 		LD H,HDD_TIMEOUT
 	ROMCALL READCMOS,ROM_RST82
 		AND A
 		LD A,1
-		JR Z,INSTALLNMIRST3
+		JR Z,.L3
 		XOR A
-INSTALLNMIRST4	ADD A,25
+.L4		ADD A,25
 		DEC L
-		JR NZ,INSTALLNMIRST4
-INSTALLNMIRST3	LD (HDDTIMEOUT),A
-		LD HL,STEK_PAGES
+		JR NZ,.L4
+.L3		LD (HDDTIMEOUT),A
+.L5		LD HL,STEK_PAGES
 		LD (TEKPAGE),HL
 		LD HL,READ_KEYS
 		LD (ADR_INT),HL

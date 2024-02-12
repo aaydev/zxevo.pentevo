@@ -18,10 +18,14 @@
 #include "asmdef.h"
 #include "asmsub.h"
 #include "asmpars.h"
+#include "asmallg.h"
+#include "onoff_common.h"
 #include "asmitree.h"
 #include "codevars.h"
 #include "codepseudo.h"
 #include "errmsg.h"
+#include "ibmfloat.h"
+#include "chartrans.h"
 
 #include "codemn1610.h"
 
@@ -169,6 +173,8 @@ static Boolean DecRIndirect(const char *pAsc, Word *mm, Word *ii, Boolean bAuto)
 {
 	int l = strlen(pAsc);
 	int rp;
+	char MinReg, MaxReg;
+	Word RegOffs;
 
 	if (l == 4 && pAsc[0] == '(' && pAsc[3] == ')')
 	{
@@ -197,19 +203,28 @@ static Boolean DecRIndirect(const char *pAsc, Word *mm, Word *ii, Boolean bAuto)
 		return False;
 	}
 
-	if (pAsc[rp] != 'R' )
+	switch (toupper(pAsc[rp]))
+	{
+		case 'R':
+			MinReg = '1'; MaxReg = '4';
+			RegOffs = 0;
+			break;
+		case 'X':
+			MinReg = '0'; MaxReg = '1';
+			RegOffs = 2;
+			break;
+		default:
+			WrError(ErrNum_InvReg);
+			return False;
+	}
+
+	if (pAsc[rp + 1] < MinReg || pAsc[rp + 1] > MaxReg)
 	{
 		WrError(ErrNum_InvReg);
 		return False;
 	}
 
-	if (pAsc[rp + 1] < '1' || pAsc[rp + 1] > '4')
-	{
-		WrError(ErrNum_InvReg);
-		return False;
-	}
-
-	*ii = pAsc[rp + 1] - '1';
+	*ii = pAsc[rp + 1] - MinReg + RegOffs;
 
 	return True;
 }
@@ -1348,12 +1363,32 @@ static void DecodeSKIP(Word Index)
 
 /* Pseudo Instruction */
 
+static void PutByte(Byte data, Boolean *p_lower_byte)
+{
+	if (*p_lower_byte)
+	{
+		WAsmCode[CodeLen - 1] |= data;
+		*p_lower_byte = False;
+	}
+	else
+	{
+		SetMaxCodeLen((CodeLen + 1) * 2);
+		WAsmCode[CodeLen++] = data << 8;
+		*p_lower_byte = True;
+	}
+}
+
+static void PutWord(Word data, Boolean *p_lower_byte)
+{
+	SetMaxCodeLen((CodeLen + 1) * 2);	
+	WAsmCode[CodeLen++] = data;
+  *p_lower_byte = False;
+}
+
 static void DecodeDC(Word Index)
 {
-	int z;
 	int c;
-	int b = 0;
-	Boolean OK;
+	Boolean LowerByte = False;
 	TempResult t;
 	
 	UNUSED(Index);
@@ -1361,45 +1396,57 @@ static void DecodeDC(Word Index)
 	as_tempres_ini(&t);
 	if (ChkArgCnt(1, ArgCntMax))
 	{
-		OK = True;
-		for (z = 1; z <= ArgCnt; z++)
+		Boolean OK = True;
+		tStrComp *pArg;
+
+		forallargs(pArg, OK)
 		{
-			if (OK)
+			EvalStrExpression(pArg, &t);
+			if (mFirstPassUnknown(t.Flags) && t.Typ == TempInt) t.Contents.Int &= 65535;
+			switch (t.Typ)
 			{
-				EvalStrExpression(&ArgStr[z], &t);
-				if (mFirstPassUnknown(t.Flags) && t.Typ == TempInt) t.Contents.Int &= 65535;
-				switch (t.Typ)
+			case TempInt:
+				if (Packing)
 				{
-				case TempInt:
+					if (ChkRange(t.Contents.Int, -128, 255))
+					{
+						PutByte(t.Contents.Int, &LowerByte);
+					}
+				}
+				else
+				{
 				ToInt:
 					if (ChkRange(t.Contents.Int, -32768, 65535))
 					{
-						WAsmCode[CodeLen++] = t.Contents.Int;
+						PutWord(t.Contents.Int, &LowerByte);
 					}
-					b = 0;
-					break;
-				case TempFloat:
-					WrStrErrorPos(ErrNum_StringOrIntButFloat, &ArgStr[z]);
-					OK = False;
-					break;
-				case TempString:
-					if (MultiCharToInt(&t, 2))
-						goto ToInt;
-					for (c = 0; c < (int)t.Contents.str.len; c++)
-					{
-						if ((b++) & 1)
-						{
-							WAsmCode[CodeLen - 1] |= t.Contents.str.p_str[c];
-						}
-						else
-						{
-							WAsmCode[CodeLen++] = t.Contents.str.p_str[c] << 8;
-						}
-					}
-					break;
-				default:
+				}
+				break;
+			case TempFloat:
+				SetMaxCodeLen((CodeLen + 2) * 2);
+				if (Double2IBMFloat(&WAsmCode[CodeLen], t.Contents.Float, False))
+				{
+					CodeLen += 2;
+				}
+				else
+				{
 					OK = False;
 				}
+				LowerByte = False;
+				break;
+			case TempString:
+				if (MultiCharToInt(&t, 2))
+					goto ToInt;
+				if (as_chartrans_xlate_nonz_dynstr(CurrTransTable->p_table, &t.Contents.str, pArg))
+					OK = False;
+				else
+					for (c = 0; c < (int)t.Contents.str.len; c++)
+					{
+						PutByte(((usint)t.Contents.str.p_str[c]) & 0xff, &LowerByte);
+					}
+				break;
+			default:
+				OK = False;
 			}
 		}
 		if (!OK) CodeLen = 0;
@@ -1613,6 +1660,7 @@ static void InitFields(void)
 	
 	AddRegImm8("RD",  0x1800);
 	AddRegImm8("WR",  0x1000);
+	AddRegImm8("WT",  0x1000);
 	AddRegImm8("MVI", 0x0800);
 
 	AddLevel("LPSW", 0x2004);
@@ -1777,6 +1825,8 @@ static void SwitchTo_MN1610(void)
 	ListGrans[SegIO] = 2;
 	SegInits[SegIO] = 0;
 	SegLimits[SegIO] = 0xffff;
+
+	onoff_packing_add(False);
 
 	MakeCode = MakeCode_MN1610;
 	IsDef = IsDef_MN1610;

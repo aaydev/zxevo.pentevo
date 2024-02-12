@@ -23,6 +23,8 @@
 #include "motpseudo.h"
 #include "asmitree.h"
 #include "codevars.h"
+#include "cpu2phys.h"
+#include "function.h"
 #include "nlmessages.h"
 #include "as.rsc"
 
@@ -71,10 +73,6 @@ enum
 #define Page3Prefix 0x1a
 #define Page4Prefix 0xcd
 
-#define FixedOrderCnt 45
-#define RelOrderCnt   19
-#define ALU16OrderCnt 16
-
 
 static tSymbolSize OpSize;
 static Byte PrefCnt;           /* Anzahl Befehlspraefixe */
@@ -86,110 +84,83 @@ static FixedOrder *FixedOrders;
 static RelOrder   *RelOrders;
 static ALU16Order *ALU16Orders;
 
-static LongInt Reg_MMSIZ, Reg_MMWBR, Reg_MM1CR, Reg_MM2CR;
-static LongWord Win1VStart, Win1VEnd, Win1PStart, Win1PEnd,
-                Win2VStart, Win2VEnd, Win2PStart, Win2PEnd;
+static LongInt Reg_MMSIZ, Reg_MMWBR, Reg_MM1CR, Reg_MM2CR, Reg_INIT, Reg_INIT2, Reg_CONFIG;
 
 static CPUVar CPU6800, CPU6801, CPU6301, CPU6811, CPU68HC11K4;
 
 /*---------------------------------------------------------------------------*/
 
-static void SetK4Ranges(void)
+/*!------------------------------------------------------------------------
+ * \fn     compute_window(Byte w_size_code, Byte cpu_start_code, LongInt phys_start_code, LongWord phys_offset)
+ * \brief  compute single window from MMU registers
+ * \param  w_size_code MMSIZ bits (0..3)
+ * \param  cpu_start_code Reg_MMWBR bits (0,2,4,6...14)
+ * \param  phys_start_code Reg_MMxCR bits
+ * \param  phys_offset offset in physical space
+ * ------------------------------------------------------------------------ */
+
+static void compute_window(Byte w_size_code, Byte cpu_start_code, LongInt phys_start_code, LongWord phys_offset)
 {
-  Byte WSize;
-
-  /* window 1 first */
-
-  WSize = Reg_MMSIZ & 0x3;
-  if (WSize)
+  if (w_size_code)
   {
+    Word size, cpu_start;
+    LongWord phys_start;
+
     /* window size */
 
-    Win1VEnd = Win1PEnd = 0x1000 << WSize;
+    size = 0x1000 << w_size_code;
 
-    /* physical start: assume 8K window, systematically clip out bits for
+    /* CPU space start address: assume 8K window, systematically clip out bits for
        larger windows */
 
-    Win1PStart = (Reg_MMWBR & 0x0e) << 12;
-    if (WSize > 1)
-      Win1PStart &= ~0x2000;
-    if (WSize > 2)
-      Win1PStart = (Win1PStart == 0xc000) ? 0x8000 : Win1PStart;
+    cpu_start = (Word)cpu_start_code << 12;
+    if (w_size_code > 1)
+      cpu_start &= ~0x2000;
+    if (w_size_code > 2)
+      cpu_start = (cpu_start == 0xc000) ? 0x8000 : cpu_start;
 
-    /* logical start: mask out lower bits according to window size */
+    /* physical space start: mask out lower bits according to window size */
 
-    Win1VStart = ((Reg_MM1CR & 0x7f & (~((1 << WSize) - 1))) << 12) + 0x10000;
+    phys_start = ((phys_start_code & 0x7f & (~((1 << w_size_code) - 1))) << 12) + phys_offset;
 
-    /* set end addresses */
+    /* set addresses */
 
-    Win1VEnd += Win1VStart;
-    Win1PEnd += Win1PStart;
+    cpu_2_phys_area_add(SegCode, cpu_start, phys_start, size);
   }
-  else
-    Win1VStart = Win1VEnd = Win1PStart = Win1PEnd = 0;
-
-  /* window 2 similarly */
-
-  WSize = Reg_MMSIZ & 0x30;
-  if (WSize)
-  {
-    /* window size */
-
-    WSize = WSize >> 4;
-    Win2VEnd = Win2PEnd = 0x1000 << WSize;
-
-    /* physical start: assume 8K window, systematically clip out bits for
-       larger windows */
-
-    Win2PStart = (Reg_MMWBR & 0x0e0) << 8;
-    if (WSize > 1)
-      Win2PStart &= ~0x2000;
-    if (WSize > 2)
-      Win2PStart = (Win2PStart == 0xc000) ? 0x8000 : Win2PStart;
-
-    /* logical start: mask out lower bits according to window size */
-
-    Win2VStart = ((Reg_MM2CR & 0x7f & (~((1 << WSize) - 1))) << 12) + 0x90000;
-
-    /* set end addresses */
-
-    Win2VEnd += Win2VStart;
-    Win2PEnd += Win2PStart;
-  }
-  else
-    Win2VStart = Win2VEnd = Win2PStart = Win2PEnd = 0;
 }
 
-static void TranslateAddress(LongWord *Address)
+static void SetK4Ranges(void)
 {
-  /* do not translate the first 64K */
+  Word ee_bank, io_bank, ram_bank;
 
-  if (*Address < 0x10000)
-    return;
+  cpu_2_phys_area_clear(SegCode);
 
-  /* in first window ? */
+  /* Add window 1 after window 2, since it has higher priority and may partially overlap window 2 */
 
-  if ((*Address >= Win1VStart) && (*Address < Win1VEnd))
+  compute_window((Reg_MMSIZ >> 4) & 0x3, (Reg_MMWBR >> 4) & 0x0e, Reg_MM2CR, 0x90000);
+  compute_window(Reg_MMSIZ & 0x3, Reg_MMWBR & 0x0e, Reg_MM1CR, 0x10000);
+
+  /* Internal registers, RAM and EEPROM (if enabled) have priority in CPU address space: */
+
+  if (Reg_CONFIG & 1)
   {
-    *Address = Win1PStart + (Win1VStart - *Address);
-    return;
+    ee_bank = ((Reg_INIT & 15) << 12) + 0x0d80;
+    cpu_2_phys_area_add(SegCode, ee_bank, ee_bank, 640);
   }
 
-  /* in second window ?  After calculation, check against overlap into first
-     window. */
+  io_bank = (Reg_INIT & 15) << 12;
+  cpu_2_phys_area_add(SegCode, io_bank, io_bank, 128);
 
-  if ((*Address >= Win2VStart) && (*Address < Win2VEnd))
-  {
-    *Address = Win2PStart + (Win2VStart - *Address);
-    if ((*Address >= Win1PStart) && (*Address < Win1PEnd))
-      WrError(ErrNum_InAccPage);
-    return;
-  }
+  /* If RAM position overlaps registers, 128 bytes of RAM get relocated to upper end: */
 
-  /* print out warning if not mapped */
+  ram_bank = ((Reg_INIT >> 4) & 15) << 12;
+  if (ram_bank == io_bank)
+    ram_bank += 128;
+  cpu_2_phys_area_add(SegCode, ram_bank, ram_bank, 768);
 
-  *Address &= 0xffff;
-  WrError(ErrNum_InAccPage);
+  /* Fill the remainder of CPU address space with 1:1 mappings: */
+
+  cpu_2_phys_area_fill(SegCode, 0x0000, 0xffff);
 }
 
 /*---------------------------------------------------------------------------*/
@@ -216,7 +187,7 @@ static void DecodeAdr(int StartInd, int StopInd, Byte Erl)
   tStrComp *pStartArg = &ArgStr[StartInd];
   Boolean OK, ErrOcc;
   tSymbolFlags Flags;
-  LongWord AdrWord;
+  Word AdrWord;
   Byte Bit8;
 
   AdrMode = ModNone;
@@ -286,9 +257,17 @@ static void DecodeAdr(int StartInd, int StopInd, Byte Erl)
       }
       if (MomCPU == CPU68HC11K4)
       {
-        AdrWord = EvalStrIntExpressionOffsWithFlags(pStartArg, Offset, UInt21, &OK, &Flags);
+        LargeWord AdrLWord = EvalStrIntExpressionOffsWithFlags(pStartArg, Offset, UInt21, &OK, &Flags);
         if (OK)
-          TranslateAddress(&AdrWord);
+        {
+          if (!def_phys_2_cpu(SegCode, &AdrLWord))
+          {
+            WrError(ErrNum_InAccPage);
+            AdrWord = AdrLWord & 0xffffu;
+          }
+          else
+            AdrWord = AdrLWord;
+        }
       }
       else
         AdrWord = EvalStrIntExpressionOffsWithFlags(pStartArg, Offset, UInt16, &OK, &Flags);
@@ -739,12 +718,10 @@ static void DecodePRWINS(Word Code)
 
   if (ChkExactCPU(CPU68HC11K4))
   {
-    printf("\nMMSIZ %02x MMWBR %02x MM1CR %02x MM2CR %02x",
-           (unsigned)Reg_MMSIZ, (unsigned)Reg_MMWBR, (unsigned)Reg_MM1CR, (unsigned)Reg_MM2CR);
-    printf("\nWindow 1: %lx...%lx --> %lx...%lx",
-           (long)Win1VStart, (long)Win1VEnd, (long)Win1PStart, (long)Win1PEnd);
-    printf("\nWindow 2: %lx...%lx --> %lx...%lx\n",
-           (long)Win2VStart, (long)Win2VEnd, (long)Win2PStart, (long)Win2PEnd);
+    printf("\nMMSIZ $%02x MMWBR $%02x MM1CR $%02x MM2CR $%02x INIT $%02x INIT2 $%02x CONFIG $%02x\n",
+           (unsigned)Reg_MMSIZ, (unsigned)Reg_MMWBR, (unsigned)Reg_MM1CR, (unsigned)Reg_MM2CR,
+           (unsigned)Reg_INIT, (unsigned)Reg_INIT2, (unsigned)Reg_CONFIG);
+    cpu_2_phys_area_dump(SegCode, stdout);
   }
 }
 
@@ -752,8 +729,7 @@ static void DecodePRWINS(Word Code)
 
 static void AddFixed(const char *NName, CPUVar NMin, CPUVar NMax, Word NCode)
 {
-  if (InstrZ >= FixedOrderCnt) exit(255);
-
+  order_array_rsv_end(FixedOrders, FixedOrder);
   FixedOrders[InstrZ].MinCPU = NMin;
   FixedOrders[InstrZ].MaxCPU = NMax;
   FixedOrders[InstrZ].Code = NCode;
@@ -762,8 +738,7 @@ static void AddFixed(const char *NName, CPUVar NMin, CPUVar NMax, Word NCode)
 
 static void AddRel(const char *NName, CPUVar NMin, Word NCode)
 {
-  if (InstrZ >= RelOrderCnt) exit(255);
-
+  order_array_rsv_end(RelOrders, RelOrder);
   RelOrders[InstrZ].MinCPU = NMin;
   RelOrders[InstrZ].Code = NCode;
   AddInstTable(InstTable, NName, InstrZ++, DecodeRel);
@@ -782,8 +757,7 @@ static void AddALU8(const char *NamePlain, const char *NameA, const char *NameB,
 
 static void AddALU16(const char *NName, Boolean NMay, CPUVar NMin, Byte NShift, Byte NCode)
 {
-  if (InstrZ >= ALU16OrderCnt) exit(255);
-
+  order_array_rsv_end(ALU16Orders, ALU16Order);
   ALU16Orders[InstrZ].MayImm = NMay;
   ALU16Orders[InstrZ].MinCPU = NMin;
   ALU16Orders[InstrZ].PageShift = NShift;
@@ -800,7 +774,7 @@ static void AddSing8(const char *NamePlain, const char *NameA, const char *NameB
 
 static void InitFields(void)
 {
-  InstTable = CreateInstTable(302);
+  InstTable = CreateInstTable(317);
   AddInstTable(InstTable, "JMP"  , 0, DecodeJMP);
   AddInstTable(InstTable, "JSR"  , 0, DecodeJSR);
   AddInstTable(InstTable, "BRCLR", 1, DecodeBRxx);
@@ -810,7 +784,7 @@ static void InitFields(void)
   AddInstTable(InstTable, "BTST" , 6, DecodeBTxx);
   AddInstTable(InstTable, "BTGL" , 0, DecodeBTxx);
 
-  FixedOrders = (FixedOrder *) malloc(sizeof(FixedOrder) * FixedOrderCnt); InstrZ = 0;
+  InstrZ = 0;
   AddFixed("ABA"  ,CPU6800, CPU68HC11K4, 0x001b); AddFixed("ABX"  ,CPU6801, CPU68HC11K4, 0x003a);
   AddFixed("ABY"  ,CPU6811, CPU68HC11K4, 0x183a); AddFixed("ASLD" ,CPU6801, CPU68HC11K4, 0x0005);
   AddFixed("CBA"  ,CPU6800, CPU68HC11K4, 0x0011); AddFixed("CLC"  ,CPU6800, CPU68HC11K4, 0x000c);
@@ -836,7 +810,7 @@ static void InitFields(void)
   AddFixed("XGDX" ,CPU6301, CPU68HC11K4, (MomCPU == CPU6301) ? 0x0018 : 0x008f);
   AddFixed("XGDY" ,CPU6811, CPU68HC11K4, 0x188f);
 
-  RelOrders = (RelOrder *) malloc(sizeof(*RelOrders) * RelOrderCnt); InstrZ = 0;
+  InstrZ = 0;
   AddRel("BCC", CPU6800, 0x24);
   AddRel("BCS", CPU6800, 0x25);
   AddRel("BEQ", CPU6800, 0x27);
@@ -869,7 +843,7 @@ static void InitFields(void)
   AddALU8("STA", "STAA", "STAB", "STB", False, 0x87);
   AddALU8("SUB", "SUBA", "SUBB", NULL , True , 0x80);
 
-  ALU16Orders = (ALU16Order *) malloc(sizeof(ALU16Order) * ALU16OrderCnt); InstrZ = 0;
+  InstrZ = 0;
   AddALU16("ADDD", True , CPU6801, 0, 0xc3);
   AddALU16("CPD" , True , CPU6811, 1, 0x83);
   AddALU16("CMPD", True , CPU6811, 1, 0x83);
@@ -907,7 +881,6 @@ static void InitFields(void)
   AddInstTable(InstTable, "PULA", 0x32, DecodeSing8_Acc);
   AddInstTable(InstTable, "PULB", 0x33, DecodeSing8_Acc);
 
-
   AddInstTable(InstTable, "AIM", 0x61, DecodeBit63);
   AddInstTable(InstTable, "EIM", 0x65, DecodeBit63);
   AddInstTable(InstTable, "OIM", 0x62, DecodeBit63);
@@ -915,21 +888,25 @@ static void InitFields(void)
 
   AddInstTable(InstTable, "PRWINS", 0, DecodePRWINS);
 
-  AddInstTable(InstTable, "DB", 0, DecodeMotoBYT);
-  AddInstTable(InstTable, "DW", 0, DecodeMotoADR);
+  init_moto8_pseudo(InstTable, e_moto_8_be | e_moto_8_db | e_moto_8_dw);
 }
 
 static void DeinitFields(void)
 {
   DestroyInstTable(InstTable);
-  free(FixedOrders);
-  free(RelOrders);
-  free(ALU16Orders);
+  order_array_free(FixedOrders);
+  order_array_free(RelOrders);
+  order_array_free(ALU16Orders);
 }
 
 static Boolean DecodeAttrPart_68(void)
 {
-  return DecodeMoto16AttrSize(*AttrPart.str.p_str, &AttrPartOpSize, False);
+  if (strlen(AttrPart.str.p_str) > 1)
+  {
+    WrStrErrorPos(ErrNum_UndefAttr, &AttrPart);
+    return False;
+  }
+  return DecodeMoto16AttrSize(*AttrPart.str.p_str, &AttrPartOpSize[0], False);
 }
 
 static void MakeCode_68(void)
@@ -941,7 +918,7 @@ static void MakeCode_68(void)
 
   /* Operandengroesse festlegen */
 
-  OpSize = (AttrPartOpSize != eSymbolSizeUnknown) ? AttrPartOpSize : eSymbolSize8Bit;
+  OpSize = (AttrPartOpSize[0] != eSymbolSizeUnknown) ? AttrPartOpSize[0] : eSymbolSize8Bit;
 
   /* zu ignorierendes */
 
@@ -950,8 +927,6 @@ static void MakeCode_68(void)
 
   /* Pseudoanweisungen */
 
-  if (DecodeMotoPseudo(True))
-    return;
   if (DecodeMoto16Pseudo(OpSize, True))
     return;
 
@@ -964,7 +939,6 @@ static void MakeCode_68(void)
 static void InitCode_68(void)
 {
   Reg_MMSIZ = Reg_MMWBR = Reg_MM1CR = Reg_MM2CR = 0;
-  SetK4Ranges();
 }
 
 static Boolean IsDef_68(void)
@@ -974,14 +948,6 @@ static Boolean IsDef_68(void)
 
 static void SwitchTo_68(void)
 {
-#define ASSUMEHC11Count (sizeof(ASSUMEHC11s) / sizeof(*ASSUMEHC11s))
-  static const ASSUMERec ASSUMEHC11s[] =
-  {
-    {"MMSIZ", &Reg_MMSIZ, 0, 0xff, 0, SetK4Ranges},
-    {"MMWBR", &Reg_MMWBR, 0, 0xff, 0, SetK4Ranges},
-    {"MM1CR", &Reg_MM1CR, 0, 0xff, 0, SetK4Ranges},
-    {"MM2CR", &Reg_MM2CR, 0, 0xff, 0, SetK4Ranges}
-  };
   TurnWords = False;
   SetIntConstMode(eIntConstModeMoto);
 
@@ -1001,15 +967,28 @@ static void SwitchTo_68(void)
   IsDef = IsDef_68;
   SwitchFrom = DeinitFields;
   InitFields();
-  AddMoto16PseudoONOFF();
+  AddMoto16PseudoONOFF(False);
 
   if (MomCPU == CPU68HC11K4)
   {
-    pASSUMERecs = ASSUMEHC11s;
-    ASSUMERecCnt = ASSUMEHC11Count;
-  }
+    static const ASSUMERec ASSUMEHC11s[] =
+    {
+      {"MMSIZ" , &Reg_MMSIZ , 0, 0xff, 0, SetK4Ranges},
+      {"MMWBR" , &Reg_MMWBR , 0, 0xff, 0, SetK4Ranges},
+      {"MM1CR" , &Reg_MM1CR , 0, 0xff, 0, SetK4Ranges},
+      {"MM2CR" , &Reg_MM2CR , 0, 0xff, 0, SetK4Ranges},
+      {"INIT"  , &Reg_INIT  , 0, 0xff, 0, SetK4Ranges},
+      {"INIT2" , &Reg_INIT2 , 0, 0xff, 0, SetK4Ranges},
+      {"CONFIG", &Reg_CONFIG, 0, 0xff, 0, SetK4Ranges},
+    };
 
-  SetFlag(&DoPadding, DoPaddingName, False);
+    pASSUMERecs = ASSUMEHC11s;
+    ASSUMERecCnt = as_array_size(ASSUMEHC11s);
+
+    SetK4Ranges();
+  }
+  else
+    cpu_2_phys_area_clear(SegCode);
 }
 
 void code68_init(void)

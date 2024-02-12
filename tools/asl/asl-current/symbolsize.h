@@ -23,7 +23,11 @@ typedef enum
   eSymbolSizeFloat96Bit = 7,
   eSymbolSize24Bit = 8,
   eSymbolSizeFloatDec96Bit = 9,
-  eSymbolSizeFloat16Bit = 10
+  eSymbolSizeFloat16Bit = 10,
+  eSymbolSize12Bit = 11,
+  eSymbolSize48Bit = 12,
+  eSymbolSizeFloat48Bit = 13,
+  eSymbolSize128Bit = 14
 } tSymbolSize;
 
 #ifdef __cplusplus

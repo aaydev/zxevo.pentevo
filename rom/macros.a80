@@ -1,5 +1,5 @@
 
-; LAST UPDATE: 26.12.2022 savelij
+; LAST UPDATE: 10.02.2024 savelij
 
 ; автоопределение кодировки работает неправильно
 
@@ -142,36 +142,29 @@ __POS := 0
 ; извлечение месяца
 MMOUNTH := (CHARFROMSTR (DATE,__POS) - '0')
 __POS := __POS + 1
-	IF MOMPASS > 1
-	IF (CHARFROMSTR (DATE,__POS)) <> '/'
-MMOUNTH := MMOUNTH * 10 + (CHARFROMSTR (DATE,__POS) - '0')
-__POS := __POS + 2
-	ELSE
+	IF (CHARFROMSTR (DATE,__POS)) > '/'
+MMOUNTH := MMOUNTH * 10 + (CHARFROMSTR (DATE,__POS)) -'0'
 __POS := __POS + 1
 	ENDIF
-	ENDIF
+__POS := __POS + 1
 ; извлечение даты
 DDATE := (CHARFROMSTR (DATE,__POS) - '0')
 __POS := __POS + 1
-	IF MOMPASS > 1
-	IF (CHARFROMSTR (DATE,__POS) <> '/')
-DDATE := DDATE * 10 + (CHARFROMSTR (DATE,__POS) - '0')
-__POS := __POS + 2
-	ELSE
+	IF (CHARFROMSTR (DATE,__POS)) > '/'
+DDATE := DDATE * 10 + (CHARFROMSTR (DATE,__POS)) - '0'
 __POS := __POS + 1
 	ENDIF
-	ENDIF
+__POS := __POS + 1
 ; извлечение года
 YYEAR := (CHARFROMSTR (DATE,__POS) - '0')
 __POS := __POS + 1
-	IF MOMPASS > 1
-	WHILE __POS < SIZEDATE
-	IF (CHARFROMSTR (DATE,__POS) <> '/')
-YYEAR := YYEAR * 10 + (CHARFROMSTR (DATE,__POS) - '0')
+	WHILE (CHARFROMSTR (DATE,__POS)) > '/'
+YYEAR := YYEAR * 10 + (CHARFROMSTR (DATE,__POS)) - '0'
 __POS := __POS + 1
+	IF __POS > SIZEDATE
+	EXITM
 	ENDIF
 	ENDM
-	ENDIF
 	IF YYEAR > 99
 YYEAR := YYEAR - 2000
 	ENDIF
@@ -183,32 +176,24 @@ __POS := 0
 ; извлечение часа
 HHOUR := CHARFROMSTR (TIME, __POS) - '0'
 __POS := __POS + 1
-	IF MOMPASS > 1
-	IF (CHARFROMSTR (TIME, __POS) <> ':')
+	IF (CHARFROMSTR (TIME,__POS)) <= '9'
 HHOUR := HHOUR * 10 + CHARFROMSTR (TIME, __POS) - '0'
-__POS := __POS + 2
-	ELSE
 __POS := __POS + 1
 	ENDIF
-	ENDIF
+__POS := __POS + 1
 ; извлечение минут
 MMINUTE := CHARFROMSTR (TIME, __POS) - '0'
 __POS := __POS + 1
-	IF MOMPASS > 1
-	IF (CHARFROMSTR (TIME, __POS) <> ':')
+	IF (CHARFROMSTR (TIME,__POS)) <= '9'
 MMINUTE := MMINUTE * 10 + CHARFROMSTR (TIME, __POS) - '0'
-__POS := __POS + 2
-	ELSE
 __POS := __POS + 1
 	ENDIF
-	ENDIF
+__POS := __POS + 1
 ; извлечение секунд
 SSECUND := CHARFROMSTR (TIME, __POS) - '0'
 __POS := __POS + 1
-	IF MOMPASS > 1
 	IF __POS < SIZETIME
 SSECUND := SSECUND * 10 + CHARFROMSTR (TIME, __POS) - '0'
-	ENDIF
 	ENDIF
 
 DATA_VERS	EQU DDATE + (MMOUNTH << 5) + (YYEAR<<9) + 0x8000			;уже упаковано
@@ -310,8 +295,8 @@ MALIGN		MACRO
 
 ; выравнивание до сектора с учетом адреса компиляции
 DALIGN		MACRO ADDRESS
-	IF LOW(ADDRESS)
-		DB LOW (-$)+LOW(ADDRESS) DUP(0)
+	IF LOW (ADDRESS)
+		DB LOW (LOW (-$)+LOW(ADDRESS)) DUP(0)
 	ELSE
 		DB LOW (-$) DUP (0)
 	ENDIF
@@ -336,3 +321,41 @@ WINHDR		MACRO X,Y,V,H,CWIN,CCUR,FLAGS,NUMPKT,TEKPKT,NUMKOL, \
 		DB X,Y,V,H,CWIN,CCUR,FLAGS,NUMPKT
 		DW TEKPKT,NUMKOL,ADRTXT,ADRPRG,ADRMOUSE,ADRHOTKEY
 		ENDM
+
+; генерация метки с резервированием места и размера области
+_SETVAR		MACRO NAME, SIZE
+NAME		EQU .CURRVAR		; номер имени
+	IFNB SIZE
+.CURRVAR := .CURRVAR + SIZE
+.NAME_Size	EQU SIZE		; размер
+	ELSE
+.CURRVAR := .CURRVAR + BYTE
+.NAME_Size	EQU BYTE
+	ENDIF
+.NAME_CurAdr	EQU $			; текущий адрес
+		ENDM
+
+; перенос метки назад на указанное число байт
+_SUBVAR		MACRO SIZE
+.CURRVAR := .CURRVAR - SIZE
+		ENDM
+
+; перенос метки вперед на указанное число байт
+_ADDVAR		MACRO SIZE
+.CURRVAR := .CURRVAR + SIZE
+		ENDM
+
+; инициализация переменной для резервирования указанным числом
+; или 0 при отсуствии второго параметра
+_INIT_VAR	MACRO START
+	IFNB START
+.CURRVAR := START
+	ELSE
+.CURRVAR := 0
+	ENDIF
+		ENDM
+
+; выравнивание для генерации меток на границу 256 байт
+_SETVAR_ALIGN	MACRO
+.CURRVAR := .CURRVAR + 0x100 - (.CURRVAR & 0xFF)
+ 		ENDM

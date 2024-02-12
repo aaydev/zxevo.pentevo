@@ -1,5 +1,5 @@
 
-;LAST UPDATE: 21.11.2013 savelij
+; LAST UPDATE: 18.10.2023 savelij
 
 C_INIT		EX AF,AF'
 		LD A,0x7c

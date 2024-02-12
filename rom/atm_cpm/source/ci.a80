@@ -1,3 +1,6 @@
+
+; LAST UPDATE: 18.10.2023 savelij
+
 ;.Z80
 ;#INCLUDE "ALLVARS.ASH"
 
@@ -21,7 +24,7 @@ _CI_INIT:    XOR     A
              JP      K_INIT
 
 CI_CVT:      LD      D,A
-             BIT     _KS_ALT,E
+             BIT     B_KS_ALT,E
              SCF
              RET     NZ
 CIC_2:       LD      D,A
@@ -33,6 +36,7 @@ CIC_2:       LD      D,A
 CIC_21:      INC     L
              JR      Z,CIC_2
              JR      CIC_RETA
+
 CIC_1:       LD      HL,CIC_TBL-1
              LD      B,-1
 CIC_L1:      INC     HL
@@ -43,17 +47,17 @@ CIC_L1:      INC     HL
              CP      (HL)
              JR      NC,CIC_L1
              LD      C,0
-             BIT     _KS_CTRL,E
+             BIT     B_KS_CTRL,E
              LD      A,3
              JR      NZ,CIC_ST
-             BIT     _KS_RUS,E
+             BIT     B_KS_RUS,E
              JR      Z,CIC_S1
              LD      C,4
-CIC_S1:      BIT     _KS_SHFT,E
+CIC_S1:      BIT     B_KS_SHFT,E
              LD      A,1
              JR      NZ,CIC_ST
              INC     A
-             BIT     _KS_SHFT2,E
+             BIT     B_KS_SHFT2,E
              JR      NZ,CIC_ST
              XOR     A
 CIC_ST:      OR      C
@@ -69,13 +73,13 @@ CIC_ST:      OR      C
              RET
 
 CIC_DOL_:    LD      A,D
-             BIT     _KS_CAPS,E
+             BIT     B_KS_CAPS,E
              RET     Z
 CIC_DOS:     ADD     A,20H
              RET
 
 CIC_DOS_:    LD      A,D
-             BIT     _KS_CAPS,E
+             BIT     B_KS_CAPS,E
              RET     NZ
              JR      CIC_DOS
 
@@ -113,12 +117,12 @@ CIC_TRY:     PUSH    AF
              BIT     7,A
              JR      NZ,CIC_LIT
              CP      "A"
-             BIT     _KS_RUS,E
+             BIT     B_KS_RUS,E
              JR      Z,CIC_51
              CP      "@"
 CIC_51:      JR      C,CIC_NOLIT
              CP      0X5A+1;'Z'+1
-             BIT     _KS_RUS,E
+             BIT     B_KS_RUS,E
              JR      Z,CIC_5
              CP      60H
 CIC_5:       JR      NC,CIC_NOLIT
@@ -131,7 +135,7 @@ CIC_4:       LD      A,H
              JR      CIC_3
 
 CIC_NOLIT:   OR      A
-             BIT     _KS_SHFT,E
+             BIT     B_KS_SHFT,E
              JR      NZ,CIC_RETA
              JR      CIC_4
 
@@ -293,10 +297,10 @@ _1:          CALL    CI_CVT
              LD      (IX-_KS_UNDS),D
              RET     NC
              LD      A,E
-             AND     _KS_CTRL<<1+_KS_ALT<<1;(1 SHL _KS_CTRL) + (1 SHL _KS_ALT)
-             CP      _KS_CTRL<<1+_KS_ALT<<1;(1 SHL _KS_CTRL) + (1 SHL _KS_ALT)
+             AND     M_KS_CTRL + M_KS_ALT;(1 SHL _KS_CTRL) + (1 SHL _KS_ALT)
+             CP      M_KS_CTRL + M_KS_ALT;(1 SHL _KS_CTRL) + (1 SHL _KS_ALT)
              JR      Z,CHK_CA
-             CP      _KS_ALT<<1;1 SHL _KS_ALT
+             CP      B_KS_ALT<<1;1 SHL _KS_ALT
              JR      Z,_L1_
              LD      A,D
              CP      "z"
@@ -344,7 +348,7 @@ TRY_RES:     BIT     _BREAK,(IX-_FLAG1)
 
 RUS_LAT_SW:
              LD      A,14
-             BIT     _KS_RUS,E
+             BIT     B_KS_RUS,E
              RET     NZ
              INC     A
              RET
@@ -389,11 +393,11 @@ S2O_1:       LD      HL,OLDSC_T
              LD      H,A
 PAFRET:      LD      D,0
              OR      A
-             BIT     _KS_SHFT,E
+             BIT     B_KS_SHFT,E
              JR      Z,PFR_1
              SET     7,D
              RET
-PFR_1:       BIT     _KS_CTRL,E
+PFR_1:       BIT     B_KS_CTRL,E
              RET     Z
              SET     7,D
              SET     6,D

@@ -50,11 +50,6 @@ typedef struct
   Word Mask;
 } RMWOrder;
 
-#define FixedOrderCnt 23
-#define RelOrderCnt 9
-#define ALUOrderCnt 8
-#define RMWOrderCnt 7
-
 enum
 {
   ModNone = -1,
@@ -664,61 +659,84 @@ static void DecodeRMW(Word Index)
   }
 }
 
-static void DecodeBx(Word Index)
+static void decode_bset_bclr_core(Word code, int arg_index)
 {
-  Boolean OK = True;
+  Boolean ok = True;
 
+  if (!as_strcasecmp(ArgStr[arg_index].str.p_str, "D[X]")) BAsmCode[1] = 0x0e;
+  else if  (!as_strcasecmp(ArgStr[arg_index].str.p_str, "X")) BAsmCode[1] = 0x0f;
+  else BAsmCode[1] = EvalStrIntExpression(&ArgStr[2], Int8, &ok);
+
+  if (ok)
+  {
+    CodeLen = 2;
+    BAsmCode[0] = 0x10 | code;
+  }
+}
+
+static void decode_bset_bclr_1(Word code)
+{
+  if (ChkArgCnt(1, 1))
+    decode_bset_bclr_core(code, 1);
+}
+
+static void decode_bset_bclr_2(Word code)
+{
   if (ChkArgCnt(2, 2))
   {
-    if (!as_strcasecmp(ArgStr[2].str.p_str, "D[X]")) BAsmCode[1] = 0x0e;
-    else if  (!as_strcasecmp(ArgStr[2].str.p_str, "X")) BAsmCode[1] = 0x0f;
-    else BAsmCode[1] = EvalStrIntExpression(&ArgStr[2], Int8, &OK);
+    Boolean ok;
 
-    if (OK)
+    code |= EvalStrIntExpression(&ArgStr[1], UInt3, &ok) << 1;
+    if (ok)
+      decode_bset_bclr_core(code, 2);
+  }
+}
+
+static void decode_brset_brclr_core(Word code, int arg_index)
+{
+  Boolean ok = True;
+
+  if (!as_strcasecmp(ArgStr[2].str.p_str, "D[X]"))
+    BAsmCode[1] = 0x0e;
+  else if (!as_strcasecmp(ArgStr[2].str.p_str, "X"))
+    BAsmCode[1] = 0x0f;
+  else
+    BAsmCode[1] = EvalStrIntExpression(&ArgStr[arg_index], Int8, &ok);
+
+  if (ok)
+  {
+    tSymbolFlags flags;
+    LongInt address;
+
+    address = EvalStrIntExpressionWithFlags(&ArgStr[arg_index + 1], AdrIntType, &ok, &flags) - (EProgCounter() + 3);
+    if (ok)
     {
-      BAsmCode[0] = EvalStrIntExpression(&ArgStr[1], UInt3, &OK);
-      if (OK)
+      if (!mSymbolQuestionable(flags) && ((address < -128) || (address > 127))) WrError(ErrNum_JmpDistTooBig);
+      else
       {
-        CodeLen = 2;
-        BAsmCode[0] = 0x10 | (BAsmCode[0] << 1) | Index;
+        CodeLen = 3;
+        BAsmCode[0] = code;
+        BAsmCode[2] = Lo(address);
       }
     }
   }
 }
 
-static void DecodeBRx(Word Index)
+static void decode_brset_brclr_2(Word code)
 {
-  Boolean OK = True;
-  tSymbolFlags Flags;
-  LongInt AdrInt;
+  if (ChkArgCnt(2, 2))
+    decode_brset_brclr_core(code, 1);
+}
 
+static void decode_brset_brclr_3(Word code)
+{
   if (ChkArgCnt(3, 3))
   {
-    if (!as_strcasecmp(ArgStr[2].str.p_str, "D[X]"))
-      BAsmCode[1] = 0x0e;
-    else if (!as_strcasecmp(ArgStr[2].str.p_str, "X"))
-      BAsmCode[1] = 0x0f;
-    else
-      BAsmCode[1] = EvalStrIntExpression(&ArgStr[2], Int8, &OK);
+    Boolean ok;
 
-    if (OK)
-    {
-      BAsmCode[0] = EvalStrIntExpression(&ArgStr[1], UInt3, &OK);
-      if (OK)
-      {
-        AdrInt = EvalStrIntExpressionWithFlags(&ArgStr[3], AdrIntType, &OK, &Flags) - (EProgCounter() + 3);
-        if (OK)
-        {
-          if (!mSymbolQuestionable(Flags) && ((AdrInt < -128) || (AdrInt > 127))) WrError(ErrNum_JmpDistTooBig);
-          else
-          {
-            CodeLen = 3;
-            BAsmCode[0] = (BAsmCode[0] << 1) | Index;
-            BAsmCode[2] = Lo(AdrInt);
-          }
-        }
-      }
-    }
+    code |= EvalStrIntExpression(&ArgStr[1], UInt3, &ok) << 1;
+    if (ok)
+      decode_brset_brclr_core(code, 2);
   }
 }
 
@@ -727,7 +745,7 @@ static void DecodeBRx(Word Index)
 
 static void AddFixed(const char *NName, CPUVar NMin, Byte NCode)
 {
-  if (InstrZ >= FixedOrderCnt) exit(255);
+  order_array_rsv_end(FixedOrders, BaseOrder);
   FixedOrders[InstrZ].MinCPU = NMin;
   FixedOrders[InstrZ].Code = NCode;
   AddInstTable(InstTable, NName, InstrZ++, DecodeFixed);
@@ -735,7 +753,7 @@ static void AddFixed(const char *NName, CPUVar NMin, Byte NCode)
 
 static void AddRel(const char *NName, CPUVar NMin, Byte NCode)
 {
-  if (InstrZ >= RelOrderCnt) exit(255);
+  order_array_rsv_end(RelOrders, BaseOrder);
   RelOrders[InstrZ].MinCPU = NMin;
   RelOrders[InstrZ].Code = NCode;
   AddInstTable(InstTable, NName, InstrZ++, DecodeRel);
@@ -743,7 +761,7 @@ static void AddRel(const char *NName, CPUVar NMin, Byte NCode)
 
 static void AddALU(const char *NName, CPUVar NMin, Byte NCode, Word NMask)
 {
-  if (InstrZ >= ALUOrderCnt) exit(255);
+  order_array_rsv_end(ALUOrders, ALUOrder);
   ALUOrders[InstrZ].MinCPU = NMin;
   ALUOrders[InstrZ].Code = NCode;
   ALUOrders[InstrZ].Mask = NMask;
@@ -752,7 +770,7 @@ static void AddALU(const char *NName, CPUVar NMin, Byte NCode, Word NMask)
 
 static void AddRMW(const char *NName, CPUVar NMin, Byte NCode, Byte DCode, Word NMask)
 {
-  if (InstrZ >= RMWOrderCnt) exit(255);
+  order_array_rsv_end(RMWOrders, RMWOrder);
   RMWOrders[InstrZ].MinCPU = NMin;
   RMWOrders[InstrZ].Code = NCode;
   RMWOrders[InstrZ].DCode = DCode;
@@ -760,11 +778,38 @@ static void AddRMW(const char *NName, CPUVar NMin, Byte NCode, Byte DCode, Word 
   AddInstTable(InstTable, NName, InstrZ++, DecodeRMW);
 }
 
+static void add_bset_bclr(const char *p_name, Word code)
+{
+  char name[10];
+  unsigned bit;
+
+  AddInstTable(InstTable, p_name, code, decode_bset_bclr_2);
+  for (bit = 0; bit < 8; bit++)
+  {
+    as_snprintf(name, sizeof(name), "%s%c", p_name, bit + '0');
+    AddInstTable(InstTable, name, code | (bit << 1), decode_bset_bclr_1);
+  }
+}
+
+static void add_brset_brclr(const char *p_name, Word code)
+{
+  char name[10];
+  unsigned bit;
+
+  AddInstTable(InstTable, p_name, code, decode_brset_brclr_3);
+  for (bit = 0; bit < 8; bit++)
+  {
+    as_snprintf(name, sizeof(name), "%s%c", p_name, bit + '0');
+    AddInstTable(InstTable, name, code | (bit << 1), decode_brset_brclr_2);
+  }
+}
+
 static void InitFields(void)
 {
-  InstTable = CreateInstTable(101);
+  InstTable = CreateInstTable(177);
+  SetDynamicInstTable(InstTable);
 
-  FixedOrders = (BaseOrder *) malloc(sizeof(BaseOrder) * FixedOrderCnt); InstrZ = 0;
+  InstrZ = 0;
   AddFixed("SHA" , CPU68RS08, 0x45); AddFixed("SLA" , CPU68RS08, 0x42);
   AddFixed("RTS" , CPU68RS08, 0xbe); AddFixed("TAX" , CPU68RS08, 0xef);
   AddFixed("CLC" , CPU68RS08, 0x38); AddFixed("SEC" , CPU68RS08, 0x39);
@@ -778,14 +823,14 @@ static void InitFields(void)
   AddFixed("STOP", CPU68RS08, 0xae); AddFixed("WAIT", CPU68RS08, 0xaf);
   AddFixed("BGND", CPU68RS08, 0xbf);
 
-  RelOrders = (BaseOrder *) malloc(sizeof(BaseOrder) * RelOrderCnt); InstrZ = 0;
+  InstrZ = 0;
   AddRel("BRA" , CPU68RS08, 0x30); AddRel("BRN" , CPU68RS08, 0x00);
   AddRel("BCC" , CPU68RS08, 0x34); AddRel("BCS" , CPU68RS08, 0x35);
   AddRel("BHS" , CPU68RS08, 0x34); AddRel("BLO" , CPU68RS08, 0x35);
   AddRel("BNE" , CPU68RS08, 0x36); AddRel("BEQ" , CPU68RS08, 0x37);
   AddRel("BSR" , CPU68RS08, 0xad);
 
-  ALUOrders=(ALUOrder *) malloc(sizeof(ALUOrder) * ALUOrderCnt); InstrZ = 0;
+  InstrZ = 0;
   AddALU("ADC" , CPU68RS08, 0x09, MModImm | MModDir | MModIX  | MModX);
   AddALU("AND" , CPU68RS08, 0x04, MModImm | MModDir | MModIX  | MModX);
   AddALU("CMP" , CPU68RS08, 0x01, MModImm | MModDir | MModIX  | MModX);
@@ -795,7 +840,7 @@ static void InitFields(void)
   AddALU("JMP" , CPU68RS08, 0xbc, MModExt);
   AddALU("JSR" , CPU68RS08, 0xbd, MModExt);
 
-  RMWOrders = (RMWOrder *) malloc(sizeof(RMWOrder) * RMWOrderCnt); InstrZ = 0;
+  InstrZ = 0;
   AddRMW("ADD" , CPU68RS08, 0x0b, 0x60, MModImm | MModDir | MModTny           | MModIX | MModX );
   AddRMW("SUB" , CPU68RS08, 0x00, 0x70, MModImm | MModDir | MModTny           | MModIX | MModX );
   AddRMW("DEC" , CPU68RS08, 0x8a, 0x50,           MModDir | MModTny           | MModIX | MModX );
@@ -823,22 +868,21 @@ static void InitFields(void)
   AddInstTable(InstTable, "LDX"  , 0, DecodeLDX);
   AddInstTable(InstTable, "STX"  , 1, DecodeLDX);
 
-  AddInstTable(InstTable, "BCLR" , 0x01, DecodeBx);
-  AddInstTable(InstTable, "BSET" , 0x00, DecodeBx);
-  AddInstTable(InstTable, "BRCLR", 0x01, DecodeBRx);
-  AddInstTable(InstTable, "BRSET", 0x00, DecodeBRx);
+  add_bset_bclr("BCLR" , 0x01);
+  add_bset_bclr("BSET" , 0x00);
+  add_brset_brclr("BRCLR", 0x01);
+  add_brset_brclr("BRSET", 0x00);
 
-  AddInstTable(InstTable, "DB", 0, DecodeMotoBYT);
-  AddInstTable(InstTable, "DW", 0, DecodeMotoADR);
+  init_moto8_pseudo(InstTable, e_moto_8_be | e_moto_8_db | e_moto_8_dw);
 }
 
 static void DeinitFields(void)
 {
   DestroyInstTable(InstTable);
-  free(FixedOrders);
-  free(RelOrders);
-  free(ALUOrders);
-  free(RMWOrders);
+  order_array_free(FixedOrders);
+  order_array_free(RelOrders);
+  order_array_free(ALUOrders);
+  order_array_free(RMWOrders);
 }
 
 /*--------------------------------------------------------------------------*/
@@ -846,17 +890,20 @@ static void DeinitFields(void)
 
 static Boolean DecodeAttrPart_68rs08(void)
 {
+  if (strlen(AttrPart.str.p_str) > 1)
+  {
+    WrStrErrorPos(ErrNum_UndefAttr, &AttrPart);
+    return False;
+  }
+
   /* Deduce operand size.  No size is zero-length string -> '\0' */
 
-  return DecodeMoto16AttrSize(*AttrPart.str.p_str, &AttrPartOpSize, False);
+  return DecodeMoto16AttrSize(*AttrPart.str.p_str, &AttrPartOpSize[0], False);
 }
 
 static void MakeCode_68rs08(void)
 {
-  int l;
-  char ch;
-
-  CodeLen = 0; DontPrint = False; OpSize = AttrPartOpSize;
+  CodeLen = 0; DontPrint = False; OpSize = AttrPartOpSize[0];
 
   /* zu ignorierendes */
 
@@ -865,23 +912,8 @@ static void MakeCode_68rs08(void)
 
   /* Pseudoanweisungen */
 
-  if (DecodeMotoPseudo(True))
-    return;
   if (DecodeMoto16Pseudo(OpSize, True))
     return;
-
-  l = strlen(OpPart.str.p_str);
-  ch = OpPart.str.p_str[l - 1];
-  if ((ch >= '0') && (ch <= '7'))
-  {
-    InsertArg(1, 2);
-    ArgStr[1].str.p_str[0] = ch;
-    ArgStr[1].str.p_str[1] = '\0';
-    ArgStr[1].Pos.StartCol = OpPart.Pos.StartCol + l - 1;
-    ArgStr[1].Pos.Len = 1;
-    OpPart.str.p_str[l - 1] = '\0';
-    OpPart.Pos.Len--;
-  }
 
   if (!LookupInstTable(InstTable, OpPart.str.p_str))
     WrStrErrorPos(ErrNum_UnknownInstruction, &OpPart);
@@ -919,7 +951,7 @@ static void SwitchTo_68rs08(void)
   IsDef = IsDef_68rs08;
   SwitchFrom = SwitchFrom_68rs08;
   InitFields();
-  AddMoto16PseudoONOFF();
+  AddMoto16PseudoONOFF(False);
 }
 
 void code68rs08_init(void)

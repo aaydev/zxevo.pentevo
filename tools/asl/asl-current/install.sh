@@ -36,9 +36,6 @@ if [ "${BINPATH}" != "" ]; then
    chmod 755 ${BINPATH}/$i${TARG_EXEXTENSION}
   fi
  done
- if test "${TARG_EXEXTENSION}" = ".exe"; then
-  mv ${BINPATH}/asl${TARG_EXEXTENSION} ${BINPATH}/asw${TARG_EXEXTENSION}
- fi
 fi
 
 if test "${TARG_EXEXTENSION}" = ".exe"; then
@@ -84,13 +81,15 @@ fi
 if [ "${LIBPATH}" != "" ]; then
  ${MKDIRHIER} ${LIBPATH}
  chmod 755 ${LIBPATH}
- for file in ${TARG_OBJDIR}*.msg; do
-  base=`basename ${file}`
-  #echo copy ${file} to ${LIBPATH}/${base} ...
-  if cp ${file} ${LIBPATH}/ ; then
-   chmod 644 ${LIBPATH}/${base}
-  fi
- done
+ if [ -f as.msg ]; then
+  for file in ${TARG_OBJDIR}*.msg; do
+   base=`basename ${file}`
+   #echo copy ${file} to ${LIBPATH}/${base} ...
+   if cp ${file} ${LIBPATH}/ ; then
+    chmod 644 ${LIBPATH}/${base}
+   fi
+  done
+ fi
 fi
 
 if [ "${DOCPATH}" != "" ]; then
@@ -111,6 +110,8 @@ if [ "${DOCPATH}" != "" ]; then
  chmod 644 ${DOCPATH}/ps*.tex
  cp doc_COM/biblio.tex ${DOCPATH}
  chmod 644 ${DOCPATH}/biblio.tex
+ cp doc_COM/cp3finst.tex ${DOCPATH}
+ chmod 644 ${DOCPATH}/cp3finst.tex
  cp COPYING ${DOCPATH}
  chmod 644 ${DOCPATH}/COPYING
 fi

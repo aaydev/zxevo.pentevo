@@ -31,8 +31,6 @@ typedef struct
   LongInt Code;
 } BaseOrder;
 
-#define FixedOrderCnt 19
-
 enum
 {
   ModNone = -1,
@@ -356,7 +354,7 @@ static void DecodeSFR(Word Code)
 
 static void AddFixed(const char *NName, LongInt NCode)
 {
-  if (InstrZ >= FixedOrderCnt) exit(255);
+  order_array_rsv_end(FixedOrders, BaseOrder);
   FixedOrders[InstrZ].Code = NCode;
   AddInstTable(InstTable, NName, InstrZ++, DecodeFixed);
 }
@@ -389,7 +387,7 @@ static void InitFields(void)
   AddInstTable(InstTable, "BRCLR", 0xc0, DecodeBRSET_BRCLR);
   AddInstTable(InstTable, "SFR", 0, DecodeSFR);
 
-  FixedOrders = (BaseOrder *) malloc(sizeof(BaseOrder) * FixedOrderCnt); InstrZ = 0;
+  InstrZ = 0;
   AddFixed("CLRA", 0x00fbff);
   AddFixed("CLRX", 0xb08000);
   AddFixed("CLRY", 0xb08100);
@@ -422,16 +420,14 @@ static void InitFields(void)
   AddALU("CMP", 0x04);
   AddALU("AND", 0x05);
 
-  AddInstTable(InstTable, "DB", 0, DecodeMotoBYT);
-  AddInstTable(InstTable, "DW", 0, DecodeMotoADR);
-  AddInstTable(InstTable, "DS", 0, DecodeMotoDFS);
+  init_moto8_pseudo(InstTable, e_moto_8_be | e_moto_8_db | e_moto_8_dw | e_moto_8_ds);
 }
 
 static void DeinitFields(void)
 {
   DestroyInstTable(InstTable);
 
-  free(FixedOrders);
+  order_array_free(FixedOrders);
 }
 
 /*--------------------------------------------------------------------------*/
@@ -444,11 +440,6 @@ static void MakeCode_6804(void)
   /* zu ignorierendes */
 
   if (Memo(""))
-    return;
-
-  /* Pseudoanweisungen */
-
-  if (DecodeMotoPseudo(True))
     return;
 
   if (!LookupInstTable(InstTable, OpPart.str.p_str))
