@@ -860,7 +860,7 @@ __inline unsigned char in1(unsigned port)
        if((port & 0xFF) == 0xBF)
            return comp.pBF;
 
-       if(((port & 0xFF) == 0xBE) || ((port & 0xFF) == 0xBD))
+       if ((port & 0xFF) == 0xBD)
        {
            u8 port_hi = (port >> 8) & 0xFF;
            if((port_hi & ~7) == 0) // Чтение не инвертированного номера страницы
