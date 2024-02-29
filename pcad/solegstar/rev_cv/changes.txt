@@ -1,0 +1,9 @@
+Changes in ZX-Evolution Rev.CV:
+
+1. Added HDAUDIO connector.
+2. Added MICRO-SD slot.
+3. X9 is KEMPSTON SEGA GAMEPAD connector, not RS232 now.
+4. X19 is RS232 TTL-standard.
+5. BAT54C replaced by SS14.
+6. ATX connector is universal for 4.2/5.5 pins step.
+7. Added EXT_VGA connector.
