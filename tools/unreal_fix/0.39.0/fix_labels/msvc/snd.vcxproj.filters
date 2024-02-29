@@ -25,15 +25,6 @@
     <ClCompile Include="..\sndrender\emul_2203.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\sndrender\dev_moonsound.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="..\sndrender\ymf262.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="..\sndrender\ymf278.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\sndrender\saa1099.h">
@@ -54,8 +45,5 @@
     <ClInclude Include="..\sndrender\emul_2203.h">
       <Filter>Source Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\sndrender\dev_moonsound.h" />
-    <ClInclude Include="..\sndrender\ymf262.h" />
-    <ClInclude Include="..\sndrender\ymf278.h" />
   </ItemGroup>
 </Project>
