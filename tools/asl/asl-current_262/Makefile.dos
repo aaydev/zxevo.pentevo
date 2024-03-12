@@ -1,0 +1,173 @@
+NULL=
+BLANK=$(NULL) $(NULL)
+
+# These may be overwritten in Makefile.def (and have to be for DOS...):
+
+RM=rm -f
+OOBJ=-o$(BLANK)
+EOBJ=-o$(BLANK)
+TARG_OOBJ=$(OOBJ)
+TARG_EOBJ=$(EOBJ)
+CURRDIR=./
+LIBM=-lm
+CHECK_TARG_CC=
+
+# assure binaries are the default target
+
+dft: binaries
+
+!include Makefile.def
+
+# targets built via this file use message catalogs in external .res files:
+
+!include makedefs.mx
+
+ALLFLAGS = $(TARG_CFLAGS) -I$(TARG_OBJDIR) $(DOS_MSX_FLAGS) -DINCDIR="$(INCDIR)"
+
+!include makedefs.files
+
+#---------------------------------------------------------------------------
+# Primary Targets
+
+binaries: $(ALLTARGETS)
+
+all: binaries docs
+
+!include makedefs.src
+
+docs: docs_DE_notex docs_EN_notex
+
+$(ASLTARGET): $(AS_OBJECTS) $(ASM_OBJECTS) $(ST_OBJECTS) $(CODE_OBJECTS) $(NLS_OBJECTS) $(AS_RC_OBJECTS)
+        $(TARG_LD) @&&!
+-ml $(OVR1FLAG) $(TARG_EOBJ)$(ASLTARGET)
+$(AS_OBJECTS) $(ASM_OBJECTS)
+$(ST_OBJECTS) $(NLS_OBJECTS)
+$(AS_RC_OBJECTS)
+$(LIBM) $(OVR2FLAG) $(CODE_OBJECTS)
+!
+
+$(PLISTTARGET): $(PLIST_OBJECTS) $(NLS_OBJECTS) $(PLIST_RC_OBJECTS)
+        $(TARG_LD) @&&!
+-ml $(TARG_EOBJ)$(PLISTTARGET)
+$(PLIST_OBJECTS) $(NLS_OBJECTS)
+$(PLIST_RC_OBJECTS)
+!
+
+$(ALINKTARGET): $(ALINK_OBJECTS) $(NLS_OBJECTS) $(ALINK_RC_OBJECTS)
+        $(TARG_LD) @&&!
+-ml $(TARG_EOBJ)$(ALINKTARGET)
+$(ALINK_OBJECTS) $(NLS_OBJECTS)
+$(ALINK_RC_OBJECTS)
+!
+
+$(PBINDTARGET): $(PBIND_OBJECTS) $(NLS_OBJECTS) $(PBIND_RC_OBJECTS)
+        $(TARG_LD) @&&!
+-ml $(TARG_EOBJ)$(PBINDTARGET)
+$(PBIND_OBJECTS) $(NLS_OBJECTS)
+$(PBIND_RC_OBJECTS)
+!
+
+$(P2HEXTARGET): $(P2HEX_OBJECTS) $(NLS_OBJECTS) $(P2HEX_RC_OBJECTS)
+        $(TARG_LD) @&&!
+-ml $(TARG_EOBJ)$(P2HEXTARGET)
+$(P2HEX_OBJECTS)
+$(NLS_OBJECTS)
+$(P2HEX_RC_OBJECTS)
+!
+
+$(P2BINTARGET): $(P2BIN_OBJECTS) $(NLS_OBJECTS) $(P2BIN_RC_OBJECTS)
+        $(TARG_LD) @&&!
+-ml $(TARG_EOBJ)$(P2BINTARGET)
+$(P2BIN_OBJECTS)
+$(NLS_OBJECTS)
+$(P2BIN_RC_OBJECTS)
+!
+
+$(RESCOMPTARGET): $(RESCOMP_OBJECTS)
+	$(LD) -ml $(EOBJ)$(RESCOMPTARGET) $(RESCOMP_OBJECTS) $(LDFLAGS)
+
+$(TEX2DOCTARGET): $(TEX2DOC_OBJECTS)
+	$(LD) @&&!
+-ml $(EOBJ)$(TEX2DOCTARGET)
+$(TEX2DOC_OBJECTS) $(LDFLAGS)
+!
+
+$(TEX2HTMLTARGET): $(TEX2HTML_OBJECTS)
+	$(LD) @&&!
+-ml $(EOBJ)$(TEX2HTMLTARGET)
+$(TEX2HTML_OBJECTS) $(LDFLAGS)
+!
+
+$(UMLAUTTARGET): $(UMLAUT_OBJECTS)
+	$(LD) -ml $(EOBJ)$(UMLAUTTARGET) $(UMLAUT_OBJECTS) $(LDFLAGS)
+
+$(UNUMLAUTTARGET): $(UNUMLAUT_OBJECTS)
+	$(LD) -ml $(EOBJ)$(UNUMLAUTTARGET) $(UNUMLAUT_OBJECTS) $(LDFLAGS)
+
+#---------------------------------------------------------------------------
+# special rules for objects dependant on string resource files
+
+!include makedefs.str
+
+binaries: $(ALLMSGTARGETS)
+
+#---------------------------------------------------------------------------
+# no make depend, some minimal dependencies to get all built
+
+!include rscdeps
+
+#---------------------------------------------------------------------------
+# Documentation
+
+DOC_COM_DIR=doc_COM\\
+!include $(DOC_COM_DIR)makedefs.dok
+
+DOC_DE_DIR=doc_DE\\
+!include $(DOC_DE_DIR)makedefs.dok
+DOC_EN_DIR=doc_EN\\
+!include $(DOC_EN_DIR)makedefs.dok
+
+#---------------------------------------------------------------------------
+# Supplementary Targets
+
+test: binaries
+	cd tests
+	copy t_secdri\wd1003at.inc t_secdri\lowlevel.inc
+	testall
+	cd ..
+
+install: all $(UNUMLAUTTARGET)
+	install $(BINDIR) $(INCDIR) $(MANDIR) $(LIBDIR) $(DOCDIR)
+
+clean_doc: clean_doc_DE clean_doc_EN
+
+clean: clean_doc
+	$(RM) $(ALLTARGETS)
+	$(RM) $(TEX2DOCTARGET)
+	$(RM) $(TEX2HTMLTARGET)
+	$(RM) $(RESCOMPTARGET)
+	$(RM) $(OBJDIR)*$(HOST_OBJEXTENSION)
+	$(RM) $(TARG_OBJDIR)*$(TARG_OBJEXTENSION)
+        $(RM) $(TARG_OBJDIR)*.msg
+	$(RM) $(TARG_OBJDIR)*.msh
+	$(RM) *.p
+	$(RM) testlog
+	$(RM) *.rsc
+
+#---------------------------------------------------------------------------
+# create distributions
+
+bindist: $(UNUMLAUTTARGET) all
+	mkdir as
+	install as\bin as\include as\man as\lib as\doc
+	cd as
+	zip -9 -r ..\as$(VERSION) *.*
+	cd ..
+	deltree as
+
+#---------------------------------------------------------------------------
+# for my own use only...
+
+#---------------------------------------------------------------------------
+
+.SUFFIXES:

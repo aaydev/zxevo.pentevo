@@ -1,14 +1,14 @@
 
 @echo off
 
-copy /Y /B makefile.def asl-current
-
 cd asl-current
+
+copy /Y /B ..\makefile.def
 
 make
 
 copy /Y /B *.exe ..\bin
-copy /Y /B *.msh ..\bin
+copy /Y /B *.ms? ..\bin
 
 make clean
 

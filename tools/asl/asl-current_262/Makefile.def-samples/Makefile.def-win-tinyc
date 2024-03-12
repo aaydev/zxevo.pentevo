@@ -1,0 +1,40 @@
+# -------------------------------------------------------------------------
+# Override some Makefile defaults:
+
+LIBM  =
+CHECK_TARG_CC =
+
+# -------------------------------------------------------------------------
+#
+# choose your compiler (must be ANSI-compliant!) and linker command, plus
+# any additionally needed flags
+#
+# Makefile.def for TinyC running on Windows.
+
+# ...for host-side build tools:
+
+OBJDIR =
+CC = tcc
+CFLAGS = -O2 -Wall 
+HOST_OBJEXTENSION = .o
+LD = $(CC)
+LDFLAGS =
+HOST_EXEXTENSION = .exe
+
+TARG_OBJDIR = $(OBJDIR)
+TARG_CC = $(CC)
+TARG_CFLAGS = $(CFLAGS)
+TARG_LD = $(LD)
+TARG_LDFLAGS = $(LDFLAGS)
+TARG_OBJEXTENSION = .o
+TARG_EXEXTENSION = $(HOST_EXEXTENSION)
+
+# -------------------------------------------------------------------------
+# directories where binaries, includes, and manpages should go during
+# installation
+
+BINDIR = C:/ASL/bin
+INCDIR = C:/ASL/include
+MANDIR = C:/ASL/man
+LIBDIR =
+DOCDIR = C:/ASL/doc

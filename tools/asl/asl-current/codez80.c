@@ -387,7 +387,6 @@ static Boolean DecodeReg16Core(const char *p_asc, Byte *p_ret)
   for (z = 0; z < Reg16Cnt; z++)
     if (!as_strcasecmp(p_asc, Reg16Names[z]))
     {
-      AdrMode = ModReg16;
       if (z <= 3)
         *p_ret = z;
       else
@@ -729,7 +728,7 @@ static ShortInt DecodeAdr(const tStrComp *pArg, unsigned ModeMask)
         }
         AdrVals[0] = disp_acc & 0xff;
         AdrCnt = 1;
-        if ((disp_acc < -0x80l) || (disp_acc > 0x7fl))
+        if (((disp_acc < -0x80l) || (disp_acc > 0x7fl)) && (MomCPU >= CPUZ380))
         {
           AdrVals[AdrCnt++] = (disp_acc >> 8) & 0xff;
           if ((disp_acc >= -0x8000l) && (disp_acc <= 0x7fffl))
@@ -977,7 +976,7 @@ static LargeWord CodeEnd(void)
 
   if (ExtFlag) Type = UInt32;
   else if (MomCPU == CPUZ180) Type = UInt19;
-  else Type = UInt32;
+  else Type = UInt32;//UInt16;
   return (LargeWord)IntTypeDefs[Type].Max;
 }
 
