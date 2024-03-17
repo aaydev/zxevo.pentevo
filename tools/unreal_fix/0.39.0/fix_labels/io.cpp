@@ -99,10 +99,18 @@ void out(unsigned port, unsigned char val)
    if (conf.zc && (port & 0xFF) == 0x57 )
    {
       if ((port & 0x80FF) == 0x8057 && conf.mem_model == MM_ATM3
-         &&(comp.flags & CF_DOSPORTS))
-         return;
-       Zc.Wr(port, val);
-       return;
+         &&(comp.flags & CF_DOSPORTS)) Zc.Wr(0x0077, val);
+      else Zc.Wr(port, val);
+      return;
+   }
+   
+   if ( conf.zc && ( (port & 0xFF) == 0x77 ) )
+   {
+      if ( ( conf.mem_model != MM_ATM3 ) || ( ( comp.flags & CF_DOSPORTS) == 0 ) )
+      {
+        Zc.Wr(port, val);
+        return;
+      }
    }
    
    if(conf.wiznet && (port & 0xff) == 0xab ){ 
