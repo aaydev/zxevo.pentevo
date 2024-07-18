@@ -11,6 +11,7 @@
 #include "stdinc.h"
 
 #include <errno.h>
+#include <string.h>
 
 #include "strutil.h"
 #include "stringlists.h"
@@ -46,7 +47,7 @@ LargeWord *Phases;                       /* Verschiebungen */
 Word Grans[SegCountPlusStruct];          /* Groesse der Adressierungselemente */
 Word ListGrans[SegCountPlusStruct];      /* Wortgroesse im Listing */
 ChunkList SegChunks[SegCountPlusStruct]; /* Belegungen */
-Integer ActPC;                           /* gewaehlter Programmzaehler */
+as_addrspace_t ActPC;                    /* gewaehlter Programmzaehler */
 Boolean PCsUsed[SegCountPlusStruct];     /* PCs bereits initialisiert ? */
 LargeWord *SegInits;                     /* Segmentstartwerte */
 LargeWord *SegLimits;                    /* Segmentgrenzwerte */
@@ -63,30 +64,27 @@ Integer PassNo;                          /* Durchlaufsnummer */
 Integer JmpErrors;                       /* Anzahl fraglicher Sprungfehler */
 Boolean ThrowErrors;                     /* Fehler verwerfen bei Repass ? */
 LongWord MaxErrors;                      /* terminate upon n errors? */
-Boolean TreatWarningsAsErrors;           /* treat warnings like erros? */
-Boolean Repass;		                 /* noch ein Durchlauf erforderlich */
-Byte MaxSymPass;	                 /* Pass, nach dem Symbole definiert sein muessen */
+Boolean Repass;		                       /* noch ein Durchlauf erforderlich */
+Byte MaxSymPass;	                       /* Pass, nach dem Symbole definiert sein muessen */
 Byte ShareMode;                          /* 0=kein SHARED,1=Pascal-,2=C-Datei, 3=ASM-Datei */
 DebugType DebugMode;                     /* Ausgabeformat Debug-Datei */
 Word NoICEMask;                          /* which symbols to use in NoICE dbg file */
 Byte ListMode;                           /* 0=kein Listing,1=Konsole,2=auf Datei */
-Byte ListOn;		    	         /* Listing erzeugen ? */
+Byte ListOn;		    	                   /* Listing erzeugen ? */
 Integer MaxIncludeLevel;                 /* maximum include nesting level */
 Boolean MakeUseList;                     /* Belegungsliste ? */
 Boolean MakeCrossList;	                 /* Querverweisliste ? */
 Boolean MakeSectionList;                 /* Sektionsliste ? */
 Boolean MakeIncludeList;                 /* Includeliste ? */
 Boolean DefRelaxedMode;                  /* alle Integer-Syntaxen zulassen ? */
-Boolean DefCompMode, CompMode;           /* enable compatibility mode */
 Word ListMask;                           /* Listingmaske */
 ShortInt ExtendErrors;	                 /* erweiterte Fehlermeldungen */
 Integer EnumSegment;                     /* ENUM state & config */
 LongInt EnumIncrement, EnumCurrentValue;
 Boolean NumericErrors;                   /* Fehlermeldungen mit Nummer */
-Boolean CodeOutput;		         /* Code erzeugen */
+Boolean CodeOutput;	                     /* Code erzeugen */
 Boolean MacProOutput;                    /* Makroprozessorausgabe schreiben */
 Boolean MacroOutput;                     /* gelesene Makros schreiben */
-Boolean QuietMode;                       /* keine Meldungen */
 Boolean HardRanges;                      /* Bereichsfehler echte Fehler ? */
 const char *DivideChars;                 /* Trennzeichen fuer Parameter. Inhalt Read Only! */
 Boolean HasAttrs;                        /* Opcode hat Attribut */
@@ -103,8 +101,7 @@ StringPtr ErrorPath, ErrorName;          /* Ausgabedatei Fehlermeldungen */
 StringPtr OutName;                       /* Name Code-Datei */
 Integer CurrIncludeLevel;                /* current include nesting level */
 StringPtr CurrFileName;                  /* mom. bearbeitete Datei */
-LongInt MomLineCounter;                  /* Position in mom. Datei */
-LongInt CurrLine;       	         /* virtuelle Position */
+LongInt CurrLine;                        /* virtuelle Position */
 LongInt LineSum;                         /* Gesamtzahl Quellzeilen */
 LongInt MacLineSum;                      /* inkl. Makroexpansion */
 
@@ -112,13 +109,14 @@ LongInt NOPCode;                         /* Maschinenbefehl NOP zum Stopfen */
 Boolean TurnWords;                       /* TRUE  = Motorola-Wortformat */
                                          /* FALSE = Intel-Wortformat */
 Byte HeaderID;	                         /* Kennbyte des Codeheaders */
-const char *PCSymbol;	                 /* Symbol, womit Programmzaehler erreicht wird. Inhalt Read Only! */
+const char *PCSymbol;	                   /* Symbol, womit Programmzaehler erreicht wird. Inhalt Read Only! */
 Boolean (*SetIsOccupiedFnc)(void),       /* TRUE: SET instr, to be parsed by code generator */
         (*SaveIsOccupiedFnc)(void),      /* ditto for SAVE */
         (*RestoreIsOccupiedFnc)(void);   /* ditto for RESTORE */
 Boolean SwitchIsOccupied,                /* TRUE: SWITCH/PAGE/SHIFT ist Prozessorbefehl */
         PageIsOccupied,
         ShiftIsOccupied;
+Boolean multi_char_le;
 #ifdef __PROTOS__
 Boolean (*DecodeAttrPart)(void);         /* dissect attribute of instruction */
 void (*MakeCode)(void);                  /* Codeerzeugungsprozedur */
@@ -139,7 +137,8 @@ DissectRegProc DissectReg;
 tQualifyQuoteFnc QualifyQuote;
 
 StringPtr IncludeList;	                /* Suchpfade fuer Includedateien */
-Integer IncDepth, NextIncDepth;         /* Verschachtelungstiefe INCLUDEs */
+Integer IncDepth, NextIncDepth,         /* Verschachtelungstiefe INCLUDEs */
+        MaxIncDepth;
 FILE *ErrorFile = NULL;                 /* Fehlerausgabe */
 FILE *LstFile = NULL;                   /* Listdatei */
 FILE *ShareFile = NULL;                 /* Sharefile */
@@ -158,23 +157,15 @@ char MomCPUIdent[20],                   /* dessen Name in ASCII */
      MomFPUIdent[20],                   /* ditto FPU */
      MomPMMUIdent[20];                  /* ditto PMMU */
 
-Boolean FPUAvail,                       /* Koprozessor erlaubt ? */
-        PMMUAvail;                      /* MMU-Befehle erlaubt? */
-Boolean DoPadding,                      /* auf gerade Byte-Zahl ausrichten ? */
-        TargetBigEndian;                /* Datenablage Big Endian? */
-Boolean Packing;                        /* gepackte Ablage ? */
-Boolean DefSupAllowed, SupAllowed;      /* Supervisormode freigegeben */
-Boolean Maximum;                        /* CPU nicht kastriert */
-Boolean DoBranchExt;                    /* Spruenge automatisch verlaengern */
-
 int OutRadixBase;                       /* dito fuer Ausgabe */
 int ListRadixBase;                      /* ditto for listing */
+Boolean ListPCZeroPad;			/* PC with leading zeros? */
 const char *pCommentLeadIn;             /* list of comment lead-in sequences */
 
 tStrComp *ArgStr;                       /* Komponenten der Zeile */
-StringPtr pLOpPart;
 tStrComp LabPart, CommPart, ArgPart, OpPart, AttrPart;
 char AttrSplit;
+Boolean oppart_leading_dot;
 int ArgCnt;                             /* Argumentzahl */
 int AllocArgCnt;
 as_dynstr_t OneLine;                    /* eingelesene Zeile */
@@ -199,7 +190,7 @@ LongInt MomSectionHandle;               /* mom. Namensraum */
 PSaveSection SectionStack;              /* gespeicherte Sektionshandles */
 tSavePhase *pPhaseStacks[SegCount];	/* saves nested PHASE values */
 
-tSymbolSize AttrPartOpSize;             /* instruction operand size deduced from insn attribute */
+tSymbolSize AttrPartOpSize[2];          /* instruction operand size(s) deduced from insn attribute */
 LongWord MaxCodeLen = 0;                /* max. length of generated code */
 LongInt CodeLen;                        /* Laenge des erzeugten Befehls */
 LongWord *DAsmCode;                     /* Zwischenspeicher erzeugter Code */
@@ -246,7 +237,6 @@ void AsmDefInit(void)
   PrtTitleString[0] = '\0';
 
   CurrFileName[0] = '\0';
-  MomLineCounter = 0;
 
   FirstDefine = NULL;
   FirstSaveState = NULL;
@@ -371,19 +361,99 @@ void InsertArg(int Index, size_t ReqSize)
   }
 }
 
-Boolean SetIsOccupied(void)
+/*!------------------------------------------------------------------------
+ * \fn     memo_set_pseudo(void)
+ * \brief  is the current instruction SET, and the pseudo instruction of that name?
+ * \return True if yes
+ * ------------------------------------------------------------------------ */
+
+Boolean memo_set_pseudo(void)
 {
-  return SetIsOccupiedFnc && SetIsOccupiedFnc();
+  return Memo("SET") && is_set_pseudo();
 }
 
-Boolean SaveIsOccupied(void)
+/*!------------------------------------------------------------------------
+ * \fn     is_set_pseudo(void)
+ * \brief  is the current (SET) instruction the pseudo instruction of that name?
+ * \return True if yes
+ * ------------------------------------------------------------------------ */
+
+Boolean is_set_pseudo(void)
 {
-  return SaveIsOccupiedFnc && SaveIsOccupiedFnc();
+  return (oppart_leading_dot
+       || (!SetIsOccupiedFnc || !SetIsOccupiedFnc()));
 }
 
-Boolean RestoreIsOccupied(void)
+/*!------------------------------------------------------------------------
+ * \fn     is_save_pseudo(void)
+ * \brief  is the current (SAVE) instruction the pseudo instruction of that name?
+ * \return True if yes
+ * ------------------------------------------------------------------------ */
+
+Boolean is_save_pseudo(void)
 {
-  return RestoreIsOccupiedFnc && RestoreIsOccupiedFnc();
+  return (oppart_leading_dot
+       || (!SaveIsOccupiedFnc || !SaveIsOccupiedFnc()));
+}
+
+/*!------------------------------------------------------------------------
+ * \fn     is_restore_pseudo(void)
+ * \brief  is the current (RESTORE) instruction the pseudo instruction of that name?
+ * \return True if yes
+ * ------------------------------------------------------------------------ */
+
+Boolean is_restore_pseudo(void)
+{
+  return (oppart_leading_dot
+       || (!RestoreIsOccupiedFnc || !RestoreIsOccupiedFnc()));
+}
+
+/*!------------------------------------------------------------------------
+ * \fn     memo_switch_pseudo(void)
+ * \brief  is the current instruction SWITCh, and the pseudo instruction of that name?
+ * \return True if yes
+ * ------------------------------------------------------------------------ */
+
+Boolean memo_switch_pseudo(void)
+{
+  return Memo("SWITCH")
+      && (oppart_leading_dot || !SwitchIsOccupied);
+}
+
+/*!------------------------------------------------------------------------
+ * \fn     memo_shift_pseudo(void)
+ * \brief  is the current instruction SHIFT, and the pseudo instruction of that name?
+ * \return True if yes
+ * ------------------------------------------------------------------------ */
+
+Boolean memo_shift_pseudo(void)
+{
+  return Memo("SHIFT")
+      && (oppart_leading_dot || !ShiftIsOccupied);
+}
+
+/*!------------------------------------------------------------------------
+ * \fn     is_page_pseudo(void)
+ * \brief  is the current PAGE instruction the pseudo instruction of that name?
+ * \return True if yes
+ * ------------------------------------------------------------------------ */
+
+Boolean is_page_pseudo(void)
+{
+  return oppart_leading_dot || !PageIsOccupied;
+}
+
+/*!------------------------------------------------------------------------
+ * \fn     free_forward_symbol(PForwardSymbol p_symbol)
+ * \brief  free entry from forward symbol list
+ * \param  p_symbol entry to free
+ * ------------------------------------------------------------------------ */
+
+void free_forward_symbol(PForwardSymbol p_symbol)
+{
+  free(p_symbol->Name); p_symbol->Name = NULL;
+  free(p_symbol->pErrorPos); p_symbol->pErrorPos = NULL;
+  free(p_symbol);
 }
 
 void asmdef_init(void)
@@ -421,7 +491,6 @@ void asmdef_init(void)
   StrCompAlloc(&AttrPart, STRINGSIZE);
   StrCompAlloc(&ArgPart, STRINGSIZE);
   StrCompAlloc(&CommPart, STRINGSIZE);
-  pLOpPart = GetString();
   as_dynstr_ini(&OneLine, STRINGSIZE);
   ListLine = GetString();
   PrtInitString = GetString();

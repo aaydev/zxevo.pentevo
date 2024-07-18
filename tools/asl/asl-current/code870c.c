@@ -20,6 +20,7 @@
 #include "asmsub.h"
 #include "asmpars.h"
 #include "asmitree.h"
+#include "asmcode.h"
 #include "codepseudo.h"
 #include "intpseudo.h"
 #include "codevars.h"
@@ -33,8 +34,6 @@ typedef struct
   const char *Name;
   Word Code;
 } CondRec;
-
-#define ConditionCnt 20
 
 enum
 {
@@ -53,6 +52,8 @@ enum
 
 #define AccReg 0
 #define WAReg 0
+
+#define COND_CODE_TRUE 0xde
 
 #define Reg8Cnt 8
 static const char Reg8Names[] = "AWCBEDLH";
@@ -87,10 +88,12 @@ static Boolean DecodeRegDisp(tStrComp *pArg, Byte *pRegFlag, LongInt *pDispAcc, 
   *pFirstFlag = False;
   do
   {
-    EPos = QuotMultPos(pArg->str.p_str, "+-");
+    KillPrefBlanksStrCompRef(pArg);
+    EPos = indir_split_pos(pArg->str.p_str);
     NNegFlag = EPos && (*EPos == '-');
     if (EPos)
       StrCompSplitRef(pArg, &Remainder, pArg, EPos);
+    KillPostBlanksStrComp(pArg);
 
     for (z = 0; z < AdrRegCnt; z++)
       if (!as_strcasecmp(pArg->str.p_str, AdrRegs[z]))
@@ -381,16 +384,39 @@ static void CodeMem(Byte Entry, Byte Opcode)
   BAsmCode[1 + AdrCnt] = Opcode;
 }
 
-static int DecodeCondition(char *pCondStr, int Start)
+/*!------------------------------------------------------------------------
+ * \fn     decode_condition(const char *p_cond_str, Word *p_cond_code)
+ * \brief  parse condition code
+ * \param  p_cond_str source argument
+ * \param  p_cond_code machine code if found
+ * \return True if found
+ * ------------------------------------------------------------------------ */
+
+static Boolean decode_condition(const char *p_cond_str, Word *p_cond_code)
 {
-  int Condition;
+  int z;
 
-  NLS_UpString(pCondStr);
-  for (Condition = Start; Condition < ConditionCnt; Condition++)
-    if (!strcmp(ArgStr[1].str.p_str, Conditions[Condition].Name))
-      break;
+  for (z = 0; Conditions[z].Name; z++)
+    if (!as_strcasecmp(p_cond_str, Conditions[z].Name))
+    {
+      *p_cond_code = Conditions[z].Code;
+      return True;
+    }
 
-  return Condition;
+  return False;
+}
+
+/*!------------------------------------------------------------------------
+ * \fn     cond_code_tf(Word cond_code)
+ * \brief  check if condition is true or false
+ * \param  cond_code condition code to check
+ * \return True if yes
+ * ------------------------------------------------------------------------ */
+
+static Boolean cond_code_tf(Word cond_code)
+{
+  return (cond_code == COND_CODE_TRUE)
+      || (cond_code == 0xdf);
 }
 
 /*--------------------------------------------------------------------------*/
@@ -1082,12 +1108,13 @@ static void DecodeJRS(Word Code)
 
   if (ChkArgCnt(2, 2))
   {
-    Integer AdrInt, Condition;
+    Integer AdrInt;
+    Word cond_code;
     Boolean OK;
     tSymbolFlags Flags;
 
-    Condition = DecodeCondition(ArgStr[1].str.p_str, ConditionCnt - 2);
-    if ((Condition >= ConditionCnt) || (Condition < ConditionCnt - 2)) WrStrErrorPos(ErrNum_UndefCond, &ArgStr[1]); /* only T/F allowed */
+    /* only T/F allowed */
+    if (!decode_condition(ArgStr[1].str.p_str, &cond_code) || !cond_code_tf(cond_code)) WrStrErrorPos(ErrNum_UndefCond, &ArgStr[1]);
     else
     {
       AdrInt = EvalStrIntExpressionWithFlags(&ArgStr[2], Int16, &OK, &Flags) - (EProgCounter() + 2);
@@ -1097,7 +1124,7 @@ static void DecodeJRS(Word Code)
         else
         {
           CodeLen = 1;
-          BAsmCode[0] = 0x80 | ((Conditions[Condition].Code - 0xde) << 5) | (AdrInt & 0x1f);
+          BAsmCode[0] = 0x80 | ((cond_code - 0xde) << 5) | (AdrInt & 0x1f);
         }
       }
     }
@@ -1110,15 +1137,21 @@ static void DecodeJR(Word Code)
 
   if (ChkArgCnt(1, 2))
   {
-    Integer Condition, AdrInt;
+    Word cond_code;
+    Integer AdrInt;
+    int Delta;
     Boolean OK;
     tSymbolFlags Flags;
 
-    Condition = (ArgCnt == 1) ? -1 : DecodeCondition(ArgStr[1].str.p_str, 0);
-    if (Condition >= ConditionCnt) WrStrErrorPos(ErrNum_UndefCond, &ArgStr[1]);
-    else
+    if (ArgCnt == 1)
+      cond_code = COND_CODE_TRUE;
+    else if (!decode_condition(ArgStr[1].str.p_str, &cond_code))
     {
-      int Delta = ((Condition < 0) || (!Hi(Conditions[Condition].Code))) ? 2 : 3;
+      WrStrErrorPos(ErrNum_UndefCond, &ArgStr[1]);
+      return;
+    }
+
+      Delta = ((ArgCnt == 1) || (!Hi(cond_code))) ? 2 : 3;
 
       AdrInt = EvalStrIntExpressionWithFlags(&ArgStr[ArgCnt], Int16, &OK, &Flags) - (EProgCounter() + Delta);
       if (OK)
@@ -1126,14 +1159,12 @@ static void DecodeJR(Word Code)
         if (((AdrInt < -128) || (AdrInt > 127)) && !mSymbolQuestionable(Flags)) WrError(ErrNum_JmpDistTooBig);
         else
         {
-          CodeLen = Delta;
           if (3 == Delta)
-            BAsmCode[0] = Hi(Conditions[Condition].Code);
-          BAsmCode[CodeLen - 2] = (Condition == -1) ?  0xfc : Lo(Conditions[Condition].Code);
-          BAsmCode[CodeLen - 1] = AdrInt & 0xff;
+            BAsmCode[CodeLen++] = Hi(cond_code);
+          BAsmCode[CodeLen++] = (ArgCnt == 1) ?  0xfc : Lo(cond_code);
+          BAsmCode[CodeLen++] = AdrInt & 0xff;
         }
       }
-    }
   }
 }
 
@@ -1143,86 +1174,88 @@ static void DecodeJ(Word Code)
 
   if (ChkArgCnt(1, 2))
   {
-    int CondIndex = (ArgCnt == 1) ? -1 : DecodeCondition(ArgStr[1].str.p_str, 0);
+    Word cond_code;
 
-    if (CondIndex >= ConditionCnt) WrStrErrorPos(ErrNum_UndefCond, &ArgStr[1]);
-    else
+    if (ArgCnt == 1)
+      cond_code = COND_CODE_TRUE;
+    else if (!decode_condition(ArgStr[1].str.p_str, &cond_code))
     {
-      Word CondCode = (CondIndex >= 0) ? Conditions[CondIndex].Code : 0;
+      WrStrErrorPos(ErrNum_UndefCond, &ArgStr[1]);
+      return;
+    }
 
-      OpSize = 1;
-      DecodeAdr(&ArgStr[ArgCnt], MModReg16 | MModMem | MModImm, False);
-      switch (AdrType)
-      {
-        case ModReg16: /* -> JP */
-          if (CondIndex >= 0) WrStrErrorPos(ErrNum_UndefCond, &ArgStr[1]);
-          else
-          {
-            CodeLen = 2;
-            BAsmCode[0] = 0xe8 | AdrMode;
-            BAsmCode[1] = Code;
-          }
-          break;
-        case ModMem: /* -> JP */
-          if (CondIndex >= 0) WrStrErrorPos(ErrNum_UndefCond, &ArgStr[1]);
-          else
-          {
-            CodeLen = 2 + AdrCnt;
-            CodeMem(0x00, Code);
-          }
-          break;
-        case ModImm:
+    OpSize = 1;
+    DecodeAdr(&ArgStr[ArgCnt], MModReg16 | MModMem | MModImm, False);
+    switch (AdrType)
+    {
+      case ModReg16: /* -> JP */
+        if (cond_code != COND_CODE_TRUE) WrStrErrorPos(ErrNum_UndefCond, &ArgStr[1]);
+        else
         {
-          Word Adr = ((Word)(AdrVals[1] << 8)) | AdrVals[0];
-          Integer Dist = Adr - (EProgCounter() + 2);
-          int Delta = ((CondIndex < 0) || (!Hi(CondCode))) ? 2 : 3;
-
-          if ((Dist >= -16) && (Dist < 15) && (CondIndex >= ConditionCnt - 2)) /* JRS T/F */
-          {
-            CodeLen = 1;
-            BAsmCode[0] = 0x80 | ((CondCode - 0xde) << 5) | (Dist & 0x1f);
-          }
-          else if ((Dist >= -128) && (Dist < 127))
-          {
-            if (CondIndex < 0) /* JR dist */
-            {
-              CodeLen = 2;
-              BAsmCode[0] = 0xfc;
-              BAsmCode[1] = Dist & 0xff;
-            }
-            else /* JR cc, dist */
-            {
-              CodeLen = Delta;
-              if (3 == Delta)
-                BAsmCode[0] = Hi(CondCode);
-              BAsmCode[CodeLen - 2] = Lo(CondCode);
-              BAsmCode[CodeLen - 1] = Dist & 0xff;
-            }
-          }
-          else
-          {
-            if (CondIndex < 0) /* JP dest */
-            {
-              CodeLen = 3;
-              BAsmCode[CodeLen - 3] = 0xfe;
-              BAsmCode[CodeLen - 2] = Lo(Adr);
-              BAsmCode[CodeLen - 1] = Hi(Adr);
-            }
-            else /* JR !cc, JP dest */
-            {
-              CondCode ^= 1;
-              CodeLen = Delta + 3;
-              if (3 == Delta)
-                BAsmCode[0] = Hi(CondCode);
-              BAsmCode[CodeLen - 5] = Lo(CondCode);
-              BAsmCode[CodeLen - 4] = 3;
-              BAsmCode[CodeLen - 3] = 0xfe;
-              BAsmCode[CodeLen - 2] = Lo(Adr);
-              BAsmCode[CodeLen - 1] = Hi(Adr);
-            }
-          }
-          break;
+          CodeLen = 2;
+          BAsmCode[0] = 0xe8 | AdrMode;
+          BAsmCode[1] = Code;
         }
+        break;
+      case ModMem: /* -> JP */
+        if (cond_code != COND_CODE_TRUE) WrStrErrorPos(ErrNum_UndefCond, &ArgStr[1]);
+        else
+        {
+          CodeLen = 2 + AdrCnt;
+          CodeMem(0x00, Code);
+        }
+        break;
+      case ModImm:
+      {
+        Word Adr = ((Word)(AdrVals[1] << 8)) | AdrVals[0];
+        Integer Dist = Adr - (EProgCounter() + 2);
+        int Delta = ((ArgCnt == 1) || !Hi(cond_code)) ? 2 : 3;
+
+        /* TODO: the ArgCnt != 1 check is only necessary to get same
+           encoding as previous versions.  Encoding 'J xxx' as 'JRS T,XXX'
+           if possible would actually be smarter: */
+
+        if ((Dist >= -16) && (Dist < 15) && (ArgCnt != 1) && cond_code_tf(cond_code)) /* JRS T/F */
+        {
+          CodeLen = 1;
+          BAsmCode[0] = 0x80 | ((cond_code - 0xde) << 5) | (Dist & 0x1f);
+        }
+        else if ((Dist >= -128) && (Dist < 127))
+        {
+          if (ArgCnt == 1) /* JR dist */
+          {
+            BAsmCode[CodeLen++] = 0xfc;
+            BAsmCode[CodeLen++] = Dist & 0xff;
+          }
+          else /* JR cc, dist */
+          {
+            if (3 == Delta)
+              BAsmCode[CodeLen++] = Hi(cond_code);
+            BAsmCode[CodeLen++] = Lo(cond_code);
+            BAsmCode[CodeLen++] = Dist & 0xff;
+          }
+        }
+        else
+        {
+          if (ArgCnt == 1) /* JP dest */
+          {
+            BAsmCode[CodeLen++] = 0xfe;
+            BAsmCode[CodeLen++] = Lo(Adr);
+            BAsmCode[CodeLen++] = Hi(Adr);
+          }
+          else /* JR !cc, JP dest */
+          {
+            cond_code ^= 1;
+            if (3 == Delta)
+              BAsmCode[CodeLen++] = Hi(cond_code);
+            BAsmCode[CodeLen++] = Lo(cond_code);
+            BAsmCode[CodeLen++] = 3;
+            BAsmCode[CodeLen++] = 0xfe;
+            BAsmCode[CodeLen++] = Lo(Adr);
+            BAsmCode[CodeLen++] = Hi(Adr);
+          }
+        }
+        break;
       }
     }
   }
@@ -1281,7 +1314,7 @@ static void AddFixed(const char *NName, Word NCode)
 
 static void AddCond(const char *NName, Word NCode)
 {
-  if (InstrZ >= ConditionCnt) exit(255);
+  order_array_rsv_end(Conditions, CondRec);
   Conditions[InstrZ].Name = NName;
   Conditions[InstrZ++].Code = NCode;
 }
@@ -1330,7 +1363,7 @@ static void InitFields(void)
   AddFixed("SWI" , 0x00ff);
   AddFixed("NOP" , 0x0000);
 
-  Conditions = (CondRec *) malloc(sizeof(CondRec)*ConditionCnt); InstrZ = 0;
+  InstrZ = 0;
   AddCond("EQ" , 0x00d8); AddCond("Z"  , 0x00d8);
   AddCond("NE" , 0x00d9); AddCond("NZ" , 0x00d9);
   AddCond("CS" , 0x00da); AddCond("LT" , 0x00da);
@@ -1340,7 +1373,8 @@ static void InitFields(void)
   AddCond("SLT", 0xe8d2); AddCond("SGE", 0xe8d3);
   AddCond("SLE", 0xe8d4); AddCond("SGT", 0xe8d5);
   AddCond("VS" , 0xe8d6); AddCond("VC" , 0xe8d7);
-  AddCond("T"  , 0x00de); AddCond("F"  , 0x00df);
+  AddCond("T"  , COND_CODE_TRUE); AddCond("F"  , 0x00df);
+  AddCond(NULL , 0);
 
   AddReg("DAA" , 0xdae8);  AddReg("DAS" , 0xdbe8);
   AddReg("SHLC", 0xf4e8);  AddReg("SHRC", 0xf5e8);
@@ -1364,7 +1398,7 @@ static void DeinitFields(void)
 {
   DestroyInstTable(InstTable);
 
-  free(Conditions);
+  order_array_free(Conditions);
 }
 
 /*--------------------------------------------------------------------------*/
@@ -1406,7 +1440,7 @@ static Boolean TrueFnc(void)
 
 static void SwitchTo_870C(void)
 {
-  PFamilyDescr FoundDescr;
+  const TFamilyDescr *FoundDescr;
 
   FoundDescr = FindFamilyByName("TLCS-870/C");
 

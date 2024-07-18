@@ -20,6 +20,8 @@ TARG_LDFLAGS =
 TARG_EXEXTENSION = .exe
 TARG_RUNCMD = wine
 TEX2DOC_FLAGS=-codepage 1252
+RC_CC = i686-w64-mingw32-windres
+include makedefs.rc
 
 # -------------------------------------------------------------------------
 # directories where binaries, includes, and manpages should go during
@@ -28,5 +30,5 @@ TEX2DOC_FLAGS=-codepage 1252
 BINDIR = /usr/local/bin
 INCDIR = /usr/local/include/asl
 MANDIR = /usr/local/man
-LIBDIR = /usr/local/lib/asl
+LIBDIR =
 DOCDIR = /usr/local/doc/asl

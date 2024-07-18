@@ -22,6 +22,7 @@
 
 typedef enum
 {
+  UInt0    ,
   UInt1    ,
   UInt2    ,
   UInt3    ,
@@ -36,7 +37,7 @@ typedef enum
   UInt12   , Int12   ,
   UInt13   ,
   UInt14   , Int14   ,
-  SInt15   , UInt15  ,
+  SInt15   , UInt15  , Int15   ,
   SInt16   , UInt16  , Int16   ,
   UInt17   ,
   UInt18   ,
@@ -135,7 +136,7 @@ extern IntType GetSmallestUIntType(LargeWord MaxValue);
 
 extern IntType GetUIntTypeByBits(unsigned Bits);
 
-extern LargeInt NonZString2Int(const struct as_nonz_dynstr *p_str);
+extern tErrorNum NonZString2Int(const struct as_nonz_dynstr *p_str, LargeInt *p_result);
 
 extern Boolean Int2NonZString(struct as_nonz_dynstr *p_str, LargeInt Src);
 
@@ -146,13 +147,16 @@ extern Boolean MultiCharToInt(TempResult *pResult, unsigned MaxLen);
 
 extern Boolean RangeCheck(LargeInt Wert, IntType Typ);
 
+extern Boolean ChkRangeByType(LargeInt value, IntType type, const struct sStrComp *p_comp);
+extern Boolean ChkRangeWarnByType(LargeInt value, IntType type, const struct sStrComp *p_comp);
+
 extern Boolean FloatRangeCheck(Double Wert, FloatType Typ);
 
 
 extern Boolean IdentifySection(const struct sStrComp *pName, LongInt *Erg);
 
 
-extern Boolean ExpandStrSymbol(char *pDest, size_t DestSize, const struct sStrComp *pSrc);
+extern struct sStrComp *ExpandStrSymbol(struct sStrComp *p_exp_comp, const struct sStrComp *pSrc, Boolean convert_upper);
 
 extern void ChangeSymbol(struct sSymbolEntry *pEntry, LargeInt Value);
 
@@ -261,7 +265,7 @@ extern void PrintCrossList(void);
 extern void ClearCrossList(void);
 
 
-extern LongInt GetSectionHandle(char *SName_O, Boolean AddEmpt, LongInt Parent);
+extern LongInt GetSectionHandle(const char *SName, Boolean AddEmpt, LongInt Parent);
 
 extern const char *GetSectionName(LongInt Handle);
 
@@ -291,6 +295,7 @@ extern void ClearLocStack(void);
 
 extern void PrintRegDefs(void);
 
+extern PTransTable FindCodepage(const char *p_name, PTransTable p_source);
 
 extern void ClearCodepages(void);
 

@@ -22,6 +22,7 @@
 #include "asmpars.h"
 #include "asmallg.h"
 #include "asmitree.h"
+#include "asmcode.h"
 #include "codepseudo.h"
 #include "intpseudo.h"
 #include "codevars.h"
@@ -34,20 +35,6 @@ typedef struct
   Byte Code;
   Byte Mask;     /* B0..2=OpSizes, B4=-MayImm, B5=-MayReg */
 } RMWOrder;
-
-typedef struct
-{
-  const char *Name;
-  Byte Code;
-  Byte Mask;     /* B7: DD in A-Format gedreht */
-  enum { Equal, FirstCounts, SecondCounts, Op2Half } SizeType;
-  Boolean ImmKorr, ImmErl, RegErl;
-} GAOrder;
-
-
-#define ConditionCount 20
-#define RMWOrderCount 14
-
 
 static CPUVar CPU97C241;
 
@@ -65,7 +52,20 @@ static char Format;
 static Boolean MinOneIs0;
 
 static RMWOrder *RMWOrders;
-static const char **Conditions;
+
+static const char Conditions[][4] =
+{
+  "C",   "NC",
+  "Z",   "NZ",
+  "OV",  "NOV",
+  "MI",  "PL",
+  "LE",  "GT",
+  "LT",  "GE",
+  "ULE", "UGT",
+  "N",   "A",
+  "ULT", "UGE",
+  "EQ",  "NE"
+};
 
 /*--------------------------------------------------------------------------*/
 
@@ -369,13 +369,13 @@ static void DecodeAdr(const tStrComp *pArg, Byte PrefInd, tImmAllow MayImm, Bool
     {
       /* I.4.a. Trennzeichen suchen */
 
-      PMPos = QuotMultPos(Arg.str.p_str, "-+");
+      KillPrefBlanksStrCompRef(&Arg);
+      PMPos = indir_split_pos(Arg.str.p_str);
       NMinFlag = (PMPos && (*PMPos == '-'));
       if (PMPos)
       {
         StrCompSplitRef(&Arg, &Remainder, &Arg, PMPos);
         KillPostBlanksStrComp(&Arg);
-        KillPrefBlanksStrCompRef(&Remainder);
       }
 
       /* I.4.b. Indexregister mit Skalierung */
@@ -898,9 +898,9 @@ static void AddPrefixes(void)
 
 static Boolean DecodeCondition(const char *pAsc, Word *pCondition)
 {
-  int z;
+  size_t z;
 
-  for (z = 0; z < ConditionCount; z++)
+  for (z = 0; z < as_array_size(Conditions); z++)
     if (!as_strcasecmp(pAsc, Conditions[z]))
     {
       *pCondition = z;
@@ -2288,7 +2288,7 @@ static void AddFixed(const char *NName, Word NCode)
 
 static void AddRMW(const char *NName, Byte NCode, Byte NMask)
 {
-  if (InstrZ >= RMWOrderCount) exit(255);
+  order_array_rsv_end(RMWOrders, RMWOrder);
   RMWOrders[InstrZ].Mask = NMask;
   RMWOrders[InstrZ].Code = NCode;
   AddInstTable(InstTable, NName, InstrZ++, DecodeRMW);
@@ -2356,7 +2356,7 @@ static void InitFields(void)
   AddFixed("SZF" , 0x7f8b);
   AddFixed("UNLK", 0x7fa2);
 
-  RMWOrders = (RMWOrder *) malloc(sizeof(RMWOrder) * RMWOrderCount); InstrZ = 0;
+  InstrZ = 0;
   AddRMW("CALL" , 0x35, 0x36);
   AddRMW("CLR"  , 0x2b, 0x17);
   AddRMW("CPL"  , 0x28, 0x17);
@@ -2441,26 +2441,13 @@ static void InitFields(void)
   AddInstTable(InstTable, "CPSZ", 0, DecodeString);
   AddInstTable(InstTable, "CPSN", 1, DecodeString);
   AddInstTable(InstTable, "LDS" , 3, DecodeString);
-
-  Conditions = (const char **) malloc(sizeof(char *)*ConditionCount); InstrZ = 0;
-  Conditions[InstrZ++] = "C";   Conditions[InstrZ++] = "NC";
-  Conditions[InstrZ++] = "Z";   Conditions[InstrZ++] = "NZ";
-  Conditions[InstrZ++] = "OV";  Conditions[InstrZ++] = "NOV";
-  Conditions[InstrZ++] = "MI";  Conditions[InstrZ++] = "PL";
-  Conditions[InstrZ++] = "LE";  Conditions[InstrZ++] = "GT";
-  Conditions[InstrZ++] = "LT";  Conditions[InstrZ++] = "GE";
-  Conditions[InstrZ++] = "ULE"; Conditions[InstrZ++] = "UGT";
-  Conditions[InstrZ++] = "N";   Conditions[InstrZ++] = "A";
-  Conditions[InstrZ++] = "ULT"; Conditions[InstrZ++] = "UGE";
-  Conditions[InstrZ++] = "EQ";  Conditions[InstrZ++] = "NE";
 }
 
 static void DeinitFields(void)
 {
   DestroyInstTable(InstTable);
 
-  free(RMWOrders);
-  free(Conditions);
+  order_array_free(RMWOrders);
 }
 
 static Boolean DecodeAttrPart_97C241(void)
@@ -2501,13 +2488,13 @@ static Boolean DecodeAttrPart_97C241(void)
     switch (as_toupper(*AttrPart.str.p_str))
     {
       case 'B':
-        AttrPartOpSize = eSymbolSize8Bit;
+        AttrPartOpSize[0] = eSymbolSize8Bit;
         break;
       case 'W':
-        AttrPartOpSize = eSymbolSize16Bit;
+        AttrPartOpSize[0] = eSymbolSize16Bit;
         break;
       case 'D':
-        AttrPartOpSize = eSymbolSize32Bit;
+        AttrPartOpSize[0] = eSymbolSize32Bit;
         break;
       default:
        WrStrErrorPos(ErrNum_UndefAttr, &AttrPart);
@@ -2531,7 +2518,7 @@ static void MakeCode_97C241(void)
   if (Memo(""))
     return;
 
-  OpSize = AttrPartOpSize;
+  OpSize = AttrPartOpSize[0];
 
   /* Pseudoanweisungen */
 
@@ -2566,6 +2553,7 @@ static void InternSymbol_97C241(char *pArg, TempResult *pResult)
     pResult->DataSize = Size;
     pResult->Contents.RegDescr.Reg = Reg;
     pResult->Contents.RegDescr.Dissect = DissectReg_97C241;
+    pResult->Contents.RegDescr.compare = NULL;
   }
 }
 

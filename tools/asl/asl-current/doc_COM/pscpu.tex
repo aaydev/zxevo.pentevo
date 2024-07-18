@@ -14,7 +14,7 @@ PMMU       \> REG         \> SUPMODE \\
 
 {\tt\begin{tabbing}
 \hspace{3cm}\=\hspace{3cm}\=\hspace{3cm}\=\hspace{3cm}\=\kill
-DC         \> DS          \> XSFR        \> YSFR \\
+DC         \> DS          \> PACKING     \> XSFR        \> YSFR \\
 \end{tabbing}}
 
 \subsubsection{PowerPC}
@@ -25,6 +25,16 @@ DC         \> DS          \> XSFR        \> YSFR \\
 \hspace{3cm}\=\hspace{3cm}\=\hspace{3cm}\=\hspace{3cm}\=\kill
 BIGENDIAN  \> DB          \> DD          \> DN          \> DQ \\
 DS         \> DT          \> DW          \> REG         \> SUPMODE \\
+\end{tabbing}}
+
+\subsubsection{IBM PALM}
+
+{\em Default Integer Syntax: IBM}
+
+{\tt\begin{tabbing}
+\hspace{3cm}\=\hspace{3cm}\=\hspace{3cm}\=\hspace{3cm}\=\kill
+DB         \> DD          \> DN          \> DQ          \> DS \\
+DT         \> DW          \> PORT        \> REG \\
 \end{tabbing}}
 
 \subsubsection{Motorola M-Core}
@@ -55,7 +65,7 @@ RMB \\
 \hspace{3cm}\=\hspace{3cm}\=\hspace{3cm}\=\hspace{3cm}\=\kill
 ADR        \> BYT         \> DB          \> DC[.$<$size$>$] \> DFS     \\
 DS[.$<$size$>$] \> DW     \> FCB         \> FCC         \> FDB         \\
-PADDING     \> RMB \\
+PADDING     \> PRWINS(68HC11K4) \> RMB \\
 \end{tabbing}}
 
 \subsubsection{Motorola/Freescale 6805/68HC(S)08}
@@ -77,7 +87,18 @@ PADDING     \> RMB \\
 \hspace{3cm}\=\hspace{3cm}\=\hspace{3cm}\=\hspace{3cm}\=\kill
 ADR        \> ASSUME      \> BYT         \> DB          \> DC[.$<$size$>$] \\
 DFS        \> DS[.$<$size$>$] \> DW      \> FCB         \> FCC \\
-FDB        \> PADDING     \> RMB \\
+FDB        \> PADDING     \> PLAINBASE   \> RMB \\
+\end{tabbing}}
+
+\subsubsection{Konami 052001}
+
+{\em Default Integer Syntax: Motorola}
+
+{\tt\begin{tabbing}
+\hspace{3cm}\=\hspace{3cm}\=\hspace{3cm}\=\hspace{3cm}\=\kill
+ADR        \> BYT         \> DB          \> DC[.$<$size$>$] DFS \\
+DS[.$<$size$>$] \> DW      \> FCB         \> FCC \> FDB        \\
+PADDING    \> RMB \\
 \end{tabbing}}
 
 \subsubsection{Motorola 68HC12}
@@ -140,8 +161,8 @@ REG    \\
 
 {\tt\begin{tabbing}
 \hspace{3cm}\=\hspace{3cm}\=\hspace{3cm}\=\hspace{3cm}\=\kill
-ASSUME          \> BIT    \> DATA   \> DC[.$<$size$>$] \> DS[.$<$size$>$] \\
-MAXMODE         \> PADDING         \> REG \\
+ASSUME          \> BIT    \> COMPMODE \> DATA   \> DC[.$<$size$>$] \\
+DS[.$<$size$>$] \> MAXMODE \> PADDING \> REG \\
 \end{tabbing}}
 
 \subsubsection{Hitachi SH7x00}
@@ -178,7 +199,8 @@ BIT        \> DC[.$<$size$>$]    \> DS[.$<$size$>$]   \> REG       \> SUPMODE \\
 
 {\tt\begin{tabbing}
 \hspace{3cm}\=\hspace{3cm}\=\hspace{3cm}\=\hspace{3cm}\=\kill
-ADR        \> ASSUME      \> BYT         \> DFS         \> FCB \\
+ADR        \> ASSUME      \> BYT         \> DB          \> DCB \\
+DDB        \> DFS         \> DS          \> DW          \> FCB \\
 FCC        \> FDB         \> RMB \\
 \end{tabbing}}
 
@@ -189,8 +211,9 @@ FCC        \> FDB         \> RMB \\
 {\tt\begin{tabbing}
 \hspace{3cm}\=\hspace{3cm}\=\hspace{3cm}\=\hspace{3cm}\=\kill
 ADR        \> ASSUME      \> BYT         \> DB          \> DD \\
-DN         \> DQ          \> DS          \> DT          \> DW \\
-DFS        \> FCB         \> FCC         \> FDB         \> RMB \\
+DDB        \> DN          \> DQ          \> DS          \> DT \\
+DW         \> DFS         \> FCB         \> FCC         \> FDB \\
+RMB \\
 \end{tabbing}}
 
 \subsubsection{Mitsubishi MELPS-4500}
@@ -201,6 +224,16 @@ DFS        \> FCB         \> FCC         \> FDB         \> RMB \\
 \hspace{3cm}\=\hspace{3cm}\=\hspace{3cm}\=\hspace{3cm}\=\kill
 DATA       \> RES         \> SFR \\
 \end{tabbing}}
+
+\subsubsection{Rockwell PPS-4}
+
+{\em Default Integer Syntax: Intel}
+
+{\tt\begin{tabbing}
+\hspace{3cm}\=\hspace{3cm}\=\hspace{3cm}\=\hspace{3cm}\=\kill
+DATA       \> DC          \> DS          \> RES \\
+\end{tabbing}}
+
 
 \subsubsection{Mitsubishi M16}
 
@@ -222,7 +255,35 @@ DB         \> DD          \> DN          \> DQ          \> DS \\
 DT         \> DW          \> REG \\
 \end{tabbing}}
 
-\subsubsection{Intel 4004}
+\subsubsection{DEC PDP-11}
+
+{\em Default Integer Syntax: C}
+
+{\tt\begin{tabbing}
+\hspace{3cm}\=\hspace{3cm}\=\hspace{3cm}\=\hspace{3cm}\=\kill
+BYTE       \> CIS         \> EIS         \> FIS         \> FLT2 \\
+FLT4       \> FP11        \> REG         \> SUPMODE     \> WORD \\
+\end{tabbing}}
+
+\subsubsection{WD16}
+
+{\em Default Integer Syntax: C}
+
+{\tt\begin{tabbing}
+\hspace{3cm}\=\hspace{3cm}\=\hspace{3cm}\=\hspace{3cm}\=\kill
+BYTE       \> FLT3        \> REG         \> WORD \\
+\end{tabbing}}
+
+\subsubsection{Olympia CP-3F/GI LP8000/SGS M380}
+
+{\em Default Integer Syntax: Intel}
+
+{\tt\begin{tabbing}
+\hspace{3cm}\=\hspace{3cm}\=\hspace{3cm}\=\hspace{3cm}\=\kill   
+DC         \> DS          \> PORT \\
+\end{tabbing}}
+
+\subsubsection{Intel 4004/4040}
 
 {\em Default Integer Syntax: Intel}
 
@@ -282,7 +343,7 @@ DB         \> DD          \> DN          \> DQ          \> DS \\
 DT         \> DW          \> PORT \\
 \end{tabbing}}
 
-\subsubsection{Intel 8086/80186/NEC V30/35}
+\subsubsection{Intel 8086/80186/NEC V20...V5x}
 
 {\em Default Integer Syntax: Intel}
 
@@ -318,8 +379,8 @@ LIV        \> RIV         \\
 
 {\tt\begin{tabbing}
 \hspace{3cm}\=\hspace{3cm}\=\hspace{3cm}\=\hspace{3cm}\=\kill
-DB         \> DD          \> DN          \> DQ          \> DS \\
-DT         \> DW          \\
+ACON       \> BIGENDIAN  \> DB          \> DD          \> DN \\
+DQ         \> DS         \> DT          \> DW          \> RES \\
 \end{tabbing}}
 
 \subsubsection{Philips XA}
@@ -373,7 +434,7 @@ DQ         \> DS          \> DT          \> DW          \> REG \\
 \hspace{3cm}\=\hspace{3cm}\=\hspace{3cm}\=\hspace{3cm}\=\kill
 DB         \> DD          \> DEFB        \> DEFW        \> DN \\
 DQ         \> DS          \> DT          \> DW          \> EXTMODE \\
-LWORDMODE \\
+LWORDMODE  \> PRWINS(Z180) \> REG \\
 \end{tabbing}}
 
 \subsubsection{Zilog Z8}
@@ -587,8 +648,8 @@ Qxx        \> RES         \> RSTRING     \> STRING      \> WORD \\
 
 {\tt\begin{tabbing}
 \hspace{3cm}\=\hspace{3cm}\=\hspace{3cm}\=\hspace{3cm}\=\kill
-ASSUME     \> BSS         \> DATA        \> EXTENDED    \> SINGLE \\
-WORD \\
+ASSUME     \> BSS         \> DATA        \> EXTENDED    \> PACKING \\
+SINGLE     \> WORD \\
 \end{tabbing}}
 
 \subsubsection{Texas Instruments TM32C020x/TM32C05x/TM32C054x}
@@ -608,7 +669,7 @@ Qxx        \> RES         \> RSTRING     \> STRING      \> WORD \\
 
 {\tt\begin{tabbing}
 \hspace{3cm}\=\hspace{3cm}\=\hspace{3cm}\=\hspace{3cm}\=\kill
-BSS         \> DATA        \> DOUBLE     \> SINGLE \\
+BSS         \> DATA        \> DOUBLE     \> PACKING     \> SINGLE \\
 WORD \\
 \end{tabbing}}
 
@@ -661,6 +722,24 @@ DS         \> DT          \> DW \\
 BSS        \> BYTE        \> PADDING     \> REG         \> WORD \\
 \end{tabbing}}
 
+\subsubsection{National IMP-16}
+
+{\em Default Integer Syntax: IBM}
+
+{\tt\begin{tabbing}
+\hspace{3cm}\=\hspace{3cm}\=\hspace{3cm}\=\hspace{3cm}\=\kill
+ASCII      \> LTORG       \> PORT        \> WORD \\
+\end{tabbing}}
+
+\subsubsection{National IPC-16/INS8900}
+
+{\em Default Integer Syntax: IBM}
+
+{\tt\begin{tabbing}
+\hspace{3cm}\=\hspace{3cm}\=\hspace{3cm}\=\hspace{3cm}\=\kill
+ASCII      \> ASSUME      \> LTORG       \> WORD \\
+\end{tabbing}}
+
 \subsubsection{National SC/MP}
 
 {\em Default Integer Syntax: C}
@@ -668,7 +747,7 @@ BSS        \> BYTE        \> PADDING     \> REG         \> WORD \\
 {\tt\begin{tabbing}
 \hspace{3cm}\=\hspace{3cm}\=\hspace{3cm}\=\hspace{3cm}\=\kill
 BIGENDIAN  \> DB         \> DD          \> DN          \> DQ \\
-DS         \> DT         \> DW \\
+DS         \> DT         \> DW          \> REG \\
 \end{tabbing}}
 	
 \subsubsection{National INS807x}
@@ -716,10 +795,10 @@ DW         \> DW16 \\
 \subsubsection{National NS32xxx}
 {\tt\begin{tabbing}
 \hspace{3cm}\=\hspace{3cm}\=\hspace{3cm}\=\hspace{3cm}\=\kill
-BYTE       \> CUSTOM      \> DB         \> DD           \> DOUBLE \\
-DQ         \> DS          \> DT         \> DW           \> FLOAT \\
-FPU        \> LONG        \> PMMU       \> REG          \> SUPMODE \\
-WORD \\
+BIGENDIAN  \> BYTE        \> CUSTOM     \> DB           \> DD \\
+DOUBLE     \> DQ          \> DS         \> DT           \> DW \\
+FLOAT      \> FPU         \> LONG       \> PMMU         \> REG \\
+SUPMODE    \> WORD \\
 \end{tabbing}}
 
 \subsubsection{Fairchild ACE}
@@ -742,14 +821,24 @@ DB          \> DD          \> DN         \> DQ          \> DS \\
 DT          \> DW          \> PORT \\
 \end{tabbing}}
 
-\subsubsection{NEC $\mu$PD78(C)1x}
+\subsubsection{NEC $\mu$PD7800...$\mu$PD7806, $\mu$PD78(C)1x}
 
 {\em Default Integer Syntax: Intel}
 
 {\tt\begin{tabbing}
 \hspace{3cm}\=\hspace{3cm}\=\hspace{3cm}\=\hspace{3cm}\=\kill
 ASSUME     \> DB          \> DD          \> DN          \> DQ \\
-DS         \> DT          \> DW \\
+DS         \> DT          \> DW          \> Z80SYNTAX   \\
+\end{tabbing}}
+
+\subsubsection{NEC $\mu$PD7807...$\mu$PD7809}
+
+{\em Default Integer Syntax: Intel}
+
+{\tt\begin{tabbing}
+\hspace{3cm}\=\hspace{3cm}\=\hspace{3cm}\=\hspace{3cm}\=\kill
+ASSUME     \> DB          \> DEFBIT      \>DD          \> DN \\
+DQ         \> DS         \> DT          \> DW \\
 \end{tabbing}}
 
 \subsubsection{NEC 75xx}
@@ -818,7 +907,7 @@ DS         \> DT         \> DW \\
 
 {\tt\begin{tabbing}
 \hspace{3cm}\=\hspace{3cm}\=\hspace{3cm}\=\hspace{3cm}\=\kill
-DATA       \> RES \\
+DATA       \> PACKING     \> RES \\
 \end{tabbing}}
 
 \subsubsection{NEC $\mu$PD77230}
@@ -827,7 +916,16 @@ DATA       \> RES \\
 
 {\tt\begin{tabbing} 
 \hspace{3cm}\=\hspace{3cm}\=\hspace{3cm}\=\hspace{3cm}\=\kill
-DS         \> DW \\
+DS         \> DW          \> PACKING \\
+\end{tabbing}}
+
+\subsubsection{NEC V60}
+
+{\em Default Integer Syntax: Intel}
+
+{\tt\begin{tabbing}
+\hspace{3cm}\=\hspace{3cm}\=\hspace{3cm}\=\hspace{3cm}\=\kill
+DC[.$<$size$>$]\> DS[.$<$size$>$] \> PADDING \> REG         \> SUPMODE \\
 \end{tabbing}}
 
 \subsubsection{Symbios Logic SYM53C8xx}
@@ -884,7 +982,7 @@ DATA       \> RES         \> SFR \\
 
 {\tt\begin{tabbing}
 \hspace{3cm}\=\hspace{3cm}\=\hspace{3cm}\=\hspace{3cm}\=\kill
-DC         \> DS \\
+DC         \> DS          \> PACKING \\
 \end{tabbing}}
 
 \subsubsection{Padauk PMC/PMS/PFSxxx}
@@ -944,11 +1042,61 @@ BIT        \> DB          \> DD          \> DN          \> DQ \\
 DS         \> DT          \> DW          \> REG \\
 \end{tabbing}}
 
-\subsubsection{CP1600}
+\subsubsection{CP-1600}
 
 {\em Default Integer Syntax: IBM (hex), C (oct) }
 
 {\tt\begin{tabbing}
 \hspace{3cm}\=\hspace{3cm}\=\hspace{3cm}\=\hspace{3cm}\=\kill
-BYTE       \> RES         \> TEXT        \> WORD       \> ZERO \\
+BYTE       \> PACKING     \> RES         \> TEXT        \> WORD \\
+ZERO \\
+\end{tabbing}}
+
+\subsubsection{HP Nano Processor}
+
+{\em Default Integer Syntax: C }
+
+{\tt\begin{tabbing}
+\hspace{3cm}\=\hspace{3cm}\=\hspace{3cm}\=\hspace{3cm}\=\kill
+\end{tabbing}}
+
+\subsubsection{IM61x0}
+
+{\em Default Integer Syntax: C}
+
+{\tt\begin{tabbing}
+\hspace{3cm}\=\hspace{3cm}\=\hspace{3cm}\=\hspace{3cm}\=\kill
+DC         \> DECIMAL     \> DS          \> LTORG       \> OCTAL \\
+ZERO \\
+\end{tabbing}}
+
+\subsubsection{Renesas RX}
+
+{\em Default Integer Syntax: Intel}
+
+{\tt\begin{tabbing}
+\hspace{3cm}\=\hspace{3cm}\=\hspace{3cm}\=\hspace{3cm}\=\kill
+BLKB       \> BLKW        \> BLKL        \> BLKD        \> BYTE \\
+DOUBLE     \> ENDIAN      \> FLOAT       \> LWORD       \> WORD \\
+\end{tabbing}}
+
+\subsubsection{Sharp SC61860}
+
+{\em Default Integer Syntax: Motorola}
+
+{\tt\begin{tabbing}
+\hspace{3cm}\=\hspace{3cm}\=\hspace{3cm}\=\hspace{3cm}\=\kill
+ADR        \> BYT         \> DB          \> DC          \> DFS \\
+DS         \> DW          \> FCB         \> FCC         \> FDB \\
+RMB \\
+\end{tabbing}}
+
+\subsubsection{Sharp SC62015}
+
+{\em Default Integer Syntax: Intel}
+
+{\tt\begin{tabbing}
+\hspace{3cm}\=\hspace{3cm}\=\hspace{3cm}\=\hspace{3cm}\=\kill
+DN         \> DB          \> DD          \> DQ         \> DS \\
+DT         \> DW \\
 \end{tabbing}}

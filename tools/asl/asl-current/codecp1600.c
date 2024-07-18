@@ -23,6 +23,7 @@
 #include "codepseudo.h"
 #include "headids.h"
 #include "errmsg.h"
+#include "onoff_common.h"
 
 #include "codecp1600.h"
 
@@ -512,12 +513,24 @@ static void DecodeRES(Word Index)
 	BookKeeping();
 }
 
+static void PutByte(Word value, int *p_half)
+{
+	if (*p_half & 1)
+	{
+		WAsmCode[CodeLen - 1] |= value << 8;
+	}
+	else
+	{
+		WAsmCode[CodeLen++] = value & 0xFF;
+	}
+	if (Packing)
+		(*p_half)++;
+}
+
 static void DecodeWORD(Word Index)
 {
-	int z;
 	int c;
 	int b = 0;
-	Boolean OK;
 	TempResult t;
 
 	PrefixedSDBD = False;
@@ -525,76 +538,60 @@ static void DecodeWORD(Word Index)
 	as_tempres_ini(&t);
 	if (ChkArgCnt(1, ArgCntMax))
 	{
-		OK = True;
-		for (z = 1; z <= ArgCnt; z++)
-		{
-			if (OK)
-			{
-				EvalStrExpression(&ArgStr[z], &t);
-				if (mFirstPassUnknown(t.Flags) && t.Typ == TempInt) t.Contents.Int &= 65535;
+		Boolean OK = True;
+		tStrComp *pArg;
 
-				switch (t.Typ)
+		forallargs (pArg, OK)
+		{
+			EvalStrExpression(pArg, &t);
+			if (mFirstPassUnknown(t.Flags) && t.Typ == TempInt) t.Contents.Int &= 65535;
+
+			switch (t.Typ)
+			{
+			case TempInt:
+				switch (Index)
 				{
-				case TempInt:
-					switch (Index)
+				case 0x0000: /* WORD */
+					if (ChkRange(t.Contents.Int, -32768, 65535))
 					{
-					case 0x0000: /* WORD */
-						if (ChkRange(t.Contents.Int, -32768, 65535))
-						{
-							WAsmCode[CodeLen++] = t.Contents.Int;
-						}
-						b = 0;
-						break;
-					case 0x0001: /* BYTE */
-						if (ChkRange(t.Contents.Int, -32768, 65535))
-						{
-							WAsmCode[CodeLen++] = t.Contents.Int & 0x00FF;
-							WAsmCode[CodeLen++] = (t.Contents.Int >> 8) & 0x00FF;
-						}
-						b = 0;
-						break;
-					case 0x0002: /* TEXT */
-						if (ChkRange(t.Contents.Int, 0, 255))
-						{
-							if ((b++) & 1)
-							{
-								WAsmCode[CodeLen - 1] |= t.Contents.Int << 8;
-							}
-							else
-							{
-								WAsmCode[CodeLen++] = t.Contents.Int & 0xFF;
-							}
-						}
-						break;
-					default:
-						OK = False;
+						WAsmCode[CodeLen++] = t.Contents.Int;
 					}
+					b = 0;
 					break;
-				case TempFloat:
-					WrStrErrorPos(ErrNum_StringOrIntButFloat, &ArgStr[z]);
-					OK = False;
+				case 0x0001: /* BYTE */
+					if (ChkRange(t.Contents.Int, -32768, 65535))
+					{
+						WAsmCode[CodeLen++] = t.Contents.Int & 0x00FF;
+						WAsmCode[CodeLen++] = (t.Contents.Int >> 8) & 0x00FF;
+					}
+					b = 0;
 					break;
-				case TempString:
-					if (Index != 0x0002)
-					{
-						OK = False;
-						break;
-					}
-					for (c = 0; c < (int)t.Contents.str.len; c++)
-					{
-						if ((b++) & 1)
-						{
-							WAsmCode[CodeLen - 1] |= t.Contents.str.p_str[c] << 8;
-						}
-						else
-						{
-							WAsmCode[CodeLen++] = t.Contents.str.p_str[c];
-						}
-					}
+				case 0x0002: /* TEXT */
+					if (ChkRange(t.Contents.Int, 0, 255))
+						PutByte(t.Contents.Int & 0xff, &b);
 					break;
 				default:
 					OK = False;
 				}
+				break;
+			case TempFloat:
+				WrStrErrorPos(ErrNum_StringOrIntButFloat, pArg);
+				OK = False;
+				break;
+			case TempString:
+				if (Index != 0x0002)
+				{
+					OK = False;
+					break;
+				}
+				if (as_chartrans_xlate_nonz_dynstr(CurrTransTable->p_table, &t.Contents.str, pArg))
+					OK = False;
+				else
+					for (c = 0; c < (int)t.Contents.str.len; c++)
+						PutByte(t.Contents.str.p_str[c], &b);
+				break;
+			default:
+				OK = False;
 			}
 		}
 		if (!OK) CodeLen = 0;
@@ -853,7 +850,7 @@ static void SwitchFrom_CP1600(void)
 
 static void SwitchTo_CP1600(void)
 {
-	PFamilyDescr pDescr;
+	const TFamilyDescr *pDescr;
 
 	TurnWords = True;
 	/* SetIntConstMode(eIntConstModeIBM); */
@@ -877,6 +874,8 @@ static void SwitchTo_CP1600(void)
 	Bits = 16;
 	Mask = 0x0000;
 	PrefixedSDBD = False;
+
+  onoff_packing_add(True);
 
 	MakeCode = MakeCode_CP1600;
 	IsDef = IsDef_CP1600;

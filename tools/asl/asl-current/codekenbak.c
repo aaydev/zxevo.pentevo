@@ -888,6 +888,7 @@ static void InternSymbol_KENBAK(char *pArg, TempResult *pResult)
     pResult->DataSize = eSymbolSize8Bit;
     pResult->Contents.RegDescr.Reg = RegNum;
     pResult->Contents.RegDescr.Dissect = DissectReg_KENBAK;
+    pResult->Contents.RegDescr.compare = NULL;
   }
 }
 
@@ -914,7 +915,7 @@ static Boolean TrueFnc(void)
 
 static void SwitchTo_KENBAK(void)
 {
-  PFamilyDescr Descr;
+  const TFamilyDescr *Descr;
 
   TurnWords = False;
   SetIntConstMode(eIntConstModeIntel);

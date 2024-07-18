@@ -23,8 +23,10 @@
 #include "errmsg.h"
 #include "as.h"
 #include "as.rsc"
+#include "function.h"
 #include "asmpars.h"
 #include "asmmac.h"
+#include "asmlist.h"
 #include "asmstructs.h"
 #include "asmcode.h"
 #include "asmrelocs.h"
@@ -32,6 +34,10 @@
 #include "operator.h"
 #include "codepseudo.h"
 #include "nlmessages.h"
+#include "literals.h"
+#include "msg_level.h"
+#include "dyn_array.h"
+#include "codenone.h"
 #include "asmallg.h"
 
 #define LEAVE goto func_exit
@@ -39,7 +45,9 @@
 /*--------------------------------------------------------------------------*/
 
 
-static PInstTable PseudoTable = NULL, ONOFFTable;
+static PInstTable PseudoTable = NULL,
+                  ONOFFTable  = NULL;
+static inst_fnc_table_t *pseudo_inst_fnc_table = NULL;
 
 /*--------------------------------------------------------------------------*/
 
@@ -108,6 +116,26 @@ static void ParseCPUArgs(const tStrComp *pArgs, const tCPUArg *pCPUArgs)
   while (pNext);
 }
 
+/*!------------------------------------------------------------------------
+ * \fn     SetNSeg(as_addrspace_t NSeg, Boolean force_setup)
+ * \brief  preparations when segment was switched
+ * \param  NSeg new segment to set
+ * \param  force_setup perform setup operations even if segment remains same
+ * ------------------------------------------------------------------------ */
+
+static void SetNSeg(as_addrspace_t NSeg, Boolean force_setup)
+{
+  if ((ActPC != NSeg) || !PCsUsed[ActPC] || force_setup)
+  {
+    ActPC = NSeg;
+    if (!PCsUsed[ActPC])
+      PCs[ActPC] = SegInits[ActPC];
+    PCsUsed[ActPC] = True;
+    DontPrint = True;
+    as_list_set_max_pc(SegLimits[ActPC]);
+  }
+}
+
 static void SetCPUCore(const tCPUDef *pCPUDef, const tStrComp *pCPUArgs)
 {
   LargeInt HCPU;
@@ -145,6 +173,7 @@ static void SetCPUCore(const tCPUDef *pCPUDef, const tStrComp *pCPUArgs)
   SetIsOccupiedFnc =
   SaveIsOccupiedFnc =
   RestoreIsOccupiedFnc = NULL;
+  multi_char_le = False;
   DecodeAttrPart = NULL;
   SwitchIsOccupied =
   PageIsOccupied =
@@ -160,6 +189,9 @@ static void SetCPUCore(const tCPUDef *pCPUDef, const tStrComp *pCPUArgs)
   ParseCPUArgs(pCPUArgs, pCPUDef->pArgs);
   pCPUDef->SwitchProc(pCPUDef->pUserData);
 
+  if (pCPUDef->Number)
+    none_target_seglimit = SegLimits[SegCode];
+
   DontPrint = True;
 }
 
@@ -169,7 +201,10 @@ void SetCPUByType(CPUVar NewCPU, const tStrComp *pCPUArgs)
 
   pCPUDef = LookupCPUDefByVar(NewCPU);
   if (pCPUDef)
+  {
     SetCPUCore(pCPUDef, pCPUArgs);
+    SetNSeg(SegCode, True);
+  }
 }
 
 Boolean SetCPUByName(const tStrComp *pName)
@@ -192,6 +227,7 @@ Boolean SetCPUByName(const tStrComp *pName)
     }
     else
       SetCPUCore(pCPUDef, NULL);
+    SetNSeg(SegCode, True);
     return True;
   }
 }
@@ -203,23 +239,12 @@ Boolean SetCPUByName(const tStrComp *pName)
 
 void UnsetCPU(void)
 {
+  literals_chk_alldone();
   if (SwitchFrom)
   {
     ClearONOFF();
     SwitchFrom();
     SwitchFrom = NULL;
-  }
-}
-
-static void SetNSeg(Byte NSeg)
-{
-  if ((ActPC != NSeg) || (!PCsUsed[ActPC]))
-  {
-    ActPC = NSeg;
-    if (!PCsUsed[ActPC])
-      PCs[ActPC] = SegInits[ActPC];
-    PCsUsed[ActPC] = True;
-    DontPrint = True;
   }
 }
 
@@ -247,25 +272,32 @@ static void IntLine(char *pDest, size_t DestSize, LargeWord Inp, tIntConstMode T
 
 static void CodeSECTION(Word Index)
 {
-  PSaveSection Neu;
-  String ExpName;
   UNUSED(Index);
 
-  if (ChkArgCnt(1, 1)
-   && ExpandStrSymbol(ExpName, sizeof(ExpName), &ArgStr[1]))
+  if (ChkArgCnt(1, 1))
   {
-    if (!ChkSymbName(ExpName)) WrStrErrorPos(ErrNum_InvSymName, &ArgStr[1]);
-    else if ((PassNo == 1) && (GetSectionHandle(ExpName, False, MomSectionHandle) != -2)) WrError(ErrNum_DoubleSection);
-    else
+    PSaveSection Neu;
+    String exp_name_buf;
+    tStrComp exp_name;
+    const tStrComp *p_exp_name;
+    StrCompMkTemp(&exp_name, exp_name_buf, sizeof(exp_name_buf));
+
+    p_exp_name = ExpandStrSymbol(&exp_name, &ArgStr[1], !CaseSensitive);
+    if (p_exp_name)
     {
-      Neu = (PSaveSection) malloc(sizeof(TSaveSection));
-      Neu->Next = SectionStack;
-      Neu->Handle = MomSectionHandle;
-      Neu->LocSyms = NULL;
-      Neu->GlobSyms = NULL;
-      Neu->ExportSyms = NULL;
-      SetMomSection(GetSectionHandle(ExpName, True, MomSectionHandle));
-      SectionStack = Neu;
+      if (!ChkSymbName(p_exp_name->str.p_str)) WrStrErrorPos(ErrNum_InvSymName, &ArgStr[1]);
+      else if ((PassNo == 1) && (GetSectionHandle(p_exp_name->str.p_str, False, MomSectionHandle) != -2)) WrError(ErrNum_DoubleSection);
+      else
+      {
+        Neu = (PSaveSection) malloc(sizeof(TSaveSection));
+        Neu->Next = SectionStack;
+        Neu->Handle = MomSectionHandle;
+        Neu->LocSyms = NULL;
+        Neu->GlobSyms = NULL;
+        Neu->ExportSyms = NULL;
+        SetMomSection(GetSectionHandle(p_exp_name->str.p_str, True, MomSectionHandle));
+        SectionStack = Neu;
+      }
     }
   }
 }
@@ -278,41 +310,55 @@ static void CodeENDSECTION_ChkEmptList(PForwardSymbol *Root)
 
   while (*Root)
   {
-    strmaxcpy(XError, (*Root)->Name, STRINGSIZE);
+    Tmp = (*Root); *Root = Tmp->Next;
+    strmaxcpy(XError, Tmp->Name, STRINGSIZE);
     strmaxcat(XError, ", ", STRINGSIZE);
-    strmaxcat(XError, (*Root)->pErrorPos, STRINGSIZE);
+    strmaxcat(XError, Tmp->pErrorPos, STRINGSIZE);
     WrXError(ErrNum_UndefdForward, XError);
-    free((*Root)->Name);
-    free((*Root)->pErrorPos);
-    Tmp = (*Root);
-    *Root = Tmp->Next; free(Tmp);
+    free_forward_symbol(Tmp);
   }
 }
 
 static void CodeENDSECTION(Word Index)
 {
-  PSaveSection Tmp;
-  String ExpName;
   UNUSED(Index);
 
-  if (!ChkArgCnt(0, 1));
-  else if (!SectionStack) WrError(ErrNum_NotInSection);
-  else if ((ArgCnt == 0) || (ExpandStrSymbol(ExpName, sizeof(ExpName), &ArgStr[1])))
-  {
-    if ((ArgCnt == 1) && (GetSectionHandle(ExpName, False, SectionStack->Handle) != MomSectionHandle)) WrStrErrorPos(ErrNum_WrongEndSect, &ArgStr[1]);
-    else
+  if (!SectionStack) WrError(ErrNum_NotInSection);
+  else
+    switch (ArgCnt)
     {
-      Tmp = SectionStack;
-      SectionStack = Tmp->Next;
-      CodeENDSECTION_ChkEmptList(&(Tmp->LocSyms));
-      CodeENDSECTION_ChkEmptList(&(Tmp->GlobSyms));
-      CodeENDSECTION_ChkEmptList(&(Tmp->ExportSyms));
-      if (ArgCnt == 0)
-        as_snprintf(ListLine, STRINGSIZE, "[%s]", GetSectionName(MomSectionHandle));
-      SetMomSection(Tmp->Handle);
-      free(Tmp);
+      case 0:
+        goto section_ok;
+      case 1:
+      {
+        String exp_name_buf;
+        tStrComp exp_name;
+        const tStrComp *p_exp_name;
+
+        StrCompMkTemp(&exp_name, exp_name_buf, sizeof(exp_name_buf));
+        p_exp_name = ExpandStrSymbol(&exp_name, &ArgStr[1], !CaseSensitive);
+        if (!p_exp_name);
+        else if (GetSectionHandle(exp_name.str.p_str, False, SectionStack->Handle) != MomSectionHandle) WrStrErrorPos(ErrNum_WrongEndSect, &ArgStr[1]);
+        else
+          goto section_ok;
+        break;
+      }
+      default:
+        (void)ChkArgCnt(0, 1);
+        break;
+      section_ok:
+      {
+        PSaveSection Tmp = SectionStack;
+        SectionStack = Tmp->Next;
+        CodeENDSECTION_ChkEmptList(&(Tmp->LocSyms));
+        CodeENDSECTION_ChkEmptList(&(Tmp->GlobSyms));
+        CodeENDSECTION_ChkEmptList(&(Tmp->ExportSyms));
+        if (ArgCnt == 0)
+          as_snprintf(ListLine, STRINGSIZE, "[%s]", GetSectionName(MomSectionHandle));
+        SetMomSection(Tmp->Handle);
+        free(Tmp);
+      }
     }
-  }
 }
 
 
@@ -325,9 +371,7 @@ static void CodeCPU(Word Index)
   else
   {
     NLS_UpString(ArgStr[1].str.p_str);
-    if (SetCPUByName(&ArgStr[1]))
-      SetNSeg(SegCode);
-    else
+    if (!SetCPUByName(&ArgStr[1]))
       WrStrErrorPos(ErrNum_InvCPUType, &ArgStr[1]);
   }
 }
@@ -413,8 +457,8 @@ static void CodeSETEQU(Word MayChange)
         {
           case TempInt:
             EnterIntSymbol(pName, t.Contents.Int, DestSeg, MayChange);
-            if (AttrPartOpSize != eSymbolSizeUnknown)
-              SetSymbolOrStructElemSize(pName, AttrPartOpSize);
+            if (AttrPartOpSize[0] != eSymbolSizeUnknown)
+              SetSymbolOrStructElemSize(pName, AttrPartOpSize[0]);
             break;
           case TempFloat:
             EnterFloatSymbol(pName, t.Contents.Float, MayChange);
@@ -816,7 +860,7 @@ static void CodeMESSAGE(Word Index)
     if (!OK) WrError(ErrNum_InvString);
     else
     {
-      if (!QuietMode)
+      if (msg_level >= e_msg_level_normal)
         WrConsoleLine(mess, True);
       if (strcmp(LstName, "/dev/null"))
         WrLstLine(mess);
@@ -833,6 +877,9 @@ static void CodeERROR(Word Index)
 
   if (ChkArgCnt(1, 1))
   {
+    if (FindAndTakeExpectError(ErrNum_UserError))
+      return;
+
     EvalStrStringExpression(&ArgStr[1], &OK, mess);
     if (!OK) WrError(ErrNum_InvString);
     else
@@ -858,18 +905,11 @@ static void CodeFATAL(Word Index)
 
 static void CodeCHARSET(Word Index)
 {
-  FILE *f;
-  unsigned char tfield[256];
-  LongWord Start, l, TStart, Stop, z;
-  Boolean OK;
   UNUSED(Index);
 
   if (!ChkArgCnt(0, 3));
   else if (ArgCnt == 0)
-  {
-    for (z = 0; z < 256; z++)
-      CharTransTable[z] = z;
-  }
+    as_chartrans_table_reset(CurrTransTable->p_table);
   else
   {
     TempResult t;
@@ -887,46 +927,57 @@ static void CodeCHARSET(Word Index)
         {
           if (ChkArgCnt(2, 3))
           {
-            Start = t.Contents.Int;
-            EvalStrExpression(&ArgStr[2], &t);
-            if ((t.Typ == TempString) && (t.Flags & eSymbolFlag_StringSingleQuoted))
-              TempResultToInt(&t);
-            switch (t.Typ)
+            LongWord Start = t.Contents.Int;
+            if ((ArgCnt == 2) && (!ArgStr[2].str.p_str[0]))
             {
-              case TempInt: /* Übersetzungsbereich als Character-Angabe */
-                if (mFirstPassUnknown(t.Flags))
-                  t.Contents.Int &= 255;
-                if (ArgCnt == 2)
+              as_chartrans_table_unset(CurrTransTable->p_table, Start);
+            }
+            else
+            {
+              EvalStrExpression(&ArgStr[2], &t);
+              if ((t.Typ == TempString) && (t.Flags & eSymbolFlag_StringSingleQuoted))
+                TempResultToInt(&t);
+              switch (t.Typ)
+              {
+                case TempInt: /* Uebersetzungsbereich als Character-Angabe */
+                  if (mFirstPassUnknown(t.Flags))
+                    t.Contents.Int &= 255;
+                  if (ChkRange(t.Contents.Int, 0, 255))
+                  {
+                    if (ArgCnt == 2)
+                      as_chartrans_table_set(CurrTransTable->p_table, Start, t.Contents.Int);
+                    else if (!ArgStr[3].str.p_str[0])
+                      as_chartrans_table_unset_mult(CurrTransTable->p_table, Start, t.Contents.Int);
+                    else if (ChkRange(t.Contents.Int, Start, 255))
+                    {
+                      Boolean OK;
+                      LongWord Stop = t.Contents.Int,
+                               TStart = EvalStrIntExpression(&ArgStr[3], UInt8, &OK);
+                      if (OK)
+                        as_chartrans_table_set_mult(CurrTransTable->p_table, Start, Stop, TStart);
+                    }
+                  }
+                  break;
+                case TempString:
                 {
-                  Stop = Start;
-                  TStart = t.Contents.Int;
-                  OK = ChkRange(TStart, 0, 255);
-                }
-                else
-                {
-                  Stop = t.Contents.Int;
-                  OK = ChkRange(Stop, Start, 255);
-                  if (OK)
-                    TStart = EvalStrIntExpression(&ArgStr[3], UInt8, &OK);
+                  LongWord l = t.Contents.str.len; /* Uebersetzungsstring ab Start */
+
+                  if (Start + l > 256) WrError(ErrNum_OverRange);
                   else
-                    TStart = 0;
+                  {
+                    LongWord z;
+
+                    for (z = 0; z < l; z++)
+                      as_chartrans_table_set(CurrTransTable->p_table, Start + z, t.Contents.str.p_str[z]);
+                  }
+                  break;
                 }
-                if (OK)
-                  for (z = Start; z <= Stop; z++)
-                    CharTransTable[z] = TStart + (z - Start);
-                break;
-              case TempString:
-                l = t.Contents.str.len; /* Uebersetzungsstring ab Start */
-                if (Start + l > 256) WrError(ErrNum_OverRange);
-                else
-                  for (z = 0; z < l; z++)
-                    CharTransTable[Start + z] = t.Contents.str.p_str[z];
-                break;
-              case TempFloat:
-                WrStrErrorPos(ErrNum_StringOrIntButFloat, &ArgStr[2]);
-                break;
-              default:
-                break;
+                case TempFloat:
+                  WrStrErrorPos(ErrNum_StringOrIntButFloat, &ArgStr[2]);
+                  break;
+                default:
+                  break;
+              }
             }
           }
         }
@@ -935,13 +986,17 @@ static void CodeCHARSET(Word Index)
         if (ChkArgCnt(1, 1)) /* Tabelle von Datei lesen */
         {
           String Tmp;
+          FILE *f;
+          unsigned char tfield[256];
+          LongWord z;
 
           as_nonz_dynstr_to_c_str(Tmp, &t.Contents.str, sizeof(Tmp));
           f = fopen(Tmp, OPENRDMODE);
           if (!f) ChkIO(ErrNum_OpeningFile);
           if (fread(tfield, sizeof(char), 256, f) != 256) ChkIO(ErrNum_FileReadError);
           fclose(f);
-          memcpy(CharTransTable, tfield, sizeof(char) * 256);
+          for (z = 0; z < 256; z++)
+            as_chartrans_table_set(CurrTransTable->p_table, z, tfield[z]);
         }
         break;
       case TempFloat:
@@ -956,72 +1011,30 @@ static void CodeCHARSET(Word Index)
 
 static void CodePRSET(Word Index)
 {
-  int z, z2;
   UNUSED(Index);
 
-  for (z = 0; z < 16; z++)
-  {
-    for (z2 = 0; z2 < 16; z2++)
-      printf(" %02x", CharTransTable[z*16 + z2]);
-    printf("  ");
-    for (z2 = 0; z2 < 16; z2++)
-      printf("%c", CharTransTable[z * 16 + z2] > ' ' ? CharTransTable[z*16 + z2] : '.');
-    putchar('\n');
-  }
+  as_chartrans_table_print(CurrTransTable->p_table, stdout);
 }
 
 static void CodeCODEPAGE(Word Index)
 {
-  PTransTable Prev, Run, New, Source;
-  int erg = 0;
+  PTransTable Source;
   UNUSED(Index);
 
   if (!ChkArgCnt(1, 2));
   else if (!ChkSymbName(ArgStr[1].str.p_str)) WrStrErrorPos(ErrNum_InvSymName, &ArgStr[1]);
   else
   {
-    if (!CaseSensitive)
-    {
-      UpString(ArgStr[1].str.p_str);
-      if (ArgCnt == 2)
-        UpString(ArgStr[2].str.p_str);
-    }
-
-    if (ArgCnt == 1)
-      Source = CurrTransTable;
-    else
-    {
-      for (Source = TransTables; Source; Source = Source->Next)
-        if (!strcmp(Source->Name, ArgStr[2].str.p_str))
-          break;
-    }
-
+    Source = (ArgCnt == 1) ? CurrTransTable : FindCodepage(ArgStr[2].str.p_str, NULL);
     if (!Source) WrStrErrorPos(ErrNum_UnknownCodepage, &ArgStr[2]);
     else
     {
-      for (Prev = NULL, Run = TransTables; Run; Prev = Run, Run = Run->Next)
-        if ((erg = strcmp(ArgStr[1].str.p_str, Run->Name)) <= 0)
-          break;
-
-      if ((!Run) || (erg < 0))
-      {
-        New = (PTransTable) malloc(sizeof(TTransTable));
-        New->Next = Run;
-        New->Name = as_strdup(ArgStr[1].str.p_str);
-        New->Table = (unsigned char *) malloc(256 * sizeof(char));
-        memcpy(New->Table, Source->Table, 256 * sizeof(char));
-        if (!Prev)
-          TransTables = New;
-        else
-          Prev->Next = New;
-        CurrTransTable = New;
-      }
-      else
-        CurrTransTable = Run;
+      Source = FindCodepage(ArgStr[1].str.p_str, Source);
+      if (Source)
+        CurrTransTable = Source;
     }
   }
 }
-
 
 static void CodeFUNCTION(Word Index)
 {
@@ -1204,9 +1217,9 @@ static void CodeMACEXP(Word Index)
   }
 }
 
-static Boolean DecodeSegment(const tStrComp *pArg, Integer StartSeg, Integer *pResult)
+static Boolean DecodeSegment(const tStrComp *pArg, as_addrspace_t StartSeg, as_addrspace_t *pResult)
 {
-  Integer SegZ;
+  as_addrspace_t SegZ;
   Word Mask;
 
   for (SegZ = StartSeg, Mask = 1 << StartSeg; SegZ < SegCount; SegZ++, Mask <<= 1)
@@ -1221,12 +1234,12 @@ static Boolean DecodeSegment(const tStrComp *pArg, Integer StartSeg, Integer *pR
 
 static void CodeSEGMENT(Word Index)
 {
-  Integer NewSegment;
+  as_addrspace_t NewSegment;
   UNUSED(Index);
 
   if (ChkArgCnt(1, 1)
    && DecodeSegment(&ArgStr[1], SegCode, &NewSegment))
-    SetNSeg(NewSegment);
+    SetNSeg(NewSegment, False);
 }
 
 
@@ -1372,12 +1385,14 @@ static void CodeALIGN(Word Index)
 static void CodeASSUME(Word Index)
 {
   int z1;
-  unsigned z2;
+  unsigned z2, z3;
   Boolean OK;
   tSymbolFlags Flags;
   LongInt HVal;
   tStrComp RegPart, ValPart;
   char *pSep, EmptyStr[] = "";
+  void (*pPostProcs[5])(void);
+  unsigned PostProcCount = 0;
 
   UNUSED(Index);
 
@@ -1393,7 +1408,7 @@ static void CodeASSUME(Word Index)
   {
     z1 = 1;
     OK = True;
-    while ((z1 <= ArgCnt) && (OK))
+    while ((z1 <= ArgCnt) && OK)
     {
       pSep = QuotPos(ArgStr[z1].str.p_str, ':');
       if (pSep)
@@ -1431,11 +1446,28 @@ static void CodeASSUME(Word Index)
               *(pASSUMERecs[z2].Dest) = HVal;
           }
         }
+        /* collect different post procs so same proc is called only once */
         if (pASSUMERecs[z2].pPostProc)
-          pASSUMERecs[z2].pPostProc();
+        {
+          for (z3 = 0; z3 < PostProcCount; z3++)
+            if (pASSUMERecs[z2].pPostProc == pPostProcs[z3])
+              break;
+          if (z3 >= PostProcCount)
+          {
+            if (PostProcCount >= as_array_size(pPostProcs))
+            {
+              for (z3 = 0; z3 < PostProcCount; z3++)
+                pPostProcs[z3]();
+              PostProcCount = 0;
+            }
+            pPostProcs[PostProcCount++] = pASSUMERecs[z2].pPostProc;
+          }
+        }
       }
       z1++;
     }
+    for (z3 = 0; z3 < PostProcCount; z3++)
+      pPostProcs[z3]();
   }
 }
 
@@ -1504,7 +1536,7 @@ static void CodeENUMCONF(Word Index)
 
     if (ArgCnt >= 2)
     {
-      Integer NewSegment;
+      as_addrspace_t NewSegment;
 
       if (DecodeSegment(&ArgStr[2], SegNone, &NewSegment))
         EnumSegment = NewSegment;
@@ -1694,8 +1726,6 @@ static void CodePUSHV(Word Index)
 
   if (ChkArgCnt(2, ArgCntMax))
   {
-    if (!CaseSensitive)
-      NLS_UpString(ArgStr[1].str.p_str);
     for (z = 2; z <= ArgCnt; z++)
       PushSymbol(&ArgStr[z], &ArgStr[1]);
   }
@@ -1708,8 +1738,6 @@ static void CodePOPV(Word Index)
 
   if (ChkArgCnt(2, ArgCntMax))
   {
-    if (!CaseSensitive)
-      NLS_UpString(ArgStr[1].str.p_str);
     for (z = 2; z <= ArgCnt; z++)
       PopSymbol(&ArgStr[z], &ArgStr[1]);
   }
@@ -2006,10 +2034,11 @@ static void CodePPSyms(PForwardSymbol *Orig,
                        PForwardSymbol *Alt2)
 {
   PForwardSymbol Lauf;
-  tStrComp *pArg, SymArg, SectionArg;
-  String Sym, Section;
+  tStrComp *pArg, SymArg, SectionArg, exp_sym, *p_exp_sym;
+  String exp_sym_buf, Section;
   char *pSplit;
 
+  StrCompMkTemp(&exp_sym, exp_sym_buf, sizeof(exp_sym_buf));
   if (ChkArgCnt(1, ArgCntMax))
     forallargs (pArg, True)
     {
@@ -2017,32 +2046,32 @@ static void CodePPSyms(PForwardSymbol *Orig,
       if (pSplit)
       {
         StrCompSplitRef(&SymArg, &SectionArg, pArg, pSplit);
-        if (!ExpandStrSymbol(Sym, sizeof(Sym), &SymArg))
+        p_exp_sym = ExpandStrSymbol(&exp_sym, &SymArg, !CaseSensitive);
+        if (!p_exp_sym)
           return;
       }
       else
       {
-        if (!ExpandStrSymbol(Sym, sizeof(Sym), pArg))
+        p_exp_sym = ExpandStrSymbol(&exp_sym, pArg, !CaseSensitive);
+        if (!p_exp_sym)
           return;
         *Section = '\0';
         StrCompMkTemp(&SectionArg, Section, sizeof(Section));
       }
-      if (!CaseSensitive)
-        NLS_UpString(Sym);
-      Lauf = CodePPSyms_SearchSym(*Alt1, Sym);
+      Lauf = CodePPSyms_SearchSym(*Alt1, p_exp_sym->str.p_str);
       if (Lauf) WrStrErrorPos(ErrNum_ContForward, pArg);
       else
       {
-        Lauf = CodePPSyms_SearchSym(*Alt2, Sym);
+        Lauf = CodePPSyms_SearchSym(*Alt2, p_exp_sym->str.p_str);
         if (Lauf) WrStrErrorPos(ErrNum_ContForward, pArg);
         else
         {
-          Lauf = CodePPSyms_SearchSym(*Orig, Sym);
+          Lauf = CodePPSyms_SearchSym(*Orig, p_exp_sym->str.p_str);
           if (!Lauf)
           {
             Lauf = (PForwardSymbol) malloc(sizeof(TForwardSymbol));
             Lauf->Next = (*Orig); *Orig = Lauf;
-            Lauf->Name = as_strdup(Sym);
+            Lauf->Name = as_strdup(p_exp_sym->str.p_str);
             Lauf->pErrorPos = GetErrorPos();
           }
           IdentifySection(&SectionArg, &Lauf->DestSection);
@@ -2053,15 +2082,14 @@ static void CodePPSyms(PForwardSymbol *Orig,
 
 /*------------------------------------------------------------------------*/
 
-#define ONOFFMax 32
-static int ONOFFCnt = 0;
 typedef struct
 {
   Boolean Persist, *FlagAddr;
   const char *FlagName;
   const char *InstName;
 } ONOFFTab;
-static ONOFFTab *ONOFFList;
+static ONOFFTab *ONOFFList = NULL;
+static size_t ONOFFCnt = 0;
 
 Boolean CheckONOFFArg(const tStrComp *pArg, Boolean *pResult)
 {
@@ -2090,7 +2118,7 @@ static void DecodeONOFF(Word Index)
 
 void AddONOFF(const char *InstName, Boolean *Flag, const char *FlagName, Boolean Persist)
 {
-  if (ONOFFCnt == ONOFFMax) exit(255);
+  dyn_array_rsv_end(ONOFFList, ONOFFTab, ONOFFCnt);
   ONOFFList[ONOFFCnt].Persist = Persist;
   ONOFFList[ONOFFCnt].FlagAddr = Flag;
   ONOFFList[ONOFFCnt].FlagName = FlagName;
@@ -2100,17 +2128,26 @@ void AddONOFF(const char *InstName, Boolean *Flag, const char *FlagName, Boolean
 
 void ClearONOFF(void)
 {
-  int z, z2;
+  size_t z, z2;
 
   for (z = 0; z < ONOFFCnt; z++)
     if (!ONOFFList[z].Persist)
       break;
 
-  for (z2 = ONOFFCnt - 1; z2 >= z; z2--)
-    RemoveInstTable(ONOFFTable, ONOFFList[z2].InstName);
+  if (z < ONOFFCnt)
+  {
+    for (z2 = ONOFFCnt - 1; z2 >= z; z2--)
+      RemoveInstTable(ONOFFTable, ONOFFList[z2].InstName);
 
-  ONOFFCnt = z;
+    dyn_array_realloc(ONOFFList, ONOFFTab, ONOFFCnt, z);
+    ONOFFCnt = z;
+  }
 }
+
+/*!------------------------------------------------------------------------
+ * \fn     CodeRELAXED(Word Index)
+ * \brief  handle RELAXED statement
+ * ------------------------------------------------------------------------ */
 
 static void CodeRELAXED(Word Index)
 {
@@ -2176,161 +2213,259 @@ static void CodeINTSYNTAX(Word Index)
   }
 }
 
-/*------------------------------------------------------------------------*/
+/*!------------------------------------------------------------------------
+ * \fn     code_set_cond(Word may_change)
+ * \brief  process SET pseudo statement if no machine instruction
+ * \param  may_change fixed True for SET
+ * \return True if instruction was processed
+ * ------------------------------------------------------------------------ */
 
-typedef struct
+static Boolean code_set_cond(Word may_change)
 {
-  const char *Name;
-  InstProc Proc;
-  Word Index;
-} PseudoOrder;
-static const PseudoOrder Pseudos[] =
-{
-  {"ALIGN",      CodeALIGN      , 0 },
-  {"ASEG",       CodeSEGTYPE    , 0 },
-  {"ASSUME",     CodeASSUME     , 0 },
-  {"BINCLUDE",   CodeBINCLUDE   , 0 },
-  {"CHARSET",    CodeCHARSET    , 0 },
-  {"CODEPAGE",   CodeCODEPAGE   , 0 },
-  {"CPU",        CodeCPU        , 0 },
-  {"DEPHASE",    CodeDEPHASE    , 0 },
-  {"END",        CodeEND        , 0 },
-  {"ENDEXPECT",  CodeENDEXPECT  , 0 },
-  {"ENDS",       CodeENDSTRUCT  , 0 },
-  {"ENDSECTION", CodeENDSECTION , 0 },
-  {"ENDSTRUC",   CodeENDSTRUCT  , 0 },
-  {"ENDSTRUCT",  CodeENDSTRUCT  , 0 },
-  {"ENDUNION",   CodeENDSTRUCT  , 1 },
-  {"ENUM",       CodeENUM       , 0 },
-  {"ENUMCONF",   CodeENUMCONF   , 0 },
-  {"EQU",        CodeSETEQU     , 0 },
-  {"ERROR",      CodeERROR      , 0 },
-  {"EXPECT",     CodeEXPECT     , 0 },
-  {"EXPORT_SYM", CodeEXPORT     , 0 },
-  {"EXTERN_SYM", CodeEXTERN     , 0 },
-  {"FATAL",      CodeFATAL      , 0 },
-  {"FUNCTION",   CodeFUNCTION   , 0 },
-  {"INTSYNTAX",  CodeINTSYNTAX  , 0 },
-  {"LABEL",      CodeLABEL      , 0 },
-  {"LISTING",    CodeLISTING    , 0 },
-  {"MESSAGE",    CodeMESSAGE    , 0 },
-  {"NEWPAGE",    CodeNEWPAGE    , 0 },
-  {"NESTMAX",    CodeNESTMAX    , 0 },
-  {"NEXTENUM",   CodeENUM       , 1 },
-  {"ORG",        CodeORG        , 0 },
-  {"OUTRADIX",   CodeRADIX      , 1 },
-  {"PHASE",      CodePHASE      , 0 },
-  {"POPV",       CodePOPV       , 0 },
-  {"PRSET",      CodePRSET      , 0 },
-  {"PRTINIT",    CodeString     , 0 },
-  {"PRTEXIT",    CodeString     , 1 },
-  {"TITLE",      CodeString     , 2 },
-  {"PUSHV",      CodePUSHV      , 0 },
-  {"RADIX",      CodeRADIX      , 0 },
-  {"READ",       CodeREAD       , 0 },
-  {"RELAXED",    CodeRELAXED    , 0 },
-  {"MACEXP",     CodeMACEXP     , 0x10 },
-  {"MACEXP_DFT", CodeMACEXP     , 0 },
-  {"MACEXP_OVR", CodeMACEXP     , 1 },
-  {"RORG",       CodeRORG       , 0 },
-  {"RSEG",       CodeSEGTYPE    , 0 },
-  {"SECTION",    CodeSECTION    , 0 },
-  {"SEGMENT",    CodeSEGMENT    , 0 },
-  {"SHARED",     CodeSHARED     , 0 },
-  {"STRUC",      CodeSTRUCT     , 0 },
-  {"STRUCT",     CodeSTRUCT     , 0 },
-  {"UNION",      CodeSTRUCT     , 1 },
-  {"WARNING",    CodeWARNING    , 0 },
-  {"=",          CodeSETEQU     , 0 },
-  {":=",         CodeSETEQU     , 1 },
-  {""       ,    NULL           , 0 }
-};
-
-Boolean CodeGlobalPseudo(void)
-{
-  switch (*OpPart.str.p_str)
+  if (is_set_pseudo())
   {
-    case 'S':
-      if (!SetIsOccupied() && Memo("SET"))
-      {
-        CodeSETEQU(True);
-        return True;
-      }
-      else if (!SaveIsOccupied() && Memo("SAVE"))
-      {
-        CodeSAVE(0);
-        return True;
-      }
-      break;
-    case 'E':
-      if (Memo("EVAL"))
-      {
-        CodeSETEQU(True);
-        return True;
-      }
-      break;
-    case 'P':
-      if ((!PageIsOccupied && Memo("PAGE"))
-       || (PageIsOccupied && Memo("PAGESIZE")))
-      {
-        CodePAGE(0);
-        return True;
-      }
-      break;
-    case 'R':
-      if (!RestoreIsOccupied() && Memo("RESTORE"))
-      {
-        CodeRESTORE(0);
-        return True;
-      }
-      break;
+    CodeSETEQU(may_change);
+    return True;
   }
+  else
+    return False;
+}
 
-  if (LookupInstTable(ONOFFTable, OpPart.str.p_str))
-    return True;
+/*!------------------------------------------------------------------------
+ * \fn     code_save_cond(Word may_change)
+ * \brief  process SAVE pseudo statement if no machine instruction
+ * \param  may_change fixed 0 for SAVE
+ * \return True if instruction was processed
+ * ------------------------------------------------------------------------ */
 
-  if (LookupInstTable(PseudoTable, OpPart.str.p_str))
+static Boolean code_save_cond(Word arg)
+{
+  if (is_save_pseudo())
+  {
+    CodeSAVE(arg);
     return True;
+  }
+  else
+    return False;
+}
+
+/*!------------------------------------------------------------------------
+ * \fn     code_page_cond(Word may_change)
+ * \brief  process PAGE pseudo statement if no machine instruction
+ * \param  may_change fixed 0 for PAGE
+ * \return True if instruction was processed
+ * ------------------------------------------------------------------------ */
+
+static Boolean code_page_cond(Word arg)
+{
+  if (is_page_pseudo())
+  {
+    CodePAGE(arg);
+    return True;
+  }
+  else
+    return False;
+}
+
+/*!------------------------------------------------------------------------
+ * \fn     code_pagesize_cond(Word may_change)
+ * \brief  process PAGESIZE pseudo statement if PAGE is a machine instruction
+ * \param  may_change fixed 0 for PAGESIZE
+ * \return True if instruction was processed
+ * ------------------------------------------------------------------------ */
+
+static Boolean code_pagesize_cond(Word arg)
+{
+  if (PageIsOccupied)
+  {
+    CodePAGE(arg);
+    return True;
+  }
+  else
+    return False;
+}
+
+/*!------------------------------------------------------------------------
+ * \fn     code_restore_cond(Word may_change)
+ * \brief  process RESTORE pseudo statement if no machine instruction
+ * \param  may_change fixed 0 for RESTORE
+ * \return True if instruction was processed
+ * ------------------------------------------------------------------------ */
+
+static Boolean code_restore_cond(Word arg)
+{
+  if (is_restore_pseudo())
+  {
+    CodeRESTORE(arg);
+    return True;
+  }
+  else
+    return False;
+}
+
+/*!------------------------------------------------------------------------
+ * \fn     code_forward_cond(Word arg)
+ * \brief  process FORWARD pseudo statement if within section
+ * \param  arg constant 0 for FORWARD
+ * \return True if processed
+ * ------------------------------------------------------------------------ */
+
+static Boolean code_forward_cond(Word arg)
+{
+  UNUSED(arg);
 
   if (SectionStack)
   {
-    if (Memo("FORWARD"))
-    {
-      if (PassNo <= MaxSymPass)
+    if (PassNo <= MaxSymPass)
         CodePPSyms(&(SectionStack->LocSyms),
                    &(SectionStack->GlobSyms),
                    &(SectionStack->ExportSyms));
-      return True;
-    }
-    if (Memo("PUBLIC"))
-    {
-      CodePPSyms(&(SectionStack->GlobSyms),
-                 &(SectionStack->LocSyms),
-                 &(SectionStack->ExportSyms));
-      return True;
-    }
-    if (Memo("GLOBAL"))
-    {
-      CodePPSyms(&(SectionStack->ExportSyms),
-                 &(SectionStack->LocSyms),
-                 &(SectionStack->GlobSyms));
-      return True;
-    }
+    return True;
   }
-
-  return False;
+  else
+    return False;
 }
 
+/*!------------------------------------------------------------------------
+ * \fn     code_public_cond(Word arg)
+ * \brief  process PUBLIC pseudo statement if within section
+ * \param  arg constant 0 for PUBLIC
+ * \return True if processed
+ * ------------------------------------------------------------------------ */
+
+static Boolean code_public_cond(Word arg)
+{
+  UNUSED(arg);
+
+  if (SectionStack)
+  {
+    CodePPSyms(&(SectionStack->GlobSyms),
+               &(SectionStack->LocSyms),
+               &(SectionStack->ExportSyms));
+    return True;
+  }
+  else
+    return False;
+}
+
+/*!------------------------------------------------------------------------
+ * \fn     code_global_cond(Word arg)
+ * \brief  process GLOBAL pseudo statement if within section
+ * \param  arg constant 0 for GLOBAL
+ * \return True if processed
+ * ------------------------------------------------------------------------ */
+
+static Boolean code_global_cond(Word arg)
+{
+  UNUSED(arg);
+
+  if (SectionStack)
+  {
+    CodePPSyms(&(SectionStack->ExportSyms),
+               &(SectionStack->LocSyms),
+               &(SectionStack->GlobSyms));
+    return True;
+  }
+  else
+    return False;
+}
+
+/*------------------------------------------------------------------------*/
+
+
+Boolean CodeGlobalPseudo(void)
+{
+  return 
+      LookupInstTable(ONOFFTable, OpPart.str.p_str)
+   || LookupInstTable(PseudoTable, OpPart.str.p_str)
+   || inst_fnc_table_lookup(pseudo_inst_fnc_table, OpPart.str.p_str);
+}
 
 void codeallg_init(void)
 {
-  const PseudoOrder *POrder;
-
-  ONOFFList = (ONOFFTab*)calloc(ONOFFMax, sizeof(*ONOFFList));
-
   PseudoTable = CreateInstTable(201);
-  for (POrder = Pseudos; POrder->Proc; POrder++)
-    AddInstTable(PseudoTable, POrder->Name, POrder->Index, POrder->Proc);
+  AddInstTable(PseudoTable, "ALIGN",      0,  CodeALIGN     );
+  AddInstTable(PseudoTable, "ASEG",       0,  CodeSEGTYPE   );
+  AddInstTable(PseudoTable, "ASSUME",     0,  CodeASSUME    );
+  AddInstTable(PseudoTable, "BINCLUDE",   0,  CodeBINCLUDE  );
+  AddInstTable(PseudoTable, "CHARSET",    0,  CodeCHARSET   );
+  AddInstTable(PseudoTable, "CODEPAGE",   0,  CodeCODEPAGE  );
+  AddInstTable(PseudoTable, "CPU",        0,  CodeCPU       );
+  AddInstTable(PseudoTable, "DEPHASE",    0,  CodeDEPHASE   );
+  AddInstTable(PseudoTable, "END",        0,  CodeEND       );
+  AddInstTable(PseudoTable, "ENDEXPECT",  0,  CodeENDEXPECT );
+  AddInstTable(PseudoTable, "ENDS",       0,  CodeENDSTRUCT );
+  AddInstTable(PseudoTable, "ENDSECTION", 0,  CodeENDSECTION);
+  AddInstTable(PseudoTable, "ENDSTRUC",   0,  CodeENDSTRUCT );
+  AddInstTable(PseudoTable, "ENDSTRUCT",  0,  CodeENDSTRUCT );
+  AddInstTable(PseudoTable, "ENDUNION",   1,  CodeENDSTRUCT );
+  AddInstTable(PseudoTable, "ENUM",       0,  CodeENUM      );
+  AddInstTable(PseudoTable, "ENUMCONF",   0,  CodeENUMCONF  );
+  AddInstTable(PseudoTable, "EQU",        0,  CodeSETEQU    );
+  AddInstTable(PseudoTable, "ERROR",      0,  CodeERROR     );
+  AddInstTable(PseudoTable, "EXPECT",     0,  CodeEXPECT    );
+  AddInstTable(PseudoTable, "EXPORT_SYM", 0,  CodeEXPORT    );
+  AddInstTable(PseudoTable, "EXTERN_SYM", 0,  CodeEXTERN    );
+  AddInstTable(PseudoTable, "EVAL",       1,  CodeSETEQU    );
+  AddInstTable(PseudoTable, "FATAL",      0,  CodeFATAL     );
+  AddInstTable(PseudoTable, "FUNCTION",   0,  CodeFUNCTION  );
+  AddInstTable(PseudoTable, "INTSYNTAX",  0,  CodeINTSYNTAX );
+  AddInstTable(PseudoTable, "LABEL",      0,  CodeLABEL     );
+  AddInstTable(PseudoTable, "LISTING",    0,  CodeLISTING   );
+  AddInstTable(PseudoTable, "MESSAGE",    0,  CodeMESSAGE   );
+  AddInstTable(PseudoTable, "NEWPAGE",    0,  CodeNEWPAGE   );
+  AddInstTable(PseudoTable, "NESTMAX",    0,  CodeNESTMAX   );
+  AddInstTable(PseudoTable, "NEXTENUM",   1,  CodeENUM      );
+  AddInstTable(PseudoTable, "ORG",        0,  CodeORG       );
+  AddInstTable(PseudoTable, "OUTRADIX",   1,  CodeRADIX     );
+  AddInstTable(PseudoTable, "PHASE",      0,  CodePHASE     );
+  AddInstTable(PseudoTable, "POPV",       0,  CodePOPV      );
+  AddInstTable(PseudoTable, "PRSET",      0,  CodePRSET     );
+  AddInstTable(PseudoTable, "PRTINIT",    0,  CodeString    );
+  AddInstTable(PseudoTable, "PRTEXIT",    1,  CodeString    );
+  AddInstTable(PseudoTable, "TITLE",      2,  CodeString    );
+  AddInstTable(PseudoTable, "PUSHV",      0,  CodePUSHV     );
+  AddInstTable(PseudoTable, "RADIX",      0,  CodeRADIX     );
+  AddInstTable(PseudoTable, "READ",       0,  CodeREAD      );
+  AddInstTable(PseudoTable, "RELAXED",    0,  CodeRELAXED   );
+  AddInstTable(PseudoTable, "MACEXP",     0x10, CodeMACEXP  );
+  AddInstTable(PseudoTable, "MACEXP_DFT", 0,  CodeMACEXP    );
+  AddInstTable(PseudoTable, "MACEXP_OVR", 1,  CodeMACEXP    );
+  AddInstTable(PseudoTable, "RESTOREENV", 0,  CodeRESTORE   );
+  AddInstTable(PseudoTable, "RORG",       0,  CodeRORG      );
+  AddInstTable(PseudoTable, "RSEG",       0,  CodeSEGTYPE   );
+  AddInstTable(PseudoTable, "SAVEENV",    0,  CodeSAVE      );
+  AddInstTable(PseudoTable, "SECTION",    0,  CodeSECTION   );
+  AddInstTable(PseudoTable, "SEGMENT",    0,  CodeSEGMENT   );
+  AddInstTable(PseudoTable, "SHARED",     0,  CodeSHARED    );
+  AddInstTable(PseudoTable, "STRUC",      0,  CodeSTRUCT    );
+  AddInstTable(PseudoTable, "STRUCT",     0,  CodeSTRUCT    );
+  AddInstTable(PseudoTable, "UNION",      1,  CodeSTRUCT    );
+  AddInstTable(PseudoTable, "WARNING",    0,  CodeWARNING   );
+  AddInstTable(PseudoTable, "=",          0,  CodeSETEQU    );
+  AddInstTable(PseudoTable, ":=",         1,  CodeSETEQU    );
+
+  /* NOTE: These will only be selected if the current target does
+     NOT use the dot to separate an attribute part.  If it does,
+     the oppart_leading_dot flag gets set and the appropriate
+     rules kick in: */
+
+  AddInstTable(PseudoTable, ".EQU",        0, CodeSETEQU );
+  AddInstTable(PseudoTable, ".SET",        1, CodeSETEQU );
+  AddInstTable(PseudoTable, ".SAVE",       0, CodeSAVE   );
+  AddInstTable(PseudoTable, ".RESTORE",    0, CodeRESTORE);
+  AddInstTable(PseudoTable, ".PAGE",       0, CodePAGE   );
+
   ONOFFTable = CreateInstTable(47);
   AddONOFF("DOTTEDSTRUCTS", &DottedStructs, DottedStructsName, True);
+
+  pseudo_inst_fnc_table = inst_fnc_table_create(103);
+  inst_fnc_table_add(pseudo_inst_fnc_table, "SET", True, code_set_cond);
+  inst_fnc_table_add(pseudo_inst_fnc_table, "SAVE", 0, code_save_cond);
+  inst_fnc_table_add(pseudo_inst_fnc_table, "PAGE", 0, code_page_cond);
+  inst_fnc_table_add(pseudo_inst_fnc_table, "PAGESIZE", 0, code_pagesize_cond);
+  inst_fnc_table_add(pseudo_inst_fnc_table, "RESTORE", 0, code_restore_cond);
+  inst_fnc_table_add(pseudo_inst_fnc_table, "FORWARD", 0, code_forward_cond);
+  inst_fnc_table_add(pseudo_inst_fnc_table, "PUBLIC", 0, code_public_cond);
+  inst_fnc_table_add(pseudo_inst_fnc_table, "GLOBAL", 0, code_global_cond);
 }

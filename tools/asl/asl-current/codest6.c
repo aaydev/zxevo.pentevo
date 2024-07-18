@@ -629,35 +629,49 @@ static void DecodeSFR(Word Code)
 
 static void DecodeASCII_ASCIZ(Word IsZ)
 {
-  int z, l;
-  Boolean OK;
-  String s;
-
   if (ChkArgCnt(1, ArgCntMax))
   {
-    z = 1;
-    do
+    int l;
+    Boolean OK = True;
+    tStrComp *pArg;
+    TempResult t;
+
+    as_tempres_ini(&t);
+    forallargs(pArg, OK)
     {
-      EvalStrStringExpression(&ArgStr[z], &OK, s);
-      if (OK)
+      EvalStrExpression(pArg, &t);
+      switch (t.Typ)
       {
-        l = strlen(s);
-        TranslateString(s, -1);
-        if (SetMaxCodeLen(CodeLen + l + IsZ))
+        case TempString:
         {
-          WrError(ErrNum_CodeOverflow); OK = False;
+          if (as_chartrans_xlate_nonz_dynstr(CurrTransTable->p_table, &t.Contents.str, pArg))
+            OK = False;
+          else
+          {
+            l = t.Contents.str.len;
+            if (SetMaxCodeLen(CodeLen + l + IsZ))
+            {
+              WrStrErrorPos(ErrNum_CodeOverflow, pArg); OK = False;
+            }
+            else
+            {
+              memcpy(BAsmCode + CodeLen, t.Contents.str.p_str, l);
+              CodeLen += l;
+              if (IsZ)
+                BAsmCode[CodeLen++] = 0;
+            }
+          }
+          break;
         }
-        else
-        {
-          memcpy(BAsmCode + CodeLen, s, l);
-          CodeLen += l;
-          if (IsZ)
-            BAsmCode[CodeLen++] = 0;
-        }
+        case TempNone:
+          OK = False;
+          break;
+        default:
+          WrStrErrorPos(ErrNum_ExpectString, pArg);
+          OK = False;
       }
-      z++;
     }
-    while ((OK) && (z <= ArgCnt));
+    as_tempres_free(&t);
     if (!OK)
       CodeLen = 0;
   }

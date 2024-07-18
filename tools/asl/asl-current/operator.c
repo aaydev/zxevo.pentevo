@@ -8,6 +8,7 @@
 /*                                                                           */
 /*****************************************************************************/
 
+#include <stdio.h>
 #include <math.h>
 
 #include "stdinc.h"
@@ -42,6 +43,49 @@
           } \
         } \
         while (0)
+
+/*!------------------------------------------------------------------------
+ * \fn     reg_cmp(const tRegDescr *p_reg1, tSymbolSize data_size1,
+                   const tRegDescr *p_reg2, tSymbolSize data_size2)
+ * \brief  compare two register symbols
+ * \param  p_reg1, p_reg2 registers to compare
+ * \return -1 : reg1 < reg2
+ *          0 : reg1 = reg2
+ *         +1 : reg1 > reg2
+ *         -2 : unequal, but no smaller/greater relation can be given
+ * ------------------------------------------------------------------------ */
+
+static int reg_cmp(const TempResult *p_val1, const TempResult *p_val2)
+{
+  tRegInt num1, num2;
+
+  /* If the two symbols are for different target architectures,
+     they are for sure unequal, but no ordering critera can be given: */
+
+  if ((p_val1->Contents.RegDescr.Dissect != p_val2->Contents.RegDescr.Dissect)
+   || (p_val1->Contents.RegDescr.compare != p_val2->Contents.RegDescr.compare))
+    return -2;
+
+  /* architecture-specific comparison function? */
+
+  if (p_val1->Contents.RegDescr.compare)
+    return p_val1->Contents.RegDescr.compare(p_val1->Contents.RegDescr.Reg, p_val1->DataSize,
+                                             p_val2->Contents.RegDescr.Reg, p_val2->DataSize);
+
+  /* The generic comparison: If operand sizes differ, they are 'just unequal',
+     otherwise compare register numbers: */
+
+  if (p_val1->DataSize != p_val2->DataSize)
+    return -2;
+  num1 = p_val1->Contents.RegDescr.Reg & ~REGSYM_FLAG_ALIAS;
+  num2 = p_val2->Contents.RegDescr.Reg & ~REGSYM_FLAG_ALIAS;
+  if (num1 < num2)
+    return -1;
+  else if (num1 > num2)
+    return 1;
+  else
+    return 0;
+}
 
 static void DummyOp(TempResult *pErg, TempResult *pLVal, TempResult *pRVal)
 {
@@ -155,7 +199,7 @@ static void PotOp(TempResult *pErg, TempResult *pLVal, TempResult *pRVal)
           Base *= Base;
           HVal >>= 1;
         }
-        as_tempres_set_float(pErg, Base);
+        as_tempres_set_float(pErg, Result);
       }
       else
       {
@@ -212,6 +256,8 @@ static void ModOp(TempResult *pErg, TempResult *pLVal, TempResult *pRVal)
   PromoteLRValFlags();
 }
 
+/* TODO: handle return code of NonZString2Int() better */
+
 static void AddOp(TempResult *pErg, TempResult *pLVal, TempResult *pRVal)
 {
   as_tempres_set_none(pErg);
@@ -226,13 +272,16 @@ static void AddOp(TempResult *pErg, TempResult *pLVal, TempResult *pRVal)
           break;
         case TempString:
         {
-          LargeInt RIntVal = NonZString2Int(&pRVal->Contents.str);
+          LargeInt RIntVal;
+          tErrorNum error_num = NonZString2Int(&pRVal->Contents.str, &RIntVal);
 
-          if (RIntVal >= 0)
+          if (ErrNum_None == error_num)
           {
             as_tempres_set_c_str(pErg, "");
             Int2NonZString(&pErg->Contents.str, RIntVal + pLVal->Contents.Int);
           }
+          else
+            WrError(error_num);
           break;
         }
         default:
@@ -253,13 +302,16 @@ static void AddOp(TempResult *pErg, TempResult *pLVal, TempResult *pRVal)
           break;
         case TempInt:
         {
-          LargeInt LIntVal = NonZString2Int(&pLVal->Contents.str);
+          LargeInt LIntVal;
+          tErrorNum error_num = NonZString2Int(&pLVal->Contents.str, &LIntVal);
 
-          if (LIntVal >= 0)
+          if (ErrNum_None == error_num)
           {
             as_tempres_set_c_str(pErg, "");
             Int2NonZString(&pErg->Contents.str, LIntVal + pRVal->Contents.Int);
           }
+          else
+            WrError(error_num);
           break;
         }
         default:
@@ -327,6 +379,9 @@ static void EqOp(TempResult *pErg, TempResult *pLVal, TempResult *pRVal)
     case TempString:
       as_tempres_set_int(pErg, (as_nonz_dynstr_cmp(&pLVal->Contents.str, &pRVal->Contents.str) == 0) ? 1 : 0);
       break;
+    case TempReg:
+      as_tempres_set_int(pErg, 0 == reg_cmp(pLVal, pRVal));
+      break;
     default:
       break;
   }
@@ -345,6 +400,9 @@ static void GtOp(TempResult *pErg, TempResult *pLVal, TempResult *pRVal)
       break;
     case TempString:
       as_tempres_set_int(pErg, (as_nonz_dynstr_cmp(&pLVal->Contents.str, &pRVal->Contents.str) > 0) ? 1 : 0);
+      break;
+    case TempReg:
+      as_tempres_set_int(pErg, reg_cmp(pLVal, pRVal) == 1);
       break;
     default:
       break;
@@ -365,6 +423,9 @@ static void LtOp(TempResult *pErg, TempResult *pLVal, TempResult *pRVal)
     case TempString:
       as_tempres_set_int(pErg, (as_nonz_dynstr_cmp(&pLVal->Contents.str, &pRVal->Contents.str) < 0) ? 1 : 0);
       break;
+    case TempReg:
+      as_tempres_set_int(pErg, reg_cmp(pLVal, pRVal) == -1);
+      break;
     default:
       break;
   }
@@ -384,6 +445,12 @@ static void LeOp(TempResult *pErg, TempResult *pLVal, TempResult *pRVal)
     case TempString:
       as_tempres_set_int(pErg, (as_nonz_dynstr_cmp(&pLVal->Contents.str, &pRVal->Contents.str) <= 0) ? 1 : 0);
       break;
+    case TempReg:
+    {
+      int cmp_res = reg_cmp(pLVal, pRVal);
+      as_tempres_set_int(pErg, (cmp_res == -1) || (cmp_res == 0));
+      break;
+    }
     default:
       break;
   }
@@ -403,6 +470,12 @@ static void GeOp(TempResult *pErg, TempResult *pLVal, TempResult *pRVal)
     case TempString:
       as_tempres_set_int(pErg, (as_nonz_dynstr_cmp(&pLVal->Contents.str, &pRVal->Contents.str) >= 0) ? 1 : 0);
       break;
+    case TempReg:
+    {
+      int cmp_res = reg_cmp(pLVal, pRVal);
+      as_tempres_set_int(pErg, (cmp_res == 1) || (cmp_res == 0));
+      break;
+    }
     default:
       break;
   }
@@ -422,6 +495,9 @@ static void UneqOp(TempResult *pErg, TempResult *pLVal, TempResult *pRVal)
     case TempString:
       as_tempres_set_int(pErg, (as_nonz_dynstr_cmp(&pLVal->Contents.str, &pRVal->Contents.str) != 0) ? 1 : 0);
       break;
+    case TempReg:
+      as_tempres_set_int(pErg, reg_cmp(pLVal, pRVal) != 0);
+      break;
     default:
       break;
   }
@@ -431,6 +507,7 @@ static void UneqOp(TempResult *pErg, TempResult *pLVal, TempResult *pRVal)
 #define Int2Int       (TempInt    | (TempInt << 4)   )
 #define Float2Float   (TempFloat  | (TempFloat << 4) )
 #define String2String (TempString | (TempString << 4))
+#define Reg2Reg       (TempReg    | (TempReg << 4)   )
 #define Int2String    (TempInt    | (TempString << 4))
 #define String2Int    (TempString | (TempInt << 4)   )
 
@@ -454,13 +531,14 @@ const Operator Operators[] =
   {"&&", 2 , True , 15, { Int2Int, 0, 0, 0, 0 }, LogAndOp},
   {"||", 2 , True , 16, { Int2Int, 0, 0, 0, 0 }, LogOrOp},
   {"!!", 2 , True , 17, { Int2Int, 0, 0, 0, 0 }, LogXorOp},
-  {"=" , 1 , True , 23, { Int2Int, Float2Float, String2String, 0, 0 }, EqOp},
-  {"==", 2 , True , 23, { Int2Int, Float2Float, String2String, 0, 0 }, EqOp},
-  {">" , 1 , True , 23, { Int2Int, Float2Float, String2String, 0, 0 }, GtOp},
-  {"<" , 1 , True , 23, { Int2Int, Float2Float, String2String, 0, 0 }, LtOp},
-  {"<=", 2 , True , 23, { Int2Int, Float2Float, String2String, 0, 0 }, LeOp},
-  {">=", 2 , True , 23, { Int2Int, Float2Float, String2String, 0, 0 }, GeOp},
-  {"<>", 2 , True , 23, { Int2Int, Float2Float, String2String, 0, 0 }, UneqOp},
+  {"=" , 1 , True , 23, { Int2Int, Float2Float, String2String, Reg2Reg, 0 }, EqOp},
+  {"==", 2 , True , 23, { Int2Int, Float2Float, String2String, Reg2Reg, 0 }, EqOp},
+  {">" , 1 , True , 23, { Int2Int, Float2Float, String2String, Reg2Reg, 0 }, GtOp},
+  {"<" , 1 , True , 23, { Int2Int, Float2Float, String2String, Reg2Reg, 0 }, LtOp},
+  {"<=", 2 , True , 23, { Int2Int, Float2Float, String2String, Reg2Reg, 0 }, LeOp},
+  {">=", 2 , True , 23, { Int2Int, Float2Float, String2String, Reg2Reg, 0 }, GeOp},
+  {"<>", 2 , True , 23, { Int2Int, Float2Float, String2String, Reg2Reg, 0 }, UneqOp},
+  {"!=", 2 , True , 23, { Int2Int, Float2Float, String2String, Reg2Reg, 0 }, UneqOp},
   /* termination marker */
   {NULL, 0 , False,  0, { 0, 0, 0, 0, 0 }, NULL}
 },

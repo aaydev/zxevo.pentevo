@@ -28,7 +28,6 @@
 
 #define REG_SP 15
 #define REG_FP 14
-#define REG_MARK 16
 
 #define ModNone      (-1)
 #define ModReg       0
@@ -73,12 +72,6 @@
 #define Mask_PureDest   (Mask_NoImmGen & ~(MModPush | MModPop))
 #define Mask_PureMem    (Mask_MemGen & ~(MModPush | MModPop))
 
-#define FixedLongOrderCount 2
-#define OneOrderCount 13
-#define GE2OrderCount 11
-#define BitOrderCount 6
-#define ConditionCount 14
-
 typedef struct
 {
   Word Mask;
@@ -101,6 +94,10 @@ typedef struct
   Word Code1,Code2;
 } BitOrder;
 
+typedef struct
+{
+  const char *p_name;
+} condition_t;
 
 static CPUVar CPUM16;
 
@@ -119,7 +116,7 @@ static BitOrder *FixedLongOrders;
 static OneOrder *OneOrders;
 static GE2Order *GE2Orders;
 static BitOrder *BitOrders;
-static const char **Conditions;
+static condition_t *Conditions;
 
 /*------------------------------------------------------------------------*/
 
@@ -164,9 +161,9 @@ static Boolean IsD16(LongInt inp)
 static Boolean DecodeRegCore(const char *pArg, Word *pResult)
 {
   if (!as_strcasecmp(pArg, "SP"))
-    *pResult = REG_SP | REG_MARK;
+    *pResult = REG_SP | REGSYM_FLAG_ALIAS;
   else if (!as_strcasecmp(pArg, "FP"))
-    *pResult = REG_FP | REG_MARK;
+    *pResult = REG_FP | REGSYM_FLAG_ALIAS;
   else if ((strlen(pArg) > 1) && (as_toupper(*pArg) == 'R'))
   {
     Boolean OK;
@@ -195,10 +192,10 @@ static void DissectReg_M16(char *pDest, size_t DestSize, tRegInt Value, tSymbolS
   {
     switch (Value)
     {
-      case REG_MARK | REG_SP:
+      case REGSYM_FLAG_ALIAS | REG_SP:
         as_snprintf(pDest, DestSize, "SP");
         break;
-      case REG_MARK | REG_FP:
+      case REGSYM_FLAG_ALIAS | REG_FP:
         as_snprintf(pDest, DestSize, "FP");
         break;
       default:
@@ -226,12 +223,12 @@ static tRegEvalResult DecodeReg(const tStrComp *pArg, Word *pResult, Boolean Mus
 
   if (DecodeRegCore(pArg->str.p_str, pResult))
   {
-    *pResult &= ~REG_MARK;
+    *pResult &= ~REGSYM_FLAG_ALIAS;
     return eIsReg;
   }
 
   RegEvalResult = EvalStrRegExpressionAsOperand(pArg, &RegDescr, &EvalResult, eSymbolSize32Bit, MustBeReg);
-  *pResult = RegDescr.Reg & ~REG_MARK;
+  *pResult = RegDescr.Reg & ~REGSYM_FLAG_ALIAS;
   return RegEvalResult;
 }
 
@@ -1038,11 +1035,13 @@ static Boolean DecodeCondition(const char *Asc, Word *Erg)
 {
   int z;
 
-  for (z = 0; z < ConditionCount; z++)
-    if (!as_strcasecmp(Asc, Conditions[z]))
-      break;
-  *Erg = z;
-  return (z < ConditionCount);
+  for (z = 0; Conditions[z].p_name; z++)
+    if (!as_strcasecmp(Asc, Conditions[z].p_name))
+    {
+      *Erg = z;
+      return True;
+    }
+  return False;
 }
 
 static Boolean DecodeStringCondition(const char *Asc, Word *pErg)
@@ -2877,7 +2876,7 @@ static void AddFixed(const char *NName, Word NCode)
 
 static void AddFixedLong(const char *NName, Word NCode1, Word NCode2)
 {
-  if (InstrZ >= FixedLongOrderCount) exit(255);
+  order_array_rsv_end(FixedLongOrders, BitOrder);
   FixedLongOrders[InstrZ].Code1 = NCode1;
   FixedLongOrders[InstrZ].Code2 = NCode2;
   AddInstTable(InstTable, NName, InstrZ++, DecodeFixedLong);
@@ -2885,7 +2884,7 @@ static void AddFixedLong(const char *NName, Word NCode1, Word NCode2)
 
 static void AddOne(const char *NName, Byte NOpMask, Word NMask, Word NCode)
 {
-  if (InstrZ >= OneOrderCount) exit(255);
+  order_array_rsv_end(OneOrders, OneOrder);
   OneOrders[InstrZ].Code = NCode;
   OneOrders[InstrZ].Mask = NMask;
   OneOrders[InstrZ].OpMask = NOpMask;
@@ -2896,7 +2895,7 @@ static void AddGE2(const char *NName, Word NMask1, Word NMask2,
                    Byte NSMask1, Byte NSMask2, Word NCode,
                    Boolean NSigned)
 {
-  if (InstrZ >= GE2OrderCount) exit(255);
+  order_array_rsv_end(GE2Orders, GE2Order);
   GE2Orders[InstrZ].Mask1 = NMask1;
   GE2Orders[InstrZ].Mask2 = NMask2;
   GE2Orders[InstrZ].SMask1 = NSMask1;
@@ -2908,7 +2907,7 @@ static void AddGE2(const char *NName, Word NMask1, Word NMask2,
 
 static void AddBit(const char *NName, Boolean NMust, Word NCode1, Word NCode2)
 {
-  if (InstrZ >= BitOrderCount) exit(255);
+  order_array_rsv_end(BitOrders, BitOrder);
   BitOrders[InstrZ].Code1 = NCode1;
   BitOrders[InstrZ].Code2 = NCode2;
   BitOrders[InstrZ].MustByte = NMust;
@@ -2920,10 +2919,12 @@ static void AddGetPut(const char *NName, Byte NSize, Word NCode, Boolean NTurn)
   AddInstTable(InstTable, NName, NCode | NSize | (NTurn << 7), DecodeGetPut);
 }
 
-static void Addcc(const char *BName)
+static void Addcc(const char *p_branch_name)
 {
-  Conditions[InstrZ] = BName + 1;
-  AddInstTable(InstTable, BName, InstrZ << 10, DecodeBcc);
+  order_array_rsv_end(Conditions, condition_t);
+  Conditions[InstrZ].p_name = p_branch_name + 1;
+  if (p_branch_name)
+    AddInstTable(InstTable, p_branch_name, InstrZ << 10, DecodeBcc);
   InstrZ++;
 }
 
@@ -2979,11 +2980,11 @@ static void InitFields(void)
   AddFixed("RTS"  , 0x2bd6); AddFixed("STCTX", 0x07d6);
   AddFixed("REIT" , 0x2fd6);
 
-  FixedLongOrders = (BitOrder*) malloc(sizeof(BitOrder) * FixedLongOrderCount); InstrZ = 0;
+  InstrZ = 0;
   AddFixedLong("STOP", 0x5374, 0x6f70);
   AddFixedLong("SLEEP", 0x5761, 0x6974);
 
-  OneOrders = (OneOrder *) malloc(sizeof(OneOrder) * OneOrderCount); InstrZ = 0;
+  InstrZ = 0;
   AddOne("ACS"   , 0x00, Mask_PureMem,                    0x8300);
   AddOne("NEG"   , 0x07, Mask_PureDest,                   0xc800);
   AddOne("NOT"   , 0x07, Mask_PureDest,                   0xcc00);
@@ -2999,7 +3000,7 @@ static void InitFields(void)
   AddOne("STPSB" , 0x02, Mask_Dest,                       0xdd00);
   AddOne("STPSM" , 0x02, Mask_Dest,                       0xde00);
 
-  GE2Orders = (GE2Order *) malloc(sizeof(GE2Order) * GE2OrderCount); InstrZ = 0;
+  InstrZ = 0;
   AddGE2("ADDU" , Mask_Source, Mask_PureDest, 7, 7, 0x0400, False);
   AddGE2("ADDX" , Mask_Source, Mask_PureDest, 7, 7, 0x1000, True );
   AddGE2("SUBU" , Mask_Source, Mask_PureDest, 7, 7, 0x0c00, False);
@@ -3012,7 +3013,7 @@ static void InitFields(void)
   AddGE2("REMU" , Mask_Source, Mask_PureDest, 7, 7, 0x5c00, True );
   AddGE2("ROT"  , Mask_Source, Mask_PureDest, 1, 7, 0x3800, True );
 
-  BitOrders = (BitOrder *) malloc(sizeof(BitOrder) * BitOrderCount); InstrZ = 0;
+  InstrZ = 0;
   AddBit("BCLR" , False, 0xb400, 0xa180);
   AddBit("BCLRI", True , 0xa400, 0x0000);
   AddBit("BNOT" , False, 0xb800, 0x0000);
@@ -3041,7 +3042,7 @@ static void InitFields(void)
   AddInstTable(InstTable, "DIV" , InstrZ++, DecodeMul);
   AddInstTable(InstTable, "DIVU", InstrZ++, DecodeMul);
 
-  InstrZ = 0; Conditions = (const char**)malloc(ConditionCount * sizeof(char*));
+  InstrZ = 0;
   Addcc("BXS");
   Addcc("BXC");
   Addcc("BEQ");
@@ -3056,6 +3057,7 @@ static void InitFields(void)
   Addcc("BMC");
   Addcc("BFS");
   Addcc("BFC");
+  Addcc(NULL);
 
   InstrZ = 0;
   AddInstTable(InstTable, "AND", InstrZ++, DecodeLog);
@@ -3067,12 +3069,12 @@ static void InitFields(void)
 
 static void DeinitFields(void)
 {
-  free(Conditions);
-  free(Format);
-  free(FixedLongOrders);
-  free(OneOrders);
-  free(GE2Orders);
-  free(BitOrders);
+  order_array_free(Conditions);
+  order_array_free(Format);
+  order_array_free(FixedLongOrders);
+  order_array_free(OneOrders);
+  order_array_free(GE2Orders);
+  order_array_free(BitOrders);
   DestroyInstTable(InstTable);
 }
 
@@ -3122,11 +3124,11 @@ static Boolean DecodeAttrPart_M16(void)
     switch (as_toupper(*AttrPart.str.p_str))
     {
       case 'B':
-        AttrPartOpSize = eSymbolSize8Bit; break;
+        AttrPartOpSize[0] = eSymbolSize8Bit; break;
       case 'H':
-        AttrPartOpSize = eSymbolSize16Bit; break;
+        AttrPartOpSize[0] = eSymbolSize16Bit; break;
       case 'W':
-        AttrPartOpSize = eSymbolSize32Bit; break;
+        AttrPartOpSize[0] = eSymbolSize32Bit; break;
       default:
         WrStrErrorPos(ErrNum_UndefAttr, &AttrPart); return False;
     }
@@ -3137,7 +3139,7 @@ static void MakeCode_M16(void)
 {
   int z;
 
-  DOpSize = AttrPartOpSize;
+  DOpSize = AttrPartOpSize[0];
   for (z = 1; z <= ArgCnt; OpSize[z++] = eSymbolSizeUnknown);
 
   /* zu ignorierendes */
@@ -3178,6 +3180,7 @@ static void InternSymbol_M16(char *pArg, TempResult *pResult)
     pResult->DataSize = eSymbolSize32Bit;
     pResult->Contents.RegDescr.Reg = RegNum;
     pResult->Contents.RegDescr.Dissect = DissectReg_M16;
+    pResult->Contents.RegDescr.compare = NULL;
   }
 }
 

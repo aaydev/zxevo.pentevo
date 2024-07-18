@@ -13,7 +13,7 @@
 #include <ctype.h>
 #include <assert.h>
 
-#include "endian.h"
+#include "be_le.h"
 #include "bpemu.h"
 #include "nls.h"
 #include "nlmessages.h"
@@ -33,18 +33,19 @@
 #include "function.h"
 #include "intformat.h"
 #include "ieeefloat.h"
+#include "chartrans.h"
+#include "dynstr_nls.h"
 
 #include "asmpars.h"
-
-#define LOCSYMSIGHT 3       /* max. sight for nameless temporary symbols */
 
 #define LEAVE  goto func_exit
 #define LEAVE2 goto func_exit2
 
-/* Mask, Min 6 Max are computed at initialization */
+/* Mask, Min & Max are computed at initialization */
 
 tIntTypeDef IntTypeDefs[IntTypeCnt] =
 {
+  { 0x0000, 0, 0, 0 }, /* UInt0 */
   { 0x0001, 0, 0, 0 }, /* UInt1 */
   { 0x0002, 0, 0, 0 }, /* UInt2 */
   { 0x0003, 0, 0, 0 }, /* UInt3 */
@@ -73,6 +74,7 @@ tIntTypeDef IntTypeDefs[IntTypeCnt] =
   { 0xc00e, 0, 0, 0 }, /* Int14 */
   { 0x800f, 0, 0, 0 }, /* SInt15 */
   { 0x000f, 0, 0, 0 }, /* UInt15 */
+  { 0xc00f, 0, 0, 0 }, /* Int15 */
   { 0x8010, 0, 0, 0 }, /* SInt16 */
   { 0x0010, 0, 0, 0 }, /* UInt16 */
   { 0xc010, 0, 0, 0 }, /* Int16 */
@@ -120,8 +122,9 @@ LongInt LocHandleCnt;          /* mom. verwendeter lokaler Handle            */
 typedef struct sSymbolEntry
 {
   TTree Tree;
-  Boolean Defined, Used, Changeable;
+  Boolean Defined, Used, Changeable, changed;
   TempResult SymWert;
+  LargeInt unchanged_value;
   PCrossRef RefList;
   Byte FileNum;
   LongInt LineNum;
@@ -187,6 +190,12 @@ static PCToken MomSection;
 static char *LastGlobSymbol;
 static PFunction FirstFunction;	        /* Liste definierter Funktionen */
 
+void InitPass_AsmPars(void)
+{
+  RadixBase = 10;
+  OutRadixBase = 16;
+}
+
 void AsmParsInit(void)
 {
   FirstSymbol = NULL;
@@ -197,23 +206,66 @@ void AsmParsInit(void)
   FirstStack = NULL;
   FirstFunction = NULL;
   DoRefs = True;
-  RadixBase = 10;
-  OutRadixBase = 16;
+  InitPass_AsmPars();
   RegistersDefined = False;
+  AddInitPassProc(InitPass_AsmPars);
 }
 
+/*!------------------------------------------------------------------------
+ * \fn     range_not_checkable(IntType type)
+ * \brief  can integer type's range not be checked on host system?
+ * \param  type integer type
+ * \return true if range can NOT be checked
+ * ------------------------------------------------------------------------ */
+
+static Boolean range_not_checkable(IntType type)
+{
+#ifndef HAS64
+  return (((int)type) >= ((int)SInt32));
+#else
+  return (((int)type) >= ((int)SInt64));
+#endif
+}
+
+/*!------------------------------------------------------------------------
+ * \fn     RangeCheck(LargeInt Wert, IntType Typ)
+ * \brief  check whether value is within integer type's ranges
+ * \param  Wert value to check
+ * \param  Typ integer type giving range
+ * \return true if within range
+ * ------------------------------------------------------------------------ */
 
 Boolean RangeCheck(LargeInt Wert, IntType Typ)
 {
-#ifndef HAS64
-  if (((int)Typ) >= ((int)SInt32))
-    return True;
-#else
-  if (((int)Typ) >= ((int)SInt64))
-    return True;
-#endif
-  else
-    return ((Wert >= IntTypeDefs[(int)Typ].Min) && (Wert <= IntTypeDefs[(int)Typ].Max));
+  return range_not_checkable(Typ) || ((Wert >= IntTypeDefs[(int)Typ].Min) && (Wert <= IntTypeDefs[(int)Typ].Max));
+}
+
+/*!------------------------------------------------------------------------
+ * \fn     ChkRangeByType(LargeInt value, IntType type, const struct sStrComp *p_comp)
+ * \brief  check whether value is within integer type's ranges, and throw error if not
+ * \param  value value to check
+ * \param  type integer type giving range
+ * \param  p_comp corresponding source argument
+ * \return true if within range
+ * ------------------------------------------------------------------------ */
+
+Boolean ChkRangeByType(LargeInt value, IntType type, const struct sStrComp *p_comp)
+{
+  return range_not_checkable(type) || ChkRangePos(value, IntTypeDefs[(int)type].Min, IntTypeDefs[(int)type].Max, p_comp);
+}
+
+/*!------------------------------------------------------------------------
+ * \fn     ChkRangeWarnByType(LargeInt value, IntType type, const struct sStrComp *p_comp)
+ * \brief  check whether value is within integer type's ranges, and throw warning if not
+ * \param  value value to check
+ * \param  type integer type giving range
+ * \param  p_comp corresponding source argument
+ * \return true if within range
+ * ------------------------------------------------------------------------ */
+
+Boolean ChkRangeWarnByType(LargeInt value, IntType type, const struct sStrComp *p_comp)
+{
+  return range_not_checkable(type) || ChkRangeWarnPos(value, IntTypeDefs[(int)type].Min, IntTypeDefs[(int)type].Max, p_comp);
 }
 
 Boolean FloatRangeCheck(Double Wert, FloatType Typ)
@@ -282,8 +334,7 @@ IntType GetUIntTypeByBits(unsigned Bits)
     if (Lo(IntTypeDefs[Result].SignAndWidth) == Bits)
       return Result;
   }
-  fprintf(stderr, "define unsigned int type with %u bits\n", Bits);
-  exit(255);
+  return UInt0;
 }
 
 static Boolean ProcessBk(char **Start, char *Erg)
@@ -374,95 +425,103 @@ static Boolean ProcessBk(char **Start, char *Erg)
 }
 
 /*!------------------------------------------------------------------------
- * \fn     NonZString2Int(const struct as_nonz_dynstr *p_str)
+ * \fn     NonZString2Int(const struct as_nonz_dynstr *p_str, LargeInt *p_result)
  * \brief  convert string to its "ASCII representation"
  * \param  p_str string containing characters
- * \return -1 or converted int
+ * \param  p_result dest buffer
+ * \return 0 or error message
  * ------------------------------------------------------------------------ */
 
-LargeInt NonZString2Int(const struct as_nonz_dynstr *p_str)
+tErrorNum NonZString2Int(const struct as_nonz_dynstr *p_str, LargeInt *p_result)
 {
   if ((p_str->len > 0) && (p_str->len <= 4))
   {
-    const char *pRun;
-    Byte Digit;
-    LargeInt Result;
+    unsigned digit, shift;
+    const char *p_run = p_str->p_str;
+    size_t run_len = p_str->len;
+    int ret;
 
-    Result = 0;
-    for (pRun = p_str->p_str;
-         pRun < p_str->p_str + p_str->len;
-         pRun++)
-    {
-      Digit = (usint) *pRun;
-      Result = (Result << 8) | CharTransTable[Digit & 0xff];
-    }
-    return Result;
+    *p_result = shift = 0;
+    while (!(ret = as_chartrans_xlate_next(CurrTransTable->p_table, &digit, &p_run, &run_len)))
+      if (multi_char_le)
+      {
+        *p_result |= ((LargeWord)digit) << shift;
+        shift += 8;
+      }
+      else
+        *p_result = (*p_result << 8) | (digit & 0xff);
+    /* ENOMEM -> regular end of string */
+    return (ret == ENOMEM) ? ErrNum_None : ErrNum_UnmappedChar;
   }
-  return -1;
+  return ErrNum_MultiCharInvLength;
 }
 
-Boolean Int2NonZString(struct as_nonz_dynstr *p_str, LargeInt Src)
+Boolean Int2NonZString(struct as_nonz_dynstr *p_str, LargeInt src)
 {
-  int Search;
-  Byte Digit;
-  char *pDest;
+  char *p_dest;
+  int ret;
 
   if (p_str->capacity < 32)
     as_nonz_dynstr_realloc(p_str, 32);
   p_str->len = 0;
-  pDest = &p_str->p_str[p_str->capacity];
-  while (Src && (p_str->len < p_str->capacity))
+  p_dest = &p_str->p_str[multi_char_le ? 0 : p_str->capacity];
+  while (src && (p_str->len < p_str->capacity))
   {
-    Digit = Src & 0xff;
-    Src = (Src >> 8) & 0xfffffful;
-    for (Search = 0; Search < 256; Search++)
-      if (CharTransTable[Search] == Digit)
-      {
-        *(--pDest) = Search;
-        p_str->len++;
-        break;
-      }
+    ret = as_chartrans_xlate_rev(CurrTransTable->p_table, src & 0xff);
+    if (ret >= 0)
+    {
+      *(multi_char_le ? p_dest++ : --p_dest) = ret;
+      p_str->len++;
+    }
+    src = (src >> 8) & 0xfffffful;
   }
-  memmove(p_str->p_str, pDest, p_str->len);
+  if (!multi_char_le)
+    memmove(p_str->p_str, p_dest, p_str->len);
   return True;
 }
 
 /*!------------------------------------------------------------------------
  * \fn     TempResultToInt(TempResult *pResult)
  * \brief  convert TempResult to integer
- * \param  pResult tempresult to convert
+ * \param  pResult temp result to convert
  * \return 0 or error code
  * ------------------------------------------------------------------------ */
 
 int TempResultToInt(TempResult *pResult)
 {
+  int ret = 0;
+
   switch (pResult->Typ)
   {
     case TempInt:
       break;
     case TempString:
     {
-      LargeInt Result = NonZString2Int(&pResult->Contents.str);
-      if (Result >= 0)
-      {
+      LargeInt Result;
+      tErrorNum error_num = NonZString2Int(&pResult->Contents.str, &Result);
+
+      if (error_num == ErrNum_None)
         as_tempres_set_int(pResult, Result);
-        break;
+      else
+      {
+        WrError(error_num);
+        as_tempres_set_none(pResult);
+        ret = -1;
       }
-      /* else */
+      break;
     }
-    /* fall-through */
     default:
-      pResult->Typ = TempNone;
-      return -1;
+      as_tempres_set_none(pResult);
+      ret = -1;
   }
-  return 0;
+  return ret;
 }
 
 /*!------------------------------------------------------------------------
  * \fn     MultiCharToInt(TempResult *pResult, unsigned MaxLen)
  * \brief  optionally convert multi-character constant to integer
  * \param  pResult holding value
- * \param  MaxLen maximum lenght of multi-character constant
+ * \param  MaxLen maximum length of multi-character constant
  * \return True if converted
  * ------------------------------------------------------------------------ */
 
@@ -479,61 +538,71 @@ Boolean MultiCharToInt(TempResult *pResult, unsigned MaxLen)
 }
 
 /*!------------------------------------------------------------------------
- * \fn     ExpandStrSymbol(char *pDest, size_t DestSize, const tStrComp *pSrc)
+ * \fn     ExpandStrSymbol(tStrComp *p_dest, const tStrComp *p_src, Boolean convert_upper)
  * \brief  expand symbol name from string component
- * \param  pDest dest buffer
- * \param  DestSize size of dest buffer
- * \param  pSrc source component
- * \return True if success
+ * \param  p_dest dest buffer (initialize to 0 capacity)
+ * \param  p_src source component
+ * \param  convert_upper convert to upper while copying?
+ * \return resulting component or NULL if error
  * ------------------------------------------------------------------------ */
 
-Boolean ExpandStrSymbol(char *pDest, size_t DestSize, const tStrComp *pSrc)
+tStrComp *ExpandStrSymbol(tStrComp *p_dest, const tStrComp *p_src, Boolean convert_upper)
 {
-  tStrComp SrcComp;
-  const char *pStart;
+  tStrComp src_comp;
+  Boolean first = True;
 
-  *pDest = '\0'; StrCompRefRight(&SrcComp, pSrc, 0);
+  StrCompRefRight(&src_comp, p_src, 0);
   while (True)
   {
-    pStart = strchr(SrcComp.str.p_str, '{');
-    if (pStart)
+    const char *p_start = QuotPos(src_comp.str.p_str, '{');
+    if (first)
     {
-      unsigned ls = pStart - SrcComp.str.p_str, ld = strlen(pDest);
-      String Expr, Result;
-      tStrComp ExprComp;
-      tEvalResult EvalResult;
-      const char *pStop;
+      p_dest->Pos = p_src->Pos;
+      p_dest->str.p_str[0] = '\0';
+    }
+    if (p_start)
+    {
+      unsigned ls = p_start - src_comp.str.p_str;
+      String expr, result;
+      tStrComp expr_comp;
+      tEvalResult eval_result;
+      const char *p_stop;
 
-      if (ld + ls + 1 > DestSize)
-        ls = DestSize - 1 - ld;
-      memcpy(pDest + ld, SrcComp.str.p_str, ls);
-      pDest[ld + ls] = '\0';
+      if (convert_upper)
+        as_dynstr_append_upr(&p_dest->str, src_comp.str.p_str, ls);
+      else
+        as_dynstr_append(&p_dest->str, src_comp.str.p_str, ls);
 
-      pStop = QuotPos(pStart + 1, '}');
-      if (!pStop)
+      p_stop = QuotPos(p_start + 1, '}');
+      if (!p_stop)
       {
-        WrStrErrorPos(ErrNum_InvSymName, pSrc);
-        return False;
+        WrStrErrorPos(ErrNum_InvSymName, p_src);
+        return NULL;
       }
-      StrCompMkTemp(&ExprComp, Expr, sizeof(Expr));
-      StrCompCopySub(&ExprComp, &SrcComp, pStart + 1 - SrcComp.str.p_str, pStop - pStart - 1);
-      EvalStrStringExpressionWithResult(&ExprComp, &EvalResult, Result);
-      if (!EvalResult.OK)
-        return False;
-      if (mFirstPassUnknown(EvalResult.Flags))
+      StrCompMkTemp(&expr_comp, expr, sizeof(expr));
+      StrCompCopySub(&expr_comp, &src_comp, p_start + 1 - src_comp.str.p_str, p_stop - p_start - 1);
+      EvalStrStringExpressionWithResult(&expr_comp, &eval_result, result);
+      if (!eval_result.OK)
+        return NULL;
+      if (mFirstPassUnknown(eval_result.Flags))
       {
-        WrStrErrorPos(ErrNum_FirstPassCalc, &ExprComp);
-        return False;
+        WrStrErrorPos(ErrNum_FirstPassCalc, &expr_comp);
+        return NULL;
       }
-      if (!CaseSensitive)
-        UpString(Result);
-      strmaxcat(pDest, Result, DestSize);
-      StrCompIncRefLeft(&SrcComp, pStop + 1 - SrcComp.str.p_str);
+      if (CaseSensitive)
+        as_dynstr_append_c_str(&p_dest->str, result);
+      else
+        as_dynstr_append_c_str_upr(&p_dest->str, result);
+      StrCompIncRefLeft(&src_comp, p_stop + 1 - src_comp.str.p_str);
+      first = False;
     }
     else
     {
-      strmaxcat(pDest, SrcComp.str.p_str, DestSize);
-      return True;
+      if (convert_upper)
+        as_dynstr_append_c_str_upr(&p_dest->str, src_comp.str.p_str);
+      else
+        as_dynstr_append_c_str(&p_dest->str, src_comp.str.p_str);
+      return p_dest;
     }
   }
 }
@@ -636,7 +705,7 @@ static Boolean ChkTmp2(char *pDest, const char *pSrc, as_symbol_source_t symbol_
     {
       if ((symbol_source != e_symbol_source_none) && (Cnt == 1))
       {
-        as_snprintf(pDest, STRINGSIZE, "__back%d", (int)BackSymCounter);
+        as_snprintf(pDest, STRINGSIZE, "__BACK%d", (int)BackSymCounter);
         AddTmpSymLog(TRUE, BackSymCounter);
         BackSymCounter++;
         Result = TRUE;
@@ -649,7 +718,7 @@ static Boolean ChkTmp2(char *pDest, const char *pSrc, as_symbol_source_t symbol_
       {
         Cnt--;
         as_snprintf(pDest, STRINGSIZE, "__%s%d",
-                    TmpSymLog[Cnt].Back ? "back" : "forw",
+                    TmpSymLog[Cnt].Back ? "BACK" : "FORW",
                     (int)TmpSymLog[Cnt].Counter);
         Result = TRUE;
       }
@@ -668,12 +737,12 @@ static Boolean ChkTmp2(char *pDest, const char *pSrc, as_symbol_source_t symbol_
     {
       if ((symbol_source != e_symbol_source_none) && (Cnt == 1))
       {
-        as_snprintf(pDest, STRINGSIZE, "__forw%d", (int)FwdSymCounter++);
+        as_snprintf(pDest, STRINGSIZE, "__FORW%d", (int)FwdSymCounter++);
         Result = TRUE;
       }
       else if (Cnt <= LOCSYMSIGHT)
       {
-        as_snprintf(pDest, STRINGSIZE, "__forw%d", (int)(FwdSymCounter + (Cnt - 1)));
+        as_snprintf(pDest, STRINGSIZE, "__FORW%d", (int)(FwdSymCounter + (Cnt - 1)));
         Result = TRUE;
       }
     }
@@ -684,7 +753,7 @@ static Boolean ChkTmp2(char *pDest, const char *pSrc, as_symbol_source_t symbol_
   else if ((pEnd - pBegin == 1) && (*pBegin == '/') && (symbol_source != e_symbol_source_none))
   {
     AddTmpSymLog(FALSE, FwdSymCounter);
-    as_snprintf(pDest, STRINGSIZE, "__forw%d", (int)FwdSymCounter);
+    as_snprintf(pDest, STRINGSIZE, "__FORW%d", (int)FwdSymCounter);
     FwdSymCounter++;
     Result = TRUE;
   }
@@ -719,101 +788,105 @@ static Boolean ChkTmp(char *Name, as_symbol_source_t symbol_source)
   return IsTmp1 || IsTmp2 || IsTmp3;
 }
 
-Boolean IdentifySection(const tStrComp *pName, LongInt *Erg)
+Boolean IdentifySection(const tStrComp *pName, LongInt *p_ret)
 {
   PSaveSection SLauf;
-  String ExpName;
+  String exp_name_buf;
+  tStrComp exp_name, *p_exp_name;
   sint Depth;
+  size_t exp_len;
 
-  if (!ExpandStrSymbol(ExpName, sizeof(ExpName), pName))
+  StrCompMkTemp(&exp_name, exp_name_buf, sizeof(exp_name_buf));
+  p_exp_name = ExpandStrSymbol(&exp_name, pName, !CaseSensitive);
+  if (!p_exp_name)
     return False;
-  if (!CaseSensitive)
-    NLS_UpString(ExpName);
 
-  if (*ExpName == '\0')
+  exp_len = strlen(p_exp_name->str.p_str);
+  if (!exp_len)
   {
-    *Erg = -1;
+    *p_ret = -1;
     return True;
   }
-  else if (((strlen(ExpName) == 6) || (strlen(ExpName) == 7))
-       && (!as_strncasecmp(ExpName, "PARENT", 6))
-       && ((strlen(ExpName) == 6) || ((ExpName[6] >= '0') && (ExpName[6] <= '9'))))
+  else if (((exp_len == 6) || (exp_len == 7))
+       && !as_strncasecmp(p_exp_name->str.p_str, "PARENT", 6)
+       && ((exp_len == 6) || as_isdigit(p_exp_name->str.p_str[6])))
   {
-    Depth = (strlen(ExpName) == 6) ? 1 : ExpName[6] - AscOfs;
+    Depth = (exp_len == 6) ? 1 : p_exp_name->str.p_str[6] - AscOfs;
     SLauf = SectionStack;
-    *Erg = MomSectionHandle;
-    while ((Depth > 0) && (*Erg != -2))
+    *p_ret = MomSectionHandle;
+    while ((Depth > 0) && (*p_ret != -2))
     {
-      if (!SLauf) *Erg = -2;
+      if (!SLauf) *p_ret = -2;
       else
       {
-        *Erg = SLauf->Handle;
+        *p_ret = SLauf->Handle;
         SLauf = SLauf->Next;
       }
       Depth--;
     }
-    if (*Erg == -2)
+    if (*p_ret == -2)
     {
-      WrError(ErrNum_InvSection);
+      WrStrErrorPos(ErrNum_InvSection, pName);
       return False;
     }
     else
       return True;
   }
-  else if (!strcmp(ExpName, GetSectionName(MomSectionHandle)))
+  else if (!strcmp(p_exp_name->str.p_str, GetSectionName(MomSectionHandle)))
   {
-    *Erg = MomSectionHandle;
+    *p_ret = MomSectionHandle;
     return True;
   }
   else
   {
     SLauf = SectionStack;
-    while ((SLauf) && (strcmp(GetSectionName(SLauf->Handle), ExpName)))
+    while ((SLauf) && (strcmp(GetSectionName(SLauf->Handle), p_exp_name->str.p_str)))
       SLauf = SLauf->Next;
     if (!SLauf)
     {
-      WrError(ErrNum_InvSection);
+      WrStrErrorPos(ErrNum_InvSection, pName);
       return False;
     }
     else
     {
-      *Erg = SLauf->Handle;
+      *p_ret = SLauf->Handle;
       return True;
     }
   }
 }
 
-static Boolean GetSymSection(char *Name, LongInt *Erg, const tStrComp *pUnexpComp)
+static Boolean GetSymSection(tStrComp *p_name, LongInt *p_ret, const tStrComp *pUnexpComp)
 {
-  String Part;
   tStrComp TmpComp;
   char *q;
-  int l = strlen(Name);
+  int l = strlen(p_name->str.p_str), pos;
 
-  if (Name[l - 1] != ']')
+  if (!l || (p_name->str.p_str[l - 1] != ']'))
   {
-    *Erg = -2;
+    *p_ret = -2;
     return True;
   }
 
-  Name[l - 1] = '\0';
-  q = RQuotPos(Name, '[');
-  Name[l - 1] = ']';
-  if (Name + l - q <= 1)
+  p_name->str.p_str[l - 1] = '\0';
+  q = RQuotPos(p_name->str.p_str, '[');
+  if (!q)
   {
-    if (pUnexpComp)
-      WrStrErrorPos(ErrNum_InvSymName, pUnexpComp);
-    else
-      WrXError(ErrNum_InvSymName, Name);
+    *p_ret = -2;
+    return True;
+  }
+  p_name->str.p_str[l - 1] = ']';
+  if (p_name->str.p_str + l - q <= 1)
+  {
+    WrStrErrorPos(ErrNum_InvSymName, pUnexpComp ? pUnexpComp : p_name);
     return False;
   }
 
-  Name[l - 1] = '\0';
-  strmaxcpy(Part, q + 1, STRINGSIZE);
-  *q = '\0';
+  StrCompShorten(p_name, 1); l--;
+  pos = q - p_name->str.p_str;
+  StrCompRefRight(&TmpComp, p_name, pos + 1);
+  StrCompShorten(p_name, l - pos);
 
-  StrCompMkTemp(&TmpComp, Part, sizeof(Part));
-  return IdentifySection(&TmpComp, Erg);
+  return IdentifySection(&TmpComp, p_ret);
 }
 
 /*****************************************************************************
@@ -869,7 +942,17 @@ static LargeInt ConstIntVal(const char *pExpr, IntType Typ, Boolean *pResult)
   Wert = 0;
   while (Ctx.ExprLen > 0)
   {
-    Digit = DigitVal(as_toupper(*Ctx.pExpr), Ctx.Base);
+    if (256 == Ctx.Base)
+    {
+      Digit = as_chartrans_xlate(CurrTransTable->p_table, ((unsigned)*Ctx.pExpr) & 0xff);
+      if (Digit < 0)
+      {
+        WrError(ErrNum_UnmappedChar);
+        Digit = 0;
+      }
+    }
+    else
+      Digit = DigitVal(as_toupper(*Ctx.pExpr), Ctx.Base);
     if (Digit == -1)
       return -1;
     Wert = Wert * Ctx.Base + Digit;
@@ -1100,15 +1183,11 @@ func_exit:
 }
 
 
-static PSymbolEntry FindLocNode(
-#ifdef __PROTOS__
-const char *Name, TempType SearchType
-#endif
-);
+typedef enum { e_expand_chk_none, e_expand_chk_upto, e_expand_chk_empty_upto } expand_chk_t;
 
-static PSymbolEntry FindNode(
+static PSymbolEntry ExpandAndFindNode(
 #ifdef __PROTOS__
-const char *Name, TempType SearchType
+const struct sStrComp *pComp, TempType SearchType, Boolean SearchLocal, expand_chk_t chk, Boolean *p_error_on_find
 #endif
 );
 
@@ -1181,6 +1260,8 @@ static tErrorNum DeduceExpectTypeErrMsgMask(unsigned Mask, TempType ActType)
           return ErrNum_ExpectString;
         case TempInt | TempString:
           return ErrNum_ExpectIntOrString;
+        case TempInt | TempFloat:
+          return ErrNum_IntOrFloatButReg;
         case TempInt | TempFloat | TempString:
           return ErrNum_StringOrIntOrFloatButReg;
         default:
@@ -1673,10 +1754,8 @@ func_exit2:
 
     /* search function */
 
-    for (pFunction = Functions; pFunction->pName; pFunction++)
-      if (!strcmp(FName.str.p_str, pFunction->pName))
-        break;
-    if (!pFunction->pName)
+    pFunction = function_find(FName.str.p_str);
+    if (!pFunction)
     {
       WrStrErrorPos(ErrNum_UnknownFunc, &FName);
       LEAVE;
@@ -1691,15 +1770,19 @@ func_exit2:
     }
     for (z1 = 0; z1 < cnt; z1++)
     {
-      if ((InVals[z1].Typ == TempInt) && (!(pFunction->ArgTypes[z1] & (1 << TempInt))))
+      if ((InVals[z1].Typ == TempInt) && !(pFunction->ArgTypes[z1] & TempInt))
         TempResultToFloat(&InVals[z1]);
-      if (!(pFunction->ArgTypes[z1] & (1 << InVals[z1].Typ)))
+      if (!(pFunction->ArgTypes[z1] & InVals[z1].Typ))
       {
         WrStrErrorPos(DeduceExpectTypeErrMsgMask(pFunction->ArgTypes[z1], InVals[z1].Typ), &InArgs[z1]);
         LEAVE;
       }
     }
-    pFunction->pFunc(pErg, InVals, cnt);
+    if (!pFunction->pFunc(pErg, InVals, cnt))
+    {
+      WrStrErrorPos(ErrNum_UnknownFunc, &FName);
+      LEAVE;
+    }
     pErg->Flags |= PromotedFlags;
     pErg->AddrSpaceMask |= PromotedAddrSpaceMask;
     if (pErg->DataSize == eSymbolSizeUnknown) pErg->DataSize = PromotedDataSize;
@@ -1798,16 +1881,13 @@ LargeInt EvalStrIntExpressionWithResult(const tStrComp *pComp, IntType Type, tEv
 
       if ((l > 0) && (l <= 4))
       {
-        char *pRun;
-        Byte Digit;
+        int ret = NonZString2Int(&t.Contents.str, &Result);
 
-        Result = 0;
-        for (pRun = t.Contents.str.p_str;
-             pRun < t.Contents.str.p_str + l;
-             pRun++)
+        if (ENOENT == ret)
         {
-          Digit = (usint) *pRun;
-          Result = (Result << 8) | CharTransTable[Digit & 0xff];
+          WrStrErrorPos(ErrNum_UnmappedChar, pComp);
+          FreeRelocs(&LastRelocs);
+          LEAVE;
         }
         pResult->Flags = t.Flags;
         pResult->AddrSpaceMask = t.AddrSpaceMask;
@@ -1832,24 +1912,21 @@ LargeInt EvalStrIntExpressionWithResult(const tStrComp *pComp, IntType Type, tEv
   if (mFirstPassUnknown(t.Flags))
     Result &= IntTypeDefs[(int)Type].Mask;
 
-  if (!RangeCheck(Result, Type))
+  pResult->OK = HardRanges ? ChkRangeByType(Result, Type, pComp) : ChkRangeWarnByType(Result, Type, pComp);
+  if (!pResult->OK)
   {
     if (HardRanges)
     {
       FreeRelocs(&LastRelocs);
-      WrStrErrorPos(ErrNum_OverRange, pComp);
       Result = -1;
       LEAVE;
     }
     else
     {
-      WrStrErrorPos(ErrNum_WOverRange, pComp);
       pResult->OK = True;
       Result &= IntTypeDefs[(int)Type].Mask;
     }
   }
-  else
-    pResult->OK = True;
 
 func_exit:
   as_tempres_free(&t);
@@ -2010,29 +2087,9 @@ void EvalStrStringExpression(const tStrComp *pExpr, Boolean *pResult, char *pEva
  * \param  pResult retrieved register
  * \param  pEvalResult success flag, symbol size & flags
  * \param  IssueErrors print errors at all?
+ * \param  p_error_on_find True if error on symbol resolution and not just not found
  * \return occured error
  * ------------------------------------------------------------------------ */
-
-PSymbolEntry ExpandAndFindNode(const struct sStrComp *pComp, TempType SearchType)
-{
-  PSymbolEntry pEntry;
-  String ExpName;
-  const char *pKlPos;
-
-  if (!ExpandStrSymbol(ExpName, sizeof(ExpName), pComp))
-    return NULL;
-
-  /* just [...] without symbol name itself is not valid */
-
-  pKlPos = strchr(ExpName, '[');
-  if ((pKlPos == ExpName) || (ChkSymbNameUpTo(ExpName, pKlPos) != pKlPos))
-    return NULL;
-
-  pEntry = FindLocNode(ExpName, SearchType);
-  if (!pEntry)
-    pEntry = FindNode(ExpName, SearchType);
-  return pEntry;
-}
 
 tErrorNum EvalStrRegExpressionWithResult(const struct sStrComp *pExpr, tRegDescr *pResult, tEvalResult *pEvalResult)
 {
@@ -2040,7 +2097,7 @@ tErrorNum EvalStrRegExpressionWithResult(const struct sStrComp *pExpr, tRegDescr
 
   EvalResultClear(pEvalResult);
 
-  pEntry = ExpandAndFindNode(pExpr, TempReg);
+  pEntry = ExpandAndFindNode(pExpr, TempReg, True, e_expand_chk_empty_upto, NULL);
   if (!pEntry)
     return ErrNum_SymbolUndef;
 
@@ -2090,6 +2147,7 @@ tRegEvalResult EvalStrRegExpressionAsOperand(const tStrComp *pArg, struct sRegDe
         {
           pResult->Reg = 0;
           pResult->Dissect = NULL;
+          pResult->compare = NULL;
           Repass = True;
           return eIsReg;
         }
@@ -2202,42 +2260,66 @@ static Boolean SymbolAdder(PTree *PDest, PTree Neu, void *pData)
   {
     if (!EnterStruct->MayChange)
     {
-      /* TODO TempResult */
-      if ((NewEntry->SymWert.Typ != (*Node)->SymWert.Typ)
-       || ((NewEntry->SymWert.Typ == TempString) && (as_nonz_dynstr_cmp(&NewEntry->SymWert.Contents.str, &(*Node)->SymWert.Contents.str)))
-       || ((NewEntry->SymWert.Typ == TempFloat ) && (NewEntry->SymWert.Contents.Float != (*Node)->SymWert.Contents.Float))
-       || ((NewEntry->SymWert.Typ == TempInt   ) && (NewEntry->SymWert.Contents.Int   != (*Node)->SymWert.Contents.Int  )))
-       {
-         if ((!Repass) && (JmpErrors>0))
-         {
-           if (ThrowErrors)
-             ErrorCount -= JmpErrors;
-           JmpErrors = 0;
-         }
-         Repass = True;
-         if ((MsgIfRepass) && (PassNo >= PassNoForMessage))
-         {
-           strmaxcpy(serr, Neu->Name, STRINGSIZE);
-           if (Neu->Attribute != -1)
-           {
-             strmaxcat(serr, "[", STRINGSIZE);
-             strmaxcat(serr, GetSectionName(Neu->Attribute), STRINGSIZE);
-             strmaxcat(serr, "]", STRINGSIZE);
-           }
-           WrXError(ErrNum_PhaseErr, serr);
-         }
-       }
+      Boolean value_changed;
+
+#if 0
+      if (NewEntry->SymWert.Typ == TempInt)
+        fprintf(stderr, "NewEntry 0x%lx Node 0x%lx Node changed %d\n",
+                NewEntry->SymWert.Contents.Int, (*Node)->SymWert.Contents.Int, (*Node)->changed);
+#endif
+
+      /* If the symbol value was changed after entry (padding of label),
+         compare to the originally set value, because this is what we get
+         here as initial value to set (before padding) in the next pass: */
+
+      if (NewEntry->SymWert.Typ != (*Node)->SymWert.Typ)
+        value_changed = True;
+      else switch (NewEntry->SymWert.Typ)
+      {
+        case TempInt:
+          value_changed = NewEntry->SymWert.Contents.Int != ((*Node)->changed ? (*Node)->unchanged_value : (*Node)->SymWert.Contents.Int);
+          break;
+        default:
+          value_changed = !!as_tempres_cmp(&NewEntry->SymWert, &(*Node)->SymWert);
+      }
+      if (value_changed)
+      {
+        if (!Repass && (JmpErrors > 0))
+        {
+          if (ThrowErrors)
+            ErrorCount -= JmpErrors;
+          JmpErrors = 0;
+        }
+        Repass = True;
+        if (MsgIfRepass && (PassNo >= PassNoForMessage))
+        {
+          strmaxcpy(serr, Neu->Name, STRINGSIZE);
+          if (Neu->Attribute != -1)
+          {
+            strmaxcat(serr, "[", STRINGSIZE);
+            strmaxcat(serr, GetSectionName(Neu->Attribute), STRINGSIZE);
+            strmaxcat(serr, "]", STRINGSIZE);
+          }
+          WrXError(ErrNum_PhaseErr, serr);
+        }
+      }
     }
     if (EnterStruct->DoCross)
     {
       NewEntry->LineNum = (*Node)->LineNum;
       NewEntry->FileNum = (*Node)->FileNum;
     }
+
+    /* take over values from existing node that shall be kept */
+
     NewEntry->RefList = (*Node)->RefList;
     (*Node)->RefList = NULL;
     NewEntry->Defined = True;
     NewEntry->Used = (*Node)->Used;
     NewEntry->Changeable = EnterStruct->MayChange;
+
+    /* since NewEntry will be copied over Node, free the latter's dynamic data: */
+
     FreeSymbolEntry(Node, False);
     return True;
   }
@@ -2249,35 +2331,34 @@ static void EnterLocSymbol(PSymbolEntry Neu)
   PTree TreeRoot;
 
   Neu->Tree.Attribute = MomLocHandle;
-  if (!CaseSensitive)
-    NLS_UpString(Neu->Tree.Name);
   EnterStruct.MayChange = EnterStruct.DoCross = FALSE;
   TreeRoot = &FirstLocSymbol->Tree;
   EnterTree(&TreeRoot, (&Neu->Tree), SymbolAdder, &EnterStruct);
   FirstLocSymbol = (PSymbolEntry)TreeRoot;
 }
 
-static void EnterSymbol_Search(PForwardSymbol *Lauf, PForwardSymbol *Prev,
-                               PForwardSymbol **RRoot, PSymbolEntry Neu,
-                               PForwardSymbol *Root, Byte ResCode, Byte *SearchErg)
+static Boolean EnterSymbol_SearchAndUnchain(PSymbolEntry Neu, PForwardSymbol *pp_root, LongInt *p_override_section)
 {
-  *Lauf = (*Root);
-  *Prev = NULL;
-  *RRoot = Root;
-  while ((*Lauf) && (strcmp((*Lauf)->Name, Neu->Tree.Name)))
-  {
-    *Prev = (*Lauf);
-    *Lauf = (*Lauf)->Next;
-  }
-  if (*Lauf)
-    *SearchErg = ResCode;
+  PForwardSymbol p_run, p_prev;
+
+  for (p_run = *pp_root, p_prev= NULL;
+       p_run;
+       p_prev = p_run, p_run = p_run->Next)
+    if (!strcmp(p_run->Name, Neu->Tree.Name))
+    {
+      *p_override_section = p_run->DestSection;
+      if (!p_prev)
+        *pp_root = p_run->Next;
+      else
+        p_prev->Next = p_run->Next;
+      free_forward_symbol(p_run);
+      return True;
+    }
+  return False;
 }
 
 static void EnterSymbol(PSymbolEntry Neu, Boolean MayChange, LongInt ResHandle)
 {
-  PForwardSymbol Lauf, Prev;
-  PForwardSymbol *RRoot;
-  Byte SearchErg;
   String CombName;
   PSaveSection RunSect;
   LongInt MSect;
@@ -2285,31 +2366,35 @@ static void EnterSymbol(PSymbolEntry Neu, Boolean MayChange, LongInt ResHandle)
   TEnterStruct EnterStruct;
   PTree TreeRoot = &(FirstSymbol->Tree);
 
-  if (!CaseSensitive)
-    NLS_UpString(Neu->Tree.Name);
-
-  SearchErg = 0;
   EnterStruct.MayChange = MayChange;
   EnterStruct.DoCross = MakeCrossList;
   Neu->Tree.Attribute = (ResHandle == -2) ? MomSectionHandle : ResHandle;
-  if ((SectionStack) && (Neu->Tree.Attribute == MomSectionHandle))
+
+  /* Within a section: special treatment for FORWARD, PUBLIC and GLOBAL: */
+
+  if (SectionStack && (Neu->Tree.Attribute == MomSectionHandle))
   {
-    EnterSymbol_Search(&Lauf, &Prev, &RRoot, Neu, &(SectionStack->LocSyms),
-                       1, &SearchErg);
-    if (!Lauf)
-      EnterSymbol_Search(&Lauf, &Prev, &RRoot, Neu,
-                         &(SectionStack->GlobSyms), 2, &SearchErg);
-    if (!Lauf)
-      EnterSymbol_Search(&Lauf, &Prev, &RRoot, Neu,
-                         &(SectionStack->ExportSyms), 3, &SearchErg);
-    if (SearchErg == 2)
-      Neu->Tree.Attribute = Lauf->DestSection;
-    if (SearchErg == 3)
+    LongInt override_section;
+
+    /* FORWARD: just an info to avoid resolution to global symbol.  This symbol remains
+       in current section: */
+
+    if (EnterSymbol_SearchAndUnchain(Neu, &(SectionStack->LocSyms), &override_section))
+    { }
+
+    /* PUBLIC: relocate scope of symbol to given section: */
+
+    else if (EnterSymbol_SearchAndUnchain(Neu, &(SectionStack->GlobSyms), &override_section))
+      Neu->Tree.Attribute = override_section;
+
+    /* GLOBAL: create copy with scope in given section: */
+
+    else if (EnterSymbol_SearchAndUnchain(Neu, &(SectionStack->ExportSyms), &override_section))
     {
       strmaxcpy(CombName, Neu->Tree.Name, STRINGSIZE);
       RunSect = SectionStack;
       MSect = MomSectionHandle;
-      while ((MSect != Lauf->DestSection) && (RunSect))
+      while ((MSect != override_section) && (RunSect))
       {
         strmaxprep(CombName, "_", STRINGSIZE);
         strmaxprep(CombName, GetSectionName(MSect), STRINGSIZE);
@@ -2319,7 +2404,7 @@ static void EnterSymbol(PSymbolEntry Neu, Boolean MayChange, LongInt ResHandle)
       Copy = (PSymbolEntry) calloc(1, sizeof(TSymbolEntry));
       *Copy = (*Neu);
       Copy->Tree.Name = as_strdup(CombName);
-      Copy->Tree.Attribute = Lauf->DestSection;
+      Copy->Tree.Attribute = override_section;
       Copy->SymWert.Relocs = DupRelocs(Neu->SymWert.Relocs);
       if (Copy->SymWert.Typ == TempString)
       {
@@ -2329,16 +2414,6 @@ static void EnterSymbol(PSymbolEntry Neu, Boolean MayChange, LongInt ResHandle)
                Copy->SymWert.Contents.str.len = Copy->SymWert.Contents.str.capacity = l);
       }
       EnterTree(&TreeRoot, &(Copy->Tree), SymbolAdder, &EnterStruct);
-    }
-    if (Lauf)
-    {
-      free(Lauf->Name);
-      free(Lauf->pErrorPos);
-      if (!Prev)
-        *RRoot = Lauf->Next;
-      else
-        Prev->Next = Lauf->Next;
-      free(Lauf);
     }
   }
   EnterTree(&TreeRoot, &(Neu->Tree), SymbolAdder, &EnterStruct);
@@ -2362,12 +2437,17 @@ void PrintSymTree(char *Name)
 
 void ChangeSymbol(PSymbolEntry pEntry, LargeInt Value)
 {
+  if (!pEntry->changed)
+  {
+    pEntry->unchanged_value = (pEntry->SymWert.Typ == TempInt) ? pEntry->SymWert.Contents.Int : 0;
+    pEntry->changed = True;
+  }
   as_tempres_set_int(&pEntry->SymWert, Value);
 }
 
 /*!------------------------------------------------------------------------
  * \fn     CreateSymbolEntry(const tStrComp *pName, LongInt *pDestHandle, tSymbolFlags symbol_flags)
- * \brief  create empty container for symbol tabl eentry
+ * \brief  create empty container for symbol table entry
  * \param  pName unexpanded symbol name
  * \param  pDestHandle section handle (out)
  * \param  symbol_flags symbol flags
@@ -2376,22 +2456,27 @@ void ChangeSymbol(PSymbolEntry pEntry, LargeInt Value)
 
 PSymbolEntry CreateSymbolEntry(const tStrComp *pName, LongInt *pDestHandle, tSymbolFlags symbol_flags)
 {
-  PSymbolEntry pNeu;
-  String ExtName;
+  PSymbolEntry pNeu = NULL;
+  String exp_name_buf;
+  tStrComp *p_exp_name, exp_name;
 
-  if (!ExpandStrSymbol(ExtName, sizeof(ExtName), pName))
-    return NULL;
-  if (!GetSymSection(ExtName, pDestHandle, pName))
-    return NULL;
-  (void)ChkTmp(ExtName, (symbol_flags & eSymbolFlag_Label) ? e_symbol_source_label : e_symbol_source_define);
-  if (!ChkSymbName(ExtName))
+  StrCompMkTemp(&exp_name, exp_name_buf, sizeof exp_name_buf);
+  p_exp_name = ExpandStrSymbol(&exp_name, pName, !CaseSensitive);
+  if (!p_exp_name)
+    LEAVE;
+  if (!GetSymSection(p_exp_name, pDestHandle, pName))
+    LEAVE;
+  (void)ChkTmp(p_exp_name->str.p_str, (symbol_flags & eSymbolFlag_Label) ? e_symbol_source_label : e_symbol_source_define);
+  if (!ChkSymbName(p_exp_name->str.p_str))
   {
     WrStrErrorPos(ErrNum_InvSymName, pName);
-    return NULL;
+    LEAVE;
   }
   pNeu = (PSymbolEntry) calloc(1, sizeof(TSymbolEntry));
-  pNeu->Tree.Name = as_strdup(ExtName);
+  pNeu->Tree.Name = as_strdup(p_exp_name->str.p_str);
   as_tempres_ini(&pNeu->SymWert);
+func_exit:
+  StrCompFree(&exp_name);
   return pNeu;
 }
 
@@ -2684,7 +2769,7 @@ static void AddReference(PSymbolEntry Node)
   }
 }
 
-static PSymbolEntry FindNode_FNode(char *Name, TempType SearchType, LongInt Handle)
+static PSymbolEntry FindGlobNode_FNode(const char *Name, TempType SearchType, LongInt Handle)
 {
   PSymbolEntry Lauf;
 
@@ -2704,55 +2789,43 @@ static PSymbolEntry FindNode_FNode(char *Name, TempType SearchType, LongInt Hand
   return Lauf;
 }
 
-static Boolean FindNode_FSpec(char *Name, PForwardSymbol Root)
+static Boolean FindGlobNode_FSpec(const char *Name, PForwardSymbol Root)
 {
   while ((Root) && (strcmp(Root->Name, Name)))
     Root = Root->Next;
   return (Root != NULL);
 }
 
-static PSymbolEntry FindNode(const char *Name_O, TempType SearchType)
+static PSymbolEntry FindGlobNode(const char *p_name, TempType SearchType, LongInt DestSection)
 {
   PSaveSection Lauf;
-  LongInt DestSection;
   PSymbolEntry Result = NULL;
-  String Name;
-
-  strmaxcpy(Name, Name_O, STRINGSIZE);
-  ChkTmp3(Name, e_symbol_source_none);
-
-  /* TODO: pass StrComp */
-  if (!GetSymSection(Name, &DestSection, NULL))
-    return NULL;
-
-  if (!CaseSensitive)
-    NLS_UpString(Name);
 
   if (SectionStack)
     if (PassNo <= MaxSymPass)
-      if (FindNode_FSpec(Name, SectionStack->LocSyms)) DestSection = MomSectionHandle;
+      if (FindGlobNode_FSpec(p_name, SectionStack->LocSyms)) DestSection = MomSectionHandle;
 
   if (DestSection == -2)
   {
-    Result = FindNode_FNode(Name, SearchType, MomSectionHandle);
+    Result = FindGlobNode_FNode(p_name, SearchType, MomSectionHandle);
     if (Result)
       return Result;
     Lauf = SectionStack;
     while (Lauf)
     {
-      Result = FindNode_FNode(Name, SearchType, Lauf->Handle);
+      Result = FindGlobNode_FNode(p_name, SearchType, Lauf->Handle);
       if (Result)
         break;
       Lauf = Lauf->Next;
     }
   }
   else
-    Result = FindNode_FNode(Name, SearchType, DestSection);
+    Result = FindGlobNode_FNode(p_name, SearchType, DestSection);
 
   return Result;
 }
 
-static PSymbolEntry FindLocNode_FNode(char *Name, TempType SearchType, LongInt Handle)
+static PSymbolEntry FindLocNode_FNode(const char *Name, TempType SearchType, LongInt Handle)
 {
   PSymbolEntry Lauf;
 
@@ -2767,28 +2840,19 @@ static PSymbolEntry FindLocNode_FNode(char *Name, TempType SearchType, LongInt H
   return Lauf;
 }
 
-static PSymbolEntry FindLocNode(const char *Name_O, TempType SearchType)
+static PSymbolEntry FindLocNode(const char *p_name, TempType SearchType)
 {
   PLocHandle RunLocHandle;
   PSymbolEntry Result = NULL;
-  String Name;
 
-  strmaxcpy(Name, Name_O, STRINGSIZE);
-  ChkTmp3(Name, e_symbol_source_none);
-  if (!CaseSensitive)
-    NLS_UpString(Name);
-
-  if (MomLocHandle == -1)
-    return NULL;
-
-  Result = FindLocNode_FNode(Name, SearchType, MomLocHandle);
+  Result = FindLocNode_FNode(p_name, SearchType, MomLocHandle);
   if (Result)
     return Result;
 
   RunLocHandle = FirstLocHandle;
   while ((RunLocHandle) && (RunLocHandle->Cont != -1))
   {
-    Result = FindLocNode_FNode(Name, SearchType, RunLocHandle->Cont);
+    Result = FindLocNode_FNode(p_name, SearchType, RunLocHandle->Cont);
     if (Result)
       break;
     RunLocHandle = RunLocHandle->Next;
@@ -2796,20 +2860,95 @@ static PSymbolEntry FindLocNode(const char *Name_O, TempType SearchType)
 
   return Result;
 }
+
+/*!------------------------------------------------------------------------
+ * \fn     FindNode(const tStrComp *p_exp_name, TempType SearchType, Boolean SearchLocal, Boolean *p_error_on_find)
+ * \brief  find node in global and/or local symbol table
+ * \param  p_exp_name name of symbol to search
+ * \param  SearchType data type to search for
+ * \param  SearchLocal search in local table as well
+ * \param  p_error_on_find may return True if NULL due to symbol syntax error
+ * \return * to node or NULL
+ * ------------------------------------------------------------------------ */
+
+static PSymbolEntry FindNode(const tStrComp *p_exp_name, TempType SearchType, Boolean SearchLocal, Boolean *p_error_on_find)
+{
+  String name;
+  tStrComp name_comp;
+  LongInt DestSection = -1;
+
+  StrCompMkTemp(&name_comp, name, sizeof(name));
+  StrCompCopy(&name_comp, p_exp_name);
+  ChkTmp3(name_comp.str.p_str, e_symbol_source_none);
+  if (p_error_on_find)
+    *p_error_on_find = False;
+
+  if (!GetSymSection(&name_comp, &DestSection, p_exp_name))
+  {
+    if (p_error_on_find)
+      *p_error_on_find = True;
+    return NULL;
+  }
+  if (DestSection != -2)
+    SearchLocal = False;
+
+  if (SearchLocal && (MomLocHandle != -1))
+  {
+    PSymbolEntry p_result = FindLocNode(name_comp.str.p_str, SearchType);
+    if (p_result)
+      return p_result;
+  }
+  return FindGlobNode(name_comp.str.p_str, SearchType, DestSection);
+}
+
+/*!------------------------------------------------------------------------
+ * \fn     ExpandAndFindNode(const struct sStrComp *pComp, TempType SearchType, Boolean SearchLocal, expand_chk_t chk, Boolean *p_error_on_find)
+ * \brief  expand, optionally check and find node in global and/or local symbol table
+ * \param  pComp name of symbol to expand & search
+ * \param  SearchType data type to search for
+ * \param  SearchLocal search in local table as well
+ * \param  chk preliminary checks to perform
+ * \param  p_error_on_find may return True if NULL due to symbol syntax error
+ * \return * to node or NULL
+ * ------------------------------------------------------------------------ */
+
+PSymbolEntry ExpandAndFindNode(const struct sStrComp *pComp, TempType SearchType, Boolean SearchLocal, expand_chk_t chk, Boolean *p_error_on_find)
+{
+  String exp_name_buf;
+  tStrComp exp_name;
+  const tStrComp *p_exp_name;
+  const char *pKlPos;
+
+  if (p_error_on_find) *p_error_on_find = False;
+  StrCompMkTemp(&exp_name, exp_name_buf, sizeof(exp_name_buf));
+  p_exp_name = ExpandStrSymbol(&exp_name, pComp, !CaseSensitive);
+  if (!p_exp_name)
+  {
+    if (p_error_on_find) *p_error_on_find = True;
+    return NULL;
+  }
+
+  if (chk != e_expand_chk_none)
+  {
+    /* just [...] without symbol name itself is not valid */
+
+    pKlPos = strchr(p_exp_name->str.p_str, '[');
+    if ((pKlPos == p_exp_name->str.p_str) || (ChkSymbNameUpTo(p_exp_name->str.p_str, pKlPos) != pKlPos))
+      return NULL;
+  }
+
+  return FindNode(p_exp_name, SearchType, SearchLocal, p_error_on_find);
+}
+
 /**
 void SetSymbolType(const tStrComp *pName, Byte NTyp)
 {
   PSymbolEntry Lauf;
   Boolean HRef;
-  String ExpName;
 
-  if (!ExpandStrSymbol(ExpName, sizeof(ExpName), pName))
-    return;
   HRef = DoRefs;
   DoRefs = False;
-  Lauf = FindLocNode(ExpName, TempInt);
-  if (!Lauf)
-    Lauf = FindNode(ExpName, TempInt);
+  Lauf = ExpandAndFindNode(pName, TempInt, True, expand_chk_none, NULL);
   if (Lauf)
     Lauf->SymType = NTyp;
   DoRefs = HRef;
@@ -2818,27 +2957,9 @@ void SetSymbolType(const tStrComp *pName, Byte NTyp)
 
 void LookupSymbol(const struct sStrComp *pComp, TempResult *pValue, Boolean WantRelocs, TempType ReqType)
 {
-  PSymbolEntry pEntry;
-  String ExpName;
-  const char *pKlPos;
+  Boolean error_on_find;
+  PSymbolEntry pEntry = ExpandAndFindNode(pComp, ReqType, True, e_expand_chk_upto, &error_on_find);
 
-  if (!ExpandStrSymbol(ExpName, sizeof(ExpName), pComp))
-  {
-    pValue->Typ = TempNone;
-    return;
-  }
-
-  pKlPos = strchr(ExpName, '[');
-  if (ChkSymbNameUpTo(ExpName, pKlPos) != pKlPos)
-  {
-    WrStrErrorPos(ErrNum_InvSymName, pComp);
-    pValue->Typ = TempNone;
-    return;
-  }
-
-  pEntry = FindLocNode(ExpName, ReqType);
-  if (!pEntry)
-    pEntry = FindNode(ExpName, ReqType);
   if (pEntry)
   {
     as_tempres_copy_value(pValue, &pEntry->SymWert);
@@ -2859,6 +2980,9 @@ void LookupSymbol(const struct sStrComp *pComp, TempResult *pValue, Boolean Want
     }
     pEntry->Used = True;
   }
+
+  else if (error_on_find)
+    pValue->Typ = TempNone;
 
   /* Symbol evtl. im ersten Pass unbekannt */
 
@@ -2884,20 +3008,15 @@ void LookupSymbol(const struct sStrComp *pComp, TempResult *pValue, Boolean Want
 void SetSymbolOrStructElemSize(const struct sStrComp *pName, tSymbolSize Size)
 {
   if (pInnermostNamedStruct)
-    SetStructElemSize(pInnermostNamedStruct->StructRec, pName->str.p_str, Size);
+    SetStructElemSize(pInnermostNamedStruct->StructRec, pName, Size);
   else
   {
     PSymbolEntry pEntry;
     Boolean HRef;
-    String ExpName;
 
-    if (!ExpandStrSymbol(ExpName, sizeof(ExpName), pName))
-      return;
     HRef = DoRefs;
     DoRefs = False;
-    pEntry = FindLocNode(ExpName, TempInt);
-    if (!pEntry)
-      pEntry = FindNode(ExpName, TempInt);
+    pEntry = ExpandAndFindNode(pName, TempInt, True, e_expand_chk_none, NULL);
     if (pEntry)
       pEntry->SymWert.DataSize = Size;
     DoRefs = HRef;
@@ -2913,15 +3032,10 @@ void SetSymbolOrStructElemSize(const struct sStrComp *pName, tSymbolSize Size)
 
 ShortInt GetSymbolSize(const struct sStrComp *pName)
 {
-  PSymbolEntry pEntry;
-  String ExpName;
+  Boolean error_on_find;
+  PSymbolEntry pEntry = ExpandAndFindNode(pName, TempInt, True, e_expand_chk_none, &error_on_find);
 
-  if (!ExpandStrSymbol(ExpName, sizeof(ExpName), pName))
-     return -1;
-  pEntry = FindLocNode(ExpName, TempInt);
-  if (!pEntry)
-    pEntry = FindNode(ExpName, TempInt);
-  return pEntry ? pEntry->SymWert.DataSize : eSymbolSizeUnknown;
+  return pEntry ? pEntry->SymWert.DataSize : (error_on_find ? -1 : eSymbolSizeUnknown);
 }
 
 /*!------------------------------------------------------------------------
@@ -2933,15 +3047,8 @@ ShortInt GetSymbolSize(const struct sStrComp *pName)
 
 Boolean IsSymbolDefined(const struct sStrComp *pName)
 {
-  PSymbolEntry pEntry;
-  String ExpName;
+  PSymbolEntry pEntry = ExpandAndFindNode(pName, TempAll, True, e_expand_chk_none, NULL);
 
-  if (!ExpandStrSymbol(ExpName, sizeof(ExpName), pName))
-    return False;
-
-  pEntry = FindLocNode(ExpName, TempAll);
-  if (!pEntry)
-    pEntry = FindNode(ExpName, TempAll);
   return pEntry && pEntry->Defined;
 }
 
@@ -2954,15 +3061,8 @@ Boolean IsSymbolDefined(const struct sStrComp *pName)
 
 Boolean IsSymbolUsed(const struct sStrComp *pName)
 {
-  PSymbolEntry pEntry;
-  String ExpName;
+  PSymbolEntry pEntry = ExpandAndFindNode(pName, TempAll, True, e_expand_chk_none, NULL);
 
-  if (!ExpandStrSymbol(ExpName, sizeof(ExpName), pName))
-    return False;
-
-  pEntry = FindLocNode(ExpName, TempAll);
-  if (!pEntry)
-    pEntry = FindNode(ExpName, TempAll);
   return pEntry && pEntry->Used;
 }
 
@@ -2975,15 +3075,8 @@ Boolean IsSymbolUsed(const struct sStrComp *pName)
 
 Boolean IsSymbolChangeable(const struct sStrComp *pName)
 {
-  PSymbolEntry pEntry;
-  String ExpName;
+  PSymbolEntry pEntry = ExpandAndFindNode(pName, TempAll, True, e_expand_chk_none, NULL);
 
-  if (!ExpandStrSymbol(ExpName, sizeof(ExpName), pName))
-    return False;
-
-  pEntry = FindLocNode(ExpName, TempAll);
-  if (!pEntry)
-    pEntry = FindNode(ExpName, TempAll);
   return pEntry && pEntry->Changeable;
 }
 
@@ -3006,15 +3099,7 @@ as_addrspace_t addrspace_from_mask(unsigned mask)
 
 Integer GetSymbolType(const struct sStrComp *pName)
 {
-  PSymbolEntry pEntry;
-  String ExpName;
-
-  if (!ExpandStrSymbol(ExpName, sizeof(ExpName), pName))
-    return -1;
-
-  pEntry = FindLocNode(ExpName, TempAll);
-  if (!pEntry)
-    pEntry = FindNode(ExpName, TempAll);
+  PSymbolEntry pEntry = ExpandAndFindNode(pName, TempAll, True, e_expand_chk_none, NULL);
 
   if (!pEntry)
     return -1;
@@ -3131,13 +3216,21 @@ typedef struct
   as_dynstr_t s;
 } TDebContext;
 
+static Boolean match_space_mask(unsigned mask, as_addrspace_t space)
+{
+  if (SegNone == space)
+    return !mask;
+  else
+    return !!((mask >> space) & 1);
+}
+
 static void PrintDebSymbols_PNode(PTree Tree, void *pData)
 {
   PSymbolEntry Node = (PSymbolEntry) Tree;
   TDebContext *DebContext = (TDebContext*) pData;
   int l1;
 
-  if (!((Node->SymWert.AddrSpaceMask >> DebContext->Space) & 1))
+  if (!match_space_mask(Node->SymWert.AddrSpaceMask, DebContext->Space))
     return;
 
   if (!DebContext->HWritten)
@@ -3271,57 +3364,79 @@ void ClearSymbolList(void)
 /*-------------------------------------------------------------------------*/
 /* Stack-Verwaltung */
 
+static PSymbolStack find_stack(const char *p_name, PSymbolStack *pp_stack_prev, Boolean allow_create)
+{
+  PSymbolStack p_stack_run;
+
+  p_stack_run = FirstStack;
+  *pp_stack_prev = NULL;
+  while (p_stack_run && (strcmp(p_stack_run->Name, p_name) < 0))
+  {
+    *pp_stack_prev = p_stack_run;
+    p_stack_run = p_stack_run->Next;
+  }
+
+  if (!p_stack_run || (strcmp(p_stack_run->Name, p_name) > 0))
+  {
+    PSymbolStack p_stack_new;
+
+    if (!allow_create)
+      return NULL;
+
+    p_stack_new = (PSymbolStack) malloc(sizeof(TSymbolStack));
+    p_stack_new->Name = as_strdup(p_name);
+    p_stack_new->Contents = NULL;
+    p_stack_new->Next = p_stack_run;
+    if (!*pp_stack_prev)
+      FirstStack = p_stack_new;
+    else
+      (*pp_stack_prev)->Next = p_stack_new;
+    return p_stack_new;
+  }
+  else
+    return p_stack_run;
+}
+
 Boolean PushSymbol(const tStrComp *pSymName, const tStrComp *pStackName)
 {
   PSymbolEntry pSrc;
-  PSymbolStack LStack, NStack, PStack;
+  PSymbolStack LStack, PStack;
   PSymbolStackEntry Elem;
-  String ExpSymName, ExpStackName;
+  tStrComp exp_sym_name, exp_stack_name;
+  const tStrComp *p_exp_sym_name, *p_exp_stack_name;
+  String exp_sym_name_buf, exp_stack_name_buf;
 
-  if (!ExpandStrSymbol(ExpSymName, sizeof(ExpSymName), pSymName))
+  StrCompMkTemp(&exp_sym_name, exp_sym_name_buf, sizeof(exp_sym_name_buf));
+  p_exp_sym_name = ExpandStrSymbol(&exp_sym_name, pSymName, !CaseSensitive);
+  if (!p_exp_sym_name)
     return False;
 
-  pSrc = FindNode(ExpSymName, TempAll);
+  pSrc = FindNode(p_exp_sym_name, TempAll, False, NULL);
   if (!pSrc)
   {
     WrStrErrorPos(ErrNum_SymbolUndef, pSymName);
     return False;
   }
 
+  StrCompMkTemp(&exp_stack_name, exp_stack_name_buf, sizeof(exp_stack_name_buf));
   if (*pStackName->str.p_str)
   {
-    if (!ExpandStrSymbol(ExpStackName, sizeof(ExpStackName), pStackName))
+    p_exp_stack_name = ExpandStrSymbol(&exp_stack_name, pStackName, !CaseSensitive);
+    if (!p_exp_stack_name)
       return False;
   }
   else
-    strmaxcpy(ExpStackName, DefStackName, STRINGSIZE);
-  if (!ChkSymbName(ExpStackName))
+  {
+    strmaxcpy(exp_stack_name.str.p_str, DefStackName, exp_stack_name.str.capacity);
+    p_exp_stack_name = &exp_stack_name;
+  }
+  if (!ChkSymbName(p_exp_stack_name->str.p_str))
   {
     WrStrErrorPos(ErrNum_InvSymName, pStackName);
     return False;
   }
 
-  LStack = FirstStack;
-  PStack = NULL;
-  while ((LStack) && (strcmp(LStack->Name, ExpStackName) < 0))
-  {
-    PStack = LStack;
-    LStack = LStack->Next;
-  }
-
-  if ((!LStack) || (strcmp(LStack->Name, ExpStackName) > 0))
-  {
-    NStack = (PSymbolStack) malloc(sizeof(TSymbolStack));
-    NStack->Name = as_strdup(ExpStackName);
-    NStack->Contents = NULL;
-    NStack->Next = LStack;
-    if (!PStack)
-      FirstStack = NStack;
-    else
-      PStack->Next = NStack;
-    LStack = NStack;
-  }
-
+  LStack = find_stack(p_exp_stack_name->str.p_str, &PStack, True);
   Elem = (PSymbolStackEntry) malloc(sizeof(TSymbolStackEntry));
   Elem->Next = LStack->Contents;
   Elem->Contents = pSrc->SymWert;
@@ -3335,40 +3450,42 @@ Boolean PopSymbol(const tStrComp *pSymName, const tStrComp *pStackName)
   PSymbolEntry pDest;
   PSymbolStack LStack, PStack;
   PSymbolStackEntry Elem;
-  String ExpSymName, ExpStackName;
+  tStrComp exp_sym_name, exp_stack_name;
+  const tStrComp *p_exp_sym_name, *p_exp_stack_name;
+  String exp_sym_name_buf, exp_stack_name_buf;
 
-  if (!ExpandStrSymbol(ExpSymName, sizeof(ExpSymName), pSymName))
+  StrCompMkTemp(&exp_sym_name, exp_sym_name_buf, sizeof(exp_sym_name_buf));
+  p_exp_sym_name = ExpandStrSymbol(&exp_sym_name, pSymName, !CaseSensitive);
+  if (!p_exp_sym_name)
     return False;
 
-  pDest = FindNode(ExpSymName, TempAll);
+  pDest = FindNode(p_exp_sym_name, TempAll, False, NULL);
   if (!pDest)
   {
     WrStrErrorPos(ErrNum_SymbolUndef, pSymName);
     return False;
   }
 
+  StrCompMkTemp(&exp_stack_name, exp_stack_name_buf, sizeof(exp_stack_name_buf));
   if (*pStackName->str.p_str)
   {
-    if (!ExpandStrSymbol(ExpStackName, sizeof(ExpStackName), pStackName))
+    p_exp_stack_name = ExpandStrSymbol(&exp_stack_name, pStackName, !CaseSensitive);
+    if (!p_exp_stack_name)
       return False;
   }
   else
-    strmaxcpy(ExpStackName, DefStackName, STRINGSIZE);
-  if (!ChkSymbName(ExpStackName))
+  {
+    strmaxcpy(exp_stack_name.str.p_str, DefStackName, exp_stack_name.str.capacity);
+    p_exp_stack_name = &exp_stack_name;
+  }
+  if (!ChkSymbName(p_exp_stack_name->str.p_str))
   {
     WrStrErrorPos(ErrNum_InvSymName, pStackName);
     return False;
   }
 
-  LStack = FirstStack;
-  PStack = NULL;
-  while ((LStack) && (strcmp(LStack->Name, ExpStackName) < 0))
-  {
-    PStack = LStack;
-    LStack = LStack->Next;
-  }
-
-  if ((!LStack) || (strcmp(LStack->Name, ExpStackName) > 0))
+  LStack = find_stack(p_exp_stack_name->str.p_str, &PStack, False);
+  if (!LStack)
   {
     WrStrErrorPos(ErrNum_StackEmpty, pStackName);
     return False;
@@ -3549,7 +3666,9 @@ void SetFlag(Boolean *Flag, const char *Name, Boolean Wert)
 
   *Flag = Wert;
   StrCompMkTemp(&TmpComp, (char*)Name, 0);
+  PushLocHandle(-1);
   EnterIntSymbol(&TmpComp, *Flag ? 1 : 0, SegNone, True);
+  PopLocHandle();
 }
 
 void AddDefSymbol(char *Name, TempResult *Value)
@@ -3645,20 +3764,15 @@ void PrintSymbolDepth(void)
   fprintf(Debug, " MaxTree %ld\n", (long)TreeMax);
 }
 
-LongInt GetSectionHandle(char *SName_O, Boolean AddEmpt, LongInt Parent)
+LongInt GetSectionHandle(const char *SName, Boolean AddEmpt, LongInt Parent)
 {
   PCToken Lauf, Prev;
   LongInt z;
-  String SName;
-
-  strmaxcpy(SName, SName_O, STRINGSIZE);
-  if (!CaseSensitive)
-    NLS_UpString(SName);
 
   Lauf = FirstSection;
   Prev = NULL;
   z = 0;
-  while ((Lauf) && ((strcmp(Lauf->Name, SName)) || (Lauf->Parent != Parent)))
+  while (Lauf && (strcmp(Lauf->Name, SName) || (Lauf->Parent != Parent)))
   {
     z++;
     Prev = Lauf;
@@ -3947,7 +4061,7 @@ void PopLocHandle(void)
   free(OldLocHandle);
 }
 
-void ClearLocStack()
+void ClearLocStack(void)
 {
   while (MomLocHandle != -1)
     PopLocHandle();
@@ -4037,6 +4151,50 @@ void PrintRegDefs(void)
 
 /*--------------------------------------------------------------------------*/
 
+/*!------------------------------------------------------------------------
+ * \fn     FindCodepage(const char *p_name, PTransTable p_source)
+ * \brief  look up a code page by name
+ * \param  p_name name to look for
+ * \param  p_source source to copy from if creation allowed, otehrwise NULL
+ * \return * to found/created code page
+ * ------------------------------------------------------------------------ */
+
+PTransTable FindCodepage(const char *p_name, PTransTable p_source)
+{
+  PTransTable p_prev, p_run, p_new;
+  /* If TransTables is empty, p_name is right behind non-existing
+     last entry: */
+  int cmp_res = 1;
+
+  for (p_run = TransTables, p_prev = NULL; p_run; p_prev = p_run, p_run = p_run->Next)
+  {
+    cmp_res = CaseSensitive ? strcmp(p_name, p_run->Name) : as_strcasecmp(p_name, p_run->Name);
+    if (cmp_res <= 0)
+      break;
+  }
+  if (!cmp_res)
+    return p_run;
+  else if (!p_source)
+    return NULL;
+  else
+  {
+    p_new = (PTransTable) malloc(sizeof(TTransTable));
+    if (p_new)
+    {
+      p_new->Next = p_run;
+      p_new->Name = as_strdup(p_name);
+      if (!CaseSensitive)
+        UpString(p_new->Name);
+      p_new->p_table = as_chartrans_table_dup(p_source->p_table);
+      if (p_prev)
+        p_prev->Next = p_new;
+      else
+        TransTables = p_new;
+    }
+    return p_new;
+  }
+}
+
 void ClearCodepages(void)
 {
   PTransTable Old;
@@ -4046,7 +4204,7 @@ void ClearCodepages(void)
     Old = TransTables;
     TransTables = Old->Next;
     free(Old->Name);
-    free(Old->Table);
+    as_chartrans_table_free(Old->p_table);
     free(Old);
   }
 }
@@ -4066,7 +4224,7 @@ void PrintCodepages(void)
   for (Table = TransTables; Table; Table = Table->Next)
   {
     for (z = cnt = 0; z < 256; z++)
-      if (Table->Table[z] != z)
+      if (Table->p_table->mapping[z] != z)
         cnt++;
     as_snprintf(buf, sizeof(buf), "%s (%d%s)", Table->Name, cnt,
                 getmessage((cnt == 1) ? Num_ListCodepageChange : Num_ListCodepagePChange));

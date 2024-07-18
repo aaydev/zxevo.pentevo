@@ -15,17 +15,21 @@
 #include <assert.h>
 
 #include "version.h"
-#include "endian.h"
+#include "be_le.h"
 #include "bpemu.h"
 
 #include "stdhandl.h"
 #include "nls.h"
 #include "nlmessages.h"
 #include "as.rsc"
+#ifdef _USE_MSH
+# include "as.msh"
+#endif
 #include "ioerrs.h"
 #include "strutil.h"
 #include "stringlists.h"
 #include "cmdarg.h"
+#include "msg_level.h"
 #include "asmitree.h"
 #include "trees.h"
 #include "chunks.h"
@@ -45,14 +49,17 @@
 #include "asmlabel.h"
 #include "asmdebug.h"
 #include "asmrelocs.h"
+#include "literals.h"
 #include "asmallg.h"
+#include "onoff_common.h"
 #include "codepseudo.h"
-#include "intpseudo.h"
 #include "as.h"
 
+#include "codenone.h"
 #include "code68k.h"
 #include "code56k.h"
 #include "code601.h"
+#include "codepalm.h"
 #include "codemcore.h"
 #include "codexgate.h"
 #include "code68.h"
@@ -65,13 +72,17 @@
 #include "codeh8_3.h"
 #include "codeh8_5.h"
 #include "code7000.h"
+#include "codeko09.h"
 #include "code65.h"
+#include "codepps4.h"
 #include "codeh16.h"
 #include "code7700.h"
 #include "codehmcs400.h"
 #include "code4500.h"
 #include "codem16.h"
 #include "codem16c.h"
+#include "codepdp11.h"
+#include "codevax.h"
 #include "code4004.h"
 #include "code8008.h"
 #include "code48.h"
@@ -120,12 +131,14 @@
 #include "codemsp.h"
 #include "codetms1.h"
 #include "codescmp.h"
+#include "codeimp16.h"
 #include "code807x.h"
 #include "codecop4.h"
 #include "codecop8.h"
 #include "codesc14xxx.h"
 #include "codens32k.h"
 #include "codeace.h"
+#include "codecp3f.h"
 #include "codef8.h"
 #include "code78c10.h"
 #include "code75xx.h"
@@ -136,6 +149,7 @@
 #include "code78k4.h"
 #include "code7720.h"
 #include "code77230.h"
+#include "codev60.h"
 #include "code53c8xx.h"
 #include "codefmc8.h"
 #include "codefmc16.h"
@@ -149,6 +163,11 @@
 #include "code1750.h"
 #include "codekenbak.h"
 #include "codecp1600.h"
+#include "codenano.h"
+#include "code6100.h"
+#include "coderx.h"
+#include "code61860.h"
+#include "code62015.h"
 /**          Code21xx};**/
 
 static long StartTime, StopTime;
@@ -173,9 +192,10 @@ static void NULL_Restorer(PInputTag PInp)
   UNUSED(PInp);
 }
 
-static Boolean NULL_GetPos(PInputTag PInp, char *dest, size_t DestSize)
+static Boolean NULL_GetPos(PInputTag PInp, char *dest, size_t DestSize, Boolean ActGNUErrors)
 {
   UNUSED(PInp);
+  UNUSED(ActGNUErrors);
 
   if (DestSize)
     *dest = '\0';
@@ -195,7 +215,7 @@ static PInputTag GenerateProcessor(void)
   PInp->StartLine = CurrLine;
   PInp->ParCnt = 0; PInp->ParZ = 0;
   InitStringList(&(PInp->Params));
-  PInp->LineCnt = 0; PInp->LineZ = 1;
+  PInp->LineCnt = PInp->ContLineCnt = 0; PInp->LineZ = 1;
   PInp->Lines = PInp->LineRun = NULL;
   StrCompMkTemp(&PInp->SpecName, PInp->SpecNameStr, sizeof(PInp->SpecNameStr));
   StrCompReset(&PInp->SpecName);
@@ -217,7 +237,7 @@ static PInputTag GenerateProcessor(void)
 
   /* in case the input tag chain is empty, this must be the master file */
 
-  PInp->FromFile = (!FirstInputTag) || (FirstInputTag->Processor == INCLUDE_Processor);
+  PInp->FromFile = !FirstInputTag || (FirstInputTag->Processor == INCLUDE_Processor);
 
   return PInp;
 }
@@ -395,7 +415,10 @@ static void MACRO_OutProcessor(void)
 
     l = FirstOutputTag->ParamNames;
     for (z = 1; z <= FirstOutputTag->Mac->ParamCount; z++)
-      CompressLine(GetStringListNext(&l), z, &s, CaseSensitive);
+    {
+      const char *p_param_name = GetStringListNext(&l);
+      CompressLine(p_param_name ? p_param_name : "", z, &s, CaseSensitive);
+    }
 
     /* reserved argument names are never case-sensitive */
 
@@ -656,7 +679,9 @@ static void ReadMacro(void)
   PMacroRec OneMacro;
   tReadMacroContext Context;
   LongInt HSect;
-  String MacroName;
+  String macro_name_buf;
+  tStrComp macro_name;
+  const tStrComp *p_macro_name;
 
   WasMACRO = True;
 
@@ -666,14 +691,25 @@ static void ReadMacro(void)
   /* Makronamen pruefen */
   /* Definition nur im ersten Pass */
 
+  StrCompMkTemp(&macro_name, macro_name_buf, sizeof(macro_name_buf));
   if (PassNo != 1)
-    Context.ErrFlag = True;
-  else if (!ExpandStrSymbol(MacroName, sizeof(MacroName), &LabPart))
-    Context.ErrFlag = True;
-  else if (!ChkSymbName(MacroName))
   {
-    WrXError(ErrNum_InvSymName, LabPart.str.p_str);
     Context.ErrFlag = True;
+    p_macro_name = &LabPart;
+  }
+  else
+  {
+    p_macro_name = ExpandStrSymbol(&macro_name, &LabPart, False);
+    if (!p_macro_name)
+    {
+      Context.ErrFlag = True;
+      p_macro_name = &LabPart;
+    }
+    else if (!ChkSymbName(p_macro_name->str.p_str))
+    {
+      WrStrErrorPos(ErrNum_InvSymName, &LabPart);
+      Context.ErrFlag = True;
+    }
   }
 
   /* create tag */
@@ -746,7 +782,7 @@ static void ReadMacro(void)
   }
 
   OneMacro->UseCounter = 0;
-  OneMacro->Name = as_strdup(MacroName);
+  OneMacro->Name = as_strdup(p_macro_name->str.p_str);
   OneMacro->ParamCount = Context.ParamCount;
   OneMacro->FirstLine = NULL;
   OneMacro->LstMacroExpMod = Context.LstMacroExpMod;
@@ -764,8 +800,9 @@ static void MACRO_Cleanup(PInputTag PInp)
   ClearStringList(&(PInp->Params));
 }
 
-static Boolean MACRO_GetPos(PInputTag PInp, char *dest, size_t DestSize)
+static Boolean MACRO_GetPos(PInputTag PInp, char *dest, size_t DestSize, Boolean ActGNUErrors)
 {
+  UNUSED(ActGNUErrors);
   as_snprintf(dest, DestSize, "%s(%lu) ", PInp->SpecName.str.p_str, (unsigned long)(PInp->LineZ - 1));
   return False;
 }
@@ -1000,9 +1037,11 @@ static void ExpandSHIFT(void)
       if (RunTag->Processor == MACRO_Processor)
         break;
 
-    if ((RunTag) && (RunTag->Params))
+    if (RunTag && RunTag->Params)
     {
-      GetAndCutStringList(&(RunTag->Params));
+      char *p_arg = MoveAndCutStringListFirst(&RunTag->Params);
+      if (p_arg)
+        free(p_arg);
       RunTag->ParCnt--;
       ComputeMacroStrings(RunTag);
     }
@@ -1090,11 +1129,13 @@ static void IRP_Cleanup(PInputTag PInp)
 /* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 /* Posisionsangabe im IRP(C) fuer Fehlermeldungen */
 
-static Boolean IRP_GetPos(PInputTag PInp, char *dest, size_t DestSize)
+static Boolean IRP_GetPos(PInputTag PInp, char *dest, size_t DestSize, Boolean ActGNUErrors)
 {
   int z, ParZ = PInp->ParZ, LineZ = PInp->LineZ;
   const char *IRPType;
   char *IRPVal, tmp[20];
+
+  UNUSED(ActGNUErrors);
 
   /* LineZ/ParZ already hopped to next line - step one back: */
 
@@ -1137,7 +1178,6 @@ static Boolean IRP_GetPos(PInputTag PInp, char *dest, size_t DestSize)
 static void IRP_OutProcessor(void)
 {
   POutputTag Tmp;
-  StringRecPtr Dummy;
 
   WasMACRO = True;
 
@@ -1153,9 +1193,11 @@ static void IRP_OutProcessor(void)
   if (FirstOutputTag->NestLevel > -1)
   {
     as_dynstr_t s;
+    StringRecPtr Dummy;
+    const char *p_first_param = GetStringListFirst(FirstOutputTag->ParamNames, &Dummy);
 
     as_dynstr_ini_clone(&s, &OneLine); KillCtrl(s.p_str);
-    CompressLine(GetStringListFirst(FirstOutputTag->ParamNames, &Dummy), 1, &s, CaseSensitive);
+    CompressLine(p_first_param ? p_first_param : "", 1, &s, CaseSensitive);
     AddStringListLast(&(FirstOutputTag->Tag->Lines), s.p_str);
     as_dynstr_free(&s);
     FirstOutputTag->Tag->LineCnt++;
@@ -1470,9 +1512,11 @@ static void REPT_Cleanup(PInputTag PInp)
   ClearStringList(&(PInp->Lines));
 }
 
-static Boolean REPT_GetPos(PInputTag PInp, char *dest, size_t DestSize)
+static Boolean REPT_GetPos(PInputTag PInp, char *dest, size_t DestSize, Boolean ActGNUErrors)
 {
   int z1 = PInp->ParZ, z2 = PInp->LineZ;
+
+  UNUSED(ActGNUErrors);
 
   if (--z2 <= 0)
   {
@@ -1667,9 +1711,11 @@ static void WHILE_Cleanup(PInputTag PInp)
   ClearStringList(&(PInp->Lines));
 }
 
-static Boolean WHILE_GetPos(PInputTag PInp, char *dest, size_t DestSize)
+static Boolean WHILE_GetPos(PInputTag PInp, char *dest, size_t DestSize, Boolean ActGNUErrors)
 {
   int z1 = PInp->ParZ, z2 = PInp->LineZ;
+
+  UNUSED(ActGNUErrors);
 
   if (--z2 <= 0)
   {
@@ -1888,8 +1934,12 @@ static void INCLUDE_Cleanup(PInputTag PInp)
 {
   fclose(PInp->Datei);
   free(PInp->Buffer);
-  LineSum += MomLineCounter;
-  if ((*LstName != '\0') && !QuietMode)
+
+  /* if last line in file was continued, do not forget to add up
+     continuation lines: */
+
+  LineSum += PInp->LineZ + PInp->ContLineCnt;
+  if ((*LstName != '\0') && (msg_level >= e_msg_level_normal))
   {
     String Tmp;
 
@@ -1902,11 +1952,11 @@ static void INCLUDE_Cleanup(PInputTag PInp)
   CurrIncludeLevel = PInp->IncludeLevel;
 }
 
-static Boolean INCLUDE_GetPos(PInputTag PInp, char *dest, size_t DestSize)
+static Boolean INCLUDE_GetPos(PInputTag PInp, char *dest, size_t DestSize, Boolean ActGNUErrors)
 {
   UNUSED(PInp);
 
-  as_snprintf(dest, DestSize, GNUErrors ? "%s:%lu" : "%s(%lu) ", NamePart(PInp->SpecName.str.p_str), (unsigned long)PInp->LineZ);
+  as_snprintf(dest, DestSize, ActGNUErrors ? "%s:%lu" : "%s(%lu) ", NamePart(PInp->SpecName.str.p_str), (unsigned long)PInp->LineZ);
   return !GNUErrors;
 }
 
@@ -1914,6 +1964,14 @@ Boolean INCLUDE_Processor(PInputTag PInp, as_dynstr_t *p_dest)
 {
   Boolean Result;
   int Count = 1;
+
+  /* add up # of continuation lines from previous source line */
+
+  if (PInp->ContLineCnt)
+  {
+    CurrLine = (PInp->LineZ += PInp->ContLineCnt);
+    PInp->ContLineCnt = 0;
+  }
 
   Result = True;
 
@@ -1924,7 +1982,17 @@ Boolean INCLUDE_Processor(PInputTag PInp, as_dynstr_t *p_dest)
     Count = ReadLnCont(PInp->Datei, p_dest);
     /**ChkIO(ErrNum_FileReadError);**/
   }
-  PInp->LineZ = CurrLine = (MomLineCounter += Count);
+
+  /* Even if we had continuation lines, only increment line counter
+     by one at this place so the first line's # is the number of the
+     concatenated line: */
+
+  if (Count > 0)
+  {
+    PInp->LineZ++;
+    CurrLine = PInp->LineZ;
+    PInp->ContLineCnt = Count - 1;
+  }
   if (feof(PInp->Datei))
     Result = False;
 
@@ -1933,7 +2001,7 @@ Boolean INCLUDE_Processor(PInputTag PInp, as_dynstr_t *p_dest)
 
 static void INCLUDE_Restorer(PInputTag PInp)
 {
-  MomLineCounter = PInp->StartLine;
+  CurrLine = PInp->StartLine;
   strmaxcpy(CurrFileName, PInp->SaveAttr, STRINGSIZE);
   IncDepth--;
 }
@@ -1965,7 +2033,7 @@ static void ExpandINCLUDE_Core(const tStrComp *pArg, Boolean SearchPath)
 
   /* Sicherung alter Daten */
 
-  Tag->StartLine = MomLineCounter;
+  Tag->StartLine = CurrLine;
   strmaxcpy(Tag->SpecName.str.p_str, FNameArg.str.p_str, STRINGSIZE);
   LineCompReset(&Tag->SpecName.Pos);
   strmaxcpy(Tag->SaveAttr, CurrFileName, STRINGSIZE);
@@ -1982,7 +2050,7 @@ static void ExpandINCLUDE_Core(const tStrComp *pArg, Boolean SearchPath)
   /* neu besetzen */
 
   strmaxcpy(CurrFileName, FNameArg.str.p_str, STRINGSIZE);
-  Tag->LineZ = MomLineCounter = 0;
+  Tag->LineZ = 0;
   AddFile(FNameArg.str.p_str);
   PushInclude(FNameArg.str.p_str);
   if (++CurrIncludeLevel > MaxIncludeLevel)
@@ -2114,7 +2182,7 @@ char *GetErrorPos(void)
           pInnerTag = RunTag;
         else
         {
-          Last = RunTag->GetPos(RunTag, ActPos, sizeof(ActPos));
+          Last = RunTag->GetPos(RunTag, ActPos, sizeof(ActPos), GNUErrors);
           if (!Str.AllocLen)
           {
             pMsg = getmessage(Num_GNUErrorMsg1);
@@ -2149,7 +2217,7 @@ char *GetErrorPos(void)
 
     if (pInnerTag)
     {
-      pInnerTag->GetPos(pInnerTag, ActPos, sizeof(ActPos));
+      pInnerTag->GetPos(pInnerTag, ActPos, sizeof(ActPos), GNUErrors);
       NewLen = CurrStrLen + strlen(ActPos) + 1;
       ReallocStr(&Str, NewLen);
       as_snprcatf(Str.pStr, Str.AllocLen, "%s", ActPos);
@@ -2165,7 +2233,7 @@ char *GetErrorPos(void)
 
     for (RunTag = FirstInputTag; RunTag; RunTag = RunTag->Next)
     {
-      Last = RunTag->GetPos(RunTag, ActPos, sizeof(ActPos));
+      Last = RunTag->GetPos(RunTag, ActPos, sizeof(ActPos), GNUErrors);
       ThisLen = strlen(ActPos);
       ReallocStr(&Str, NewLen = CurrStrLen + ThisLen + 1);
       strmaxprep(Str.pStr, ActPos, Str.AllocLen);
@@ -2219,7 +2287,10 @@ void WriteCode(void)
   }
 
   if ((ActPC != StructSeg) && (!ChkPC(PCs[ActPC] + CodeLen - 1)) && (CodeLen != 0))
+  {
     WrError(ErrNum_AdrOverflow);
+    CodeLen = 0;
+  }
   else
   {
     LargeWord NewPC = PCs[ActPC] + CodeLen;
@@ -2253,25 +2324,36 @@ static void Produce_Code(void)
   PMacroRec OneMacro;
   PStructRec OneStruct;
   Boolean SearchMacros, Found, IsMacro = False, IsStruct = False, ResetLastLabel = True;
+  tStrComp non_upper_case_op_part;
+  String non_upper_case_op_part_buf;
+  const tStrComp *p_search_op_part;
 
   ActListGran = ListGran();
   WasIF = WasMACRO = False;
 
   /* Makrosuche unterdruecken ? */
 
+  /* We need the OpPart also in a variant not converted to all-uppercase,
+     since structure and macro names may be case sensitive: */
+
+  StrCompMkTemp(&non_upper_case_op_part, non_upper_case_op_part_buf, sizeof(non_upper_case_op_part_buf));
   if (*OpPart.str.p_str == '!')
   {
     SearchMacros = False;
     StrCompCutLeft(&OpPart, 1);
-    strcpy(pLOpPart, OpPart.str.p_str);
+    StrCompCopy(&non_upper_case_op_part, &OpPart);
   }
   else
   {
+    const tStrComp *p_lop_part;
+
     SearchMacros = True;
-    ExpandStrSymbol(pLOpPart, STRINGSIZE, &OpPart);
-    strcpy(OpPart.str.p_str, pLOpPart);
+    p_lop_part = ExpandStrSymbol(&non_upper_case_op_part, &OpPart, False);
+    if (p_lop_part && (p_lop_part != &OpPart))
+      as_dynstr_copy(&OpPart.str, &p_lop_part->str);
   }
   NLS_UpString(OpPart.str.p_str);
+  p_search_op_part = CaseSensitive ? &non_upper_case_op_part : &OpPart;
 
   /* Prozessor eingehaengt ? */
 
@@ -2283,11 +2365,11 @@ static void Produce_Code(void)
 
   /* otherwise generate code: check for macro/structs here */
 
-  IsMacro = (SearchMacros) && (FoundMacro(&OneMacro));
+  IsMacro = (SearchMacros) && (FoundMacro(&OneMacro, p_search_op_part));
   if (IsMacro)
     WasMACRO = True;
   if (!IsMacro)
-    IsStruct = FoundStruct(&OneStruct, pLOpPart);
+    IsStruct = FoundStruct(&OneStruct, p_search_op_part->str.p_str);
 
   /* no longer at an address right after a BSR? */
 
@@ -2296,7 +2378,7 @@ static void Produce_Code(void)
 
   /* evtl. voranstehendes Label ablegen */
 
-  if ((IfAsm) && ((!IsMacro) || (!OneMacro->LocIntLabel)))
+  if (IfAsm && (!IsMacro || !OneMacro->LocIntLabel))
   {
     if (LabelPresent())
       LabelHandle(&LabPart, EProgCounter(), False);
@@ -2349,7 +2431,7 @@ static void Produce_Code(void)
       case 'S':
         /* shift macro arguments ? */
         Found = True;
-        if (Memo(ShiftIsOccupied ? "SHFT" : "SHIFT")) ExpandSHIFT();
+        if (memo_shift_pseudo() || (ShiftIsOccupied && Memo("SHFT"))) ExpandSHIFT();
         else Found = False;
         break;
       case 'I':
@@ -2402,12 +2484,12 @@ static void Produce_Code(void)
 
       if (IsStruct)
       {
-        ExpandStruct(OneStruct);
+        ExpandStruct(OneStruct, p_search_op_part->str.p_str);
         strmaxcpy(ListLine, OneStruct->IsUnion ? "(UNION)" : "(STRUCT)", STRINGSIZE);
       }
       else
       {
-        AttrPartOpSize = eSymbolSizeUnknown;
+        AttrPartOpSize[0] = AttrPartOpSize[1] = eSymbolSizeUnknown;
         if (DecodeAttrPart ? DecodeAttrPart() : True)
         {
           if (!CodeGlobalPseudo())
@@ -2558,6 +2640,7 @@ static void SplitLine(void)
 
   /* Attribut abspalten */
 
+  oppart_leading_dot = False;
   if (HasAttrs)
   {
     const char *pActAttrChar;
@@ -2587,6 +2670,8 @@ again:
       {
         StrCompCopy(&OpPart, &AttrPart);
         StrCompReset(&AttrPart);
+        if (!Tries && (AttrSplit == '.'))
+          oppart_leading_dot = True;
         if (++Tries < 2)
           goto again;
       }
@@ -2647,7 +2732,6 @@ again:
 static void ProcessFile(char *pFileName)
 {
   long NxtTime, ListTime;
-  const char *Name;
   char *Run;
   tStrComp FileArg;
 
@@ -2688,20 +2772,25 @@ static void ProcessFile(char *pFileName)
     MakeList(OneLine.p_str);
     DoLst = NextDoLst;
     IncDepth = NextIncDepth;
+    if (MaxIncDepth < IncDepth)
+      MaxIncDepth = IncDepth;
 
     /* Zeilenzaehler */
 
-    if (!QuietMode)
+    if (msg_level >= e_msg_level_normal)
     {
       NxtTime = GTime();
       if (((!ListToStdout) || ((ListMask&1) == 0)) && (DTime(ListTime, NxtTime) > 50))
       {
         String Num;
+        PInputTag p_input_tag;
 
-        Name = NamePart(CurrFileName);
-        as_snprintf(Num, sizeof(Num), "%s(", Name);
-        as_snprcatf(Num, sizeof(Num), LongIntFormat, MomLineCounter);
-        as_snprcatf(Num, sizeof(Num), ")");
+        /* search innermost file currently being read, and request its position */
+
+        for (p_input_tag = FirstInputTag; p_input_tag; p_input_tag = p_input_tag->Next)
+          if (p_input_tag->Processor == INCLUDE_Processor)
+            break;
+        p_input_tag->GetPos(p_input_tag, Num, sizeof(Num), False);
         WrConsoleLine(Num, False);
         fflush(stdout);
         ListTime = NxtTime;
@@ -2709,7 +2798,7 @@ static void ProcessFile(char *pFileName)
     }
 
     /* bei Ende Makroprozessor ausraeumen
-      OK - das ist eine Hauruckmethode... */
+       OK - das ist eine Hauruckmethode... */
 
     if (ENDOccured)
       while (FirstInputTag)
@@ -2773,7 +2862,6 @@ static void AssembleFile_InitPass(void)
   FirstInputTag = NULL;
   FirstOutputTag = NULL;
 
-  MomLineCounter = 0;
   MomLocHandle = -1;
   LocHandleCnt = 0;
   SectSymbolCounter = 0;
@@ -2808,9 +2896,7 @@ static void AssembleFile_InitPass(void)
   CurrTransTable = (PTransTable) malloc(sizeof(TTransTable));
   CurrTransTable->Next = NULL;
   CurrTransTable->Name = as_strdup("STANDARD");
-  CurrTransTable->Table = (unsigned char *) malloc(256 * sizeof(char));
-  for (z = 0; z < 256; z++)
-    CurrTransTable->Table[z] = z;
+  CurrTransTable->p_table = as_chartrans_table_new();
 
   EnumSegment = SegNone;
   EnumIncrement = 1;
@@ -2857,8 +2943,6 @@ static void AssembleFile_InitPass(void)
     EnterStringSymbol(&TmpComp, TimeS, True);
   }
 
-  SetFlag(&DoPadding, DoPaddingName, True);
-
   if (*DefCPU == '\0')
     SetCPUByType(0, NULL);
   else
@@ -2870,17 +2954,12 @@ static void AssembleFile_InitPass(void)
       SetCPUByType(0, NULL);
   }
 
-  SetFlag(&SupAllowed, SupAllowedSymName, DefSupAllowed);
-  SetFlag(&FPUAvail, FPUAvailName, False);
-  SetFlag(&Maximum, MaximumName, False);
-  SetFlag(&DoBranchExt, BranchExtName, False);
   strmaxcpy(TmpCompStr, ListOnName, sizeof(TmpCompStr)); EnterIntSymbol(&TmpComp, ListOn = 1, SegNone, True);
   SetLstMacroExp(eLstMacroExpAll);
   InitLstMacroExpMod(&LstMacroExpModOverride);
   InitLstMacroExpMod(&LstMacroExpModDefault);
   SetFlag(&RelaxedMode, RelaxedName, DefRelaxedMode);
   SetIntConstRelaxedMode(DefRelaxedMode);
-  SetFlag(&CompMode, CompModeName, DefCompMode);
   strmaxcpy(TmpCompStr, NestMaxName, sizeof(TmpCompStr)); EnterIntSymbol(&TmpComp, NestMax = DEF_NESTMAX, SegNone, True);
   CopyDefSymbols();
 
@@ -2939,7 +3018,7 @@ static void AssembleFile_ExitPass(void)
 
 static void AssembleFile_WrSummary(const char *pStr)
 {
-  if (!QuietMode)
+  if (msg_level >= e_msg_level_normal)
     WrConsoleLine(pStr, True);
   if (ListMode == 2)
     WrLstLine(pStr);
@@ -2947,6 +3026,7 @@ static void AssembleFile_WrSummary(const char *pStr)
 
 static void AssembleFile(char *Name)
 {
+  char *p_out_name;
   String s, Tmp;
 
   dbgentry("AssembleFile");
@@ -2965,7 +3045,9 @@ static void AssembleFile(char *Name)
 
   /* Kommandozeilenoptionen verarbeiten */
 
-  strmaxcpy(OutName, GetFromOutList(), STRINGSIZE);
+  p_out_name = MoveFromOutListFirst();
+  strmaxcpy(OutName, p_out_name ? p_out_name : "", STRINGSIZE);
+  free(p_out_name);
   if (OutName[0] == '\0')
   {
     strmaxcpy(OutName, SourceFile, STRINGSIZE);
@@ -2990,7 +3072,11 @@ static void AssembleFile(char *Name)
       strmaxcpy(LstName, "!1", STRINGSIZE);
       break;
     case 2:
-      strmaxcpy(LstName, GetFromListOutList(), STRINGSIZE);
+    {
+      char *p_lst_name = MoveFromListOutListFirst();
+
+      strmaxcpy(LstName, p_lst_name ? p_lst_name : "", STRINGSIZE);
+      if (p_lst_name) free(p_lst_name);
       if (*LstName == '\0')
       {
         strmaxcpy(LstName, SourceFile, STRINGSIZE);
@@ -2998,13 +3084,18 @@ static void AssembleFile(char *Name)
         AddSuffix(LstName, LstSuffix);
       }
       break;
+    }
   }
   ListToStdout = !strcmp(LstName, "!1");
   ListToNull = !strcmp(LstName, NULLDEV);
 
   if (ShareMode != 0)
   {
-    strmaxcpy(ShareName, GetFromShareOutList(), STRINGSIZE);
+    char *p_share_name = MoveFromShareOutListFirst();
+
+    strmaxcpy(ShareName, p_share_name ? p_share_name : "", STRINGSIZE);
+    if (p_share_name)
+      free(p_share_name);
     if (*ShareName == '\0')
     {
       strmaxcpy(ShareName, SourceFile, STRINGSIZE);
@@ -3049,12 +3140,17 @@ static void AssembleFile(char *Name)
   StartTime = GTime();
 
   PassNo = 0;
-  MomLineCounter = 0;
 
   /* Listdatei eroeffnen */
 
-  if (!QuietMode)
+  if (msg_level >= e_msg_level_normal)
     printf("%s%s\n", getmessage(Num_InfoMessAssembling), SourceFile);
+
+  /* Maximum include level survives re-passing, so it can be
+     used for the listing to format to the right max. depth from
+     the beginning: */
+
+  MaxIncDepth = 0;
 
   do
   {
@@ -3063,7 +3159,7 @@ static void AssembleFile(char *Name)
     AssembleFile_InitPass();
     AsmSubPassInit();
     AsmErrPassInit();
-    if (!QuietMode)
+    if (msg_level >= e_msg_level_normal)
     {
       as_snprintf(Tmp, sizeof(Tmp), "%s", getmessage(Num_InfoMessPass));
       as_snprcatf(Tmp, sizeof(Tmp), IntegerFormat, PassNo);
@@ -3279,7 +3375,7 @@ static void AssembleFile(char *Name)
   StopTime = GTime();
   TWrite(DTime(StartTime, StopTime), s, sizeof(s));
   strmaxcat(s, getmessage(Num_InfoMessAssTime), STRINGSIZE);
-  if (!QuietMode)
+  if (msg_level >= e_msg_level_normal)
   {
     WrConsoleLine("", True);
     WrConsoleLine(s, True);
@@ -3335,7 +3431,7 @@ static void AssembleFile(char *Name)
     unsigned long Sum = (NumMemoSum * 100) / NumMemoCnt;
 
     as_snprintf(s, sizeof(s), "%4lu.%02lu%s", Sum / 100, Sum % 100, " Oppart Compares");
-    if (!QuietMode)
+    if (msg_level >= e_msg_level_normal)
       WrConsoleLine(s, True);
     if (ListMode == 2)
       WrLstLine(s);
@@ -3374,7 +3470,23 @@ static void AssembleGroup(const char *pFileMask)
 
 /*-------------------------------------------------------------------------*/
 
-static CMDResult CMD_SharePascal(Boolean Negate, const char *Arg)
+static int LineZ, screen_height = 0;
+static Boolean write_cpu_list_exit;
+
+static void write_console_next(const char *p_line)
+{
+  WrConsoleLine(p_line, True);
+  if (screen_height && (++LineZ >= screen_height))
+  {
+    LineZ = 0;
+    WrConsoleLine(getmessage(Num_KeyWaitMsg), False);
+    fflush(stdout);
+    while (getchar() != '\n');
+    printf("%s", CursUp);
+  }
+}
+
+static as_cmd_result_t CMD_SharePascal(Boolean Negate, const char *Arg)
 {
   UNUSED(Arg);
 
@@ -3382,10 +3494,10 @@ static CMDResult CMD_SharePascal(Boolean Negate, const char *Arg)
     ShareMode = 1;
   else if (ShareMode == 1)
     ShareMode = 0;
-  return CMDOK;
+  return e_cmd_ok;
 }
 
-static CMDResult CMD_ShareC(Boolean Negate, const char *Arg)
+static as_cmd_result_t CMD_ShareC(Boolean Negate, const char *Arg)
 {
   UNUSED(Arg);
 
@@ -3393,10 +3505,10 @@ static CMDResult CMD_ShareC(Boolean Negate, const char *Arg)
     ShareMode = 2;
   else if (ShareMode == 2)
     ShareMode = 0;
-  return CMDOK;
+  return e_cmd_ok;
 }
 
-static CMDResult CMD_ShareAssembler(Boolean Negate, const char *Arg)
+static as_cmd_result_t CMD_ShareAssembler(Boolean Negate, const char *Arg)
 {
   UNUSED(Arg);
 
@@ -3404,10 +3516,10 @@ static CMDResult CMD_ShareAssembler(Boolean Negate, const char *Arg)
     ShareMode = 3;
   else if (ShareMode == 3)
     ShareMode = 0;
-  return CMDOK;
+  return e_cmd_ok;
 }
 
-static CMDResult CMD_DebugMode(Boolean Negate, const char *pArg)
+static as_cmd_result_t CMD_DebugMode(Boolean Negate, const char *pArg)
 {
   String Arg;
 
@@ -3417,63 +3529,63 @@ static CMDResult CMD_DebugMode(Boolean Negate, const char *pArg)
   if (Negate)
   {
     if (Arg[0] != '\0')
-      return CMDErr;
+      return e_cmd_err;
     else
     {
       DebugMode = DebugNone;
-      return CMDOK;
+      return e_cmd_ok;
     }
   }
   else if (!strcmp(Arg, ""))
   {
     DebugMode = DebugMAP;
-    return CMDOK;
+    return e_cmd_ok;
   }
   else if (!strcmp(Arg, "ATMEL"))
   {
     DebugMode = DebugAtmel;
-    return CMDArg;
+    return e_cmd_arg;
   }
   else if (!strcmp(Arg, "MAP"))
   {
     DebugMode = DebugMAP;
-    return CMDArg;
+    return e_cmd_arg;
   }
   else if (!strcmp(Arg, "NOICE"))
   {
     DebugMode = DebugNoICE;
-    return CMDArg;
+    return e_cmd_arg;
   }
 #if 0
   else if (!strcmp(Arg, "A.OUT"))
   {
     DebugMode = DebugAOUT;
-    return CMDArg;
+    return e_cmd_arg;
   }
   else if (!strcmp(Arg, "COFF"))
   {
     DebugMode = DebugCOFF;
-    return CMDArg;
+    return e_cmd_arg;
   }
   else if (!strcmp(Arg, "ELF"))
   {
     DebugMode = DebugELF;
-    return CMDArg;
+    return e_cmd_arg;
   }
 #endif
   else
-    return CMDErr;
+    return e_cmd_err;
 
 #if 0
   if (Negate)
     DebugMode = DebugNone;
   else
     DebugMode = DebugMAP;
-  return CMDOK;
+  return e_cmd_ok;
 #endif
 }
 
-static CMDResult CMD_ListConsole(Boolean Negate, const char *Arg)
+static as_cmd_result_t CMD_ListConsole(Boolean Negate, const char *Arg)
 {
   UNUSED(Arg);
 
@@ -3481,29 +3593,52 @@ static CMDResult CMD_ListConsole(Boolean Negate, const char *Arg)
     ListMode = 1;
   else if (ListMode == 1)
     ListMode = 0;
-  return CMDOK;
+  return e_cmd_ok;
 }
 
-static CMDResult CMD_ListRadix(Boolean Negate, const char *Arg)
+static as_cmd_result_t CMD_ListRadix(Boolean Negate, const char *Arg)
 {
-  Boolean OK;
+  Boolean OK, new_zero_pad = False;
   LargeWord NewListRadixBase;
-
-  UNUSED(Arg);
 
   if (Negate)
   {
     ListRadixBase = 16;
-    return CMDOK;
+    ListPCZeroPad = False;
+    return e_cmd_ok;
+  }
+
+  if (*Arg == '0')
+  {
+    new_zero_pad = True;
+    Arg++;
   }
   NewListRadixBase = ConstLongInt(Arg, &OK, 10);
   if (!OK || (NewListRadixBase < 2) || (NewListRadixBase > 36))
-    return CMDErr;
+    return e_cmd_err;
   ListRadixBase = NewListRadixBase;
-  return CMDArg;
+  ListPCZeroPad = new_zero_pad;
+  return e_cmd_arg;
 }
 
-static CMDResult CMD_ListFile(Boolean Negate, const char *Arg)
+static as_cmd_result_t CMD_screen_height(Boolean negate, const char *p_arg)
+{
+  Boolean ok;
+  int new_screen_height;
+
+  if (negate)
+  {
+    screen_height = 0;
+    return e_cmd_ok;
+  }
+  new_screen_height = ConstLongInt(p_arg, &ok, 10);
+  if (!ok)
+    return e_cmd_err;
+  screen_height = new_screen_height;
+  return e_cmd_arg;
+}
+
+static as_cmd_result_t CMD_ListFile(Boolean Negate, const char *Arg)
 {
   UNUSED(Arg);
 
@@ -3511,50 +3646,50 @@ static CMDResult CMD_ListFile(Boolean Negate, const char *Arg)
     ListMode = 2;
   else if (ListMode == 2)
     ListMode = 0;
-  return CMDOK;
+  return e_cmd_ok;
 }
 
-static CMDResult CMD_SuppWarns(Boolean Negate, const char *Arg)
+static as_cmd_result_t CMD_SuppWarns(Boolean Negate, const char *Arg)
 {
   UNUSED(Arg);
 
   SuppWarns = !Negate;
-  return CMDOK;
+  return e_cmd_ok;
 }
 
-static CMDResult CMD_UseList(Boolean Negate, const char *Arg)
+static as_cmd_result_t CMD_UseList(Boolean Negate, const char *Arg)
 {
   UNUSED(Arg);
 
   MakeUseList = !Negate;
-  return CMDOK;
+  return e_cmd_ok;
 }
 
-static CMDResult CMD_CrossList(Boolean Negate, const char *Arg)
+static as_cmd_result_t CMD_CrossList(Boolean Negate, const char *Arg)
 {
   UNUSED(Arg);
 
   MakeCrossList = !Negate;
-  return CMDOK;
+  return e_cmd_ok;
 }
 
-static CMDResult CMD_SectionList(Boolean Negate, const char *Arg)
+static as_cmd_result_t CMD_SectionList(Boolean Negate, const char *Arg)
 {
   UNUSED(Arg);
 
   MakeSectionList = !Negate;
-  return CMDOK;
+  return e_cmd_ok;
 }
 
-static CMDResult CMD_BalanceTree(Boolean Negate, const char *Arg)
+static as_cmd_result_t CMD_BalanceTree(Boolean Negate, const char *Arg)
 {
   UNUSED(Arg);
 
   BalanceTrees = !Negate;
-  return CMDOK;
+  return e_cmd_ok;
 }
 
-static CMDResult CMD_MakeDebug(Boolean Negate, const char *Arg)
+static as_cmd_result_t CMD_MakeDebug(Boolean Negate, const char *Arg)
 {
   UNUSED(Arg);
 
@@ -3571,42 +3706,42 @@ static CMDResult CMD_MakeDebug(Boolean Negate, const char *Arg)
     MakeDebug = False;
     CloseIfOpen(&Debug);
   }
-  return CMDOK;
+  return e_cmd_ok;
 }
 
-static CMDResult CMD_MacProOutput(Boolean Negate, const char *Arg)
+static as_cmd_result_t CMD_MacProOutput(Boolean Negate, const char *Arg)
 {
   UNUSED(Arg);
 
   MacProOutput = !Negate;
-  return CMDOK;
+  return e_cmd_ok;
 }
 
-static CMDResult CMD_MacroOutput(Boolean Negate, const char *Arg)
+static as_cmd_result_t CMD_MacroOutput(Boolean Negate, const char *Arg)
 {
   UNUSED(Arg);
 
   MacroOutput = !Negate;
-  return CMDOK;
+  return e_cmd_ok;
 }
 
-static CMDResult CMD_MakeIncludeList(Boolean Negate, const char *Arg)
+static as_cmd_result_t CMD_MakeIncludeList(Boolean Negate, const char *Arg)
 {
   UNUSED(Arg);
 
   MakeIncludeList = !Negate;
-  return CMDOK;
+  return e_cmd_ok;
 }
 
-static CMDResult CMD_CodeOutput(Boolean Negate, const char *Arg)
+static as_cmd_result_t CMD_CodeOutput(Boolean Negate, const char *Arg)
 {
   UNUSED(Arg);
 
   CodeOutput = !Negate;
-  return CMDOK;
+  return e_cmd_ok;
 }
 
-static CMDResult CMD_MsgIfRepass(Boolean Negate, const char *Arg)
+static as_cmd_result_t CMD_MsgIfRepass(Boolean Negate, const char *Arg)
 {
   Boolean OK;
   UNUSED(Arg);
@@ -3617,7 +3752,7 @@ static CMDResult CMD_MsgIfRepass(Boolean Negate, const char *Arg)
     if (Arg[0] == '\0')
     {
       PassNoForMessage = 1;
-      return CMDOK;
+      return e_cmd_ok;
     }
     else
     {
@@ -3625,35 +3760,27 @@ static CMDResult CMD_MsgIfRepass(Boolean Negate, const char *Arg)
       if (!OK)
       {
         PassNoForMessage = 1;
-        return CMDOK;
+        return e_cmd_ok;
       }
       else if (PassNoForMessage < 1)
-        return CMDErr;
+        return e_cmd_err;
       else
-        return CMDArg;
+        return e_cmd_arg;
     }
   }
   else
-    return CMDOK;
+    return e_cmd_ok;
 }
 
-static CMDResult CMD_Relaxed(Boolean Negate, const char *pArg)
+static as_cmd_result_t CMD_Relaxed(Boolean Negate, const char *pArg)
 {
   UNUSED(pArg);
 
   DefRelaxedMode = !Negate;
-  return CMDOK;
+  return e_cmd_ok;
 }
 
-static CMDResult CMD_SupAllowed(Boolean Negate, const char *pArg)
-{
-  UNUSED(pArg);
-
-  DefSupAllowed = !Negate;
-  return CMDOK;
-}
-
-static CMDResult CMD_ExtendErrors(Boolean Negate, const char *Arg)
+static as_cmd_result_t CMD_ExtendErrors(Boolean Negate, const char *Arg)
 {
   UNUSED(Arg);
 
@@ -3662,94 +3789,78 @@ static CMDResult CMD_ExtendErrors(Boolean Negate, const char *Arg)
   else if ((!Negate) && (ExtendErrors < 2))
     ExtendErrors++;
 
-  return CMDOK;
+  return e_cmd_ok;
 }
 
-static CMDResult CMD_NumericErrors(Boolean Negate, const char *Arg)
+static as_cmd_result_t CMD_NumericErrors(Boolean Negate, const char *Arg)
 {
   UNUSED(Arg);
 
   NumericErrors = !Negate;
-  return CMDOK;
+  return e_cmd_ok;
 }
 
-static CMDResult CMD_HexLowerCase(Boolean Negate, const char *Arg)
+static as_cmd_result_t CMD_HexLowerCase(Boolean Negate, const char *Arg)
 {
   UNUSED(Arg);
 
   HexStartCharacter = Negate ? 'A' : 'a';
-  return CMDOK;
+  return e_cmd_ok;
 }
 
-static CMDResult CMD_SplitByte(Boolean Negate, const char *Arg)
+static as_cmd_result_t CMD_SplitByte(Boolean Negate, const char *Arg)
 {
   UNUSED(Arg);
 
   if (Negate)
   {
     SplitByteCharacter = '\0';
-    return CMDOK;
+    return e_cmd_ok;
   }
   else if (*Arg)
   {
     if (strlen(Arg) != 1)
-      return CMDErr;
+      return e_cmd_err;
     SplitByteCharacter = *Arg;
-    return CMDArg;
+    return e_cmd_arg;
   }
   else
   {
     SplitByteCharacter = '.';
-    return CMDOK;
+    return e_cmd_ok;
   }
 }
 
-static CMDResult CMD_QuietMode(Boolean Negate, const char *Arg)
-{
-  UNUSED(Arg);
-
-  QuietMode = !Negate;
-  return CMDOK;
-}
-
-static CMDResult CMD_CompMode(Boolean Negate, const char *Arg)
-{
-  UNUSED(Arg);
-
-  DefCompMode = !Negate;
-  return CMDOK;
-}
-
-static CMDResult CMD_ThrowErrors(Boolean Negate, const char *Arg)
+static as_cmd_result_t CMD_ThrowErrors(Boolean Negate, const char *Arg)
 {
   UNUSED(Arg);
 
   ThrowErrors = !Negate;
-  return CMDOK;
+  return e_cmd_ok;
 }
 
-static CMDResult CMD_CaseSensitive(Boolean Negate, const char *Arg)
+static as_cmd_result_t CMD_CaseSensitive(Boolean Negate, const char *Arg)
 {
   UNUSED(Arg);
 
   CaseSensitive = !Negate;
-  return CMDOK;
+  return e_cmd_ok;
 }
 
-static CMDResult CMD_GNUErrors(Boolean Negate, const char *Arg)
+static as_cmd_result_t CMD_GNUErrors(Boolean Negate, const char *Arg)
 {
   UNUSED(Arg);
 
   GNUErrors  =  !Negate;
-  return CMDOK;
+  return e_cmd_ok;
 }
 
-static CMDResult CMD_IncludeList(Boolean Negate, const char *Arg)
+static as_cmd_result_t CMD_IncludeList(Boolean Negate, const char *Arg)
 {
   char *p;
   String Copy, part;
 
-  if (*Arg == '\0') return CMDErr;
+  if (*Arg == '\0') return e_cmd_err;
   else
   {
     strmaxcpy(Copy, Arg, STRINGSIZE);
@@ -3772,35 +3883,35 @@ static CMDResult CMD_IncludeList(Boolean Negate, const char *Arg)
         AddIncludeList(part);
     }
     while (Copy[0] != '\0');
-    return CMDArg;
+    return e_cmd_arg;
   }
 }
 
-static CMDResult CMD_ListMask(Boolean Negate, const char *Arg)
+static as_cmd_result_t CMD_ListMask(Boolean Negate, const char *Arg)
 {
   Word erg;
   Boolean OK;
 
   if (Arg[0] == '\0')
-    return CMDErr;
+    return e_cmd_err;
   else
   {
     erg = ConstLongInt(Arg, &OK, 10);
     if ((!OK) || (erg > 511))
-      return CMDErr;
+      return e_cmd_err;
     else
     {
       ListMask = Negate ? (ListMask & ~erg) : (ListMask | erg);
-      return CMDArg;
+      return e_cmd_arg;
     }
   }
 }
 
-static CMDResult CMD_DefSymbol(Boolean Negate, const char *Arg)
+static as_cmd_result_t CMD_DefSymbol(Boolean Negate, const char *Arg)
 {
   String Copy, Part, Name;
   char *p;
-  CMDResult Result = CMDErr;
+  as_cmd_result_t Result = e_cmd_err;
 
   TempResult t;
   as_tempres_ini(&t);
@@ -3848,7 +3959,7 @@ static CMDResult CMD_DefSymbol(Boolean Negate, const char *Arg)
      {
        EvalExpression(Part, &t);
        if ((t.Typ == TempNone) || mFirstPassUnknown(t.Flags))
-         return CMDErr;
+         return e_cmd_err;
      }
      else
        as_tempres_set_int(&t, 1);
@@ -3857,47 +3968,47 @@ static CMDResult CMD_DefSymbol(Boolean Negate, const char *Arg)
   }
   while (Copy[0] != '\0');
 
-  Result = CMDArg;
+  Result = e_cmd_arg;
 func_exit:
   as_tempres_free(&t);
   return Result;
 }
 
-static CMDResult CMD_ErrorPath(Boolean Negate, const char *Arg)
+static as_cmd_result_t CMD_ErrorPath(Boolean Negate, const char *Arg)
 {
   if (Negate)
-    return CMDErr;
+    return e_cmd_err;
   else if (Arg[0] == '\0')
   {
     ErrorPath[0] = '\0';
-    return CMDOK;
+    return e_cmd_ok;
   }
   else
   {
     strmaxcpy(ErrorPath, Arg, STRINGSIZE);
-    return CMDArg;
+    return e_cmd_arg;
   }
 }
 
-static CMDResult CMD_HardRanges(Boolean Negate, const char *Arg)
+static as_cmd_result_t CMD_HardRanges(Boolean Negate, const char *Arg)
 {
   UNUSED(Arg);
 
   HardRanges = Negate;
-  return CMDOK;
+  return e_cmd_ok;
 }
 
-static CMDResult CMD_OutFile(Boolean Negate, const char *Arg)
+static as_cmd_result_t CMD_OutFile(Boolean Negate, const char *Arg)
 {
   if (Arg[0] == '\0')
   {
     if (Negate)
     {
       ClearOutList();
-      return CMDOK;
+      return e_cmd_ok;
     }
     else
-      return CMDErr;
+      return e_cmd_err;
   }
   else
   {
@@ -3905,21 +4016,21 @@ static CMDResult CMD_OutFile(Boolean Negate, const char *Arg)
       RemoveFromOutList(Arg);
     else
       AddToOutList(Arg);
-    return CMDArg;
+    return e_cmd_arg;
   }
 }
 
-static CMDResult CMD_ShareOutFile(Boolean Negate, const char *Arg)
+static as_cmd_result_t CMD_ShareOutFile(Boolean Negate, const char *Arg)
 {
   if (Arg[0] == '\0')
   {
     if (Negate)
     {
       ClearShareOutList();
-      return CMDOK;
+      return e_cmd_ok;
     }
     else
-      return CMDErr;
+      return e_cmd_err;
   }
   else
   {
@@ -3927,21 +4038,21 @@ static CMDResult CMD_ShareOutFile(Boolean Negate, const char *Arg)
       RemoveFromShareOutList(Arg);
     else
       AddToShareOutList(Arg);
-    return CMDArg;
+    return e_cmd_arg;
   }
 }
 
-static CMDResult CMD_ListOutFile(Boolean Negate, const char *Arg)
+static as_cmd_result_t CMD_ListOutFile(Boolean Negate, const char *Arg)
 {
   if (Arg[0] == '\0')
   {
     if (Negate)
     {
       ClearListOutList();
-      return CMDOK;
+      return e_cmd_ok;
     }
     else
-      return CMDErr;
+      return e_cmd_err;
   }
   else
   {
@@ -3949,7 +4060,7 @@ static CMDResult CMD_ListOutFile(Boolean Negate, const char *Arg)
       RemoveFromListOutList(Arg);
     else
       AddToListOutList(Arg);
-    return CMDArg;
+    return e_cmd_arg;
   }
 }
 
@@ -3963,20 +4074,20 @@ static Boolean CMD_CPUAlias_ChkCPUName(char *s)
   return True;
 }
 
-static CMDResult CMD_CPUAlias(Boolean Negate, const char *Arg)
+static as_cmd_result_t CMD_CPUAlias(Boolean Negate, const char *Arg)
 {
   const char *p;
   String s1, s2;
 
   if (Negate)
-    return CMDErr;
+    return e_cmd_err;
   else if (Arg[0] == '\0')
-    return CMDErr;
+    return e_cmd_err;
   else
   {
     p = strchr(Arg, '=');
     if (!p)
-      return CMDErr;
+      return e_cmd_err;
     else
     {
       strmemcpy(s1, STRINGSIZE, Arg, p - Arg);
@@ -3984,26 +4095,32 @@ static CMDResult CMD_CPUAlias(Boolean Negate, const char *Arg)
       strmaxcpy(s2, p + 1, STRINGSIZE);
       UpString(s2);
       if (!(CMD_CPUAlias_ChkCPUName(s1) && CMD_CPUAlias_ChkCPUName(s2)))
-        return CMDErr;
+        return e_cmd_err;
       else if (!AddCPUAlias(s2, s1))
-        return CMDErr;
+        return e_cmd_err;
       else
-        return CMDArg;
+        return e_cmd_arg;
     }
   }
 }
 
-static CMDResult CMD_SetCPU(Boolean Negate, const char *Arg)
+static as_cmd_result_t CMD_SetCPU(Boolean Negate, const char *Arg)
 {
   if (Negate)
   {
     *DefCPU = '\0';
-    return CMDOK;
+    return e_cmd_ok;
   }
   else
   {
     if (*Arg == '\0')
-      return CMDErr;
+      return e_cmd_err;
+
+    if (!as_strcasecmp(Arg, "?") || !as_strcasecmp(Arg, "LIST"))
+    {
+      write_cpu_list_exit = True;
+      return e_cmd_arg;
+    }
 
     strmaxcpy(DefCPU, Arg, sizeof(DefCPU) - 1);
     NLS_UpString(DefCPU);
@@ -4011,13 +4128,13 @@ static CMDResult CMD_SetCPU(Boolean Negate, const char *Arg)
     if (!LookupCPUDefByName(DefCPU))
     {
       *DefCPU = '\0';
-      return CMDErr;
+      return e_cmd_err;
     }
-    return CMDArg;
+    return e_cmd_arg;
   }
 }
 
-static CMDResult CMD_NoICEMask(Boolean Negate, const char *Arg)
+static as_cmd_result_t CMD_NoICEMask(Boolean Negate, const char *Arg)
 {
   Word erg;
   Boolean OK;
@@ -4025,41 +4142,41 @@ static CMDResult CMD_NoICEMask(Boolean Negate, const char *Arg)
   if (Negate)
   {
     NoICEMask = 1 << SegCode;
-    return CMDOK;
+    return e_cmd_ok;
   }
   else if (Arg[0] == '\0')
-    return CMDErr;
+    return e_cmd_err;
   else
   {
     erg = ConstLongInt(Arg, &OK, 10);
     if (!OK || (erg >= (1 << SegCount)))
-      return CMDErr;
+      return e_cmd_err;
     else
     {
       NoICEMask = erg;
-      return CMDArg;
+      return e_cmd_arg;
     }
   }
 }
 
-static CMDResult CMD_MaxErrors(Boolean Negate, const char *Arg)
+static as_cmd_result_t CMD_MaxErrors(Boolean Negate, const char *Arg)
 {
   if (Negate)
   {
     MaxErrors = 0;
-    return CMDOK;
+    return e_cmd_ok;
   }
   else if (Arg[0] == '\0')
-    return CMDErr;
+    return e_cmd_err;
   else
   {
     Boolean OK;
     LongWord NewMaxErrors = ConstLongInt(Arg, &OK, 10);
 
     if (!OK)
-      return CMDErr;
+      return e_cmd_err;
     MaxErrors = NewMaxErrors;
-    return CMDArg;
+    return e_cmd_arg;
   }
 }
 
@@ -4071,49 +4188,33 @@ static CMDResult CMD_MaxErrors(Boolean Negate, const char *Arg)
  * \return exec result
  * ------------------------------------------------------------------------ */
 
-#define DEFAULT_MACINCLUDELEVEL 200
+#define DEFAULT_MAXINCLUDELEVEL 200
 
-static CMDResult CMD_MaxIncludeLevel(Boolean Negate, const char *pArg)
+static as_cmd_result_t CMD_MaxIncludeLevel(Boolean Negate, const char *pArg)
 {
   if (Negate)
   {
-    MaxErrors = DEFAULT_MACINCLUDELEVEL;
-    return CMDOK;
+    MaxErrors = DEFAULT_MAXINCLUDELEVEL;
+    return e_cmd_ok;
   }
   else if (pArg[0] == '\0')
-    return CMDErr;
+    return e_cmd_err;
   else
   {
     Boolean OK;
     Integer NewMaxIncludeLevel = ConstLongInt(pArg, &OK, 10);
 
     if (!OK)
-      return CMDErr;
+      return e_cmd_err;
     MaxIncludeLevel = NewMaxIncludeLevel;
-    return CMDArg;
+    return e_cmd_arg;
   }
 }
 
-static CMDResult CMD_TreatWarningsAsErrors(Boolean Negate, const char *Arg)
-{
-  UNUSED(Arg);
-
-  TreatWarningsAsErrors = !Negate;
-  return CMDOK;
-}
-
-static void ParamError(Boolean InEnv, char *Arg)
-{
-  printf("%s%s\n", getmessage((InEnv) ? Num_ErrMsgInvEnvParam : Num_ErrMsgInvParam), Arg);
-  exit(4);
-}
-
-#define ASParamCnt (sizeof(ASParams) / sizeof(*ASParams))
-
-static CMDRec ASParams[] =
+static const as_cmd_rec_t ASParams[] =
 {
   { "A"             , CMD_BalanceTree     },
-  { "ALIAS"         , CMD_CPUAlias        },
+  { "alias"         , CMD_CPUAlias        },
   { "a"             , CMD_ShareAssembler  },
   { "C"             , CMD_CrossList       },
   { "c"             , CMD_ShareC          },
@@ -4122,37 +4223,33 @@ static CMDRec ASParams[] =
   { "E"             , CMD_ErrorPath       },
   { "g"             , CMD_DebugMode       },
   { "G"             , CMD_CodeOutput      },
-  { "GNUERRORS"     , CMD_GNUErrors       },
+  { "gnuerrors"     , CMD_GNUErrors       },
   { "h"             , CMD_HexLowerCase    },
   { "i"             , CMD_IncludeList     },
   { "I"             , CMD_MakeIncludeList },
   { "L"             , CMD_ListFile        },
   { "l"             , CMD_ListConsole     },
-  { "LISTRADIX"     , CMD_ListRadix       },
-  { "SPLITBYTE"     , CMD_SplitByte       },
+  { "listradix"     , CMD_ListRadix       },
+  { "splitbyte"     , CMD_SplitByte       },
   { "M"             , CMD_MacroOutput     },
-  { "MAXERRORS"     , CMD_MaxErrors       },
-  { "MAXINCLEVEL"   , CMD_MaxIncludeLevel },
+  { "maxerrors"     , CMD_MaxErrors       },
+  { "maxinclevel"   , CMD_MaxIncludeLevel },
   { "n"             , CMD_NumericErrors   },
-  { "NOICEMASK"     , CMD_NoICEMask       },
+  { "noicemask"     , CMD_NoICEMask       },
   { "o"             , CMD_OutFile         },
   { "P"             , CMD_MacProOutput    },
   { "p"             , CMD_SharePascal     },
-  { "q"             , CMD_QuietMode       },
-  { "QUIET"         , CMD_QuietMode       },
-  { CompModeName    , CMD_CompMode        },
   { "r"             , CMD_MsgIfRepass     },
   { RelaxedName     , CMD_Relaxed         },
   { "s"             , CMD_SectionList     },
-  { "SHAREOUT"      , CMD_ShareOutFile    },
-  { SupAllowedCmdName,CMD_SupAllowed      },
-  { "OLIST"         , CMD_ListOutFile     },
+  { "screenheight"  , CMD_screen_height   },
+  { "shareout"      , CMD_ShareOutFile    },
+  { "olist"         , CMD_ListOutFile     },
   { "t"             , CMD_ListMask        },
   { "u"             , CMD_UseList         },
   { "U"             , CMD_CaseSensitive   },
   { "w"             , CMD_SuppWarns       },
-  { "WARNRANGES"    , CMD_HardRanges      },
-  { "WERROR"        , CMD_TreatWarningsAsErrors },
+  { "warnranges"    , CMD_HardRanges      },
   { "x"             , CMD_ExtendErrors    },
   { "X"             , CMD_MakeDebug       },
   { "Y"             , CMD_ThrowErrors     }
@@ -4186,48 +4283,16 @@ static void GlobExitProc(void)
 
 #endif
 
-static int LineZ;
-
-static void NxtLine(void)
-{
-  if (++LineZ == 23)
-  {
-    LineZ = 0;
-    if (Redirected != NoRedir)
-      return;
-    WrConsoleLine(getmessage(Num_KeyWaitMsg), False);
-    fflush(stdout);
-    while (getchar() != '\n');
-    printf("%s", CursUp);
-  }
-}
-
-static void WrHead(void)
-{
-  if (!QuietMode)
-  {
-    String Tmp;
-
-    as_snprintf(Tmp, sizeof(Tmp), "%s%s", getmessage(Num_InfoMessMacroAss), Version);
-    WrConsoleLine(Tmp, True); NxtLine();
-    as_snprintf(Tmp, sizeof(Tmp), "(%s-%s)", ARCHPRNAME, ARCHSYSNAME);
-    WrConsoleLine(Tmp, True); NxtLine();
-    WrConsoleLine(InfoMessCopyright, True); NxtLine();
-    WriteCopyrights(NxtLine);
-    WrConsoleLine("\n", True); NxtLine();
-  }
-}
-
 int main(int argc, char **argv)
 {
-  char *Env, *ph1, *ph2;
+  char *Env;
   String Dummy;
   static Boolean First = TRUE;
-  CMDProcessed ParUnprocessed;     /* bearbeitete Kommandozeilenparameter */
+  as_cmd_results_t cmd_results;
 
   if (First)
   {
-    endian_init();
+    be_le_init();
     nls_init();
     bpemu_init();
     stdhandl_init();
@@ -4236,9 +4301,15 @@ int main(int argc, char **argv)
     if (!NLS_Initialize(&argc, argv))
       exit(4);
 
-    nlmessages_init("as.msg", *argv, MsgId1, MsgId2);
+#ifdef _USE_MSH
+    nlmessages_init_buffer(as_msh_data, sizeof(as_msh_data), MsgId1, MsgId2);
+#else
+    nlmessages_init_file("as.msg", *argv, MsgId1, MsgId2);
+#endif
     ioerrs_init(*argv);
-    cmdarg_init(*argv);
+    as_cmdarg_init(*argv);
+    msg_level_init();
+    as_cmd_register(ASParams, as_array_size(ASParams));
 
     asmfnums_init();
     asminclist_init();
@@ -4253,16 +4324,22 @@ int main(int argc, char **argv)
     asmmac_init();
     asmstruct_init();
     asmif_init();
+    asmerr_init();
     asmcode_init();
     asmlabel_init();
     asmdebug_init();
 
     codeallg_init();
-    intpseudo_init();
+    onoff_common_init();
+    literals_init();
 
+#if 1
+    codenone_init();
+#endif
     code68k_init();
     code56k_init();
     code601_init();
+    codepalm_init();
     codemcore_init();
     codexgate_init();
     code68_init();
@@ -4275,13 +4352,17 @@ int main(int argc, char **argv)
     codeh8_3_init();
     codeh8_5_init();
     code7000_init();
+    codeko09_init();
     code65_init();
+    codepps4_init();
     codeh16_init();
     code7700_init();
     codehmcs400_init();
     code4500_init();
     codem16_init();
     codem16c_init();
+    codepdp11_init();
+    codevax_init();
     code4004_init();
     code8008_init();
     code48_init();
@@ -4338,13 +4419,16 @@ int main(int argc, char **argv)
     code78k4_init();
     code7720_init();
     code77230_init();
+    codev60_init();
     codescmp_init();
+    codeimp16_init();
     code807x_init();
     codecop4_init();
     codecop8_init();
     codesc14xxx_init();
     codens32k_init();
     codeace_init();
+    codecp3f_init();
     codef8_init();
     code53c8xx_init();
     codef2mc8_init();
@@ -4359,6 +4443,11 @@ int main(int argc, char **argv)
     code1750_init();
     codekenbak_init();
     codecp1600_init();
+    codenano_init();
+    code6100_init();
+    coderx_init();
+    code61860_init();
+    code62015_init();
     First = FALSE;
   }
 
@@ -4402,14 +4491,11 @@ int main(int argc, char **argv)
   MakeDebug = False;
   ExtendErrors = 0;
   DefRelaxedMode = False;
-  DefSupAllowed = False;
-  DefCompMode = False;
   MacroOutput = False;
   MacProOutput = False;
   CodeOutput = True;
   strcpy(ErrorPath,  "!2");
   MsgIfRepass = False;
-  QuietMode = False;
   NumericErrors = False;
   DebugMode = DebugNone;
   CaseSensitive = False;
@@ -4418,37 +4504,59 @@ int main(int argc, char **argv)
   NoICEMask = 1 << SegCode;
   GNUErrors = False;
   MaxErrors = 0;
-  TreatWarningsAsErrors = False;
   ListRadixBase = 16;
-  MaxIncludeLevel = DEFAULT_MACINCLUDELEVEL;
+  ListPCZeroPad = False;
+  MaxIncludeLevel = DEFAULT_MAXINCLUDELEVEL;
+  write_cpu_list_exit = False;
 
   LineZ = 0;
-
-  if (argc <= 1)
-  {
-    WrHead();
-    printf("%s%s%s\n", getmessage(Num_InfoMessHead1), GetEXEName(argv[0]), getmessage(Num_InfoMessHead2));
-    NxtLine();
-    for (ph1 = getmessage(Num_InfoMessHelp), ph2 = strchr(ph1, '\n'); ph2; ph1 = ph2 + 1, ph2 = strchr(ph1, '\n'))
-    {
-      *ph2 = '\0';
-      printf("%s\n", ph1);
-      NxtLine();
-      *ph2 = '\n';
-    }
-    PrintCPUList(NxtLine);
-    ClearCPUList();
-    exit(1);
-  }
+  screen_height = 0;
 
 #if defined(INCDIR)
   CMD_IncludeList(False, INCDIR);
 #endif
-  ProcessCMD(argc, argv, ASParams, ASParamCnt, ParUnprocessed, EnvName, ParamError);
+  if (e_cmd_err == as_cmd_process(argc, argv, EnvName, &cmd_results))
+  {
+    printf("%s%s\n", getmessage(cmd_results.error_arg_in_env ? Num_ErrMsgInvEnvParam : Num_ErrMsgInvParam), cmd_results.error_arg);
+    exit(4);
+  }
 
-  /* wegen QuietMode dahinter */
+  if ((msg_level >= e_msg_level_verbose) || cmd_results.write_version_exit)
+  {
+    String Tmp;
 
-  WrHead();
+    as_snprintf(Tmp, sizeof(Tmp), "%s%s", getmessage(Num_InfoMessMacroAss), Version);
+    write_console_next(Tmp);
+    as_snprintf(Tmp, sizeof(Tmp), "(%s-%s)", ARCHPRNAME, ARCHSYSNAME);
+    write_console_next(Tmp);
+    write_console_next(InfoMessCopyright);
+    WriteCopyrights(write_console_next);
+    write_console_next("");
+  }
+
+  if (cmd_results.write_help_exit)
+  {
+    char *ph1, *ph2;
+    String tmp;
+    as_snprintf(tmp, sizeof(tmp), "%s%s%s", getmessage(Num_InfoMessHead1), as_cmdarg_get_executable_name(), getmessage(Num_InfoMessHead2));
+    write_console_next(tmp);
+    for (ph1 = getmessage(Num_InfoMessHelp), ph2 = strchr(ph1, '\n'); ph2; ph1 = ph2 + 1, ph2 = strchr(ph1, '\n'))
+    {
+      *ph2 = '\0';
+      write_console_next(ph1);
+      *ph2 = '\n';
+    }
+  }
+
+  if (write_cpu_list_exit)
+  {
+    write_console_next(getmessage(Num_InfoMessCPUList));
+    PrintCPUList(write_console_next);
+    ClearCPUList();
+  }
+
+  if (cmd_results.write_version_exit || write_cpu_list_exit || cmd_results.write_help_exit)
+    exit(0);
 
   /* ListRadixBase must have been set */
 
@@ -4461,28 +4569,23 @@ int main(int argc, char **argv)
     unlink(ErrorName);
   }
 
-  if (StringListEmpty(FileArgList))
+  if (StringListEmpty(cmd_results.file_arg_list))
   {
-    String FileMask;
-
-    printf("%s [%s] ", getmessage(Num_InvMsgSource), SrcSuffix);
-    fflush(stdout);
-    if (!fgets(FileMask, STRINGSIZE, stdin))
-      return 0;
-    if (*FileMask && (FileMask[strlen(FileMask) - 1] == '\n'))
-      FileMask[strlen(FileMask) - 1] = '\0';
-    AssembleGroup(FileMask);
+    fprintf(stderr, "%s: %s\n", as_cmdarg_get_executable_name(), getmessage(Num_ErrMessNoInputFiles));
+    exit(1);
   }
   else
   {
-    StringRecPtr Lauf;
-    const char *pFile;
+    char *pFile;
 
-    pFile = GetStringListFirst(FileArgList, &Lauf);
-    while (pFile && *pFile)
+    while (True)
     {
-      AssembleGroup(pFile);
-      pFile = GetStringListNext(&Lauf);
+      pFile = MoveAndCutStringListFirst(&cmd_results.file_arg_list);
+      if (!pFile)
+        break;
+      if (*pFile)
+        AssembleGroup(pFile);
+      free(pFile);
     }
   }
 

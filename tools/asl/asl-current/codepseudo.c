@@ -19,7 +19,7 @@
 
 #include "nls.h"
 #include "bpemu.h"
-#include "endian.h"
+#include "be_le.h"
 #include "strutil.h"
 #include "chunks.h"
 #include "asmdef.h"
@@ -69,66 +69,85 @@ Boolean IsIndirect(const char *Asc)
 }
 
 /*!------------------------------------------------------------------------
- * \fn     FindDispBaseSplitWithQualifier(const char *pArg, int *pArgLen, tDispBaseSplitQualifier Qualifier)
+ * \fn     FindDispBaseSplitWithQualifier(const char *pArg, int *pArgLen, tDispBaseSplitQualifier Qualifier, const char *pBracks)
  * \brief  check for argument of type xxx(yyyy)
  * \param  pArg argument to check
  * \param  pArgLen returns argument length
  * \param  Qualifier possible qualifier to allow more positive decisions
+ * \param  pBracks Opening/Closing Parentheses
  * \return index to opening parenthese or -1 if not like pattern
  * ------------------------------------------------------------------------ */
 
-int FindDispBaseSplitWithQualifier(const char *pArg, int *pArgLen, tDispBaseSplitQualifier Qualifier)
+typedef struct
 {
-  int Nest = 0, Start, SplitPos = -1;
-  Boolean InSgl = False, InDbl = False;
+  as_quoted_iterator_cb_data_t data;
+  int nest, split_pos, last_nonspace_pos;
+  char last_nonspace;
+  tDispBaseSplitQualifier qualifier;
+  const char *p_bracks;
+} disp_base_split_cb_data_t;
+
+/* We are looking for expressions of the form xxx(yyy),
+   but we want to avoid false positives on things like
+   xxx+(yyy*zzz).  So we look at the (non-blank) character
+   right before the opening parenthese in question.  If it is
+   something that might be the last letter of an identifier,
+   or another parenthized expression, and not an operator,
+   it might be OK...
+
+   We generally look for the last candidate in the string,
+   i.e. we continue to search after a finding.
+ */
+
+static Boolean disp_base_split_cb(const char *p_pos, as_quoted_iterator_cb_data_t *p_cb_data)
+{
+  disp_base_split_cb_data_t *p_data = (disp_base_split_cb_data_t*)p_cb_data;
+  int pos = p_pos - p_cb_data->p_str;
+
+  if (*p_pos == p_data->p_bracks[0])
+  {
+    if (!p_data->nest)
+    {
+      if ((p_data->last_nonspace_pos < 0) || as_isalnum(p_data->last_nonspace) || (p_data->last_nonspace == ')') || (p_data->last_nonspace == '\'') || (p_data->last_nonspace == '"'))
+        p_data->split_pos = pos;
+      else if (p_data->qualifier)
+      {
+        int qual = p_data->qualifier(p_cb_data->p_str, p_data->last_nonspace_pos, pos);
+        if (qual >= 0)
+          p_data->split_pos = qual;
+      }
+    }
+    p_data->nest++;
+  }
+  else if (*p_pos == p_data->p_bracks[1])
+    p_data->nest--;
+  if (!as_isspace(*p_pos))
+  {
+    p_data->last_nonspace_pos = pos;
+    p_data->last_nonspace = *p_pos;
+  }
+  return True;
+}
+
+int FindDispBaseSplitWithQualifier(const char *pArg, int *pArgLen, tDispBaseSplitQualifier Qualifier, const char *pBracks)
+{
+  disp_base_split_cb_data_t data;
 
   *pArgLen = strlen(pArg);
 
-  if (!*pArgLen || (pArg[*pArgLen - 1] != ')'))
+  if (!*pArgLen || (pArg[*pArgLen - 1] != pBracks[1]))
     return -1;
 
-  /* We are looking for expressions of the form xxx(yyy),
-     but we want to avoid false positives on things like
-     xxx+(yyy*zzz).  So we look at the (non-blank) character
-     right before opening parenthese in question.  If it is
-     something that might be the last letter of an identifier,
-     or another parenthized expression, and not an operator,
-     it might be OK... */
+  data.nest = 0;
+  data.split_pos = -1;
+  data.last_nonspace_pos = -1;
+  data.last_nonspace = ' ';
+  data.qualifier = Qualifier;
+  data.p_bracks = pBracks;
 
-  for (Start = *pArgLen - 1; Start >= 0; Start--)
-  {
-    switch (pArg[Start])
-    {
-      case '\'':
-        if (!InDbl) InSgl = !InSgl;
-        break;
-      case '"':
-        if (!InSgl) InDbl = !InDbl;
-        break;
-      case ')':
-        if (!InSgl && !InDbl) Nest++;
-        break;
-      case '(':
-        if (!InSgl && !InDbl) Nest--;
-        break;
-      default:
-        break;
-    }
-    if (!Nest && (SplitPos < 0))
-      SplitPos = Start;
-    else if (SplitPos >= 0)
-    {
-      if (as_isspace(pArg[Start])); /* delay decision to to next non-blank */
-      else if (as_isalnum(pArg[Start]) || (pArg[Start] == ')') || (pArg[Start] == '\'') || (pArg[Start] == '"'))
-        return SplitPos;
-      else
-        return Qualifier ? Qualifier(pArg, Start, SplitPos) : -1;
-    }
-  }
+  as_iterate_str_quoted(pArg, disp_base_split_cb, &data.data);
 
-  /* if SplitPos >= 0, and we end up here, xxx is empty string or only consists of spaces: */
-
-  return SplitPos;
+  return data.split_pos;
 }
 
 /*****************************************************************************
@@ -149,7 +168,11 @@ void CodeEquate(as_addrspace_t DestSeg, LargeInt Min, LargeInt Max)
     if (OK && !mFirstPassUnknown(Flags))
     {
       if (Min > Erg) WrError(ErrNum_UnderRange);
-      else if (Erg > Max) WrError(ErrNum_OverRange);
+      else if (
+#ifndef HAS64
+        (!(Max & 0x80000000ul)) &&   /* cannot check >=2G range if LargeInt is 32 bits */
+#endif
+        (Erg > Max)) WrError(ErrNum_OverRange);
       else
       {
         TempResult t;
@@ -232,3 +255,44 @@ Boolean QualifyQuote_SingleQuoteConstant(const char *pStart, const char *pQuoteP
   return as_isalnum(*pRun);
 }
 
+/*!------------------------------------------------------------------------
+ * \fn     string_2_xasm_code(const struct as_nonz_dynstr *p_str, int bytes_per_dword, Boolean big_endian)
+ * \brief  put characters from string into xx bit words of machine code - translation done outside!
+ * \param  p_str source string
+ * \param  bytes_per_dword # of characters in a word
+ * \param  big_endian fill words starting with MSB?
+ * \return 0 or error code
+ * ------------------------------------------------------------------------ */
+
+#define declare_string_2_xasm_code(NAME, TYPE, VAR) \
+int NAME(const struct as_nonz_dynstr *p_str, int bytes_per_dword, Boolean big_endian) \
+{ \
+  int byte_fill, ret; \
+  const char *p_ch, *p_end; \
+  TYPE character; \
+ \
+  for (byte_fill = 0, p_ch = p_str->p_str, p_end = p_ch + p_str->len; \
+       p_ch < p_end; p_ch++) \
+  { \
+    if (!byte_fill) \
+    { \
+      ret = SetMaxCodeLen((CodeLen + 1) * sizeof(TYPE)); \
+      if (ret) \
+        return ret; \
+      VAR[CodeLen++] = 0; \
+    } \
+    character = *p_ch & 0xff; \
+    if (big_endian) \
+      VAR[CodeLen - 1] = (VAR[CodeLen - 1] << 8) | character; \
+    else \
+      VAR[CodeLen - 1] |= character << (byte_fill * 8); \
+    if (++byte_fill >= bytes_per_dword) \
+      byte_fill = 0; \
+  } \
+  if (byte_fill && big_endian) \
+    VAR[CodeLen - 1] <<= 8 * (bytes_per_dword - byte_fill); \
+  return 0; \
+}
+
+declare_string_2_xasm_code(string_2_dasm_code, LongWord, DAsmCode)
+declare_string_2_xasm_code(string_2_wasm_code, Word, WAsmCode)

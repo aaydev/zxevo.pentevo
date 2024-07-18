@@ -1,22 +1,22 @@
 
-; LAST UPDATE: 15.06.2022 savelij
+; LAST UPDATE: 01.11.2023 savelij
 
 ;==================óíÖçàÖ ëé ëåìä ÇàçíÄ=======================
-RD_HDDS		PUSH BC
+RD_HDD_SMUC	PUSH BC
 		PUSH DE
 		CALL SETSREG
 		EX AF,AF'
 		LD B,HIGH (PS_1F7)
-		LD A,0X20
+		LD A,0x20
 		CALL SOUTPRT
 HDSRDM2		CALL SINPRT
-		AND 0X88
+		AND 0x88
 		CP 8
 		JR NZ,HDSRDM2
 		EX AF,AF'
 HDSRDM1		PUSH AF
 		LD DE,PS_PORT_RW
-		LD A,0X40
+		LD A,0x40
 RDCSSC1		EX AF,AF'
 		LD B,D
 		CALL SINPRT
@@ -55,7 +55,7 @@ RDCSSC1		EX AF,AF'
 		JR NZ,RDCSSC1
 		LD B,HIGH (PS_1F7)
 HDSRDM3		CALL SINPRT
-		AND 0X80
+		AND 0x80
 		JR NZ,HDSRDM3
 		POP AF
 		DEC A
@@ -86,12 +86,12 @@ SETSREG		PUSH DE
 		EX AF,AF'
 
 SOUTPRT		PUSH HL
-		LD HL,0X3FF0
+		LD HL,0x3FF0
 		EX (SP),HL
-		JP 0X3D2F
+		JP 0x3D2F
 
 SINPRT		PUSH HL
-		LD HL,0X3FF3
+		LD HL,0x3FF3
 		EX (SP),HL
-		JP 0X3D2F
+		JP 0x3D2F
 ;==================óíÖçàÖ ëé ëåìä ÇàçíÄ=======================

@@ -12,12 +12,13 @@
 #include <string.h>
 #include <ctype.h>
 
-#include "endian.h"
+#include "be_le.h"
 #include "strutil.h"
 #include "asmdef.h"
 #include "asmsub.h"
 #include "asmpars.h"
 #include "asmallg.h"
+#include "onoff_common.h"
 #include "asmitree.h"
 #include "intpseudo.h"
 #include "codevars.h"
@@ -32,29 +33,6 @@ typedef struct
   LongWord Code;
   Byte CPUMask;
 } BaseOrder;
-
-#define FixedOrderCount      8
-#define Reg1OrderCount       4
-#define FReg1OrderCount      2
-#define CReg1OrderCount      1
-#define CBit1OrderCount      4
-#define Reg2OrderCount       29
-#define CReg2OrderCount      2
-#define FReg2OrderCount      14
-#define Reg2BOrderCount      2
-#define Reg2SwapOrderCount   6
-#define NoDestOrderCount     10
-#define Reg3OrderCount       91
-#define CReg3OrderCount      8
-#define FReg3OrderCount      10
-#define Reg3SwapOrderCount   49
-#define MixedOrderCount      8
-#define FReg4OrderCount      16
-#define RegDispOrderCount    16
-#define FRegDispOrderCount   8
-#define Reg2ImmOrderCount    12
-#define Imm16OrderCount      7
-#define Imm16SwapOrderCount  6
 
 static BaseOrder *FixedOrders;
 static BaseOrder *Reg1Orders;
@@ -1353,15 +1331,15 @@ static void DecodeTLBRE_TLBWE(Word Code)
 
 static void AddFixed(const char *NName1, const char *NName2, LongWord NCode, Byte NMask)
 {
-  if (InstrZ >= FixedOrderCount) exit(255);
+  order_array_rsv_end(FixedOrders, BaseOrder);
   FixedOrders[InstrZ].Code = NCode;
   FixedOrders[InstrZ].CPUMask = NMask;
   AddInstTable(InstTable, MomCPU == CPU6000 ? NName2 : NName1, InstrZ++, DecodeFixed);
 }
 
 static void AddReg1(const char *NName1, const char *NName2, LongWord NCode, Byte NMask)
-{
-  if (InstrZ >= Reg1OrderCount) exit(255);
+{ 
+  order_array_rsv_end(Reg1Orders, BaseOrder);
   Reg1Orders[InstrZ].Code = NCode;
   Reg1Orders[InstrZ].CPUMask = NMask;
   AddInstTable(InstTable, MomCPU == CPU6000 ? NName2 : NName1, InstrZ++, DecodeReg1);
@@ -1369,7 +1347,7 @@ static void AddReg1(const char *NName1, const char *NName2, LongWord NCode, Byte
 
 static void AddCReg1(const char *NName1, const char *NName2, LongWord NCode, Byte NMask)
 {
-  if (InstrZ >= CReg1OrderCount) exit(255);
+  order_array_rsv_end(CReg1Orders, BaseOrder);
   CReg1Orders[InstrZ].Code = NCode;
   CReg1Orders[InstrZ].CPUMask = NMask;
   AddInstTable(InstTable, MomCPU == CPU6000 ? NName2 : NName1, InstrZ++, DecodeCReg1);
@@ -1377,7 +1355,7 @@ static void AddCReg1(const char *NName1, const char *NName2, LongWord NCode, Byt
 
 static void AddCBit1(const char *NName1, const char *NName2, LongWord NCode, Byte NMask)
 {
-  if (InstrZ >= CBit1OrderCount) exit(255);
+  order_array_rsv_end(CBit1Orders, BaseOrder);
   CBit1Orders[InstrZ].Code = NCode;
   CBit1Orders[InstrZ].CPUMask = NMask;
   AddInstTable(InstTable, MomCPU == CPU6000 ? NName2 : NName1, InstrZ++, DecodeCBit1);
@@ -1385,7 +1363,7 @@ static void AddCBit1(const char *NName1, const char *NName2, LongWord NCode, Byt
 
 static void AddFReg1(const char *NName1, const char *NName2, LongWord NCode, Byte NMask)
 {
-  if (InstrZ >= FReg1OrderCount) exit(255);
+  order_array_rsv_end(FReg1Orders, BaseOrder);
   FReg1Orders[InstrZ].Code = NCode;
   FReg1Orders[InstrZ].CPUMask = NMask;
   AddInstTable(InstTable, MomCPU == CPU6000 ? NName2 : NName1, InstrZ++, DecodeFReg1);
@@ -1393,7 +1371,7 @@ static void AddFReg1(const char *NName1, const char *NName2, LongWord NCode, Byt
 
 static void AddSReg2(const char *NName, LongWord NCode, Byte NMask)
 {
-  if (InstrZ >= Reg2OrderCount) exit(255);
+  order_array_rsv_end(Reg2Orders, BaseOrder);
   Reg2Orders[InstrZ].Code = NCode;
   Reg2Orders[InstrZ].CPUMask = NMask;
   AddInstTable(InstTable, NName, InstrZ++, DecodeReg2);
@@ -1424,7 +1402,7 @@ static void AddReg2(const char *NName1, const char *NName2, LongWord NCode, Byte
 
 static void AddCReg2(const char *NName1, const char *NName2, LongWord NCode, Byte NMask)
 {
-  if (InstrZ >= CReg2OrderCount) exit(255);
+  order_array_rsv_end(CReg2Orders, BaseOrder);
   CReg2Orders[InstrZ].Code = NCode;
   CReg2Orders[InstrZ].CPUMask = NMask;
   AddInstTable(InstTable, (MomCPU == CPU6000) ? NName2 : NName1, InstrZ++, DecodeCReg2);
@@ -1432,7 +1410,7 @@ static void AddCReg2(const char *NName1, const char *NName2, LongWord NCode, Byt
 
 static void AddSFReg2(const char *NName, LongWord NCode, Byte NMask)
 {
-  if (InstrZ >= FReg2OrderCount) exit(255);
+  order_array_rsv_end(FReg2Orders, BaseOrder);
   if (!NName) exit(255);
   FReg2Orders[InstrZ].Code = NCode;
   FReg2Orders[InstrZ].CPUMask = NMask;
@@ -1455,7 +1433,7 @@ static void AddFReg2(const char *NName1, const char *NName2, LongWord NCode, Byt
 
 static void AddReg2B(const char *NName1, const char *NName2, LongWord NCode, Byte NMask)
 {
-  if (InstrZ >= Reg2BOrderCount) exit(255);
+  order_array_rsv_end(Reg2BOrders, BaseOrder);
   Reg2BOrders[InstrZ].Code = NCode;
   Reg2BOrders[InstrZ].CPUMask = NMask;
   AddInstTable(InstTable, (MomCPU == CPU6000) ? NName2 : NName1, InstrZ++, DecodeReg2B);
@@ -1463,7 +1441,7 @@ static void AddReg2B(const char *NName1, const char *NName2, LongWord NCode, Byt
 
 static void AddSReg2Swap(const char *NName, LongWord NCode, Byte NMask)
 {
-  if (InstrZ >= Reg2SwapOrderCount) exit(255);
+  order_array_rsv_end(Reg2SwapOrders, BaseOrder);
   if (!NName) exit(255);
   Reg2SwapOrders[InstrZ].Code = NCode;
   Reg2SwapOrders[InstrZ].CPUMask = NMask;
@@ -1495,7 +1473,7 @@ static void AddReg2Swap(const char *NName1, const char *NName2, LongWord NCode, 
 
 static void AddNoDest(const char *NName1, const char *NName2, LongWord NCode, Byte NMask)
 {
-  if (InstrZ >= NoDestOrderCount) exit(255);
+  order_array_rsv_end(NoDestOrders, BaseOrder);
   NoDestOrders[InstrZ].Code = NCode;
   NoDestOrders[InstrZ].CPUMask = NMask;
   AddInstTable(InstTable, (MomCPU == CPU6000) ? NName2 : NName1, InstrZ++, DecodeNoDest);
@@ -1503,7 +1481,7 @@ static void AddNoDest(const char *NName1, const char *NName2, LongWord NCode, By
 
 static void AddSReg3(const char *NName, LongWord NCode, Byte NMask)
 {
-  if (InstrZ >= Reg3OrderCount) exit(255);
+  order_array_rsv_end(Reg3Orders, BaseOrder);
   Reg3Orders[InstrZ].Code = NCode;
   Reg3Orders[InstrZ].CPUMask = NMask;
   AddInstTable(InstTable, NName, InstrZ++, DecodeReg3);
@@ -1536,7 +1514,7 @@ static void AddReg3(const char *NName1, const char *NName2, LongWord NCode, Byte
 
 static void AddCReg3(const char *NName, LongWord NCode, CPUVar NMask)
 {
-  if (InstrZ >= CReg3OrderCount) exit(255);
+  order_array_rsv_end(CReg3Orders, BaseOrder);
   CReg3Orders[InstrZ].Code = NCode;
   CReg3Orders[InstrZ].CPUMask = NMask;
   AddInstTable(InstTable, NName, InstrZ++, DecodeCReg3);
@@ -1544,7 +1522,7 @@ static void AddCReg3(const char *NName, LongWord NCode, CPUVar NMask)
 
 static void AddSFReg3(const char *NName, LongWord NCode, Byte NMask)
 {
-  if (InstrZ >= FReg3OrderCount) exit(255);
+  order_array_rsv_end(FReg3Orders, BaseOrder);
   FReg3Orders[InstrZ].Code = NCode;
   FReg3Orders[InstrZ].CPUMask = NMask;
   AddInstTable(InstTable, NName, InstrZ++, DecodeFReg3);
@@ -1565,7 +1543,7 @@ static void AddFReg3(const char *NName1, const char *NName2, LongWord NCode, Byt
 
 static void AddSReg3Swap(const char *NName, LongWord NCode, Byte NMask)
 {
-  if (InstrZ >= Reg3SwapOrderCount) exit(255);
+  order_array_rsv_end(Reg3SwapOrders, BaseOrder);
   Reg3SwapOrders[InstrZ].Code = NCode;
   Reg3SwapOrders[InstrZ].CPUMask = NMask;
   AddInstTable(InstTable, NName, InstrZ++, DecodeReg3Swap);
@@ -1586,7 +1564,7 @@ static void AddReg3Swap(const char *NName1, const char *NName2, LongWord NCode, 
 
 static void AddMixed(const char *NName1, const char *NName2, LongWord NCode, Byte NMask)
 {
-  if (InstrZ >= MixedOrderCount) exit(255);
+  order_array_rsv_end(MixedOrders, BaseOrder);
   MixedOrders[InstrZ].Code = NCode;
   MixedOrders[InstrZ].CPUMask = NMask;
   AddInstTable(InstTable, (MomCPU == CPU6000) ? NName2 : NName1, InstrZ++, DecodeMixed);
@@ -1594,7 +1572,7 @@ static void AddMixed(const char *NName1, const char *NName2, LongWord NCode, Byt
 
 static void AddSFReg4(const char *NName, LongWord NCode, Byte NMask)
 {
-  if (InstrZ >= FReg4OrderCount) exit(255);
+  order_array_rsv_end(FReg4Orders, BaseOrder);
   FReg4Orders[InstrZ].Code = NCode;
   FReg4Orders[InstrZ].CPUMask = NMask;
   AddInstTable(InstTable, NName, InstrZ++, DecodeFReg4);
@@ -1615,7 +1593,7 @@ static void AddFReg4(const char *NName1, const char *NName2, LongWord NCode, Byt
 
 static void AddRegDisp(const char *NName1, const char *NName2, LongWord NCode, Byte NMask)
 {
-  if (InstrZ >= RegDispOrderCount) exit(255);
+  order_array_rsv_end(RegDispOrders, BaseOrder);
   RegDispOrders[InstrZ].Code = NCode;
   RegDispOrders[InstrZ].CPUMask = NMask;
   AddInstTable(InstTable, (MomCPU == CPU6000) ? NName2 : NName1, InstrZ++, DecodeRegDispOrder);
@@ -1623,7 +1601,7 @@ static void AddRegDisp(const char *NName1, const char *NName2, LongWord NCode, B
 
 static void AddFRegDisp(const char *NName1, const char *NName2, LongWord NCode, Byte NMask)
 {
-  if (InstrZ >= FRegDispOrderCount) exit(255);
+  order_array_rsv_end(FRegDispOrders, BaseOrder);
   FRegDispOrders[InstrZ].Name = (MomCPU == CPU6000) ? NName2 : NName1;
   FRegDispOrders[InstrZ].Code = NCode;
   FRegDispOrders[InstrZ].CPUMask = NMask;
@@ -1632,7 +1610,7 @@ static void AddFRegDisp(const char *NName1, const char *NName2, LongWord NCode, 
 
 static void AddSReg2Imm(const char *NName, LongWord NCode, Byte NMask)
 {
-  if (InstrZ >= Reg2ImmOrderCount) exit(255);
+  order_array_rsv_end(Reg2ImmOrders, BaseOrder);
   if (!NName) exit(255);
   Reg2ImmOrders[InstrZ].Code = NCode;
   Reg2ImmOrders[InstrZ].CPUMask = NMask;
@@ -1654,7 +1632,7 @@ static void AddReg2Imm(const char *NName1, const char *NName2, LongWord NCode, B
 
 static void AddImm16(const char *NName1, const char *NName2, LongWord NCode, Byte NMask)
 {
-  if (InstrZ >= Imm16OrderCount) exit(255);
+  order_array_rsv_end(Imm16Orders, BaseOrder);
   Imm16Orders[InstrZ].Code = NCode;
   Imm16Orders[InstrZ].CPUMask = NMask;
   AddInstTable(InstTable, (MomCPU == CPU6000) ? NName2 : NName1, InstrZ++, DecodeImm16);
@@ -1662,7 +1640,7 @@ static void AddImm16(const char *NName1, const char *NName2, LongWord NCode, Byt
 
 static void AddImm16Swap(const char *NName1, const char *NName2, LongWord NCode, Byte NMask)
 {
-  if (InstrZ >= Imm16SwapOrderCount) exit(255);
+  order_array_rsv_end(Imm16SwapOrders, BaseOrder);
   Imm16SwapOrders[InstrZ].Code = NCode;
   Imm16SwapOrders[InstrZ].CPUMask = NMask;
   AddInstTable(InstTable, (MomCPU == CPU6000) ? NName2 : NName1, InstrZ++, DecodeImm16Swap);
@@ -1733,7 +1711,7 @@ static void InitFields(void)
 
   /* --> 0 0 0 */
 
-  FixedOrders = (BaseOrder *) malloc(sizeof(BaseOrder) * FixedOrderCount); InstrZ = 0;
+  InstrZ = 0;
   AddFixed("EIEIO"  , "EIEIO"  , (T31 << 26) + (854 << 1), M_403 | M_403C | M_505 | M_821 | M_601 | M_6000);
   AddFixed("ISYNC"  , "ICS"    , (T19 << 26) + (150 << 1), M_403 | M_403C | M_505 | M_821 | M_601 | M_6000);
   AddFixed("RFI"    , "RFI"    , (T19 << 26) + ( 50 << 1), M_403 | M_403C | M_505 | M_821 | M_601 | M_6000 | M_SUP);
@@ -1745,7 +1723,7 @@ static void InitFields(void)
 
   /* D --> D 0 0 */
 
-  Reg1Orders = (BaseOrder *) malloc(sizeof(BaseOrder) * Reg1OrderCount); InstrZ = 0;
+  InstrZ = 0;
   AddReg1("MFCR"   , "MFCR"    , (T31 << 26) + ( 19 << 1), M_403 | M_403C | M_505 | M_821 | M_601 | M_6000);
   AddReg1("MFMSR"  , "MFMSR"   , (T31 << 26) + ( 83 << 1), M_403 | M_403C | M_505 | M_821 | M_601 | M_6000);
   AddReg1("MTMSR"  , "MTMSR"   , (T31 << 26) + (146 << 1), M_403 | M_403C | M_505 | M_821 | M_601 | M_6000 | M_SUP);
@@ -1753,12 +1731,12 @@ static void InitFields(void)
 
   /* crD --> D 0 0 */
 
-  CReg1Orders = (BaseOrder *) malloc(sizeof(BaseOrder) * CReg1OrderCount); InstrZ = 0;
+  InstrZ = 0;
   AddCReg1("MCRXR"  , "MCRXR"  , (T31 << 26) + (512 << 1), M_403 | M_403C | M_505 | M_821 | M_601 | M_6000);
 
   /* crbD --> D 0 0 */
 
-  CBit1Orders = (BaseOrder *) malloc(sizeof(BaseOrder) * CBit1OrderCount); InstrZ = 0;
+  InstrZ = 0;
   AddCBit1("MTFSB0" , "MTFSB0" , (T63 << 26) + ( 70 << 1)    , M_601 | M_6000);
   AddCBit1("MTFSB0.", "MTFSB0.", (T63 << 26) + ( 70 << 1) + 1, M_601 | M_6000);
   AddCBit1("MTFSB1" , "MTFSB1" , (T63 << 26) + ( 38 << 1)    , M_601 | M_6000);
@@ -1766,13 +1744,13 @@ static void InitFields(void)
 
   /* frD --> D 0 0 */
 
-  FReg1Orders = (BaseOrder *) malloc(sizeof(BaseOrder) * FReg1OrderCount); InstrZ = 0;
+  InstrZ = 0;
   AddFReg1("MFFS"   , "MFFS"  , (T63 << 26) + (583 << 1)    , M_601 | M_6000);
   AddFReg1("MFFS."  , "MFFS." , (T63 << 26) + (583 << 1) + 1, M_601 | M_6000);
 
   /* D,A --> D A 0 */
 
-  Reg2Orders = (BaseOrder *) malloc(sizeof(BaseOrder) * Reg2OrderCount); InstrZ = 0;
+  InstrZ = 0;
   AddReg2("ABS"   , "ABS"  , (T31 << 26) + (360 << 1),                                          M_6000, True , True );
   AddReg2("ADDME" , "AME"  , (T31 << 26) + (234 << 1), M_403 | M_403C | M_505 | M_821 | M_601 | M_6000, True , True );
   AddReg2("ADDZE" , "AZE"  , (T31 << 26) + (202 << 1), M_403 | M_403C | M_505 | M_821 | M_601 | M_6000, True , True );
@@ -1784,13 +1762,13 @@ static void InitFields(void)
 
   /* cD,cS --> D S 0 */
 
-  CReg2Orders = (BaseOrder *) malloc(sizeof(BaseOrder) * CReg2OrderCount); InstrZ = 0;
+  InstrZ = 0;
   AddCReg2("MCRF"  , "MCRF"  , (T19 << 26) + (  0 << 1), M_403 | M_403C | M_505 | M_821 | M_601 | M_6000);
   AddCReg2("MCRFS" , "MCRFS" , (T63 << 26) + ( 64 << 1),                          M_601 | M_6000);
 
   /* fD,fB --> D 0 B */
 
-  FReg2Orders = (BaseOrder *) malloc(sizeof(BaseOrder) * FReg2OrderCount); InstrZ = 0;
+  InstrZ = 0;
   AddFReg2("FABS"  , "FABS"  , (T63 << 26) + (264 << 1), M_601 | M_6000, True );
   AddFReg2("FCTIW" , "FCTIW" , (T63 << 26) + ( 14 << 1), M_601 | M_6000, True );
   AddFReg2("FCTIWZ", "FCTIWZ", (T63 << 26) + ( 15 << 1), M_601 | M_6000, True );
@@ -1801,20 +1779,20 @@ static void InitFields(void)
 
   /* D,B --> D 0 B */
 
-  Reg2BOrders = (BaseOrder *) malloc(sizeof(BaseOrder) * Reg2BOrderCount); InstrZ = 0;
+  InstrZ = 0;
   AddReg2B("MFSRIN", "MFSRIN", (T31 << 26) + (659 << 1), M_601 | M_6000);
   AddReg2B("MTSRIN", "MTSRI" , (T31 << 26) + (242 << 1), M_601 | M_6000);
 
   /* A,S --> S A 0 */
 
-  Reg2SwapOrders = (BaseOrder *) malloc(sizeof(BaseOrder) * Reg2SwapOrderCount); InstrZ = 0;
+  InstrZ = 0;
   AddReg2Swap("CNTLZW", "CNTLZ" , (T31 << 26) + ( 26 << 1), M_403 | M_403C | M_505 | M_821 | M_601 | M_6000, False, True );
   AddReg2Swap("EXTSB ", "EXTSB" , (T31 << 26) + (954 << 1), M_403 | M_403C | M_505 | M_821 | M_601 | M_6000, False, True );
   AddReg2Swap("EXTSH ", "EXTS"  , (T31 << 26) + (922 << 1), M_403 | M_403C | M_505 | M_821 | M_601 | M_6000, False, True );
 
   /* A,B --> 0 A B */
 
-  NoDestOrders = (BaseOrder *) malloc(sizeof(BaseOrder) * NoDestOrderCount); InstrZ = 0;
+  InstrZ = 0;
   AddNoDest("DCBF"  , "DCBF"  , (T31 << 26) + (  86 << 1), M_403 | M_403C | M_505 | M_821 | M_601 | M_6000);
   AddNoDest("DCBI"  , "DCBI"  , (T31 << 26) + ( 470 << 1), M_403 | M_403C | M_505 | M_821 | M_601 | M_6000);
   AddNoDest("DCBST" , "DCBST" , (T31 << 26) + (  54 << 1), M_403 | M_403C | M_505 | M_821 | M_601 | M_6000);
@@ -1828,7 +1806,7 @@ static void InitFields(void)
 
   /* D,A,B --> D A B */
 
-  Reg3Orders = (BaseOrder *) malloc(sizeof(BaseOrder) * Reg3OrderCount); InstrZ = 0;
+  InstrZ = 0;
   AddReg3("ADD"   , "CAX"   , (T31 << 26) + (266 << 1), M_403 | M_403C | M_505 | M_821 | M_601 | M_6000, True,  True );
   AddReg3("ADDC"  , "A"     , (T31 << 26) + ( 10 << 1), M_403 | M_403C | M_505 | M_821 | M_601 | M_6000, True , True );
   AddReg3("ADDE"  , "AE"    , (T31 << 26) + (138 << 1), M_403 | M_403C | M_505 | M_821 | M_601 | M_6000, True , True );
@@ -1874,7 +1852,7 @@ static void InitFields(void)
 
   /* cD,cA,cB --> D A B */
 
-  CReg3Orders = (BaseOrder *) malloc(sizeof(BaseOrder) * CReg3OrderCount); InstrZ = 0;
+  InstrZ = 0;
   AddCReg3("CRAND"  , (T19 << 26) + (257 << 1), M_403 | M_403C | M_505 | M_821 | M_601 | M_6000);
   AddCReg3("CRANDC" , (T19 << 26) + (129 << 1), M_403 | M_403C | M_505 | M_821 | M_601 | M_6000);
   AddCReg3("CREQV"  , (T19 << 26) + (289 << 1), M_403 | M_403C | M_505 | M_821 | M_601 | M_6000);
@@ -1886,7 +1864,7 @@ static void InitFields(void)
 
   /* fD,fA,fB --> D A B */
 
-  FReg3Orders = (BaseOrder *) malloc(sizeof(BaseOrder) * FReg3OrderCount); InstrZ = 0;
+  InstrZ = 0;
   AddFReg3("FADD"  , "FA"    , (T63 << 26) + (21 << 1), M_601 | M_6000, True );
   AddFReg3("FADDS" , "FADDS" , (T59 << 26) + (21 << 1), M_601 | M_6000, True );
   AddFReg3("FDIV"  , "FD"    , (T63 << 26) + (18 << 1), M_601 | M_6000, True );
@@ -1895,7 +1873,7 @@ static void InitFields(void)
 
   /* A,S,B --> S A B */
 
-  Reg3SwapOrders = (BaseOrder *) malloc(sizeof(BaseOrder) * Reg3SwapOrderCount); InstrZ = 0;
+  InstrZ = 0;
   AddReg3Swap("AND"   , "AND"   , (T31 << 26) + (  28 << 1), M_403 | M_403C | M_505 | M_821 | M_601 | M_6000, True );
   AddReg3Swap("ANDC"  , "ANDC"  , (T31 << 26) + (  60 << 1), M_403 | M_403C | M_505 | M_821 | M_601 | M_6000, True );
   AddReg3Swap("ECOWX" , "ECOWX" , (T31 << 26) + ( 438 << 1),                          M_821 | M_601 | M_6000, False);
@@ -1924,7 +1902,7 @@ static void InitFields(void)
 
   /* fD,A,B --> D A B */
 
-  MixedOrders = (BaseOrder *) malloc(sizeof(BaseOrder) * MixedOrderCount); InstrZ = 0;
+  InstrZ = 0;
   AddMixed("LFDUX" , "LFDUX" , (T31 << 26) + (631 << 1), M_601 | M_6000);
   AddMixed("LFDX"  , "LFDX"  , (T31 << 26) + (599 << 1), M_601 | M_6000);
   AddMixed("LFSUX" , "LFSUX" , (T31 << 26) + (567 << 1), M_601 | M_6000);
@@ -1936,7 +1914,7 @@ static void InitFields(void)
 
   /* fD,fA,fC,fB --> D A B C */
 
-  FReg4Orders = (BaseOrder *) malloc(sizeof(BaseOrder) * FReg4OrderCount); InstrZ = 0;
+  InstrZ = 0;
   AddFReg4("FMADD"  , "FMA"    , (T63 << 26) + (29 << 1), M_601 | M_6000, True );
   AddFReg4("FMADDS" , "FMADDS" , (T59 << 26) + (29 << 1), M_601 | M_6000, True );
   AddFReg4("FMSUB"  , "FMS"    , (T63 << 26) + (28 << 1), M_601 | M_6000, True );
@@ -1948,7 +1926,7 @@ static void InitFields(void)
 
   /* D,d(A) --> D A d */
 
-  RegDispOrders = (BaseOrder *) malloc(sizeof(BaseOrder) * RegDispOrderCount); InstrZ = 0;
+  InstrZ = 0;
   AddRegDisp("LBZ"   , "LBZ"   , (T34 << 26), M_403 | M_403C | M_505 | M_821 | M_601 | M_6000);
   AddRegDisp("LBZU"  , "LBZU"  , (T35 << 26), M_403 | M_403C | M_505 | M_821 | M_601 | M_6000);
   AddRegDisp("LHA"   , "LHA"   , (T42 << 26), M_403 | M_403C | M_505 | M_821 | M_601 | M_6000);
@@ -1968,7 +1946,7 @@ static void InitFields(void)
 
   /* fD,d(A) --> D A d */
 
-  FRegDispOrders = (BaseOrder *) malloc(sizeof(BaseOrder) * FRegDispOrderCount); InstrZ = 0;
+  InstrZ = 0;
   AddFRegDisp("LFD"   , "LFD"   , (T50 << 26), M_601 | M_6000);
   AddFRegDisp("LFDU"  , "LFDU"  , (T51 << 26), M_601 | M_6000);
   AddFRegDisp("LFS"   , "LFS"   , (T48 << 26), M_601 | M_6000);
@@ -1980,7 +1958,7 @@ static void InitFields(void)
 
   /* A,S,Imm5 --> S A Imm */
 
-  Reg2ImmOrders = (BaseOrder *) malloc(sizeof(BaseOrder) * Reg2ImmOrderCount); InstrZ = 0;
+  InstrZ = 0;
   AddReg2Imm("SLIQ"  , "SLIQ"  , (T31 << 26) + (184 << 1),                                          M_6000, True);
   AddReg2Imm("SLLIQ" , "SLLIQ" , (T31 << 26) + (248 << 1),                                          M_6000, True);
   AddReg2Imm("SRAIQ" , "SRAIQ" , (T31 << 26) + (952 << 1),                                          M_6000, True);
@@ -1990,7 +1968,7 @@ static void InitFields(void)
 
   /* D,A,Imm --> D A Imm */
 
-  Imm16Orders = (BaseOrder *) malloc(sizeof(BaseOrder) * Imm16OrderCount); InstrZ = 0;
+  InstrZ = 0;
   AddImm16("ADDI"   , "CAL"    , T14 << 26, M_403 | M_403C | M_505 | M_821 | M_601 | M_6000);
   AddImm16("ADDIC"  , "AI"     , T12 << 26, M_403 | M_403C | M_505 | M_821 | M_601 | M_6000);
   AddImm16("ADDIC." , "AI."    , T13 << 26, M_403 | M_403C | M_505 | M_821 | M_601 | M_6000);
@@ -2001,7 +1979,7 @@ static void InitFields(void)
 
   /* A,S,Imm --> S A Imm */
 
-  Imm16SwapOrders = (BaseOrder *) malloc(sizeof(BaseOrder) * Imm16SwapOrderCount); InstrZ = 0;
+  InstrZ = 0;
   AddImm16Swap("ANDI."  , "ANDIL." , T28 << 26, M_403 | M_403C | M_505 | M_821 | M_601 | M_6000);
   AddImm16Swap("ANDIS." , "ANDIU." , T29 << 26, M_403 | M_403C | M_505 | M_821 | M_601 | M_6000);
   AddImm16Swap("ORI"    , "ORIL"   , T24 << 26, M_403 | M_403C | M_505 | M_821 | M_601 | M_6000);
@@ -2013,28 +1991,28 @@ static void InitFields(void)
 static void DeinitFields(void)
 {
   DestroyInstTable(InstTable);
-  free(FixedOrders);
-  free(Reg1Orders);
-  free(FReg1Orders);
-  free(CReg1Orders);
-  free(CBit1Orders);
-  free(Reg2Orders);
-  free(CReg2Orders);
-  free(FReg2Orders);
-  free(Reg2BOrders);
-  free(Reg2SwapOrders);
-  free(NoDestOrders);
-  free(Reg3Orders);
-  free(CReg3Orders);
-  free(FReg3Orders);
-  free(Reg3SwapOrders);
-  free(MixedOrders);
-  free(FReg4Orders);
-  free(RegDispOrders);
-  free(FRegDispOrders);
-  free(Reg2ImmOrders);
-  free(Imm16Orders);
-  free(Imm16SwapOrders);
+  order_array_free(FixedOrders);
+  order_array_free(Reg1Orders);
+  order_array_free(FReg1Orders);
+  order_array_free(CReg1Orders);
+  order_array_free(CBit1Orders);
+  order_array_free(Reg2Orders);
+  order_array_free(CReg2Orders);
+  order_array_free(FReg2Orders);
+  order_array_free(Reg2BOrders);
+  order_array_free(Reg2SwapOrders);
+  order_array_free(NoDestOrders);
+  order_array_free(Reg3Orders);
+  order_array_free(CReg3Orders);
+  order_array_free(FReg3Orders);
+  order_array_free(Reg3SwapOrders);
+  order_array_free(MixedOrders);
+  order_array_free(FReg4Orders);
+  order_array_free(RegDispOrders);
+  order_array_free(FRegDispOrders);
+  order_array_free(Reg2ImmOrders);
+  order_array_free(Imm16Orders);
+  order_array_free(Imm16SwapOrders);
 }
 
 /*-------------------------------------------------------------------------*/
@@ -2063,11 +2041,6 @@ static Boolean IsDef_601(void)
   return Memo("REG");
 }
 
-static void InitPass_601(void)
-{
-  SetFlag(&TargetBigEndian, BigEndianName, False);
-}
-
 /*!------------------------------------------------------------------------
  * \fn     InternSymbol_601(char *Asc, TempResult *Erg)
  * \brief  handle built.in symbols for PPC
@@ -2090,6 +2063,7 @@ static void InternSymbol_601(char *Asc, TempResult *Erg)
   {
     Erg->Typ = TempReg;
     Erg->Contents.RegDescr.Dissect = DissectReg_601;
+    Erg->Contents.RegDescr.compare = NULL;
     Erg->Contents.RegDescr.Reg = RegValue;
     Erg->DataSize = eSymbolSize32Bit;
   }
@@ -2097,6 +2071,7 @@ static void InternSymbol_601(char *Asc, TempResult *Erg)
   {
     Erg->Typ = TempReg;
     Erg->Contents.RegDescr.Dissect = DissectReg_601;
+    Erg->Contents.RegDescr.compare = NULL;
     Erg->Contents.RegDescr.Reg = RegValue;
     Erg->DataSize = eSymbolSizeFloat64Bit;
   }
@@ -2104,7 +2079,7 @@ static void InternSymbol_601(char *Asc, TempResult *Erg)
 
 static void SwitchTo_601(void)
 {
-  PFamilyDescr FoundDscr;
+  const TFamilyDescr *FoundDscr;
 
   TurnWords = True;
   SetIntConstMode(eIntConstModeC);
@@ -2128,8 +2103,8 @@ static void SwitchTo_601(void)
   SwitchFrom = DeinitFields;
   InternSymbol = InternSymbol_601;
   DissectReg = DissectReg_601;
-  AddONOFF(SupAllowedCmdName, &SupAllowed, SupAllowedSymName, False);
-  AddONOFF("BIGENDIAN", &TargetBigEndian,   BigEndianName,  False);
+  onoff_supmode_add();
+  onoff_bigendian_add();
 
   InitFields();
 }
@@ -2142,8 +2117,6 @@ void code601_init(void)
   CPU601  = AddCPU("MPC601", SwitchTo_601);
   CPU821  = AddCPU("MPC821", SwitchTo_601);
   CPU6000 = AddCPU("RS6000", SwitchTo_601);
-
-  AddInitPassProc(InitPass_601);
 
   AddCopyright("Motorola MPC821 Additions (C) 2012 Marcin Cieslak");
 }

@@ -99,10 +99,18 @@ void out(unsigned port, unsigned char val)
    if (conf.zc && (port & 0xFF) == 0x57 )
    {
       if ((port & 0x80FF) == 0x8057 && conf.mem_model == MM_ATM3
-         &&(comp.flags & CF_DOSPORTS))
-         return;
-       Zc.Wr(port, val);
-       return;
+         &&(comp.flags & CF_DOSPORTS)) Zc.Wr(0x0077, val);
+      else Zc.Wr(port, val);
+      return;
+   }
+   
+   if ( conf.zc && ( (port & 0xFF) == 0x77 ) )
+   {
+      if ( ( conf.mem_model != MM_ATM3 ) || ( ( comp.flags & CF_DOSPORTS) == 0 ) )
+      {
+        Zc.Wr(port, val);
+        return;
+      }
    }
    
    if(conf.wiznet && (port & 0xff) == 0xab ){ 
@@ -393,20 +401,25 @@ void out(unsigned port, unsigned char val)
 		  if(p1 & 0x80) {
 			comp.trdos_last_ff = val & 0x1f;
 		  }
-		  if((comp.flags & CF_TRDOS)&&conf.trdos_IORam&&(bankr[0]==base_dos_rom)&&(p1 & 0x80)){
+		  if((comp.flags & CF_TRDOS) && ( (comp.aFF77 & 0x4000) != 0 ) && conf.trdos_IORam && (bankr[0]==base_dos_rom) && (p1 & 0x80))
+          {
 		     comp.wd.out(p1, val);
-			 if( ( (1<<comp.wd.drive) & comp.fddIO2Ram_mask ) && ( ( cpu.pc & 0xc000 ) == 0 ) ){
+			 if( ( (1<<comp.wd.drive) & comp.fddIO2Ram_mask )  )
+             {
 				trdos_in_nmi = comp.flags&CF_TRDOS;
 				cpu.nmi_in_progress=conf.trdos_IORam;
 				set_banks();
 			 }
-		  }else if((comp.flags & CF_TRDOS) && ( ( cpu.pc & 0xc000 ) == 0 ) 
+		  }
+          else if((comp.flags & CF_TRDOS)  && ( (comp.aFF77 & 0x4000) != 0 ) 
 			  && conf.trdos_IORam && (1<<comp.wd.drive)&comp.fddIO2Ram_mask && (bankr[0]==base_dos_rom))
 		  {
 		     trdos_in_nmi = comp.flags&CF_TRDOS;
 			 cpu.nmi_in_progress=conf.trdos_IORam;
 			 set_banks();
-		  }else{
+		  }
+          else
+          {
 		     comp.wd.out(p1, val);
 		  }
           return;
@@ -855,7 +868,7 @@ __inline unsigned char in1(unsigned port)
        if((port & 0xFF) == 0xBF)
            return comp.pBF;
 
-       if(((port & 0xFF) == 0xBE) || ((port & 0xFF) == 0xBD))
+       if ((port & 0xFF) == 0xBD)
        {
            u8 port_hi = (port >> 8) & 0xFF;
            if((port_hi & ~7) == 0) // Чтение не инвертированного номера страницы
@@ -1050,7 +1063,7 @@ __inline unsigned char in1(unsigned port)
           // DF = 1101|1111b порт мыши
           // FF = 1111|1111b
       else if ((p1 & 0x9F) == 0x1F || p1 == 0xFF) {// 1F, 3F, 5F, 7F, FF
-		  if((comp.flags & CF_TRDOS) && conf.trdos_IORam && ( ( cpu.pc & 0xc000 ) == 0 )
+		  if((comp.flags & CF_TRDOS) && conf.trdos_IORam && ( (comp.aFF77 & 0x4000) != 0 )
 				&&((1<<comp.wd.drive)&comp.fddIO2Ram_mask)&&(bankr[0]==base_dos_rom))
 		  {
               comp.fddIO2Ram_wr_disable = true;

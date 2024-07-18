@@ -482,6 +482,7 @@ static void InternSymbol_4004(char *pArg, TempResult *pResult)
     pResult->DataSize = eSymbolSize8Bit;
     pResult->Contents.RegDescr.Reg = RegValue;
     pResult->Contents.RegDescr.Dissect = DissectReg_4004;
+    pResult->Contents.RegDescr.compare = NULL;
   }
   else if (DecodeRRegCore(pArg, &RegValue))
   {
@@ -489,6 +490,7 @@ static void InternSymbol_4004(char *pArg, TempResult *pResult)
     pResult->DataSize = eSymbolSize16Bit;
     pResult->Contents.RegDescr.Reg = RegValue;
     pResult->Contents.RegDescr.Dissect = DissectReg_4004;
+    pResult->Contents.RegDescr.compare = NULL;
   }
 }
 
@@ -518,7 +520,7 @@ static void SwitchFrom_4004(void)
 
 static void SwitchTo_4004(void)
 {
-  PFamilyDescr FoundDescr;
+  const TFamilyDescr *FoundDescr;
 
   FoundDescr = FindFamilyByName("4004/4040");
 

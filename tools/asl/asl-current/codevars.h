@@ -12,6 +12,14 @@
 /*                                                                           */
 /*****************************************************************************/
 
+#include "dyn_array.h"
+
+#define order_array_free(orders) \
+  do { \
+    free(orders); \
+    orders = NULL; \
+  } while (0)
+
 extern int InstrZ;
 extern int AdrCnt;
 

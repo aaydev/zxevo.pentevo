@@ -27,7 +27,7 @@
 #include "fourpseudo.h"
 #include "codevars.h"
 #include "headids.h"
-#include "endian.h"
+#include "be_le.h"
 #include "ieeefloat.h"
 #include "errmsg.h"
 
@@ -926,7 +926,7 @@ static void SwitchFrom_1750(void)
 
 static void SwitchTo_1750(void)
 {
-  PFamilyDescr pDescr;
+  const TFamilyDescr *pDescr;
 
   pDescr = FindFamilyByName("1750");
 

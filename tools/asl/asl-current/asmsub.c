@@ -15,11 +15,13 @@
 #include <stdarg.h>
 
 #include "version.h"
-#include "endian.h"
+#include "be_le.h"
 #include "stdhandl.h"
 #include "console.h"
 #include "nls.h"
+#include "chardefs.h"
 #include "nlmessages.h"
+#include "cmdarg.h"
 #include "as.rsc"
 #include "strutil.h"
 #include "stringlists.h"
@@ -30,6 +32,7 @@
 #include "asmdef.h"
 #include "asmpars.h"
 #include "asmdebug.h"
+#include "asmlist.h"
 #include "as.h"
 
 #include "asmsub.h"
@@ -37,7 +40,7 @@
 
 #ifdef __TURBOC__
 #ifdef __DPMI16__
-#define STKSIZE 35328
+#define STKSIZE 32768
 #else
 #define STKSIZE 49152
 #endif
@@ -72,20 +75,14 @@ void AddCopyright(const char *NewLine)
   AddStringListLast(&CopyrightList, NewLine);
 }
 
-void WriteCopyrights(TSwitchProc NxtProc)
+void WriteCopyrights(void(*PrintProc)(const char *))
 {
   StringRecPtr Lauf;
+  const char *p_line;
 
-  if (!StringListEmpty(CopyrightList))
-  {
-    WrConsoleLine(GetStringListFirst(CopyrightList, &Lauf), True);
-    NxtProc();
-    while (Lauf)
-    {
-      WrConsoleLine(GetStringListNext(&Lauf), True);
-      NxtProc();
-    }
-  }
+  for (p_line = GetStringListFirst(CopyrightList, &Lauf);
+       p_line; p_line = GetStringListNext(&Lauf))
+    PrintProc(p_line);
 }
 
 /*--------------------------------------------------------------------------*/
@@ -392,40 +389,102 @@ func_exit:
 }
 
 /*!------------------------------------------------------------------------
+ * \fn     as_iterate_str_quoted(const char *p_str, as_quoted_iterator_cb_t callback, as_quoted_iterator_cb_data_t *p_cb_data)
+ * \brief  iterate through string, skipping quoted areas
+ * \param  p_str string to iterate through
+ * \param  callback is called for all characters outside quoted areas
+ * \param  p_cb_data callback data
+ * ------------------------------------------------------------------------ */
+
+void as_iterate_str_quoted(const char *p_str, as_quoted_iterator_cb_t callback, as_quoted_iterator_cb_data_t *p_cb_data)
+{
+  const char *p_run;
+  Boolean this_escaped, next_escaped;
+
+  p_cb_data->p_str = p_str;
+  p_cb_data->in_single_quote =
+  p_cb_data->in_double_quote = False;
+
+  for (p_run = p_str, this_escaped = False;
+       *p_run;
+       p_run++, this_escaped = next_escaped)
+  {
+    next_escaped = False;
+
+    switch(*p_run)
+    {
+      case '\\':
+        if ((p_cb_data->in_single_quote || p_cb_data->in_double_quote) && !this_escaped)
+          next_escaped = True;
+        break;
+      case '\'':
+        if (p_cb_data->in_double_quote) { }
+        else if (!p_cb_data->in_single_quote && (!QualifyQuote || QualifyQuote(p_str, p_run)))
+          p_cb_data->in_single_quote = True;
+        else if (!this_escaped) /* skip escaped ' in '...' */
+          p_cb_data->in_single_quote = False;
+        break;
+      case '"':
+        if (p_cb_data->in_single_quote) { }
+        else if (!p_cb_data->in_double_quote)
+          p_cb_data->in_double_quote = True;
+        else if (!this_escaped) /* skip escaped " in "..." */
+          p_cb_data->in_double_quote = False;
+        break;
+      default:
+        if (!p_cb_data->in_single_quote && !p_cb_data->in_double_quote)
+        {
+          if (!callback(p_run, p_cb_data))
+            return;
+        }
+    }
+  }
+}
+
+/*!------------------------------------------------------------------------
  * \fn     FindClosingParenthese(const char *pStr)
  * \brief  find matching closing parenthese
  * \param  pStr * to string right after opening parenthese
  * \return * to closing parenthese or NULL
  * ------------------------------------------------------------------------ */
 
+typedef struct
+{
+  as_quoted_iterator_cb_data_t data;
+  int nest;
+  const char *p_ret;
+} close_par_cb_data_t;
+
+static Boolean close_par_cb(const char *p_pos, as_quoted_iterator_cb_data_t *p_cb_data)
+{
+  close_par_cb_data_t *p_data = (close_par_cb_data_t*)p_cb_data;
+
+  switch(*p_pos)
+  {
+    case '(':
+      p_data->nest++;
+      break;
+    case ')':
+      if (!--p_data->nest)
+      {
+        p_data->p_ret = p_pos;
+        return False;
+      }
+      break;
+  }
+  return True;
+}
+
 char *FindClosingParenthese(const char *pStr)
 {
-  int Nest = 1;
-  Boolean InSgl = False, InDbl = False;
+  close_par_cb_data_t data;
 
-  for (; *pStr; pStr++)
-  {
-    switch (*pStr)
-    {
-      case '\'':
-        if (!InDbl) InSgl = !InSgl;
-        break;
-      case '"':
-        if (!InSgl) InDbl = !InDbl;
-        break;
-      case '(':
-        if (!InSgl && !InDbl) Nest++;
-        break;
-      case ')':
-        if (!InSgl && !InDbl) Nest--;
-        if (!Nest)
-          return (char*)pStr;
-        break;
-      default:
-        break;
-    }
-  }
-  return NULL;
+  data.nest = 1;
+  data.p_ret = NULL;
+
+  as_iterate_str_quoted(pStr, close_par_cb,&data.data);
+
+  return (char*)data.p_ret;
 }
 
 /*!------------------------------------------------------------------------
@@ -437,49 +496,49 @@ char *FindClosingParenthese(const char *pStr)
  * \return * to opening parenthese or NULL if not found
  * ------------------------------------------------------------------------ */
 
+typedef struct
+{
+  as_quoted_iterator_cb_data_t data;
+  int nest;
+  const char *p_str_end;
+  const char *p_ret;
+  const char *p_bracks;
+} open_par_cb_data_t;
+
+static Boolean open_par_cb(const char *p_pos, as_quoted_iterator_cb_data_t *p_cb_data)
+{
+  open_par_cb_data_t *p_data = (open_par_cb_data_t*)p_cb_data;
+
+  if (*p_pos == p_data->p_bracks[0])
+  {
+    if (!p_data->nest)
+      p_data->p_ret = p_pos;
+    p_data->nest++;
+  }
+  else if (*p_pos == p_data->p_bracks[1])
+    p_data->nest--;
+
+  /* We are interested in the opening parenthese that is nearest to the closing
+     one and on same level, so continue searching: */
+
+  return ((p_pos + 1) < p_data->p_str_end);
+}
+
 char *FindOpeningParenthese(const char *pStrBegin, const char *pStrEnd, const char Bracks[2])
 {
-  int Nest = 1;
-  Boolean InSgl = False, InDbl = False;
+  open_par_cb_data_t data;
 
-  for (; pStrEnd >= pStrBegin; pStrEnd--)
-  {
-    if (*pStrEnd == Bracks[1])
-    {
-      if (!InSgl && !InDbl) Nest++;
-    }
-    else if (*pStrEnd == Bracks[0])
-    {
-      if (!InSgl && !InDbl) Nest--;
-      if (!Nest)
-        return (char*)pStrEnd;
-    }
-    else switch (*pStrEnd)
-    {
-      case '\'':
-        if (!InDbl) InSgl = !InSgl;
-        break;
-      case '"':
-        if (!InSgl) InDbl = !InDbl;
-        break;
-      default:
-        break;
-    }
-  }
-  return NULL;
+  data.nest = 0;
+  data.p_ret = NULL;
+  data.p_bracks = Bracks;
+  data.p_str_end = pStrEnd;
+
+  as_iterate_str_quoted(pStrBegin, open_par_cb, &data.data);
+
+  return (char*)data.p_ret;
 }
 
 /****************************************************************************/
-
-void TranslateString(char *s, int Length)
-{
-  char *pRun, *pEnd;
-
-  if (Length < 0)
-    Length = strlen(s);
-  for (pRun = s, pEnd = pRun + Length; pRun < pEnd; pRun++)
-    *pRun = CharTransTable[((usint)(*pRun)) & 0xff];
-}
 
 ShortInt StrCaseCmp(const char *s1, const char *s2, LongInt Hand1, LongInt Hand2)
 {
@@ -506,7 +565,7 @@ void AddSuffix(char *s, const char *Suff)
 
   p = NULL;
   for (z = s; *z != '\0'; z++)
-    if (*z == '\\')
+    if (*z == PATHSEP)
       p = z;
   Part = p ? p : s;
   if (!strchr(Part, '.'))
@@ -523,7 +582,7 @@ void KillSuffix(char *s)
 
   p = NULL;
   for (z = s; *z != '\0'; z++)
-    if (*z == '\\')
+    if (*z == PATHSEP)
       p = z;
   Part = p ? p : s;
   Part = strchr(Part, '.');
@@ -971,17 +1030,7 @@ void SetListLineVal(TempResult *t)
   as_dynstr_ini(&str, STRINGSIZE);
   StrSym(t, True, &str, ListRadixBase);
   as_snprintf(ListLine, STRINGSIZE, "=%s", str.p_str);
-  LimitListLine();
   as_dynstr_free(&str);
-}
-
-void LimitListLine(void)
-{
-  if (strlen(ListLine) + 1 > LISTLINESPACE)
-  {
-    ListLine[LISTLINESPACE - 4] = '\0';
-    strmaxcat(ListLine, "..", STRINGSIZE);
-  }
 }
 
 /*!------------------------------------------------------------------------
@@ -1121,9 +1170,15 @@ Boolean ChkMacSymbName(const char *pSym)
   return *pSym && !pEnd;
 }
 
+Boolean ChkMacSymbChar(char ch)
+{
+  return !!(GetValidSymChar(ch) & (VALID_M1 | VALID_MN));
+}
+
 /*!------------------------------------------------------------------------
  * \fn     visible_strlen(const char *pSym)
- * \brief  retrieve 'visible' length of string, regarding multi-by sequences for UTF-8
+ * \brief  retrieve 'visible' length of string, regarding multi-byte
+           sequences for UTF-8
  * \param  pSym symbol name
  * \return visible length in characters
  * ------------------------------------------------------------------------ */
@@ -1135,10 +1190,7 @@ unsigned visible_strlen(const char *pSym)
     unsigned Result = 0;
 
     while (*pSym)
-    {
-      (void)UTF8ToUnicode(&pSym);
-      Result++;
-    }
+      Result += as_wcwidth(UTF8ToUnicode(&pSym));
     return Result;
   }
   else
@@ -1284,56 +1336,78 @@ void ClearUseList(void)
 /****************************************************************************/
 /* Include-Pfadlistenverarbeitung */
 
-static char *GetPath(char *Acc)
-{
-  char *p;
-  static String tmp;
+/*!------------------------------------------------------------------------
+ * \fn     get_first_path_from_list(const char *p_path_list, char *p_first_path, size_t first_path_size)
+ * \brief  extract first path from list of paths
+ * \param  p_path_list path list
+ * \param  p_first_path where to put component
+ * \param  first_path_size buffer size
+ * \return p_path_list for next call of get_first_path_from_list()
+ * ------------------------------------------------------------------------ */
 
-  p = strchr(Acc, DIRSEP);
+static const char *get_first_path_from_list(const char *p_path_list, char *p_first_path, size_t first_path_size)
+{
+  const char *p;
+
+  p = strchr(p_path_list, DIRSEP);
   if (!p)
   {
-    strmaxcpy(tmp, Acc, STRINGSIZE);
-    Acc[0] = '\0';
+    strmaxcpy(p_first_path, p_path_list, first_path_size);
+    return "";
   }
   else
   {
-    *p = '\0';
-    strmaxcpy(tmp, Acc, STRINGSIZE);
-    strmov(Acc, p + 1);
+    strmemcpy(p_first_path, first_path_size, p_path_list, p - p_path_list);
+    return p + 1;
   }
-  return tmp;
 }
 
-void AddIncludeList(char *NewPath)
-{
-  String Test;
+/*!------------------------------------------------------------------------
+ * \fn     AddIncludeList(const char *p_new_path)
+ * \brief  add path to include list
+ * \param  p_new_path path to add
+ * ------------------------------------------------------------------------ */
 
-  strmaxcpy(Test, IncludeList, STRINGSIZE);
-  while (*Test != '\0')
-    if (!strcmp(GetPath(Test), NewPath))
+void AddIncludeList(const char *p_new_path)
+{
+  const char *p_list_run = IncludeList;
+  String one_path;
+
+  /* path already present in list? */
+
+  while (*p_list_run)
+  {
+    p_list_run = get_first_path_from_list(p_list_run, one_path, sizeof(one_path));
+    if (!strcmp(one_path, p_new_path))
       return;
+  }
+
+  /* no -> prepend */
+
   if (*IncludeList != '\0')
     strmaxprep(IncludeList, SDIRSEP, STRINGSIZE);
-  strmaxprep(IncludeList, NewPath, STRINGSIZE);
+  strmaxprep(IncludeList, p_new_path, STRINGSIZE);
 }
 
+/*!------------------------------------------------------------------------
+ * \fn     RemoveIncludeList(const char *p_rem_path)
+ * \brief  remove one path from include list
+ * \param  p_rem_path path to remove
+ * ------------------------------------------------------------------------ */
 
-void RemoveIncludeList(char *RemPath)
+void RemoveIncludeList(const char *p_rem_path)
 {
-  String Save;
-  char *Part;
+  String one_path;
+  const char *p_list_run, *p_list_next;
 
-  strmaxcpy(IncludeList, Save, STRINGSIZE);
-  IncludeList[0] = '\0';
-  while (Save[0] != '\0')
+  p_list_run = IncludeList;
+  while (*p_list_run)
   {
-    Part = GetPath(Save);
-    if (strcmp(Part, RemPath))
-    {
-      if (IncludeList[0] != '\0')
-        strmaxcat(IncludeList, SDIRSEP, STRINGSIZE);
-      strmaxcat(IncludeList, Part, STRINGSIZE);
-    }
+    p_list_next = get_first_path_from_list(p_list_run, one_path, sizeof(one_path));
+    if (!strcmp(one_path, p_rem_path))
+      strmov((char*)p_list_run, p_list_next);
+    else
+      p_list_run = p_list_next;
   }
 }
 
@@ -1355,9 +1429,9 @@ void RemoveFromOutList(const char *OldName)
   RemoveStringList(&OutList, OldName);
 }
 
-char *GetFromOutList(void)
+char *MoveFromOutListFirst(void)
 {
-  return GetAndCutStringList(&OutList);
+  return MoveAndCutStringListFirst(&OutList);
 }
 
 void ClearShareOutList(void)
@@ -1375,9 +1449,9 @@ void RemoveFromShareOutList(const char *OldName)
   RemoveStringList(&ShareOutList, OldName);
 }
 
-char *GetFromShareOutList(void)
+char *MoveFromShareOutListFirst(void)
 {
-  return GetAndCutStringList(&ShareOutList);
+  return MoveAndCutStringListFirst(&ShareOutList);
 }
 
 void ClearListOutList(void)
@@ -1395,20 +1469,13 @@ void RemoveFromListOutList(const char *OldName)
   RemoveStringList(&ListOutList, OldName);
 }
 
-char *GetFromListOutList(void)
+char *MoveFromListOutListFirst(void)
 {
-  return GetAndCutStringList(&ListOutList);
+  return MoveAndCutStringListFirst(&ListOutList);
 }
 
 /****************************************************************************/
 /* Tokenverarbeitung */
-
-static Boolean CompressLine_NErl(char ch)
-{
-  return (((ch >= 'A') && (ch <= 'Z'))
-       || ((ch >= 'a') && (ch <= 'z'))
-       || ((ch >= '0') && (ch <= '9')));
-}
 
 typedef int (*tCompareFnc)(const char *s1, const char *s2, size_t n);
 
@@ -1424,8 +1491,8 @@ int ReplaceLine(as_dynstr_t *p_str, const char *pSearch, const char *pReplace, B
     End = Pos + SearchLen;
     CmpRes = Compare(&p_str->p_str[Pos], pSearch, SearchLen);
     if ((!CmpRes)
-     && ((Pos == 0) || (!CompressLine_NErl(p_str->p_str[Pos - 1])))
-     && ((End >= StrLen) || (!CompressLine_NErl(p_str->p_str[End]))))
+     && ((Pos == 0) || !ChkMacSymbChar(p_str->p_str[Pos - 1]))
+     && ((End >= StrLen) || !ChkMacSymbChar(p_str->p_str[End])))
     {
       if (StrLen + DeltaLen + 1 > (int)p_str->capacity)
         as_dynstr_realloc(p_str, as_dynstr_roundup_len(p_str->capacity + DeltaLen));
@@ -1578,8 +1645,11 @@ void AddClearUpProc(SimpProc NewProc)
   pClearUpProcStore = pNewStore;
 }
 
-/*--------------------------------------------------------------------------*/
-/* Zeit holen */
+/*!------------------------------------------------------------------------
+ * \fn     GTime(void)
+ * \brief  fetch time of day in units of 10 ms
+ * \return time of day
+ * ------------------------------------------------------------------------ */
 
 #ifdef __MSDOS__
 
@@ -1598,7 +1668,10 @@ long GTime(void)
   return result;
 }
 
-#elif __IBMC__
+# define GTIME_DEFINED
+#endif /* __MSDOS__ */
+
+#ifdef __IBMC__
 
 #include <time.h>
 #define INCL_DOSDATETIME
@@ -1619,53 +1692,61 @@ long GTime(void)
   return (mktime(&ts) * 100) + (dt.hundredths);
 }
 
-#elif __MINGW32__
+# define GTIME_DEFINED
+#endif /* __IBMC__ */
 
-/* distribution by Gunnar Wallmann */
+#ifdef _WIN32
 
-#include <sys/time.h>
-#include "math64.h"
+# include <windows.h>
 
-/*time from 1 Jan 1601 to 1 Jan 1970 in 100ns units */
-
-typedef struct _FILETIME
-{
-  unsigned long dwLowDateTime;
-  unsigned long dwHighDateTime;
-} FILETIME;
-
-void __stdcall GetSystemTimeAsFileTime(FILETIME*);
+# ifdef NOLONGLONG
+#  include "math64.h"
+# endif
 
 long GTime(void)
 {
-  union
-  {
-#ifndef NOLONGLONG
-    long long ns100; /*time since 1 Jan 1601 in 100ns units */
-#endif
-    FILETIME ft;
-  } _now;
+  FILETIME ft;
 
-  GetSystemTimeAsFileTime(&(_now.ft));
-#ifdef NOLONGLONG
+  GetSystemTimeAsFileTime(&ft);
+# ifdef NOLONGLONG
   {
     static const t64 offs = { 0xd53e8000, 0x019db1de },
-                     div = { 100000, 0 };
+                     div = { 100000, 0 },
+                     mod = { 8640000, 0 };
     t64 acc;
 
-    acc.low = _now.ft.dwLowDateTime;
-    acc.high = _now.ft.dwHighDateTime;
+    /* time since 1 Jan 1601 in 100ns units */
+    acc.low = ft.dwLowDateTime;
+    acc.high = ft.dwHighDateTime;
+    /* -> time since 1 Jan 1970 in 100ns units */
     sub64(&acc, &acc, &offs);
+    /* -> time since 1 Jan 1970 in 10ms units */
     div64(&acc, &acc, &div);
+    /* -> time since 0:00:00.0 in 10ms units */
+    mod64(&acc, &acc, &mod);
     return acc.low;
   }
-#else
-# define _W32_FT_OFFSET (116444736000000000LL)
-  return (_now.ns100 - _W32_FT_OFFSET) / 100000LL;
-#endif
+# else /* !NOLONGLONG */
+#  define _W32_FT_OFFSET (116444736000000000ULL)
+  unsigned long long time_tot;
+  /* time since 1 Jan 1601 in 100ns units */
+  time_tot =  ((unsigned long long)ft.dwLowDateTime )      ;
+  time_tot += ((unsigned long long)ft.dwHighDateTime) << 32;
+
+  /* -> time since 1 Jan 1970 in 100ns units */
+  time_tot -= _W32_FT_OFFSET;
+  /* -> time since 1 Jan 1970 in 10ms units */
+  time_tot /= 100000ULL;
+  /* -> time since 0:00:00.0 in 10ms units */
+  time_tot %= 8640000ULL;
+  return time_tot;
+# endif /* NOLONGLONG */
 }
 
-#else
+# define GTIME_DEFINED
+#endif /* _WIN32 */
+
+#ifndef GTIME_DEFINED
 
 #include <sys/time.h>
 
@@ -1674,10 +1755,11 @@ long GTime(void)
   struct timeval tv;
 
   gettimeofday(&tv, NULL);
-  return (tv.tv_sec*100) + (tv.tv_usec/10000);
+  tv.tv_sec %= 86400;
+  return (tv.tv_sec * 100) + (tv.tv_usec/10000);
 }
 
-#endif
+#endif /* GTIME_DEFINED */
 
 /*-------------------------------------------------------------------------*/
 /* Stackfehler abfangen - bis auf DOS nur Dummies */
@@ -1757,6 +1839,23 @@ static void SetValidSymChars(unsigned Start, unsigned Stop, Byte Value)
     SetValidSymChar(Start, Value);
 }
 
+static as_cmd_result_t cmd_underscore_macroargs(Boolean negate, const char *p_arg)
+{
+  unsigned ch = (unsigned)'_';
+
+  UNUSED(p_arg);
+  if (negate)
+    ValidSymChar[ch] &= ~(VALID_M1 | VALID_MN);
+  else
+    ValidSymChar[ch] |= (VALID_M1 | VALID_MN);
+  return e_cmd_ok;
+}
+
+static const as_cmd_rec_t cmd_params[] =
+{
+  { "underscore-macroargs", cmd_underscore_macroargs }
+};
+
 void asmsub_init(void)
 {
 #ifdef __TURBOC__
@@ -1835,13 +1934,15 @@ void asmsub_init(void)
   StartStack = LowStack = MinStack = 0;
 #endif
 
+  as_cmd_register(cmd_params, as_array_size(cmd_params));
+
   /* initialize array of valid characters */
 
   ValidSymCharLen = (NLS_GetCodepage() == eCodepageUTF8) ? 1280 : 256;
   ValidSymChar = (Byte*) calloc(ValidSymCharLen, sizeof(Byte));
 
-  /* The basic ASCII stuff: letters, dot and underbar are allowed
-     anwhere, numbers not at beginning: */
+  /* The basic ASCII stuff: letters, dot and underscore are allowed
+     anywhere, numbers not at beginning: */
 
   SetValidSymChars('a', 'z', VALID_S1 | VALID_SN | VALID_M1 | VALID_MN);
   SetValidSymChars('A', 'Z', VALID_S1 | VALID_SN | VALID_M1 | VALID_MN);

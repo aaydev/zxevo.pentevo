@@ -845,18 +845,18 @@ void load_config(const char *fname)
    if(conf.gs_type == 1) // z80gs mode
    {
        GetPrivateProfileString(ngs, "SDCARD", nullptr, conf.ngs_sd_card_path, _countof(conf.ngs_sd_card_path), ininame);
-       addpath(conf.ngs_sd_card_path);
+       if ( strcmp(conf.ngs_sd_card_path, "<CH341>") != 0 ) addpath(conf.ngs_sd_card_path);
        if(conf.ngs_sd_card_path[0])
-           printf("NGS SDCARD=`%s'\n", conf.ngs_sd_card_path);
+           printf("NGS SDCARD='%s'\n", conf.ngs_sd_card_path);
    }
 
    conf.zc = u8(GetPrivateProfileInt(misc, "ZC", 0, ininame));
    if(conf.zc)
    {
        GetPrivateProfileString(zc, "SDCARD", nullptr, conf.zc_sd_card_path, _countof(conf.zc_sd_card_path), ininame);
-       addpath(conf.zc_sd_card_path);
+       if ( strcmp(conf.zc_sd_card_path, "<CH341>") != 0 ) addpath(conf.zc_sd_card_path);
        if(conf.zc_sd_card_path[0])
-           printf("ZC SDCARD=`%s'\n", conf.zc_sd_card_path);
+           printf("ZC SDCARD='%s'\n", conf.zc_sd_card_path);
        conf.sd_delay = GetPrivateProfileInt(zc, "SDDelay", 1000, ininame);
    }
 

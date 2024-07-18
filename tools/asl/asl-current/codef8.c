@@ -101,7 +101,11 @@ static void DecodeImm8(Word Code)
     if (EvalResult.OK)
     {
       if (IsIO)
+      {
         ChkSpace(SegIO, EvalResult.AddrSpaceMask);
+        if (BAsmCode[1] < 4)
+          WrStrErrorPos(ErrNum_NeedShortIO, &ArgStr[1]);
+      }
       BAsmCode[0] = Lo(Code);
       CodeLen = 2;
     }
@@ -454,7 +458,7 @@ static Boolean IsDef_F8(void)
 
 static void SwitchTo_F8(void)
 {
-  PFamilyDescr Descr;
+  const TFamilyDescr *Descr;
 
   TurnWords = False;
   SetIntConstMode(eIntConstModeIntel);

@@ -1,6 +1,410 @@
+2024-03-25 [1.42 Bld 266]
+
+- Bugfix      : Add missing error message about invalid length
+                of multi character constants.
+- Bugfix      : Regard questionable forward references for Z80.
+- Change      : The default target is now NONE instead of 68008.
+                A target has to be set explicitly to generate code.
+
+2024-03-15 [1.42 Bld 265]
+
+- Change      : Learn maximum include level in first pass, so
+                include nesting field in listing has fixed length
+                in subsequent passes.
+- Bugfix      : Correct address range checking for TLCS-900 and Z380.
+
+2024-03-08 [1.42 Bld 264]
+
+- Bugfix      : On Zx80, do not use indexed mode with extended
+                displacement if the target is not Z380, even in
+                case of a first-pass-unknown symbol.
+
+2024-03-03 [1.42 Bld 263]
+
+- Addition    : Add support for Sharp SC62015/SC61860 (contribution
+                by Haruo Asano)
+
+2024-02-11 [1.42 Bld 262]
+
+- Addition    : New command line switch '-underscore-macroargs' to
+                allow underscores in macro parameter names
+- Change      : No longer allow omission of an empty index argument
+                on 6809.  Use 'plainbase on' or '-plainbase' to allow
+                this again.
+- Bugfix      : 'DS 0' to align program counter did not operate
+                correctly on addresses beyond 2 GByte
+
+2024-01-28 [1.42 Bld 261]
+
+- Bugfix      : On Z80-like targets, also do not parse double/triple
+                -/+ as indirect expression
+- Bugfix      : On NS32K, make parsing of address expressions more
+                robust against arguments like '\'' or X'xx
+
+2023-12-31 [1.42 Bld 260]
+
+- Bugfix      : On Z80-like targets, do not parse single -/+ as
+                indirect expression
+- Bugfix      : If address overflow occured, the code that triggered
+                it was displayed anyway in the listing, and with
+                a wrong start address.
+
+2023-12-27 [1.42 Bld 259]
+
+- Bugfix      : On 68K, correctly skip spaces in indirect
+                addressing argument lists
+
+2023-12-23 [1.42 Bld 258]
+
+- Bugfix      : disallow a few addressing modes for TST on 68K
+- Bugfix      : reduce size of icon resource for Windows binaries
+
+2023-12-17 [1.42 Bld 257]
+
+- Change      : On F8, I/O accesses to addresses 0 to 3 via IN or
+                OUT now result in a warning, since they are
+                only accessible via INS and OUTS.
+- Bugfix      : correct several 8087 instructions
+
+2023-12-02 [1.42 Bld 256]
+
+- Bugfix      : TLCS-90(0): Allow arguments of LDA, JP amd CALL to be
+                written without enclosing parentheses.
+- Addition    : Support register symbols for SC/MP
+- Change      : On SC/MP, Usage of -128 as displacement with P1...P3
+                emits a warning instead of an error 
+
+2023-11-17 [1.42 Bld 255]
+
+- Bugfix      : SC/MP: Allow PC-relative addressing with displacement
+                of -128, but disallow using E.  Likewise, allow E and
+                forbid -128 if pointer register is P1...P3.
+- Change      : Message source files now have the extension '.mes'
+                instead of '.res' to avoid extension conflicts with
+                resource files on some systems
+- Bugfix      : (Default) endianess for DW, DD,... on NS32K is little endian
+- Addition    : Add BIGENDIAN for NS32K
+
+2023-11-04 [1.42 Bld 254]
+
+- Bugfix      : TLCS-9000: correct condition parsing
+
+2023-11-04 [1.42 Bld 253]
+
+- Bugfix      : SC/MP: Allow PC with displacement as address argument,
+                as long as no auto-increment is used
+- Bugfix      : SC/MP: Check whether PC-relative addressing would result
+                in a displacement of -128
+- Change      : Incorporate a couple of changes to compile with MSVC,
+                provided by Fred N. van Kempen
+
+2023-10-29 [1.42 Bld 252]
+
+- Change      : Add $(EOBJ), $(OOBJ), $(TARG_EOBJ), and $(TARG_OOBJ)
+                variables to Makefiles, which may be overridden by
+                Makefile.def for non-'UNIX-style' compilers that do
+                not use '-o'
+- Addition    : 78(C)xx: Implement 'Z80-style' instructions for
+                a couple of machine instructions
+- Bugfix      : 78(C)xx: Do not accept undefined instructions:
+                ADIW, ACIW, ADINCW, SUIW, SBIW, SUINBW
+- Bugfix      : MCS-51: flag invalid addressing mode '@DPTR+disp'
+
+2023-10-01 [1.42 Bld 251]
+
+- Bugfix      : IM6100: Operand combination SZL OSR HLT did not work
+- Bugfix      : IM6100: Allow combined instructions in lowercase
+
+2023-09-27 [1.42 Bld 250]
+
+- Bugfix      : Setting field length of PC in listing also works
+                if target is given via CPU statement in source file
+
+2023-09-25 [1.42 Bld 249]
+
+- Addition    : Allow zero-padded PC in listing by setting a list
+                radix with leading zero
+
+2023-09-17 [1.42 Bld 248]
+
+- Change      : Allow values between 0x80 and 0xff on 68K, but warn
+                about sign extension
+- Bugfix      : Correct encoding of V35 BRKS/BRKN instructions
+- Addition    : Add new NEC Vxx variants
+- Bugfix      : Add missing JLT, JGT, and JGE instructions for
+                TMS7000
+
+2023-07-10 [1.42 Bld 247]
+
+- Change      : No separate .msg files any more for most platforms
+- Bugfix      : Several fixes to work with compilers shipped with
+                Debian 12 (Bookworm)
+
+2023-05-24 [1.42 Bld 246]
+
+- Change      : The binary's name is now 'asl' on all platforms.
+- Bugfix      : Use system-specific path separator when searching
+                for suffix
+
+2023-05-14 [1.42 Bld 245]
+
+- Change      : Rework command line output and operation:
+                - No interactive query of input files, if none
+                  are given via command line.
+                - Version information is only printed if verbose
+                  operation (-v) or version info (-version) is
+                  requested.
+                - Verbose help is printed upon request (-help).
+                - CPU list is printed if requested via '-cpu list'
+                  or '-cpu ?'.
+                - paging of CPU list or help is off by default
+                  and may be re-enabled by '-screenheight' argument
+- Change      : Remove proposal for new program name (for the
+                moment)
+
+2023-05-07 [1.42 Bld 244]
+
+- Addition    : Make proposal for new program name
+- Addition    : Always allow .SET, .EQU, .PAGE, .SWITCH,
+                .SHIFT, .SAVE and .RESTORE as alternatives to
+                the 'undotted' instructions, regardless whether
+                machine instructions of same name exist.
+- Bugfix      : Correct handling of on/off instructions inside
+                expanded macros
+
+2023-04-15 [1.42 Bld 243]
+
+- Addition    : Add Renesas RX target (contribution
+                by Haruo Asano)
+- Bugfix      : WD16: correct format 11 addressing modes
+- Bugfix      : PDP-11/WD16: @(Rn) was wrongly assembled as @Rn
+
+2023-04-10 [1.42 Bld 242]
+
+- Change      : Enable more FP16 tests
+- Bugfix      : assign unique header ID to PDP-11
+- Change      : Multi-character constants are now little endian
+                on PDP-11
+- Addition    : Add Western Digital WD16 target
+
+2023-04-01 [1.42 Bld 241]
+
+- Bugfix      : Correct displacement value for relative branches
+                and PC-relative addressing on PDP-11
+- Addition    : Support CALL as alias for JSR on PDP-11 with PC
+                as register
+- Bugfix      : Correct availibility of MTPS/MFPS on PDP-11 variants
+- Bugfix      : Correct 16-bit indexed addressing on Konami 052001
+                if index register is not PC
+
+2023-03-27 [1.42 Bld 240]
+
+- Addition    : add Konami 052001 as target
+
+2023-03-08 [1.42 Bld 239]
+
+- Addition    : allow to set BIGENDIAN flag's default value by
+                command line
+- Addition    : allow to set PACKING flag's default value by
+                command line
+- Bugfix      : Allow 8 bit AND/OR on H8/300(L)
+- Addition    : German documentation may optionally be built
+                with Babel-based German style
+
+2023-02-19 [1.42 Bld 238]
+
+- Bugfix      : Extend and correct Code page 037 definition
+- Addition    : Support ORB as alias for OR on PALM
+- Addition    : Add definition of IBM 5110's variant of EBCDIC
+- Addition    : Add character set definition for IBM 5100
+- Addition    : JMP on PALM encodes as BRA if possible
+- Addition    : CHARSET allows characters to be defined
+                'non-existant' on the target system
+- Addition    : Allow alternative conditions P/N/Z on 2650,
+                plus numeric conditions
+- Addition    : Add ACON and RES instructions on 2650
+- Addition    : Optionally allow A'...' syntax for multi
+                character constants.
+- Addition    : Support BIGENDIAN on 2650 to control
+                behaviour of DW, DD, DQ...
+- Bugfix      : JMP on PALM now also supports auto-increment
+                and -decrement
+
+2023-02-05 [1.42 Bld 237]
+
+- Addition    : Add National Semiconductor IMP-16 and PACE targets
+
+2023-01-18 [1.42 Bld 236]
+
+- Addition    : Add Rockwell PPS-4 target
+- Addition    : Add DCM statement to 6502 to dispose
+                floating point constants in Apple format
+
+2022-12-31 [1.42 Bld 235]
+
+- Addition    : Add AEG/Olympia CP-3F target
+- Change      : Reworked symbol table handling to make it
+                slightly faster
+
+2022-12-21 [1.42 Bld 234]
+
+- Addition    : Allow DB as alias for BYT on 65xx
+- Addition    : Allow DW as alias for ADR on 65xx
+- Addition    : Allow DS as alias for RMB on 65xx
+- Addition    : Add DDB for 65xx and MELPS-7700
+
+2022-12-05 [1.42 Bld 233]
+
+- Bugfix      : Correct encoding of SP register alias on SH
+- Bugfix      : Add missing comparison operators for register symbols
+- Addition    : Allow != as unequality operator
+- Bugfix      : addr(ireg) was correctly encoded as PC-relative on V60,
+                but without encoding a possible index register
+
+2022-11-01 [1.42 Bld 232]
+
+- Addition    : Add translation of non-printable ASCII control characters
+                to EBCDIC code page
+- Addition    : Add BCDINC (code page 359)
+- Addition    : Add RADIX 50 code page and packing macro
+- Addition    : Add CODEPAGE_VAL function to query mapping of a
+                single character
+- Bugfix      : DC.x on V60 gets correct operand size, uses little
+                endian and does not pad by default
+- Bugfix      : V60: plain address as address operand is treated as
+                PC-relative instead of being silently ignored
+
+2022-10-23 [1.42 Bld 231]
+
+- Addition    : Add IBM PALM target
+
+2022-10-03 [1.42 Bld 230]
+
+- Addition    : Add DEC PDP-11 target
+
+2022-08-24 [1.42 Bld 229]
+
+- Addition    : Add NEC V60 target
+
+2022-08-03 [1.42 Bld 228]
+
+- Addition    : Add Intersil IM6100/6120 target (contribution
+                by Haruo Asano)
+
+2022-07-17 [1.42 Bld 227, the Asano & Tadaoka build ;-) ]
+
+- Bugfix      : re-initialize radix & outradix base at every
+                pass
+- Bugfix      : assemble LODZ R0 as IORZ R0 on 2650
+- Bugfix      : explicitly disallow STRZ R0 on 2650
+- Bugfix      : regard 8K modulo arithmetic for relative addressing on 2650
+- Change      : Allow 32K (4*8K) address space on 2650
+- Bugfix      : Add missing V30 BRKEM instruction
+- Addition    : Add V30EMU target as variant of 8080 with
+                CALLN and RETEM instructions
+
+2022-07-13  [1.42 Bld 226]
+
+- Bugfix      : Correct argument separator for DSP56K (Tab)
+- Bugfix      : If line continuation is used, use the line
+                number of the first line, not the last one
+
+2022-07-09  [1.42 Bld 225]
+
+- Addition    : Add HP Nano Processor target (contribution by Haruo Asano)
+- Change      : No longer provide manual as PostScript (may be generated
+                from PDF version or from doc_*/as.pdf target).
+
+2022-07-03  [1.42 Bld 224]
+
+- Addition    : Support PACKING for 56000, TMS320C3x/4x, TMS32060, 
+                uPD7720/7725, and uPD77230
+- Bugfix      : DATA on uPD7720/7725 in packed mode behaves the same
+                way as DW for uPD77230, i.e. characters are filled in
+                from left to right into words
+- Bugfix      : Correct INS/EXT on V30 with immediate operand
+- Bugfix      : On V30, allow CY as operand to NOT1/CLR1/SET1
+
+2022-06-15 [1.42 Bld 223]
+
+- Addition    : Support PACKING for MN1610 (contribution by Haruo Asano)
+                and CP1600 (contribution by Kasumi Yoshino)
+- Addition    : Support floating point constants for MN1610 (contribution by Haruo Asano)
+- Addition    : 68HC11K4: ASSUME may be informed about the values
+                of CONFIG, INIT and INIT2 registers
+- Addition    : Z180: Value of CBAR, CBR, and BBR may be specified
+                via ASSUME, to define the 64K -> 512K address mapping
+
+2022-03-16 [1.42 Bld 222]
+
+- Bugfix      : -supmode command line switch works again
+- Bugfix      : Z8000: correct register overlap check for PUSH/POP
+
+2022-03-12 [1.42 Bld 221]
+
+- Bugfix      : 68K: allow k factor to FMOVE on dest operand
+
+2022-02-13 [1.42 Bld 220]
+
+- Bugfix      : correct MCS-96 RST instruction (was 'RSC' instead)
+- Change      : MCS-96: change a few 32 bit operand alignment warnings
+                to errors, to make consistent with 16 bit alignment
+                errors
+
+2022-02-09 [1.42 Bld 219]
+
+- Bugfix      : Symbols without assigned address space did not appear
+                in MAP file
+
+2022-02-02 [1.42 Bld 218]
+
+- Addition    : add DEFBIT for uPD7807...7809
+- Change      : A couple of target-specific symbols now only appear
+                in the symbol table if the respective target was
+                actually used
+
+2022-01-30 [1.42 Bld 217]
+
+- Bugfix      : 2650: do not allow ANDZ R0 (decodes as HALT)
+- Bugfix      : uPD780x: disallow some uPD781x-specific addressing modes
+                for LDAX and STAX
+- Addition    : support NEC uPD7807...7809
+- Bugfix      : Do not attempt to expand string expansion for symbol
+                names in quoted regions
+- Bugfix      : The default for PADDING for 6805, 6809, 6816, 68RS08,
+                and S12Z should be OFF
+
+2022-01-19 [1.42 Bld 216]
+
+- Bugfix      : Z80: add error messages about address/displacement
+                overflow that got lost during address parser rework
+
+2021-12-26 [1.42 Bld 215]
+
+- Bugfix      : Z80: Allow register symbols for JP (IX/IY), forbid
+                on Gameboy Z80
+
+2021-12-23 [1.42 Bld 214]
+
+- Addition    : Add some syntax variants for Sharp SM83
+- Addition    : Allow SLI/SL1 as alias for SLIA/SLS on Z80UNDOC
+- Addition    : Allow EXA as alias for EX AF,AF' on Z80
+- Addition    : Allow EXD as alias for EX DE,HL on Z80
+- Addition    : For undocumented Z80 instructions with extra
+                destination reg, allow dest reg to be last arg
+                instead of first
+- Addition    : Allow register symbols for Z80
+
+2021-11-22 [1.42 Bld 213]
+
+- Bugfix      : Correct TMS1100 XMA instruction
+- Addition    : Add Sharp LR35902 ('Gameboy Z80') as target
+- Bugfix      : Allow (X0)/(X1) as argument on MN1613 LR
+- Bugfix      : Allow lowercase register names  on MN1613 LR
+
 2021-11-03 [1.42 Bld 212]
 
-- Bugfix      : Do not print enpty file name () on listing pages with symbol tables
+- Bugfix      : Do not print empty file name () on listing pages with symbol tables
 - Addition    : Add CP-1600 target (contribution by Haruo Asano)
 
 2021-10-03 [1.42 Bld 211]

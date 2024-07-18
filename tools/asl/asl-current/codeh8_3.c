@@ -19,6 +19,7 @@
 #include "asmsub.h"
 #include "asmpars.h"
 #include "asmallg.h"
+#include "onoff_common.h"
 #include "asmstructs.h"
 #include "asmitree.h"
 #include "codepseudo.h"
@@ -62,7 +63,6 @@
 #define M_CPU6413309  (1 << 3)
 #define M_CPUH8_300H  (1 << 4)
 
-#define REG_MARK 16
 #define REG_SP 7
 
 static tSymbolSize OpSize, MomSize;
@@ -114,8 +114,8 @@ static Boolean DecodeRegCore(char *pArg, Byte *pResult, tSymbolSize *pSize)
 {
   if (!as_strcasecmp(pArg, "SP"))
   {
-    *pResult = REG_SP | REG_MARK;
-    *pSize = (Maximum) ? eSymbolSize32Bit : eSymbolSize16Bit;
+    *pResult = REG_SP | REGSYM_FLAG_ALIAS;
+    *pSize = MaxMode ? eSymbolSize32Bit : eSymbolSize16Bit;
     return True;
   }
 
@@ -180,13 +180,13 @@ static void DissectReg_H8_3(char *pDest, size_t DestSize, tRegInt Value, tSymbol
       as_snprintf(pDest, DestSize, "R%u%c", (unsigned)(Value & 7), "HL"[(Value >> 3) & 1]);
       break;
     case eSymbolSize16Bit:
-      if (Value == (REG_SP | REG_MARK))
+      if (Value == (REG_SP | REGSYM_FLAG_ALIAS))
         as_snprintf(pDest, DestSize, "SP");
       else
         as_snprintf(pDest, DestSize, "%c%u", "RE"[(Value >> 3) & 1], (unsigned)(Value & 7));
       break;
     case eSymbolSize32Bit:
-      if (Value == (REG_SP | REG_MARK))
+      if (Value == (REG_SP | REGSYM_FLAG_ALIAS))
         as_snprintf(pDest, DestSize, "SP");
       else
         as_snprintf(pDest, DestSize, "ER%u", (unsigned)Value);
@@ -215,13 +215,13 @@ static tRegEvalResult DecodeReg(const tStrComp *pArg, Byte *pResult, unsigned Si
   if (DecodeRegCore(pArg->str.p_str, pResult, pSize))
   {
     RegEvalResult = eIsReg;
-    *pResult &= ~REG_MARK;
+    *pResult &= ~REGSYM_FLAG_ALIAS;
   }
   else
   {
     RegEvalResult = EvalStrRegExpressionAsOperand(pArg, &RegDescr, &EvalResult, eSymbolSizeUnknown, MustBeReg);
     *pSize = EvalResult.DataSize;
-    *pResult = RegDescr.Reg & ~REG_MARK;
+    *pResult = RegDescr.Reg & ~REGSYM_FLAG_ALIAS;
   }
 
   if ((RegEvalResult == eIsReg)
@@ -1439,7 +1439,7 @@ static void DecodeLogic(Word Code)
     DecodeAdr(&ArgStr[2], MModReg);
     if (AdrMode != ModNone)
     {
-      if ((OpSize == eSymbolSizeUnknown) || ChkCPU32(ErrNum_AddrModeNotSupported))
+      if ((OpSize <= eSymbolSize8Bit) || ChkCPU32(ErrNum_AddrModeNotSupported))
       {
         Byte HReg = AdrPart;
         DecodeAdr(&ArgStr[1], MModImm | MModReg);
@@ -2250,6 +2250,7 @@ static void InternSymbol_H8_3(char *pArg, TempResult *pResult)
     pResult->DataSize = Size;
     pResult->Contents.RegDescr.Reg = Result;
     pResult->Contents.RegDescr.Dissect = DissectReg_H8_3;
+    pResult->Contents.RegDescr.compare = NULL;
   }
 }
 
@@ -2262,7 +2263,7 @@ static Boolean DecodeAttrPart_H8_3(void)
       WrStrErrorPos(ErrNum_TooLongAttr, &AttrPart);
       return False;
     }
-    if (!DecodeMoto16AttrSize(*AttrPart.str.p_str, &AttrPartOpSize, False))
+    if (!DecodeMoto16AttrSize(*AttrPart.str.p_str, &AttrPartOpSize[0], False))
       return False;
   }
   return True;
@@ -2277,8 +2278,8 @@ static void MakeCode_H8_3(void)
   if (Memo("")) return;
 
   OpSize = eSymbolSizeUnknown;
-  if (AttrPartOpSize != eSymbolSizeUnknown)
-    SetOpSize(AttrPartOpSize);
+  if (AttrPartOpSize[0] != eSymbolSizeUnknown)
+    SetOpSize(AttrPartOpSize[0]);
 
   if (DecodeMoto16Pseudo(OpSize, True)) return;
 
@@ -2320,12 +2321,10 @@ static void SwitchTo_H8_3(void)
   IntConstModeIBMNoTerm = True;
   SwitchFrom = DeinitFields;
   InitFields();
-  AddONOFF("MAXMODE", &Maximum   , MaximumName   , False);
-  AddMoto16PseudoONOFF();
+  onoff_maxmode_add();
+  AddMoto16PseudoONOFF(False);
 
   CPU16 = (MomCPU <= CPUH8_300);
-
-  SetFlag(&DoPadding, DoPaddingName, False);
 }
 
 void codeh8_3_init(void)

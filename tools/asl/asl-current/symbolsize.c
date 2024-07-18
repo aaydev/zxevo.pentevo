@@ -15,7 +15,7 @@
 typedef struct
 {
   tSymbolSize Size;
-  const char *pName;
+  const char Name[5];
   unsigned Bytes;
 } tSizeDescr;
 
@@ -32,7 +32,10 @@ static const tSizeDescr Descrs[] =
   { eSymbolSizeFloat96Bit    , "F96" , 12 },
   { eSymbolSize24Bit         , "I24" ,  3 },
   { eSymbolSizeFloatDec96Bit , "D96" , 12 },
-  { eSymbolSizeUnknown       , NULL  ,  0 },
+  { eSymbolSize48Bit         , "I48" ,  6 },
+  { eSymbolSizeFloat48Bit    , "F48" ,  6 },
+  { eSymbolSize128Bit        , "I128", 16 },
+  { eSymbolSizeUnknown       , ""    ,  0 },
 };
 
 /*!------------------------------------------------------------------------
@@ -46,9 +49,9 @@ const char *GetSymbolSizeName(tSymbolSize Size)
 {
   const tSizeDescr *pDescr;
 
-  for (pDescr = Descrs; pDescr->pName; pDescr++)
+  for (pDescr = Descrs; pDescr->Name[0]; pDescr++)
     if (pDescr->Size == Size)
-      return pDescr->pName;
+      return pDescr->Name;
   return "?";
 }
 
@@ -63,7 +66,7 @@ unsigned GetSymbolSizeBytes(tSymbolSize Size)
 {
   const tSizeDescr *pDescr;
 
-  for (pDescr = Descrs; pDescr->pName; pDescr++)
+  for (pDescr = Descrs; pDescr->Name[0]; pDescr++)
     if (pDescr->Size == Size)
       return pDescr->Bytes;
   return 0;

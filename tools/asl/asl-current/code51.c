@@ -19,7 +19,9 @@
 #include "asmsub.h"
 #include "asmpars.h"
 #include "asmallg.h"
+#include "onoff_common.h"
 #include "asmrelocs.h"
+#include "asmlist.h"
 #include "codepseudo.h"
 #include "intpseudo.h"
 #include "asmitree.h"
@@ -69,11 +71,6 @@ enum
 
 #define MMod51 (MModReg | MModIReg8 | MModImm | MModAcc | MModDir8)
 #define MMod251 (MModIReg | MModInd | MModImmEx | MModDir16)
-
-#define AccOrderCnt 6
-#define FixedOrderCnt 5
-#define CondOrderCnt 13
-#define BCondOrderCnt 3
 
 #define AccReg 11
 #define DPXValue 14
@@ -403,62 +400,72 @@ static void DecodeAdr(tStrComp *pArg, Word Mask)
       *PPos = '\0';
       IndirComp.Pos.Len = PPos - IndirComp.str.p_str;
     }
-    if (DecodeReg(&IndirComp, &AdrPart, &HSize, False) == eIsReg)
+    switch (DecodeReg(&IndirComp, &AdrPart, &HSize, False))
     {
-      if (!PPos)
+      case eIsReg:
       {
-        H32 = 0;
-        OK = True;
-      }
-      else
-      {
-        tStrComp DispComp;
-
-        *PPos = Save;
-        StrCompRefRight(&DispComp, &IndirComp, PPos - IndirComp.str.p_str + !!(Save == '+'));
-        H32 = EvalStrIntExpression(&DispComp, SInt16, &OK);
-      }
-      if (OK)
-        switch (HSize)
+        if (!PPos)
         {
-          case eSymbolSize8Bit:
-            if ((AdrPart>1) || (H32 != 0)) WrError(ErrNum_InvAddrMode);
-            else
-              AdrMode = ModIReg8;
-            break;
-          case eSymbolSize16Bit:
-            if (H32 == 0)
-            {
-              AdrMode = ModIReg;
-              AdrSize = 0;
-            }
-            else
-            {
-              AdrMode = ModInd;
-              AdrSize = 0;
-              AdrVals[1] = H32 & 0xff;
-              AdrVals[0] = (H32 >> 8) & 0xff;
-              AdrCnt = 2;
-            }
-            break;
-          case eSymbolSize32Bit:
-            if (H32 == 0)
-            {
-              AdrMode = ModIReg;
-              AdrSize = 2;
-            }
-            else
-            {
-              AdrMode = ModInd;
-              AdrSize = 2;
-              AdrVals[1] = H32 & 0xff;
-              AdrVals[0] = (H32 >> 8) & 0xff;
-              AdrCnt = 2;
-            }
-            break;
-          default:
-            break;
+          H32 = 0;
+          OK = True;
         }
+        else
+        {
+          tStrComp DispComp;
+
+          *PPos = Save;
+          StrCompRefRight(&DispComp, &IndirComp, PPos - IndirComp.str.p_str + !!(Save == '+'));
+          H32 = EvalStrIntExpression(&DispComp, SInt16, &OK);
+        }
+        if (OK)
+          switch (HSize)
+          {
+            case eSymbolSize8Bit:
+              if ((AdrPart>1) || (H32 != 0)) WrError(ErrNum_InvAddrMode);
+              else
+                AdrMode = ModIReg8;
+              break;
+            case eSymbolSize16Bit:
+              if (H32 == 0)
+              {
+                AdrMode = ModIReg;
+                AdrSize = 0;
+              }
+              else
+              {
+                AdrMode = ModInd;
+                AdrSize = 0;
+                AdrVals[1] = H32 & 0xff;
+                AdrVals[0] = (H32 >> 8) & 0xff;
+                AdrCnt = 2;
+              }
+              break;
+            case eSymbolSize32Bit:
+              if (H32 == 0)
+              {
+                AdrMode = ModIReg;
+                AdrSize = 2;
+              }
+              else
+              {
+                AdrMode = ModInd;
+                AdrSize = 2;
+                AdrVals[1] = H32 & 0xff;
+                AdrVals[0] = (H32 >> 8) & 0xff;
+                AdrCnt = 2;
+              }
+              break;
+            default:
+              break;
+          }
+        break;
+      }
+      case eIsNoReg:
+        WrStrErrorPos(ErrNum_InvReg, &IndirComp);
+        break;
+      case eRegAbort:
+        /* will go to function end anyway after restoring separator */
+        break;
     }
     if (PPos)
       *PPos = Save;
@@ -1659,14 +1666,14 @@ static void DecodeJMP(Word Index)
         PutCode(0x01 + ((Hi(AdrLong) & 7) << 5));
         BAsmCode[CodeLen++] = Lo(AdrLong);
       }
-      else if (MomCPU < CPU8051) WrError(ErrNum_TargOnDiffPage);
+      else if (MomCPU < CPU8051) WrError(ErrNum_JmpTargOnDiffPage);
       else if (((((long)EProgCounter()) + 3) >> 16) == (AdrLong >> 16))
       {
         PutCode(0x02);
         BAsmCode[CodeLen++] = Hi(AdrLong);
         BAsmCode[CodeLen++] = Lo(AdrLong);
       }
-      else if (MomCPU < CPU80251) WrError(ErrNum_TargOnDiffPage);
+      else if (MomCPU < CPU80251) WrError(ErrNum_JmpTargOnDiffPage);
       else
       {
         PutCode(0x18a);
@@ -1708,7 +1715,7 @@ static void DecodeCALL(Word Index)
         PutCode(0x11 + ((Hi(AdrLong) & 7) << 5));
         BAsmCode[CodeLen++] = Lo(AdrLong);
       }
-      else if (MomCPU < CPU8051) WrError(ErrNum_TargOnDiffPage);
+      else if (MomCPU < CPU8051) WrError(ErrNum_JmpTargOnDiffPage);
       else if (ChkSamePage(AdrLong, EProgCounter() + 3, 16, Flags))
       {
         PutCode(0x12);
@@ -2416,7 +2423,6 @@ static void DecodeSFR(Word Index)
       else
         as_snprintf(ListLine, STRINGSIZE, "=%~02.*u%s",
                     ListRadixBase, (unsigned)AdrByte, GetIntConstIntelSuffix(ListRadixBase));
-      LimitListLine();
       PopLocHandle();
     }
   }
@@ -2437,7 +2443,6 @@ static void DecodeBIT(Word Index)
       PopLocHandle();
       *ListLine = '=';
       DissectBit_251(ListLine + 1, STRINGSIZE - 1, AdrLong);
-      LimitListLine();
     }
   }
   else
@@ -2449,7 +2454,6 @@ static void DecodeBIT(Word Index)
       PopLocHandle();
       as_snprintf(ListLine, STRINGSIZE, "=%~02.*u%s",
                   ListRadixBase, (unsigned)AdrLong, GetIntConstIntelSuffix(ListRadixBase));
-      LimitListLine();
     }
   }
 }
@@ -2467,7 +2471,7 @@ static void DecodePORT(Word Index)
 
 static void AddFixed(const char *NName, Word NCode, CPUVar NCPU)
 {
-  if (InstrZ >= FixedOrderCnt) exit(255);
+  order_array_rsv_end(FixedOrders, FixedOrder);
   FixedOrders[InstrZ].Code = NCode;
   FixedOrders[InstrZ].MinCPU = NCPU;
   AddInstTable(InstTable, NName, InstrZ++, DecodeFixed);
@@ -2475,7 +2479,7 @@ static void AddFixed(const char *NName, Word NCode, CPUVar NCPU)
 
 static void AddAcc(const char *NName, Word NCode, CPUVar NCPU)
 {
-  if (InstrZ >= AccOrderCnt) exit(255);
+  order_array_rsv_end(AccOrders, FixedOrder);
   AccOrders[InstrZ].Code = NCode;
   AccOrders[InstrZ].MinCPU = NCPU;
   AddInstTable(InstTable, NName, InstrZ++, DecodeAcc);
@@ -2483,7 +2487,7 @@ static void AddAcc(const char *NName, Word NCode, CPUVar NCPU)
 
 static void AddCond(const char *NName, Word NCode, CPUVar NCPU)
 {
-  if (InstrZ >= CondOrderCnt) exit(255);
+  order_array_rsv_end(CondOrders, FixedOrder);
   CondOrders[InstrZ].Code = NCode;
   CondOrders[InstrZ].MinCPU = NCPU;
   AddInstTable(InstTable, NName, InstrZ++, DecodeCond);
@@ -2491,7 +2495,7 @@ static void AddCond(const char *NName, Word NCode, CPUVar NCPU)
 
 static void AddBCond(const char *NName, Word NCode, CPUVar NCPU)
 {
-  if (InstrZ >= BCondOrderCnt) exit(255);
+  order_array_rsv_end(BCondOrders, FixedOrder);
   BCondOrders[InstrZ].Code = NCode;
   BCondOrders[InstrZ].MinCPU = NCPU;
   AddInstTable(InstTable, NName, InstrZ++, DecodeBCond);
@@ -2544,7 +2548,6 @@ static void InitFields(void)
   AddInstTable(InstTable, "BIT"  , 0, DecodeBIT);
   AddInstTable(InstTable, "PORT" , 0, DecodePORT);
 
-  FixedOrders = (FixedOrder *) malloc(FixedOrderCnt*sizeof(FixedOrder));
   InstrZ = 0;
   AddFixed("NOP" , 0x0000, CPU87C750);
   AddFixed("RET" , 0x0022, CPU87C750);
@@ -2552,7 +2555,6 @@ static void InitFields(void)
   AddFixed("ERET", 0x01aa, CPU80251);
   AddFixed("TRAP", 0x01b9, CPU80251);
 
-  AccOrders = (FixedOrder *) malloc(AccOrderCnt*sizeof(FixedOrder));
   InstrZ = 0;
   AddAcc("DA"  , 0x00d4, CPU87C750);
   AddAcc("RL"  , 0x0023, CPU87C750);
@@ -2561,7 +2563,6 @@ static void InitFields(void)
   AddAcc("RRC" , 0x0013, CPU87C750);
   AddAcc("SWAP", 0x00c4, CPU87C750);
 
-  CondOrders = (FixedOrder *) malloc(CondOrderCnt*sizeof(FixedOrder));
   InstrZ = 0;
   AddCond("JC"  , 0x0040, CPU87C750);
   AddCond("JE"  , 0x0168, CPU80251);
@@ -2577,7 +2578,6 @@ static void InitFields(void)
   AddCond("JZ"  , 0x0060, CPU87C750);
   AddCond("SJMP", 0x0080, CPU87C750);
 
-  BCondOrders = (FixedOrder *) malloc(BCondOrderCnt*sizeof(FixedOrder));
   InstrZ = 0;
   AddBCond("JB" , 0x0020, CPU87C750);
   AddBCond("JBC", 0x0010, CPU87C750);
@@ -2589,10 +2589,10 @@ static void InitFields(void)
 static void DeinitFields(void)
 {
   DestroyInstTable(InstTable);
-  free(FixedOrders);
-  free(AccOrders);
-  free(CondOrders);
-  free(BCondOrders);
+  order_array_free(FixedOrders);
+  order_array_free(AccOrders);
+  order_array_free(CondOrders);
+  order_array_free(BCondOrders);
 }
 
 /*-------------------------------------------------------------------------*/
@@ -2657,13 +2657,8 @@ static void InternSymbol_51(char *pArg, TempResult *pResult)
     pResult->DataSize = (tSymbolSize)Size;
     pResult->Contents.RegDescr.Reg = Erg;
     pResult->Contents.RegDescr.Dissect = DissectReg_51;
+    pResult->Contents.RegDescr.compare = NULL;
   }
-}
-
-static void InitPass_51(void)
-{
-  SetFlag(&SrcMode, SrcModeName, False);
-  SetFlag(&TargetBigEndian, BigEndianName, False);
 }
 
 static void SwitchTo_51(void)
@@ -2725,8 +2720,10 @@ static void SwitchTo_51(void)
 
   InitFields();
   SwitchFrom = DeinitFields;
-  AddONOFF("SRCMODE"  , &SrcMode  , SrcModeName  , False);
-  AddONOFF("BIGENDIAN", &TargetBigEndian, BigEndianName, False);
+  if (!onoff_test_and_set(e_onoff_reg_srcmode))
+    SetFlag(&SrcMode, SrcModeSymName, False);
+  AddONOFF(SrcModeCmdName, &SrcMode, SrcModeSymName, False);
+  onoff_bigendian_add();
 }
 
 void code51_init(void)
@@ -2743,6 +2740,4 @@ void code51_init(void)
   CPU80C390 = AddCPU("80C390", SwitchTo_51);
   CPU80251  = AddCPU("80C251", SwitchTo_51);
   CPU80251T = AddCPU("80C251T", SwitchTo_51);
-
-  AddInitPassProc(InitPass_51);
 }

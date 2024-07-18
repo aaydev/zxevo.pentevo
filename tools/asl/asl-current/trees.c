@@ -12,7 +12,7 @@
 #include <string.h>
 #include <ctype.h>
 
-#include "endian.h"
+#include "be_le.h"
 #include "nls.h"
 #include "asmdef.h"
 #include "asmsub.h"
@@ -102,7 +102,7 @@ void DumpTree(PTree Tree)
   DumpTreeIter(Tree, 0);
 }
 
-PTree SearchTree(PTree Tree, char *Name, LongInt Attribute)
+PTree SearchTree(PTree Tree, const char *Name, LongInt Attribute)
 {
   ShortInt SErg = -1;
 

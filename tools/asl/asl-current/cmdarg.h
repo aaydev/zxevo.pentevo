@@ -13,41 +13,46 @@
 /*                                                                           */
 /*****************************************************************************/
 
-typedef enum {CMDErr, CMDFile, CMDOK, CMDArg} CMDResult;
+#include <stddef.h>
+#include "stringlists.h"
+#include "datatypes.h"
 
-typedef CMDResult (*CMDCallback)(
-#ifdef __PROTOS__
-Boolean NegFlag, const char *Arg
-#endif
-);
+typedef enum
+{
+  e_cmd_ok,
+  e_cmd_err,
+  e_cmd_file,
+  e_cmd_arg
+} as_cmd_result_t;
 
-typedef void (*CMDErrCallback)
-(
+typedef as_cmd_result_t (*as_cmd_callback_t)(
 #ifdef __PROTOS__
-Boolean InEnv, char *Arg
+Boolean neg_flag, const char *p_arg
 #endif
 );
 
 typedef struct
 {
-  const char *Ident;
-  CMDCallback Callback;
-} CMDRec;
+  const char *p_ident;
+  as_cmd_callback_t callback;
+} as_cmd_rec_t;
 
-#define MAXPARAM 256
-typedef Boolean CMDProcessed[MAXPARAM + 1];
+typedef struct
+{
+  StringList file_arg_list;
+  Boolean write_help_exit, write_version_exit;
+  char error_arg[100];
+  Boolean error_arg_in_env;
+} as_cmd_results_t;
 
-extern StringList FileArgList;
+extern void as_cmd_register(const as_cmd_rec_t *p_new_recs, size_t new_rec_cnt);
 
-extern Boolean ProcessedEmpty(CMDProcessed Processed);
+extern as_cmd_result_t as_cmd_process(int argc, char **argv,
+                                      const char *p_env_name,
+                                      as_cmd_results_t *p_results);
 
-extern void ProcessCMD(int argc, char **argv,
-                       const CMDRec *pCMDRecs, int CMDRecCnt,
-                       CMDProcessed Unprocessed,
-                       const char *EnvName, CMDErrCallback ErrProc);
+extern const char *as_cmdarg_get_executable_name(void);
 
-extern const char *GetEXEName(const char *argv0);
-
-extern void cmdarg_init(char *ProgPath);
+extern void as_cmdarg_init(char *ProgPath);
 
 #endif /* _CMDARG_H */

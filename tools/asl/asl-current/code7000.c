@@ -19,6 +19,8 @@
 #include "asmsub.h"
 #include "asmpars.h"
 #include "asmallg.h"
+#include "literals.h"
+#include "onoff_common.h"
 #include "asmitree.h"
 #include "codepseudo.h"
 #include "motpseudo.h"
@@ -26,13 +28,6 @@
 #include "errmsg.h"
 
 #include "code7000.h"
-
-#define FixedOrderCount 13
-#define OneRegOrderCount 22
-#define TwoRegOrderCount 20
-#define MulRegOrderCount 3
-#define BWOrderCount 3
-#define SRegCnt 9
 
 enum
 {
@@ -61,14 +56,11 @@ enum
 #define MModImm (1 << ModImm)
 
 #define REG_SP 15
-#define REG_MARK 16
 #define RegNone (-1)
 #define RegPC (-2)
 #define RegGBR (-3)
 
 #define CompLiteralsName "COMPRESSEDLITERALS"
-
-#define DSPAvailName "HASDSP"
 
 typedef struct
 {
@@ -107,21 +99,9 @@ typedef struct
    Boolean NeedsDSP;
 } TRegDef;
 
-typedef struct _TLiteral
-{
-  struct _TLiteral *Next;
-  LongInt Value, FCount;
-  Boolean Is32, IsForward;
-  Integer PassNo;
-  LongInt DefSection;
-} *PLiteral, TLiteral;
-
 static tSymbolSize OpSize;  /* Groesse=8*(2^OpSize) */
 static ShortInt AdrMode;    /* Ergebnisadressmodus */
 static Word AdrPart;        /* Adressierungsmodusbits im Opcode */
-
-static PLiteral FirstLiteral;
-static LongInt ForwardCount;
 
 static CPUVar CPU7000, CPU7600, CPU7700;
 
@@ -152,33 +132,6 @@ static void ChkDelayed(void)
 /*-------------------------------------------------------------------------*/
 /* Adressparsing */
 
-static char *LiteralName(PLiteral Lit, char *Result, int ResultSize)
-{
-  as_snprintf(Result, ResultSize, "LITERAL_");
-  if (Lit->IsForward)
-    as_snprcatf(Result, ResultSize, "F_%08lllx", (LargeWord)Lit->FCount);
-  else if (Lit->Is32)
-    as_snprcatf(Result, ResultSize, "L_%08lllx", (LargeWord)Lit->Value);
-  else
-    as_snprcatf(Result, ResultSize, "W_%04x", (unsigned)Lit->Value);
-  as_snprcatf(Result, ResultSize, "_%x", (unsigned)Lit->PassNo);
-  return Result;
-}
-/*
-static void PrintLiterals(void)
-{
-  PLiteral Lauf;
-  String Name;
-
-  WrLstLine("LiteralList");
-  Lauf = FirstLiteral;
-  while (Lauf)
-  {
-    LiteralName(Lauf, Name, sizeof(Name));
-    WrLstLine(Name); Lauf = Lauf->Next;
-  }
-}
-*/
 static void SetOpSize(tSymbolSize Size)
 {
   if (OpSize == eSymbolSizeUnknown) OpSize = Size;
@@ -203,7 +156,7 @@ static Boolean DecodeRegCore(const char *pArg, Word *pResult)
 
   if (!as_strcasecmp(pArg, "SP"))
   {
-    *pResult = REG_SP | REG_MARK;
+    *pResult = REG_SP | REGSYM_FLAG_ALIAS;
     return True;
   }
 
@@ -229,7 +182,7 @@ static void DissectReg_7000(char *pDest, size_t DestSize, tRegInt Value, tSymbol
   switch (InpSize)
   {
     case eSymbolSize32Bit:
-      if (Value == (REG_SP | REG_MARK))
+      if (Value == (REG_SP | REGSYM_FLAG_ALIAS))
         as_snprintf(pDest, DestSize, "SP");
       else
         as_snprintf(pDest, DestSize, "R%u", (unsigned)Value);
@@ -255,12 +208,12 @@ static tRegEvalResult DecodeReg(const tStrComp *pArg, Word *pResult, Boolean Mus
 
   if (DecodeRegCore(pArg->str.p_str, pResult))
   {
-    *pResult &= ~REG_MARK;
+    *pResult &= ~REGSYM_FLAG_ALIAS;
     return eIsReg;
   }
 
   RegEvalResult = EvalStrRegExpressionAsOperand(pArg, &RegDescr, &EvalResult, eSymbolSize32Bit, MustBeReg);
-  *pResult = RegDescr.Reg;
+  *pResult = RegDescr.Reg & ~REGSYM_FLAG_ALIAS;
   return RegEvalResult;
 }
 
@@ -284,7 +237,7 @@ static Boolean DecodeCtrlReg(char *Asc, Word *Erg)
       && (!as_strcasecmp(Asc + 2, "_BANK"))
       && (Asc[1] >= '0') && (Asc[1] <= '7'))
   {
-    *Erg = Asc[1]-'0' + 8; MinCPU = CPU7700;
+    *Erg = Asc[1] - '0' + 8; MinCPU = CPU7700;
   }
   if ((*Erg == 0xff) || (MomCPU < MinCPU))
   {
@@ -298,10 +251,10 @@ static Boolean DecodeSReg(char *Asc, Word *Erg)
   int z;
   Boolean Result = FALSE;
 
-  for (z = 0; z < SRegCnt; z++)
+  for (z = 0; RegDefs[z].Name; z++)
     if (!as_strcasecmp(Asc, RegDefs[z].Name))
       break;
-  if (z < SRegCnt)
+  if (RegDefs[z].Name)
   {
     if (MomCPU < RegDefs[z].MinCPU);
     else if ((!DSPAvail) && RegDefs[z].NeedsDSP);
@@ -354,17 +307,13 @@ static LongInt OpMask(ShortInt OpSize)
 
 static void DecodeAdr(const tStrComp *pArg, Word Mask, Boolean Signed)
 {
-  Byte p;
   Word HReg;
   char *pos;
   ShortInt BaseReg, IndReg;
   tSymbolSize DOpSize;
   LongInt DispAcc;
-  String AdrStr;
-  Boolean OK, FirstFlag, NIs32, Critical, Found, LDef;
+  Boolean OK, FirstFlag;
   tSymbolFlags Flags;
-  PLiteral Lauf, Last;
-  String Name;
 
   AdrMode = ModNone;
 
@@ -555,9 +504,10 @@ static void DecodeAdr(const tStrComp *pArg, Word Mask, Boolean Signed)
         OK = True;
         Flags = eSymbolFlag_None;
     }
-    Critical = mFirstPassUnknown(Flags) || mUsesForwards(Flags);
     if (OK)
     {
+      Boolean Critical = mFirstPassUnknown(Flags) || mUsesForwards(Flags);
+
       /* minimale Groesse optimieren */
 
       DOpSize = (OpSize == eSymbolSize8Bit) ? eSymbolSize8Bit : (Critical ? eSymbolSize16Bit : eSymbolSize8Bit);
@@ -568,93 +518,27 @@ static void DecodeAdr(const tStrComp *pArg, Word Mask, Boolean Signed)
         AdrPart = DispAcc & 0xff;
         AdrMode = ModImm;
       }
-      else if ((Mask & MModPCRel) != 0)
+      else if (Mask & MModPCRel)
       {
-        tStrComp LComp;
+        tStrComp LStrComp;
         String LStr;
+        tSymbolSize lit_size;
+        Byte data_offset = 0;
 
-        StrCompMkTemp(&LComp, LStr, sizeof(LStr));
+        StrCompMkTemp(&LStrComp, LStr, sizeof(LStr));
 
-        /* Literalgroesse ermitteln */
+        lit_size = (DOpSize == 2) ? eSymbolSize32Bit : eSymbolSize16Bit;
 
-        NIs32 = (DOpSize == 2);
-        if (!NIs32)
-          DispAcc &= 0xffff;
-
-        /* Literale sektionsspezifisch */
-
-        strcpy(AdrStr, "[PARENT0]");
-
-        /* schon vorhanden ? */
-
-        Lauf = FirstLiteral;
-        p = 0;
-        OK = False;
-        Last = NULL;
-        Found = False;
-        while ((Lauf) && (!Found))
-        {
-          Last = Lauf;
-          if ((!Critical)
-           && (!Lauf->IsForward)
-           && (Lauf->DefSection == MomSectionHandle))
-          {
-            if (((Lauf->Is32 == NIs32) && (DispAcc == Lauf->Value))
-             || ((Lauf->Is32) && (!NIs32) && (DispAcc == (Lauf->Value >> 16))))
-              Found = True;
-            else if ((Lauf->Is32) && (!NIs32) && (DispAcc == (Lauf->Value & 0xffff)))
-            {
-              Found = True;
-              p = 2;
-            }
-          }
-          if (!Found)
-            Lauf = Lauf->Next;
-        }
-
-        /* nein - erzeugen */
-
-        if (!Found)
-        {
-          Lauf = (PLiteral) malloc(sizeof(TLiteral));
-          Lauf->Is32 = NIs32;
-          Lauf->Value = DispAcc;
-          Lauf->IsForward = Critical;
-          if (Critical)
-            Lauf->FCount = ForwardCount++;
-          Lauf->Next = NULL;
-          Lauf->PassNo = 1;
-          Lauf->DefSection = MomSectionHandle;
-          do
-          {
-            tStrComp LStrComp;
-
-            as_snprintf(LComp.str.p_str, STRINGSIZE, "%s%s",
-                        LiteralName(Lauf, Name, sizeof(Name)),
-                        AdrStr);
-            StrCompMkTemp(&LStrComp, LStr, sizeof(LStr));
-            LDef = IsSymbolDefined(&LStrComp);
-            if (LDef)
-              Lauf->PassNo++;
-          }
-          while (LDef);
-          if (!Last)
-            FirstLiteral = Lauf;
-          else
-            Last->Next = Lauf;
-        }
+        literal_make(&LStrComp, &data_offset, DispAcc, lit_size, Critical);
 
         /* Distanz abfragen - im naechsten Pass... */
 
-        as_snprintf(LComp.str.p_str, STRINGSIZE, "%s%s",
-                    LiteralName(Lauf, Name, sizeof(Name)),
-                    AdrStr);
-        DispAcc = EvalStrIntExpressionWithFlags(&LComp, Int32, &OK, &Flags) + p;
+        DispAcc = EvalStrIntExpressionWithFlags(&LStrComp, Int32, &OK, &Flags) + data_offset;
         if (OK)
         {
           if (mFirstPassUnknown(Flags))
             DispAcc = 0;
-          else if (NIs32)
+          else if (lit_size == eSymbolSize32Bit)
             DispAcc = (DispAcc - (PCRelAdr() & 0xfffffffc)) >> 2;
           else
             DispAcc = (DispAcc - PCRelAdr()) >> 1;
@@ -668,7 +552,7 @@ static void DecodeAdr(const tStrComp *pArg, Word Mask, Boolean Signed)
           {
             AdrMode = ModPCRel;
             AdrPart = DispAcc;
-            OpSize = NIs32 ? eSymbolSize32Bit : eSymbolSize16Bit;
+            OpSize = lit_size;
           }
         }
       }
@@ -1257,76 +1141,38 @@ static void DecodeDCT_DCF(Word Cond)
   UNUSED(Cond);
 }
 
-static void LTORG_16(void)
+static LargeInt ltorg_16(const as_literal_t *p_lit, tStrComp *p_name)
 {
-  PLiteral Lauf;
-  String Name;
-  tStrComp TmpComp;
+  LargeInt ret;
 
-  Lauf = FirstLiteral;
-  while (Lauf)
-  {
-    if ((!Lauf->Is32) && (Lauf->DefSection == MomSectionHandle))
-    {
-      WAsmCode[CodeLen >> 1] = Lauf->Value;
-      LiteralName(Lauf, Name, sizeof(Name));
-      StrCompMkTemp(&TmpComp, Name, sizeof(Name));
-      EnterIntSymbol(&TmpComp, EProgCounter() + CodeLen, SegCode, False);
-      Lauf->PassNo = (-1);
-      CodeLen += 2;
-    }
-    Lauf = Lauf->Next;
-  }
+  SetMaxCodeLen(CodeLen + 2);
+  WAsmCode[CodeLen >> 1] = p_lit->value;
+  ret = EProgCounter() + CodeLen;
+  EnterIntSymbol(p_name, ret, ActPC, False);
+  CodeLen += 2;
+  return ret;
 }
 
-static void LTORG_32(void)
+static LargeInt ltorg_32(const as_literal_t *p_lit, tStrComp *p_name)
 {
-  PLiteral Lauf, EqLauf;
-  String Name;
-  tStrComp TmpComp;
+  LargeInt ret;
 
-  Lauf = FirstLiteral;
-  while (Lauf)
+  SetMaxCodeLen(CodeLen + 6);
+  if (((EProgCounter() + CodeLen) & 2) != 0)
   {
-    if ((Lauf->Is32) && (Lauf->DefSection == MomSectionHandle) && (Lauf->PassNo >= 0))
-    {
-      if (((EProgCounter() + CodeLen) & 2) != 0)
-      {
-        WAsmCode[CodeLen >> 1] = 0; CodeLen += 2;
-      }
-      WAsmCode[CodeLen >> 1] = (Lauf->Value >> 16);
-      WAsmCode[(CodeLen >> 1) + 1] = (Lauf->Value & 0xffff);
-      LiteralName(Lauf, Name, sizeof(Name));
-      StrCompMkTemp(&TmpComp, Name, sizeof(Name));
-      EnterIntSymbol(&TmpComp, EProgCounter() + CodeLen, SegCode, False);
-      Lauf->PassNo = -1;
-      if (CompLiterals)
-      {
-        EqLauf = Lauf->Next;
-        while (EqLauf)
-        {
-          if ((EqLauf->Is32) && (EqLauf->PassNo >= 0)
-           && (EqLauf->DefSection == MomSectionHandle)
-           && (EqLauf->Value == Lauf->Value))
-          {
-            LiteralName(EqLauf, Name, sizeof(Name));
-            StrCompMkTemp(&TmpComp, Name, sizeof(Name));
-            EnterIntSymbol(&TmpComp, EProgCounter() + CodeLen, SegCode, False);
-            EqLauf->PassNo = -1;
-          }
-          EqLauf = EqLauf->Next;
-        }
-      }
-      CodeLen += 4;
-    }
-    Lauf = Lauf->Next;
+    WAsmCode[CodeLen >> 1] = 0;
+    CodeLen += 2;
   }
+  WAsmCode[CodeLen >> 1] = (p_lit->value >> 16);
+  WAsmCode[(CodeLen >> 1) + 1] = (p_lit->value & 0xffff);
+  ret = EProgCounter() + CodeLen;
+  EnterIntSymbol(p_name, ret, ActPC, False);
+  CodeLen += 4;
+  return ret;
 }
 
 static void DecodeLTORG(Word Code)
 {
-  PLiteral Lauf, Tmp, Last;
-
   UNUSED(Code);
 
   if (!ChkArgCnt(0, 0));
@@ -1335,33 +1181,13 @@ static void DecodeLTORG(Word Code)
   {
     if ((EProgCounter() & 3) == 0)
     {
-      LTORG_32();
-      LTORG_16();
+      literals_dump(ltorg_32, eSymbolSize32Bit, MomSectionHandle, True);
+      literals_dump(ltorg_16, eSymbolSize16Bit, MomSectionHandle, False);
     }
     else
     {
-      LTORG_16();
-      LTORG_32();
-    }
-    Lauf = FirstLiteral;
-    Last = NULL;
-    while (Lauf)
-    {
-      if ((Lauf->DefSection == MomSectionHandle) && (Lauf->PassNo < 0))
-      {
-        Tmp = Lauf->Next;
-        if (!Last)
-          FirstLiteral = Tmp;
-        else
-          Last->Next = Tmp;
-        free(Lauf);
-        Lauf = Tmp;
-      }
-      else
-      {
-        Last = Lauf;
-        Lauf = Lauf->Next;
-      }
+      literals_dump(ltorg_16, eSymbolSize16Bit, MomSectionHandle, False);
+      literals_dump(ltorg_32, eSymbolSize32Bit, MomSectionHandle, True);
     }
   }
 }
@@ -1371,7 +1197,7 @@ static void DecodeLTORG(Word Code)
 
 static void AddFixed(const char *NName, Word NCode, Boolean NPriv, CPUVar NMin)
 {
-  if (InstrZ >= FixedOrderCount) exit(255);
+  order_array_rsv_end(FixedOrders, FixedOrder);
   FixedOrders[InstrZ].Priv = NPriv;
   FixedOrders[InstrZ].MinCPU = NMin;
   FixedOrders[InstrZ].Code = NCode;
@@ -1380,7 +1206,7 @@ static void AddFixed(const char *NName, Word NCode, Boolean NPriv, CPUVar NMin)
 
 static void AddOneReg(const char *NName, Word NCode, CPUVar NMin, Boolean NPriv, Boolean NDel)
 {
-  if (InstrZ >= OneRegOrderCount) exit(255);
+  order_array_rsv_end(OneRegOrders, OneRegOrder);
   OneRegOrders[InstrZ].Code = NCode;
   OneRegOrders[InstrZ].MinCPU = NMin;
   OneRegOrders[InstrZ].Priv = NPriv;
@@ -1390,7 +1216,7 @@ static void AddOneReg(const char *NName, Word NCode, CPUVar NMin, Boolean NPriv,
 
 static void AddTwoReg(const char *NName, Word NCode, Boolean NPriv, CPUVar NMin, ShortInt NDef)
 {
-  if (InstrZ >= TwoRegOrderCount) exit(255);
+  order_array_rsv_end(TwoRegOrders, TwoRegOrder);
   TwoRegOrders[InstrZ].Priv = NPriv;
   TwoRegOrders[InstrZ].DefSize = NDef;
   TwoRegOrders[InstrZ].MinCPU = NMin;
@@ -1400,7 +1226,7 @@ static void AddTwoReg(const char *NName, Word NCode, Boolean NPriv, CPUVar NMin,
 
 static void AddMulReg(const char *NName, Word NCode, CPUVar NMin)
 {
-  if (InstrZ >= MulRegOrderCount) exit(255);
+  order_array_rsv_end(MulRegOrders, FixedMinOrder);
   MulRegOrders[InstrZ].Code = NCode;
   MulRegOrders[InstrZ].MinCPU = NMin;
   AddInstTable(InstTable, NName, InstrZ++, DecodeMulReg);
@@ -1408,14 +1234,14 @@ static void AddMulReg(const char *NName, Word NCode, CPUVar NMin)
 
 static void AddBW(const char *NName, Word NCode)
 {
-  if (InstrZ >= BWOrderCount) exit(255);
+  order_array_rsv_end(BWOrders, FixedOrder);
   BWOrders[InstrZ].Code = NCode;
   AddInstTable(InstTable, NName, InstrZ++, DecodeBW);
 }
 
 static void AddSReg(const char *NName, Word NCode, CPUVar NMin, Boolean NDSP)
 {
-  if (InstrZ >= SRegCnt) exit(255);
+  order_array_rsv_end(RegDefs, TRegDef);
   RegDefs[InstrZ].Name = NName;
   RegDefs[InstrZ].Code = NCode;
   RegDefs[InstrZ].MinCPU = NMin;
@@ -1449,7 +1275,7 @@ static void InitFields(void)
   AddInstTable(InstTable, "DCF", 2, DecodeDCT_DCF);
   AddInstTable(InstTable, "LTORG", 0, DecodeLTORG);
 
-  FixedOrders = (FixedOrder *) malloc(sizeof(FixedOrder) * FixedOrderCount); InstrZ = 0;
+  InstrZ = 0;
   AddFixed("CLRT"  , 0x0008, False, CPU7000);
   AddFixed("CLRMAC", 0x0028, False, CPU7000);
   AddFixed("NOP"   , 0x0009, False, CPU7000);
@@ -1464,7 +1290,7 @@ static void InitFields(void)
   AddFixed("SETS"  , 0x0058, False, CPU7700);
   AddFixed("LDTLB" , 0x0038, True , CPU7700);
 
-  OneRegOrders = (OneRegOrder *) malloc(sizeof(OneRegOrder) * OneRegOrderCount); InstrZ = 0;
+  InstrZ = 0;
   AddOneReg("MOVT"  , 0x0029, CPU7000, False, False);
   AddOneReg("CMP/PZ", 0x4011, CPU7000, False, False);
   AddOneReg("CMP/PL", 0x4015, CPU7000, False, False);
@@ -1488,7 +1314,7 @@ static void InitFields(void)
   AddOneReg("BRAF"  , 0x0023, CPU7600, False, True );
   AddOneReg("BSRF"  , 0x0003, CPU7600, False, True );
 
-  TwoRegOrders = (TwoRegOrder *) malloc(sizeof(TwoRegOrder) * TwoRegOrderCount); InstrZ = 0;
+  InstrZ = 0;
   AddTwoReg("XTRCT" , 0x200d, False, CPU7000, 2);
   AddTwoReg("ADDC"  , 0x300e, False, CPU7000, 2);
   AddTwoReg("ADDV"  , 0x300f, False, CPU7000, 2);
@@ -1510,12 +1336,12 @@ static void InitFields(void)
   AddTwoReg("SHAD"  , 0x400c, False, CPU7700, 2);
   AddTwoReg("SHLD"  , 0x400d, False, CPU7700, 2);
 
-  MulRegOrders = (FixedMinOrder *) malloc(sizeof(FixedMinOrder) * MulRegOrderCount); InstrZ = 0;
+  InstrZ = 0;
   AddMulReg("MUL"   , 0x0007, CPU7600);
   AddMulReg("DMULU" , 0x3005, CPU7600);
   AddMulReg("DMULS" , 0x300d, CPU7600);
 
-  BWOrders = (FixedOrder *) malloc(sizeof(FixedOrder) * BWOrderCount); InstrZ = 0;
+  InstrZ = 0;
   AddBW("SWAP", 0x6008); AddBW("EXTS", 0x600e); AddBW("EXTU", 0x600c);
 
   InstrZ = 0;
@@ -1526,7 +1352,7 @@ static void InitFields(void)
 
   AddInstTable(InstTable, "REG", 0, CodeREG);
 
-  RegDefs = (TRegDef*) malloc(sizeof(TRegDef) * SRegCnt); InstrZ = 0;
+  InstrZ = 0;
   AddSReg("MACH",  0, CPU7000, FALSE);
   AddSReg("MACL",  1, CPU7000, FALSE);
   AddSReg("PR"  ,  2, CPU7000, FALSE);
@@ -1536,17 +1362,18 @@ static void InitFields(void)
   AddSReg("X1"  ,  9, CPU7000, TRUE );
   AddSReg("Y0"  , 10, CPU7000, TRUE );
   AddSReg("Y1"  , 11, CPU7000, TRUE );
+  AddSReg(NULL  ,  0, CPU7000, FALSE);
 }
 
 static void DeinitFields(void)
 {
   DestroyInstTable(InstTable);
-  free(FixedOrders);
-  free(OneRegOrders);
-  free(TwoRegOrders);
-  free(MulRegOrders);
-  free(BWOrders);
-  free(RegDefs);
+  order_array_free(FixedOrders);
+  order_array_free(OneRegOrders);
+  order_array_free(TwoRegOrders);
+  order_array_free(MulRegOrders);
+  order_array_free(BWOrders);
+  order_array_free(RegDefs);
 }
 
 /*-------------------------------------------------------------------------*/
@@ -1560,7 +1387,7 @@ static Boolean DecodeAttrPart_7000(void)
       WrError(ErrNum_TooLongAttr);
       return False;
     }
-    if (!DecodeMoto16AttrSize(*AttrPart.str.p_str, &AttrPartOpSize, False))
+    if (!DecodeMoto16AttrSize(*AttrPart.str.p_str, &AttrPartOpSize[0], False))
       return False;
   }
   return True;
@@ -1586,20 +1413,13 @@ static void MakeCode_7000(void)
   /* Attribut verwursten */
 
   if (*AttrPart.str.p_str)
-    SetOpSize(AttrPartOpSize);
+    SetOpSize(AttrPartOpSize[0]);
 
   if (DecodeMoto16Pseudo(OpSize, True))
     return;
 
   if (!LookupInstTable(InstTable, OpPart.str.p_str))
     WrStrErrorPos(ErrNum_UnknownInstruction, &OpPart);
-}
-
-static void InitCode_7000(void)
-{
-  FirstLiteral = NULL;
-  ForwardCount = 0;
-  SetFlag(&DSPAvail, DSPAvailName, False);
 }
 
 /*!------------------------------------------------------------------------
@@ -1619,6 +1439,7 @@ static void InternSymbol_7000(char *pArg, TempResult *pResult)
     pResult->DataSize = eSymbolSize32Bit;
     pResult->Contents.RegDescr.Reg = Reg;
     pResult->Contents.RegDescr.Dissect = DissectReg_7000;
+    pResult->Contents.RegDescr.compare = NULL;
   }
 }
 
@@ -1630,8 +1451,6 @@ static Boolean IsDef_7000(void)
 static void SwitchFrom_7000(void)
 {
   DeinitFields();
-  if (FirstLiteral)
-    WrError(ErrNum_MsgMissingLTORG);
 }
 
 static void SwitchTo_7000(void)
@@ -1657,15 +1476,15 @@ static void SwitchTo_7000(void)
   DissectReg = DissectReg_7000;
   SwitchFrom = SwitchFrom_7000;
   InitFields();
-  AddONOFF(SupAllowedCmdName, &SupAllowed, SupAllowedSymName, False);
+  onoff_supmode_add();
   AddONOFF("COMPLITERALS", &CompLiterals, CompLiteralsName, False);
-  AddMoto16PseudoONOFF();
+  AddMoto16PseudoONOFF(False);
 
-  AddONOFF("DSP"     , &DSPAvail  , DSPAvailName , False);
+  if (!onoff_test_and_set(e_onoff_reg_dsp))
+    SetFlag(&DSPAvail, DSPSymName, False);
+  AddONOFF(DSPCmdName, &DSPAvail, DSPSymName, False);
 
   CurrDelayed = False; PrevDelayed = False;
-
-  SetFlag(&DoPadding, DoPaddingName, False);
 }
 
 void code7000_init(void)
@@ -1673,7 +1492,4 @@ void code7000_init(void)
   CPU7000 = AddCPU("SH7000", SwitchTo_7000);
   CPU7600 = AddCPU("SH7600", SwitchTo_7000);
   CPU7700 = AddCPU("SH7700", SwitchTo_7000);
-
-  AddInitPassProc(InitCode_7000);
-  FirstLiteral = NULL;
 }

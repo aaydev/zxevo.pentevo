@@ -1,5 +1,5 @@
 
-;LAST UPDATE: 11.12.2013 savelij
+; LAST UPDATE: 18.10.2023 savelij
 
 		include ../../macros.a80
 		include ../../global_vars.a80
@@ -485,9 +485,13 @@ PALN		DB 0FFH,0FEH,0FDH,0FCH,0EFH,0EEH,0EDH,0ECH,0FFH,0DEH,0BDH,09CH,06FH,04EH,0
 		include ve31.a80
 		include ci.a80
 
+	IF MOMPASS = 1
+HZ	EQU $
+	ENDIF
+
 ;		IF HACK_RBIOS=0
 ;		ELSE
-		DUPL 0X3E20-$,0
+	DUPL 0x3E20 - $
 WR_MAS_SLA	LD BC,HD_HEAD;0XCF
 		LD A,(IY+2)
 		AND 1
@@ -558,6 +562,10 @@ PM_GO_TRDOS:
 
 ;		DUPL 0X3FFE-$,0
 ;		DB 0XB2
+
+	IF MOMPASS = 1
+;	ssss
+	ENDIF
 
 		DUPL 0X3FF8-$,0
 		DB "ATMCPM"

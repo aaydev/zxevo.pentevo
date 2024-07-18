@@ -16,11 +16,12 @@
 
 /*---------------------------------------------------------------------------*/
 
-static TFamilyDescr Descrs[] =
+static const TFamilyDescr Descrs[] =
 {
   { "680x0"        , 0x0001, eHexFormatMotoS   },
   { "DSP56000"     , 0x0009, eHexFormatMotoS   },
   { "MPC601"       , 0x0005, eHexFormatMotoS   },
+  { "PALM"         , 0x000e, eHexFormatIntel   },
   { "M-CORE"       , 0x0003, eHexFormatMotoS   },
   { "XGATE"        , 0x0004, eHexFormatMotoS   },
   { "68xx"         , 0x0061, eHexFormatMotoS   },
@@ -30,11 +31,13 @@ static TFamilyDescr Descrs[] =
   { "S12Z"         , 0x0045, eHexFormatMotoS   },
   { "68HC16"       , 0x0065, eHexFormatMotoS   },
   { "68RS08"       , 0x005e, eHexFormatMotoS   },
+  { "052001"       , 0x0022, eHexFormatMotoS   },
   { "H8/300(H}"    , 0x0068, eHexFormatMotoS   },
   { "H8/500"       , 0x0069, eHexFormatMotoS   },
   { "H16"          , 0x0040, eHexFormatMotoS   },
   { "SH7x00"       , 0x006c, eHexFormatMotoS   },
   { "HMCS400"      , 0x0050, eHexFormatMotoS   },
+  { "PPS-4"        , 0x0010, eHexFormatIntel   },
   { "65xx"         , 0x0011, eHexFormatMOS     },
   { "MELPS-7700"   , 0x0019, eHexFormatMOS     },
   { "MELPS-4500"   , 0x0012, eHexFormatIntel   },
@@ -43,6 +46,9 @@ static TFamilyDescr Descrs[] =
   { "MCS-48"       , 0x0021, eHexFormatIntel   },
   { "MCS-(2)51"    , 0x0031, eHexFormatIntel   },
   { "MCS-96/196"   , 0x0039, eHexFormatIntel   },
+  { "PDP-11"       , 0x0023, eHexFormatMotoS   },
+  { "WD16"         , 0x0024, eHexFormatMotoS   },
+  { "VAX"          , 0x0026, eHexFormatMotoS   },
   { "4004/4040"    , 0x003f, eHexFormatIntel   },
   { "8008"         , 0x003e, eHexFormatIntel   },
   { "8080/8085"    , 0x0041, eHexFormatIntel   },
@@ -88,6 +94,8 @@ static TFamilyDescr Descrs[] =
   { "TMS370xx"     , 0x0049, eHexFormatIntel   },
   { "MSP430"       , 0x004a, eHexFormatIntel   },
   { "TMS1000"      , 0x0007, eHexFormatIntel   },
+  { "IMP-16"       , 0x0017, eHexFormatIntel   },
+  { "IPC-16"       , 0x0018, eHexFormatIntel   },
   { "SC/MP"        , 0x006e, eHexFormatIntel   },
   { "807x"         , 0x006a, eHexFormatIntel   },
   { "COP4"         , 0x005f, eHexFormatIntel   },
@@ -95,6 +103,7 @@ static TFamilyDescr Descrs[] =
   { "SC14XXX"      , 0x006d, eHexFormatIntel   },
   { "NS32000"      , 0x0008, eHexFormatIntel   },
   { "ACE"          , 0x0067, eHexFormatIntel   },
+  { "CP-3F"        , 0x000f, eHexFormatIntel   },
   { "F8"           , 0x0044, eHexFormatIntel   },
   { "75xx"         , 0x005d, eHexFormatIntel   },
   { "78(C)xx"      , 0x007a, eHexFormatIntel   },
@@ -106,6 +115,7 @@ static TFamilyDescr Descrs[] =
   { "7720"         , 0x007d, eHexFormatIntel   },
   { "7725"         , 0x007e, eHexFormatIntel   },
   { "77230"        , 0x007f, eHexFormatIntel   },
+  { "V60"          , 0x000d, eHexFormatIntel32 },
   { "SYM53C8xx"    , 0x0025, eHexFormatIntel   },
   { "F2MC8"        , 0x0015, eHexFormatIntel   },
   { "F2MC16"       , 0x0016, eHexFormatIntel   },
@@ -123,14 +133,19 @@ static TFamilyDescr Descrs[] =
   { "PDK16"        , 0x001d, eHexFormatIntel   },
   { "1750"         , 0x004f, eHexFormatIntel   },
   { "CP1600"       , 0x000a, eHexFormatIntel   },
+  { "NANO"         , 0x000b, eHexFormatIntel   },
+  { "IM6100"       , 0x000c, eHexFormatIntel   },
+  { "RX"           , 0x001e, eHexFormatIntel32 },
+  { "SC61860"      , 0x001f, eHexFormatMotoS   },
+  { "SC62015"      , 0x0020, eHexFormatMotoS   },
   { NULL           , 0xffff, eHexFormatDefault }
 };
 
 /*---------------------------------------------------------------------------*/
 
-PFamilyDescr FindFamilyByName(const char *Name)
+const TFamilyDescr *FindFamilyByName(const char *Name)
 {
-  PFamilyDescr pRun;
+  const TFamilyDescr *pRun;
 
   for (pRun = Descrs; pRun->Name != NULL; pRun++)
     if (!strcmp(Name, pRun->Name))
@@ -139,9 +154,9 @@ PFamilyDescr FindFamilyByName(const char *Name)
   return NULL;
 }
 
-PFamilyDescr FindFamilyById(Word Id)
+const TFamilyDescr *FindFamilyById(Word Id)
 {
-  PFamilyDescr pRun;
+  const TFamilyDescr *pRun;
 
   for (pRun = Descrs; pRun->Name != NULL; pRun++)
     if (Id == pRun->Id)

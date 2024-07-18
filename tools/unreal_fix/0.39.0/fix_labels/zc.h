@@ -5,7 +5,6 @@
 class TZc
 {
     TSdCard SdCard;
-    u8 Cfg;
     u8 Status;
     u8 RdReg;
     u8 RdBuff;

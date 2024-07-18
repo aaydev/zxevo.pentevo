@@ -19,44 +19,58 @@
 
 #include "strutil.h"
 #include "stringlists.h"
-#include "cmdarg.h"
 #include "nls.h"
 #include "nlmessages.h"
 #include "cmdarg.rsc"
+#ifdef _USE_MSH
+# include "cmdarg.msh"
+#endif
+#include "cmdarg.h"
+
+/* --------------------------------------------------------------- */
 
 TMsgCat MsgCat;
-StringList FileArgList;
 
-static void ClrBlanks(char *tmp)
+static as_cmd_rec_t *sum_cmd_recs = NULL;
+static size_t sum_cmd_rec_cnt = 0;
+
+/* --------------------------------------------------------------- */
+
+static as_cmd_result_t ProcessFile(const char *Name_O,
+                                   const as_cmd_rec_t *p_cmd_recs, size_t cmd_rec_cnt,
+                                   as_cmd_results_t *p_results);
+
+static as_cmd_result_t cmd_write_help(Boolean negate, const char *p_arg, as_cmd_results_t *p_results)
 {
-  int cnt;
+  UNUSED(p_arg);
 
-  for (cnt = 0; as_isspace(tmp[cnt]); cnt++);
-  if (cnt > 0)
-    strmov(tmp, tmp + cnt);
+  if (negate)
+    return e_cmd_err;
+
+  p_results->write_help_exit = True;
+  return e_cmd_ok;
 }
 
-Boolean ProcessedEmpty(CMDProcessed Processed)
+static as_cmd_result_t cmd_write_version(Boolean negate, const char *p_arg, as_cmd_results_t *p_results)
 {
-  int z;
+  UNUSED(p_arg);
 
-  for (z = 1; z <= MAXPARAM; z++)
-    if (Processed[z])
-      return False;
-   return True;
+  if (negate)
+    return e_cmd_err;
+
+  p_results->write_version_exit = True;
+  return e_cmd_ok;
 }
 
-static void ProcessFile(char *Name_O, const CMDRec *pCMDRecs, int CMDRecCnt, CMDErrCallback ErrProc);
-
-static CMDResult ProcessParam(const CMDRec *pCMDRecs, int CMDRecCnt, const char *O_Param,
-                              const char *O_Next, Boolean AllowLink,
-                              CMDErrCallback ErrProc)
+static as_cmd_result_t ProcessParam(const as_cmd_rec_t *p_cmd_recs, size_t cmd_rec_cnt, const char *O_Param,
+                                    const char *O_Next, Boolean AllowLink,
+                                    as_cmd_results_t *p_results)
 {
-  int Start;
+  size_t Start;
   Boolean Negate;
-  int z, Search;
-  CMDResult TempRes;
-  String s, Param, Next;
+  size_t z, Search;
+  as_cmd_result_t TempRes;
+  String Param, Next;
 
   strmaxcpy(Param, O_Param, STRINGSIZE);
   strmaxcpy(Next, O_Next, STRINGSIZE);
@@ -72,13 +86,13 @@ static CMDResult ProcessParam(const CMDRec *pCMDRecs, int CMDRecCnt, const char 
   {
     if (AllowLink)
     {
-      ProcessFile(Param + 1, pCMDRecs, CMDRecCnt, ErrProc);
-      return CMDOK;
+      return ProcessFile(Param + 1, p_cmd_recs, cmd_rec_cnt, p_results);
     }
     else
     {
       fprintf(stderr, "%s\n", catgetmessage(&MsgCat, Num_ErrMsgNoKeyInFile));
-      return CMDErr;
+      strmaxcpy(p_results->error_arg, O_Param, sizeof(p_results->error_arg));
+      return e_cmd_err;
     }
   }
   if ((*Param == '-')
@@ -92,72 +106,75 @@ static CMDResult ProcessParam(const CMDRec *pCMDRecs, int CMDRecCnt, const char 
 
     if (Param[Start] == '#')
     {
-      for (z = Start + 1; z < (int)strlen(Param); z++)
+      for (z = Start + 1; z < (size_t)strlen(Param); z++)
         Param[z] = as_toupper(Param[z]);
       Start++;
     }
     else if (Param[Start] == '~')
     {
-      for (z = Start + 1; z < (int)strlen(Param); z++)
+      for (z = Start + 1; z < (size_t)strlen(Param); z++)
         Param[z] = as_tolower(Param[z]);
       Start++;
     }
 
-    TempRes = CMDOK;
+    TempRes = e_cmd_ok;
 
     Search = 0;
-    strmaxcpy(s, Param + Start, STRINGSIZE);
-    for (z = 0; z < (int)strlen(s); z++)
-      s[z] = as_toupper(s[z]);
-    for (Search = 0; Search < CMDRecCnt; Search++)
-      if ((strlen(pCMDRecs[Search].Ident) > 1) && (!strcmp(s, pCMDRecs[Search].Ident)))
+    for (Search = 0; Search < cmd_rec_cnt; Search++)
+      if ((strlen(p_cmd_recs[Search].p_ident) > 1) && (!as_strcasecmp(Param + Start, p_cmd_recs[Search].p_ident)))
         break;
-    if (Search < CMDRecCnt)
-      TempRes = pCMDRecs[Search].Callback(Negate, Next);
+    if (Search < cmd_rec_cnt)
+      TempRes = p_cmd_recs[Search].callback(Negate, Next);
+    else if (!as_strcasecmp(Param + Start, "help"))
+      TempRes = cmd_write_help(Negate, Next, p_results);
+    else if (!as_strcasecmp(Param + Start, "version"))
+      TempRes = cmd_write_version(Negate, Next, p_results);
 
     else
     {
-      for (z = Start; z < (int)strlen(Param); z++)
-        if (TempRes != CMDErr)
+      for (z = Start; z < (size_t)strlen(Param); z++)
+        if (TempRes != e_cmd_err)
         {
           Search = 0;
-          for (Search = 0; Search < CMDRecCnt; Search++)
-            if ((strlen(pCMDRecs[Search].Ident) == 1) && (pCMDRecs[Search].Ident[0] == Param[z]))
+          for (Search = 0; Search < cmd_rec_cnt; Search++)
+            if ((strlen(p_cmd_recs[Search].p_ident) == 1) && (p_cmd_recs[Search].p_ident[0] == Param[z]))
               break;
-          if (Search >= CMDRecCnt)
-            TempRes = CMDErr;
+          if (Search >= cmd_rec_cnt)
+            TempRes = e_cmd_err;
           else
           {
-            switch (pCMDRecs[Search].Callback(Negate, Next))
+            switch (p_cmd_recs[Search].callback(Negate, Next))
             {
-              case CMDErr:
-                TempRes = CMDErr;
+              case e_cmd_err:
+                TempRes = e_cmd_err;
                 break;
-              case CMDArg:
-                TempRes = CMDArg;
+              case e_cmd_arg:
+                TempRes = e_cmd_arg;
                 break;
-              case CMDOK:
+              case e_cmd_ok:
                 break;
-              case CMDFile:
+              case e_cmd_file:
                 break; /** **/
             }
           }
         }
     }
+    if (TempRes == e_cmd_err)
+      strmaxcpy(p_results->error_arg, Param, sizeof(p_results->error_arg));
     return TempRes;
   }
   else
-    return CMDFile;
+    return e_cmd_file;
 }
 
-static void DecodeLine(const CMDRec *pCMDRecs, int CMDRecCnt, char *OneLine,
-                       CMDErrCallback ErrProc)
+static as_cmd_result_t DecodeLine(const as_cmd_rec_t *p_cmd_recs, int cmd_rec_cnt, char *OneLine,
+                                  as_cmd_results_t *p_results)
 {
   int z;
   char *EnvStr[256], *start, *p;
   int EnvCnt = 0;
 
-  ClrBlanks(OneLine);
+  KillPrefBlanks(OneLine);
   if ((*OneLine != '\0') && (*OneLine != ';'))
   {
     start = OneLine;
@@ -180,103 +197,176 @@ static void DecodeLine(const CMDRec *pCMDRecs, int CMDRecCnt, char *OneLine,
     EnvStr[EnvCnt] = start;
 
     for (z = 0; z < EnvCnt; z++)
-      switch (ProcessParam(pCMDRecs, CMDRecCnt, EnvStr[z], EnvStr[z + 1], False, ErrProc))
+    {
+      switch (ProcessParam(p_cmd_recs, cmd_rec_cnt, EnvStr[z], EnvStr[z + 1], False, p_results))
       {
-        case CMDFile:
-          AddStringListLast(&FileArgList, EnvStr[z]);
+        case e_cmd_file:
+          AddStringListLast(&p_results->file_arg_list, EnvStr[z]);
           break;
-        case CMDErr:
-          ErrProc(True, EnvStr[z]);
-          break;
-        case CMDArg:
+        case e_cmd_err:
+          strmaxcpy(p_results->error_arg, EnvStr[z], sizeof(p_results->error_arg));
+          p_results->error_arg_in_env = True;
+          return e_cmd_err;
+        case e_cmd_arg:
           z++;
           break;
-        case CMDOK:
+        case e_cmd_ok:
           break;
       }
+    }
   }
-}
-
-static void ProcessFile(char *Name_O, const CMDRec *pCMDRecs, int CMDRecCnt, CMDErrCallback ErrProc)
-{
-  FILE *KeyFile;
-  String Name, OneLine;
-
-  strmaxcpy(Name, Name_O, STRINGSIZE);
-  ClrBlanks(OneLine);
-
-  KeyFile = fopen(Name, "r");
-  if (!KeyFile)
-    ErrProc(True, catgetmessage(&MsgCat, Num_ErrMsgKeyFileNotFound));
-  while (!feof(KeyFile))
-  {
-    errno = 0;
-    ReadLn(KeyFile, OneLine);
-    if ((errno != 0) && (!feof(KeyFile)))
-      ErrProc(True, catgetmessage(&MsgCat, Num_ErrMsgKeyFileError));
-    DecodeLine(pCMDRecs, CMDRecCnt, OneLine, ErrProc);
-  }
-  fclose(KeyFile);
+  return e_cmd_ok;
 }
 
 /*!------------------------------------------------------------------------
- * \fn     ProcessCMD(int argc, char **argv,
-                const CMDRec *pCMDRecs, int CMDRecCnt,
-                CMDProcessed Unprocessed,
-                char *EnvName, CMDErrCallback ErrProc)
+ * \fn     ProcessFile(const char *Name_O,
+                       const as_cmd_rec_t *p_cmd_recs, size_t cmd_rec_cnt,
+                       as_cmd_results_t *p_results)
+ * \brief  process arguments from file
+ * \param  Name_O file's name
+ * \param  p_cmd_recs, cmd_rec_cnt argument defintions
+ * \param  p_results result buffer
+ * \return e_cmd_ok or e_cmd_err
+ * ------------------------------------------------------------------------ */
+
+static as_cmd_result_t ProcessFile(const char *Name_O,
+                                   const as_cmd_rec_t *p_cmd_recs, size_t cmd_rec_cnt,
+                                   as_cmd_results_t *p_results)
+{
+  FILE *KeyFile;
+  String Name, OneLine;
+  as_cmd_result_t ret = e_cmd_ok;
+
+  strmaxcpy(Name, Name_O, STRINGSIZE);
+  KillPrefBlanks(OneLine);
+
+  KeyFile = fopen(Name, "r");
+  if (!KeyFile)
+  {
+    strmaxcpy(p_results->error_arg, catgetmessage(&MsgCat, Num_ErrMsgKeyFileNotFound), sizeof(p_results->error_arg));
+    ret = e_cmd_err;
+  }
+  while (!feof(KeyFile) && (ret == e_cmd_ok))
+  {
+    errno = 0;
+    ReadLn(KeyFile, OneLine);
+    if ((errno != 0) && !feof(KeyFile))
+    {
+      strmaxcpy(p_results->error_arg, catgetmessage(&MsgCat, Num_ErrMsgKeyFileError), sizeof(p_results->error_arg));
+      ret = e_cmd_err;
+    }
+    ret = DecodeLine(p_cmd_recs, cmd_rec_cnt, OneLine, p_results);
+  }
+  fclose(KeyFile);
+  return ret;
+}
+
+static int cmd_compare(const void *p1, const void *p2)
+{
+  const as_cmd_rec_t *p_rec1 = (const as_cmd_rec_t*)p1,
+                     *p_rec2 = (const as_cmd_rec_t*)p2;
+  int cmp_res = strcmp(p_rec1->p_ident, p_rec2->p_ident);
+
+  if (!cmp_res && (p_rec1 != p_rec2))
+    fprintf(stderr, "cmd_arg: option '%s' present twice\n", p_rec1->p_ident);
+  return cmp_res;
+}
+
+/*!------------------------------------------------------------------------
+ * \fn     as_cmd_register(const as_cmd_rec_t *p_add_recs, size_t add_rec_cnt)
+ * \brief  extend command record list
+ * \param  p_add_recs, add_rec_cnt records to add
+ * ------------------------------------------------------------------------ */
+
+void as_cmd_register(const as_cmd_rec_t *p_add_recs, size_t add_rec_cnt)
+{
+  as_cmd_rec_t *p_new_sum_recs;
+
+  if (sum_cmd_recs)
+    p_new_sum_recs = (as_cmd_rec_t*)realloc(sum_cmd_recs, sizeof(*p_new_sum_recs) * (sum_cmd_rec_cnt + add_rec_cnt));
+  else
+    p_new_sum_recs = (as_cmd_rec_t*)malloc(sizeof(*p_new_sum_recs) * (sum_cmd_rec_cnt + add_rec_cnt));
+  if (p_new_sum_recs)
+  {
+    memcpy(&p_new_sum_recs[sum_cmd_rec_cnt], p_add_recs, sizeof(*p_new_sum_recs) * add_rec_cnt);
+    sum_cmd_rec_cnt += add_rec_cnt;
+    sum_cmd_recs = p_new_sum_recs;
+    qsort(p_new_sum_recs, sum_cmd_rec_cnt, sizeof(*p_new_sum_recs), cmd_compare);
+  }
+}
+
+/*!------------------------------------------------------------------------
+ * \fn     as_cmd_process(int argc, char **argv,
+                          const char *p_env_name, as_cmd_results_t *p_results)
  * \brief  arguments from command line and environment
  * \param  argc command line arg count as handed to main()
  * \param  argv command line args as handed to main()
- * \param  pCMDRecs command line switch descriptors
- * \param  CMDRecCnt # of command line switch descriptors
- * \param  Unprocessed returns bit mask of args not handled
- * \param  EnvName environment variable to draw additional args from
- * \param  CMDErrCallback called upon faulty args
+ * \param  p_env_name environment variable to draw additional args from
+ * \param  p_file_arg_list gets populated with file arguments
+ * \return e_cmd_ok, or e_cmd_err on faulty arg
  * ------------------------------------------------------------------------ */
 
-void ProcessCMD(int argc, char **argv,
-                const CMDRec *pCMDRecs, int CMDRecCnt,
-                CMDProcessed Unprocessed,
-                const char *EnvName, CMDErrCallback ErrProc)
+const char *argv0;
+
+as_cmd_result_t as_cmd_process(int argc, char **argv,
+                               const char *p_env_name, as_cmd_results_t *p_results)
 {
   int z;
   String EnvLine;
   char *pEnv;
+  Boolean skip_next;
 
-  pEnv = getenv(EnvName);
+  p_results->file_arg_list = NULL;
+  p_results->write_help_exit =
+  p_results->write_version_exit = False;
+  p_results->error_arg_in_env = False;
+  p_results->error_arg[0] = '\0';
+
+  pEnv = getenv(p_env_name);
   strmaxcpy(EnvLine, pEnv ? pEnv : "", STRINGSIZE);
 
   if (EnvLine[0] == '@')
-    ProcessFile(EnvLine + 1, pCMDRecs, CMDRecCnt, ErrProc);
+  {
+    if (e_cmd_err == ProcessFile(EnvLine + 1, sum_cmd_recs, sum_cmd_rec_cnt, p_results))
+      return e_cmd_err;
+  }
   else
-    DecodeLine(pCMDRecs, CMDRecCnt, EnvLine, ErrProc);
+  {
+    if (e_cmd_err == DecodeLine(sum_cmd_recs, sum_cmd_rec_cnt, EnvLine, p_results))
+      return e_cmd_err;
+  }
 
-  for (z = 0; z < argc; z++)
-    Unprocessed[z] = (z != 0);
-  for (z = argc; z <= MAXPARAM; z++)
-    Unprocessed[z] = False;
+  argv0 = argv[0];
 
+  skip_next = False;
   for (z = 1; z < argc; z++)
-    if (Unprocessed[z])
-      switch (ProcessParam(pCMDRecs, CMDRecCnt, argv[z], (z + 1 < argc) ? argv[z + 1] : "",
-                           True, ErrProc))
-      {
-        case CMDErr:
-          ErrProc(False, argv[z]);
-          break;
-        case CMDOK:
-          Unprocessed[z] = False;
-          break;
-        case CMDArg:
-          Unprocessed[z] = Unprocessed[z + 1] = False;
-          break;
-        case CMDFile:
-          AddStringListLast(&FileArgList, argv[z]);
-          break;
-      }
+  {
+    if (skip_next)
+    {
+      skip_next = False;
+      continue;
+    }
+    switch (ProcessParam(sum_cmd_recs, sum_cmd_rec_cnt, argv[z], (z + 1 < argc) ? argv[z + 1] : "",
+                         True, p_results))
+    {
+      case e_cmd_err:
+        p_results->error_arg_in_env = False;
+        strmaxcpy(p_results->error_arg, argv[z], sizeof(p_results->error_arg));
+        return e_cmd_err;
+      case e_cmd_ok:
+        break;
+      case e_cmd_arg:
+        skip_next = True;
+        break;
+      case e_cmd_file:
+        AddStringListLast(&p_results->file_arg_list, argv[z]);
+        break;
+    }
+  }
+  return e_cmd_ok;
 }
 
-const char *GetEXEName(const char *argv0)
+const char *as_cmdarg_get_executable_name(void)
 {
   const char *pos;
 
@@ -284,9 +374,13 @@ const char *GetEXEName(const char *argv0)
   return (pos) ? pos + 1 : argv0;
 }
 
-void cmdarg_init(char *ProgPath)
+void as_cmdarg_init(char *ProgPath)
 {
-  InitStringList(&FileArgList);
-  opencatalog(&MsgCat, "cmdarg.msg", ProgPath, MsgId1, MsgId2);
+#ifdef _USE_MSH
+  msg_catalog_open_buffer(&MsgCat, cmdarg_msh_data, sizeof(cmdarg_msh_data), MsgId1, MsgId2);
+  UNUSED(ProgPath);
+#else
+  msg_catalog_open_file(&MsgCat, "cmdarg.msg", ProgPath, MsgId1, MsgId2);
+#endif
 }
 

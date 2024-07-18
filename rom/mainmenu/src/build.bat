@@ -18,7 +18,7 @@ p2bin cmosset.p rom\cmosset.rom -r $-$ -k
 mhmt -mlz rom\main.rom ..\main_pack.rom
 mhmt -mlz rom\main_fe.rom ..\main_fe_pack.rom
 mhmt -mlz rom\cmosset.rom ..\cmosset_pack.rom
-mhmt -mlz rom\chars_eng.bin ..\chars_pack.rom
+mhmt -mlz chars_eng.bin ..\chars_pack.rom
 
 rem del *.rom
 

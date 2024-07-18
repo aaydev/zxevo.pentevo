@@ -45,6 +45,7 @@ typedef enum
   ErrNum_StackNotEmpty = 230,
   ErrNum_NULCharacter = 240,
   ErrNum_PageCrossing = 250,
+  ErrNum_WUnderRange = 255,
   ErrNum_WOverRange = 260,
   ErrNum_NegDUP = 270,
   ErrNum_ConvIndX = 280,
@@ -58,6 +59,13 @@ typedef enum
   ErrNum_PaddingAdded = 360,
   ErrNum_RegNumWraparound = 370,
   ErrNum_IndexedForIndirect = 380,
+  ErrNum_NotInNormalMode = 390,
+  ErrNum_NotInPanelMode = 400,
+  ErrNum_ArgOutOfRange = 410,
+  ErrNum_TrySkipMultiwordInstruction = 420,
+  ErrNum_SignExtension = 430,
+  ErrNum_MeansE = 440,
+  ErrNum_NeedShortIO = 450,
   ErrNum_DoubleDef = 1000,
   ErrNum_SymbolUndef = 1010,
   ErrNum_InvSymName = 1020,
@@ -88,7 +96,11 @@ typedef enum
   ErrNum_ExpectIntOrString = 1146,
   ErrNum_ExpectReg = 1147,
   ErrNum_RegWrongTarget = 1148,
+  ErrNum_FloatButInt = 1149,
   ErrNum_NoRelocs = 1150,
+  ErrNum_IntOrFloatButReg = 1151,
+  ErrNum_IntOrStringButReg = 1152,
+  ErrNum_IntButReg = 1153,
   ErrNum_UnresRelocs = 1155,
   ErrNum_Unexportable = 1156,
   ErrNum_UnknownInstruction = 1200,
@@ -99,6 +111,7 @@ typedef enum
   ErrNum_NotPwr2 = 1322,
   ErrNum_NotAligned = 1325,
   ErrNum_DistTooBig = 1330,
+  ErrNum_TargOnDiffPage = 1331,
   ErrNum_InAccReg = 1335,
   ErrNum_NoShortAddr = 1340,
   ErrNum_InvAddrMode = 1350,
@@ -112,6 +125,7 @@ typedef enum
   ErrNum_UnknownInt = 1368,
   ErrNum_DuplicateInt = 1369,
   ErrNum_JmpDistTooBig = 1370,
+  ErrNum_JmpDistIsZero = 1371,
   ErrNum_DistIsOdd = 1375,
   ErrNum_SkipTargetMismatch = 1376,
   ErrNum_InvShiftArg = 1380,
@@ -195,7 +209,7 @@ typedef enum
   ErrNum_InvArgPair = 1890,
   ErrNum_NotOnThisAddress = 1900,
   ErrNum_NotFromThisAddress = 1905,
-  ErrNum_TargOnDiffPage = 1910,
+  ErrNum_JmpTargOnDiffPage = 1910,
   ErrNum_TargOnDiffSection = 1911,
   ErrNum_CodeOverflow = 1920,
   ErrNum_AdrOverflow = 1925,
@@ -258,6 +272,15 @@ typedef enum
   ErrNum_InvCfgList = 2253,
   ErrNum_ConfBitBltOpt = 2254,
   ErrNum_UnknownBitBltOpt = 2255,
+  ErrNum_InvCBAR = 2260,
+  ErrNum_InAccPageErr = 2270,
+  ErrNum_InAccFieldErr = 2280,
+  ErrNum_TargInDiffField = 2281,
+  ErrNum_InvCombination = 2290,
+  ErrNum_UnmappedChar = 2300,
+  ErrNum_MultiCharInvLength = 2310,
+  ErrNum_NoTarget = 2320,
+  ErrNum_UserError = 9990,
   ErrNum_InternalError = 10000,
   ErrNum_OpeningFile = 10001,
   ErrNum_ListWrError = 10002,
@@ -269,8 +292,12 @@ typedef enum
 } tErrorNum;
 
 struct sLineComp;
+struct sStrComp;
 
-extern Boolean ChkRange(LargeInt Value, LargeInt Min, LargeInt Max);
+extern Boolean ChkRangePos(LargeInt Value, LargeInt Min, LargeInt Max, const struct sStrComp *p_comp);
+#define ChkRange(Value, Min, Max) ChkRangePos(Value, Min, Max, NULL)
+extern Boolean ChkRangeWarnPos(LargeInt Value, LargeInt Min, LargeInt Max, const struct sStrComp *p_comp);
+#define ChkRangeWarn(Value, Min, Max) ChkRangeWarnPos(Value, Min, Max, NULL)
 
 extern Boolean ChkArgCntExtPos(int ThisCnt, int MinCnt, int MaxCnt, const struct sLineComp *pComp);
 #define ChkArgCnt(MinCnt, MaxCnt) ChkArgCntExtPos(ArgCnt, MinCnt, MaxCnt, NULL)
@@ -279,6 +306,9 @@ extern Boolean ChkArgCntExtEitherOr(int ThisCnt, int EitherCnt, int OrCnt);
 
 extern Boolean ChkMinCPUExt(CPUVar MinCPU, tErrorNum ErrorNum);
 #define ChkMinCPU(MinCPU) ChkMinCPUExt(MinCPU, ErrNum_InstructionNotSupported)
+
+extern Boolean AChkMinCPUExtPos(CPUVar MinCPU, tErrorNum ErrorNum, const struct sStrComp *pComp);
+#define AChkMinCPUPos(MinCPU, pComp) AChkMinCPUExtPos(MinCPU, ErrNum_AddrModeNotSupported, pComp)
 
 extern Boolean ChkMaxCPUExt(CPUVar MaxCPU, tErrorNum ErrorNum);
 #define ChkMaxCPU(MaxCPU) ChkMaxCPUExt(MaxCPU, ErrNum_InstructionNotSupported)

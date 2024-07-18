@@ -1,9 +1,9 @@
 
-;LAST UPDATE: 01.12.2014 savelij
+; LAST UPDATE: 01.11.2023 savelij
 
 ;===============—’…ˆ… ‘ SD NEOGS=========================
 ;—’…ˆ… "A" ‘…Š’ŽŽ‚
-READNGS		EX AF,AF'
+READ_NEOGS	EX AF,AF'
 		LD A,_DEV_READ
 		CALL COMM2SD
 		EX AF,AF'
@@ -13,7 +13,7 @@ READNGS		EX AF,AF'
 SDRDSN1		EX AF,AF'
 		OUT (GSCOM),A
 		CALL WC_
-		LD DE,0X0200
+		LD DE,0x0200
 SDRDSN2		CALL WN_
 		INI
 		DEC DE
@@ -25,7 +25,7 @@ SDRDSN2		CALL WN_
 		JR NZ,SDRDSN1
 		CALL WN_
 SDRDSN3		IN A,(C)
-		CP 0X77
+		CP 0x77
 		JR NZ,SDRDSN3
 		POP BC
 		POP DE
@@ -34,7 +34,7 @@ SDRDSN3		IN A,(C)
 
 ;……„€’—ˆŠ ŠŽŒ€„/€€Œ…’Ž‚ ‚ „€‰‚… € NeoGS
 COMM2SD		OUT (GSDAT),A			;“˜‹€ ŠŽŒ€„€ „€‰‚…“
-		LD A,0X1E
+		LD A,0x1E
 		OUT (GSCOM),A			;“˜‹€ ŠŽŒ€„€ Ž˜ˆ‚Š…
 		CALL WC_
 		LD A,B

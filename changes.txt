@@ -1,0 +1,1257 @@
+Редакция	Давность	Автор	Путь	Запись в журнале	Различия
+1128	2024-07-06 20:59:24	lvd	/	Add zxevo DRAM datasheet	 
+1127	2024-04-19 19:58:20	chrv	/	Add ViewSonic VP930	 
+1126	2024-03-26 09:27:20	savelij	/	Обновлен asl, старые версии удалены.	 
+1125	2024-03-17 20:17:19	savelij	/	Обновление асма asl с патчем (описание в readme.txt) на базе сборки 265.	 
+1124	2024-03-17 15:44:06	dimkam	/	unreal: добавлена работа z-контроллера через ch341	 
+1123	2024-03-12 14:54:23	savelij	/	Обновлен компилер asl и залита по аналогии 262 сборка. С исходними архивами	 
+1122	2024-02-29 13:38:07	chrv	/	- revert to 1119	 
+1121	2024-02-29 13:26:53	chrv	/	- update supported monitors list
+- add Rev.CV from SolegStar	 
+1120	2024-02-12 22:36:53	savelij	/	ERS 0.59.13:
+- на экран Magic Service добавлено отображение портов ВГшки, адрес бряка и текущую частоту
+процессора.
+- переделана задержка детекта HDD для срабатывания только после включения.
+- убран детект SLAVE HDD.
+DOS 0.58:
+- добавлена расширенная команда TURBO для просмотра/установки частоты процессора.
+Обновлен асм, бинарики собраны только EXE. Залит его исходный архив.	 
+1119	2024-02-12 09:39:05	DimkaM	/	unreal baseconf: убрано чтение порта BE	 
+1118	2024-02-11 14:01:23	lvd	/	unreal: rebuilt 64bit binary	 
+1117	2024-02-11 12:52:10	dimkam	/	unreal: фикс предыдущего комита, на чтение порта FF тоже влияет бит записи палитры	 
+1116	2024-02-11 12:37:33	dimkam	/	Unreal baseconf: added palette write enable to FE (no FE action when palette write is enabled)	 
+1115	2024-02-10 14:21:04	lvd	/	baseconf: rebuilt	 
+1114	2024-02-10 14:20:51	lvd	/	baseconf: fixed path to make_fw tool	 
+1113	2024-02-10 14:20:36	lvd	/	baseconf: compiled qua	 
+1112	2024-02-10 13:59:16	lvd	/	baseconf: added palette write enable to FE (no FE action when palette write is enabled)	 
+1111	2024-01-23 16:32:39	chrv	/	Add supported monitors	 
+1110	2024-01-18 23:10:28	chrv	/	Add Asus VS238N to supported_monitors.	 
+1109	2024-01-13 22:23:37	lvd	/	unreal: rebuilt i386 and amd64 binaries	 
+1108	2024-01-13 21:17:17	alone	/	-emul: в 8bpp режимах (например, GDI) и ATM3 палитре неправильно рендерился экран. теперь в 8bpp режимах доступна только палитра ATM: if ((conf.mem_model == MM_ATM3) && ((comp.pBF&0x20) != 0) && (temp.obpp == 32))	 
+1107	2024-01-08 09:57:08	lvd	/	unreal: converted draw.cpp to utf8	 
+1106	2024-01-07 20:24:43	lvd	/	unreal: set emul.exe to executable	 
+1105	2023-11-01 22:16:44	chrv	/	add supported monitors	 
+1104	2023-10-11 20:36:41	chrv	/	doc: add ay-printer scheme and doc	 
+1103	2023-10-09 09:03:26	chrv	/	new supported monitors add to list	 
+1102	2023-10-08 14:25:06	chrv	/	release zxevo_fw.bin:
+- Ctrl-Alt-Del any combination to reset computer;
+- RS232: add 7bit LSR - half full FIFO flag.	 
+1101	2023-10-02 17:53:06	lvd	/	unreal: previous fix built with mingw	 
+1100	2023-10-01 23:46:06	galstaff	/	Фикс для GCC	 
+1099	2023-10-01 22:14:50	galstaff	/	Поддержка MoonSound на портах C2-C7	 
+1098	2023-09-24 16:39:46	dimkam	/	AVR: некоторые Sega-Pad'ы детектились как 8ми кнопочные	 
+1097	2023-09-14 17:44:54	chrv	/	baseconf:
+- add to rs232: LSR major bit is indicator of half-full receivers fifo;
+- fix RCtrl+RAlt+Del hard reset.	 
+1096	2023-09-01 20:34:12	chrv	/	update compatible monitors list	 
+1095	2023-09-01 19:41:43	chrv	/	update compatible monitors list	 
+1094	2023-08-04 23:36:52	alone	/	+Unreal_NS update	 
+1093	2023-07-30 18:52:02	lvd	/	add exes from the mingw build	 
+1092	2023-07-30 18:45:41	lvd	/	fix shit-o-code by NSFW for compilability in 64bit	 
+1091	2023-07-30 10:09:44	alone	/	Unreal: NS: Закостылен переход с 0000 к FFFF в режиме отображения меток отдельной строкой
+Закостылено стопорение PageUp-а в режиме отображения меток отдельной строкой
+так что теперь его можно как то юзать
+но включать по дефолту я его не буду тк оно все равно ущербное и будет потом наверно заменено
+и PageUp PageDown ща листает больше чем на реально отображаемый участок!!!
+"Max Speed: On" теперь всегда висит в статусе (тк не всегда это очевидно)
+Выпелены некоторые отладочные принты cpущие в консоль	 
+1090	2023-07-26 12:32:02	alone	/		 
+1089	2023-07-26 10:08:50	savelij	/	В папку z80_soft добавлен тест HDD.	 
+1088	2023-07-16 23:29:15	alone	/	+Unreal_NS	 
+1087	2023-07-13 22:48:36	lvd	/	unreal: rebuilt exes	 
+1086	2023-07-13 14:26:57	lvd	/	unreal: add RW bit 3 to SMUC port #7FBA (Muchkin)	 
+1085	2023-06-17 23:25:55	lvd	/	baseconf: removed completely xxBE read ports from RTL	 
+1084	2023-06-17 22:51:13	chrv	/	+ update build avr/baseconf + fpga/base_trdemu
++ add my winbuild bat-file	 
+1083	2023-06-14 11:52:09	chrv	/	Update ZXEVO_CS from solegstar:
+- update universal patterns for capasitors and diods.	 
+1082	2023-05-25 23:00:09	lvd	/	unreal: added -I. to makefile (path for searching png/whatever.h includes), added #include png/pnglibconf.h to sshot_png.h, recompiled EXEs	 
+1081	2023-05-24 12:34:52	fyrex	/	unreal: libpng16 NEW + x64 version	 
+1080	2023-05-16 12:10:04	chrv	/	Add rev_cs from Solegstar	 
+1079	2023-05-12 10:57:41	fyrex	/	unreal: return to zlib64.dll for 64 bit	 
+1078	2023-05-11 16:47:28	fyrex	/	unreal: zlib for CSW as static LIB instead of DLL	 
+1077	2023-05-11 13:56:43	fyrex	/	unreal: strcasecmp msvc fix	 
+1076	2023-05-11 12:27:35	savelij	/	Мелкое исправление в доке.	 
+1075	2023-05-08 23:10:17	lvd	/	build .exe from previous commit	 
+1074	2023-05-08 22:09:02	fyrex	/	bass 2.4.17 + 64bit versions work fine	 
+1073	2023-05-05 13:42:26	lvd	/	unreal: added comments to the previous commit	 
+1072	2023-05-05 13:40:49	lvd	/	unreal: added building of emul.exe and emul64.exe, emul64.exe now has default config of the same name as emul.exe (both would use emul.ini)	 
+1071	2023-04-07 13:56:46	savelij	/	Обновлен zxevo_user_manual.pdf для ревизии C	 
+1070	2023-03-09 09:33:37	DimkaM	/	Обновление документации.	 
+1069	2023-03-07 22:22:43	dimkam	/	Изменён алгоритм прошивки ПЗУ:
+при заливке полного файла стирается весь чип.
+при заливке custom-rom, в чипы с блоками не равными 64 килобайтам, не подается команда стирания	 
+1068	2023-03-07 19:30:03	dimkam	/	Унифицирована сборка ПЗУ	 
+1067	2023-02-24 19:24:05	savelij	/	ERS 0.59.11:
+- код флешера передвинут по адресам выше 0x8000.
+- при размере TRD образа больше или меньше стандартныx 640к загрузка в рамдиск без запроса.
+- добавлен пункт демонтирования всех смонтированных образов.	 
+1066	2023-02-23 11:41:15	dimkam	/	Переименован файл VIDEO, так как в windows коллизия с папкой video	 
+1065	2023-02-15 21:48:22	savelij	/	NewDOS 0.57:
+при попытке чтения/записи за пределами 80 дорожки выдается ошибка «массив не найден».	 
+1064	2023-01-23 15:19:43	lvd	/	sdload: video_sync:	 
+1063	2023-01-21 15:52:33	lvd	/	sdload: video_sync: char sync signal added	 
+1062	2023-01-20 01:14:29	lvd	/	sdload:	 
+1061	2023-01-20 00:53:04	lvd	/	sdload: video_sync: fetch control signals	 
+1060	2023-01-17 17:56:08	lvd	/	sdload: video_sync + some tb for it	 
+1059	2023-01-17 17:55:39	lvd	/	sdload: video_sync + some tb for it	 
+1058	2023-01-16 13:09:30	lvd	/	restored VIDEO in sdload	 
+1057	2023-01-16 09:49:14	savelij	/		 
+1056	2023-01-16 09:46:50	savelij	/	ERS 0.59.10:
+- поправлена запись в драйвере HDD Nemo аналогично чтения для внутреннего/внешнего вызова.
+- исправлена ошибка в драйвере HDD Nemo.	 
+1055	2023-01-16 00:42:48	lvd	/	sdload: video: video_sync.v: WIP	 
+1054	2023-01-15 17:56:03	lvd	/	sdload: video: mkfont.py finished (not yet debugged)	 
+1053	2023-01-15 11:02:29	lvd	/	sdload: mkfont,py: generate_font()	 
+1052	2023-01-15 11:01:22	lvd	/	sdload: mkfont,py: generate_font()	 
+1051	2023-01-15 02:01:18	lvd	/	sdload: mkfont,py	 
+1050	2023-01-15 01:14:17	lvd	/	sdload:	 
+1049	2023-01-13 19:21:22	lvd	/	sdload: add actual 6x6 font	 
+1048	2023-01-12 23:01:52	lvd	/	sdload: measured and written down raster times for both TV and VGA 60Hz modes	 
+1047	2022-12-26 21:20:47	savelij	/	ERS 0.59.09:
+- исправлена работа ATM CP/M.	 
+1046	2022-12-21 13:31:34	savelij	/	ERS 0.59.08:
+поправлен драйвер SD карты для запуска хобет.	 
+1045	2022-12-05 01:14:55	lvd	/	docs: update zxevo_base_configuration with a description of 'trdos emulation' mode	 
+1044	2022-12-04 13:15:50	lvd	/	base_trdemu: rebuild zxevo_fw.bin	 
+1043	2022-12-04 13:15:28	lvd	/	base_trdemu: rebuild .sof/.rbf	 
+1042	2022-12-04 13:06:47	lvd	/	base_trdemu: fix 'exit from nmi while into trdemu' not to also exit from trdemu mode	 
+1041	2022-12-03 23:56:38	savelij	/	NEO-DOS 0.56:
+- поправлена эмуляция команды ВГшки 0xC0	 
+1040	2022-12-03 12:51:32	lvd	/	base_trdemu: removed sd card fix branch	 
+1039	2022-11-30 20:12:07	lvd	/	base_trdemu: tb fix for ROM size=512k	 
+1038	2022-11-29 13:22:55	lvd	/	base_trdemu: updated rom emulator a bit	 
+1037	2022-11-29 13:22:20	lvd	/	unreal: added Makefile target to rebuild .exe without rebuilding dependencies (*.d)	 
+1036	2022-11-21 17:50:12	dimkam	/	unreal: исправлена fe-эмуляция	 
+1035	2022-11-13 12:31:26	savelij	/	ERS 0.59.07:
+- при входе в NMI сделано глушение двух AY без сохранения/восстановления регистров.
+- убраны ifdef поддержки резидента Honey Comander.	 
+1034	2022-11-08 20:38:51	alone	/	+ULAplus only works in 128K raster	 
+1033	2022-11-08 20:09:43	alone	/	-ULAplus was not working (wbcbz7). now all 8 colour levels
+*palette blinking only in 48K raster, 128K raster - reduced blinking, Pentagon raster - no blinking
++Ctrl=Symbol Shift, Alt=Extend Mode	 
+1032	2022-10-24 10:36:22	savelij	/	Перезалив собранных ROM файлов.	 
+1031	2022-10-24 10:16:50	savelij	/	ERS 0.59.06:
+- сделано сохранение/восстановление перехода на обработчик NMI.	 
+1030	2022-10-19 21:44:57	savelij	/	ERS 0.59.05, EVO-DOS(NEO-DOS) 0.55:
+вернул в свн zxevo-fe.rom;
+добавлено озвучивание любых нажатий, если включено в Setup;
+исправлен порядок копирования сектора в буфер при записи в смонтированный образ.	 
+1029	2022-10-14 13:32:33	chrv	/	- add ScorpEvo sources	 
+1028	2022-10-13 23:08:55	savelij	/	ERS 0.59.04 исправлено определения типа FAT при отсутствии MBR.	 
+1027	2022-10-09 12:31:33	savelij	/	Перезаливка zxevo.rom	 
+1026	2022-10-08 22:21:14	savelij	/		 
+1025	2022-09-28 23:11:25	dimkam	/	изменена частота клока sync sega-пада, с 24kHz до 96kHz	 
+1024	2022-09-28 22:58:30	dimkam	/	изменены дополнительные пины sega-пада	 
+1023	2022-09-25 18:26:31	dimkam	/	Добавлена поддержка Sega-геймпада	 
+1022	2022-09-25 17:37:52	lvd	/	kempston joy: changed to 8-bit iface	 
+1021	2022-09-13 20:24:46	lvd	/	unreal: added README	 
+1020	2022-09-13 20:11:33	lvd	/	unreal: added AMD64 and LTO options to Makefile, removed unused makefiles from sub-dirs	 
+1019	2022-09-13 14:08:13	lvd	/	unreal: changed dependecies described in Makefile	 
+1018	2022-09-13 14:00:47	lvd	/	unreal: added dependencies generation for compile	 
+1017	2022-09-13 12:50:57	lvd	/	unreal: fixed SSE2 turnoff based on cryptic compiler defines, beautified makefile a little	 
+1016	2022-09-13 11:45:44	lvd	/	unreal: moved to SSE2 build	 
+1015	2022-09-13 11:19:30	lvd	/	unreal: removed older Makefiles, now the only one is for mingw cross-build	 
+1014	2022-09-13 11:17:51	lvd	/	unreal: removed older .cmd files	 
+1013	2022-09-12 19:58:17	lvd	/	unreal 0.39.0: fixed 'cast from ‘u_char*’ {aka ‘unsigned char*’} to ‘u_int’' error when compiling for 64bit	 
+1012	2022-08-25 21:39:02	savelij	/	Добавил сборочный батник для сборки полной прошивки с TR-DOS 5.03	 
+1011	2022-08-21 21:10:35	savelij	/	Neo-DOS 0.53:
+перемещение кода расширенных команд для восстановления векторов прерывания im2.	 
+1010	2022-07-20 10:20:02	savelij	/	ERS 0.59.02:
+- исправлено не правильный возврат типа FAT после инициализации переменных раздела.
+- исправлено не выставление типа FAT при отсутствии MBR.	 
+1009	2022-06-16 12:03:47	alone	/	-unreal: set nobright level in "alone" palette to AA (as in emulators by Shalaev and Lion17), fix zero+bright level in ATM palette (was 80, as if gamma=1.0, now AA)	 
+1008	2022-06-15 22:51:34	savelij	/	Обновление доки на ERS	 
+1007	2022-06-15 22:51:13	savelij	/	ERS 0.59.01
+- исправлено вычисление смещений областей на FAT при одной FAT таблице.
+- исправлено вычисление смещения первой FAT таблицы.
+- исправлен адрес порта чтения данных для SMUC контроллера для мини загрузчика.	 
+1006	2022-01-23 22:06:40	dimkam	/	rebuild unreal	 
+1005	2022-01-22 22:07:16	savelij	/	Добавил пропущенный для сборки файл.	 
+1004	2022-01-17 13:46:28	dimkam	/	remove tools\unreal_fix\0.39.0\fix_build	 
+1003	2022-01-17 11:26:46	dimkam	/	исправлена FE-эмуляции (inir и т.п.)	 
+1002	2022-01-17 09:55:02	lvd	/	unreal: removed 0.38.4	 
+1001	2022-01-17 09:45:04	savelij	/	Поправил сборочные скрипты, права доступа наверно опять потерялись или отсутствуют.	 
+1000	2022-01-16 23:22:47	lvd	/	sdload	 
+999	2022-01-15 23:28:16	savelij	/	ERS 0.59 NEO-DOS 0.52 подробности в описании.	 
+998	2022-01-07 22:29:13	savelij	/	Исправление оглавления в zxevo_base_configuration.odt и pdf	 
+997	2021-12-28 19:59:09	alone	/	+added top.sof for base_trdemu	 
+996	2021-12-26 09:56:12	lvd	/	fixed sdcard reads when 48/128k contention mode slows down sdcard IO cycles. Also fixed wire/always pattern in 444 palette made by alone (quartus was quite ok with it while simulator refused to compile)	 
+995	2021-12-25 21:05:24	savelij	/	Обновление доки про порты 0xBE, 0XBD (lvd)	 
+994	2021-12-25 19:50:12	lvd	/	built zxevo_fw.bin with previous commit's fix	 
+993	2021-12-25 19:45:55	lvd	/	sd iface testing: suggested fix to broken sd card read when IO contention happens	 
+992	2021-12-25 19:20:04	lvd	/	sd iface testing: added logging, fixed ROM	 
+991	2021-12-25 18:14:48	lvd	/	simulator test for nedoos load with 48/128k contention -- rom source added	 
+990	2021-12-25 16:50:47	lvd	/	added DimkaM rom for sd iface testing	 
+989	2021-12-08 08:06:36	lvd	/	rom: now build_full.sh accepts asl and mhmt paths either in absolute or in relative form, relative to where the script is run from	 
+988	2021-12-08 01:24:38	lvd	/	rom: change build_full.sh to use 'source build.sh' which does not run another bash process and is more like 'include'	 
+987	2021-12-08 01:22:14	lvd	/	rom: change individual build.sh to support external tools paths, change build_full.sh to be runnable from any dir	 
+986	2021-12-06 08:58:13	lvd	/	unreal: fix_labels: rebuilt with mingw	 
+985	2021-12-04 21:18:51	alone	/	+Unreal Speccy: добавлена палитра ATM3 в режиме d3d (не gdi)	 
+984	2021-12-01 18:07:38	lvd	/	base_trdemu: rebuild zxevo_fw.bin with changes from previous commit	 
+983	2021-12-01 18:01:10	lvd	/	fpga: add extra fetch bufffer for Z80, now there's one for opcode and one for data. (psk7)	 
+982	2021-11-28 15:32:53	lvd	/	added +x to all scripts and asl executables	 
+981	2021-11-25 18:36:02	lvd	/	unreal_fix: add converting tool, convert russian docs to utf-8	 
+980	2021-11-24 14:53:46	lvd	/	zxevo_base_configuration.pdf: added values for addr bits 10,11 during ddpalette setup	 
+979	2021-11-24 00:53:06	alone	/	- unreal_fix: исправлено направление колеса мыши (Alone Coder), исправлен noise 0 (Dexus)	 
+978	2021-11-23 00:58:13	lvd	/	zxevo_base_configuration.pdf -- some fixes for dpalette docs	 
+977	2021-11-22 18:46:09	savelij	/	При не соответствии прошивки ROM zxevo_fe.rom и FPGA на экран выводится «Incorrect FPGA
+zxevo_fw.bin» на красном фоне.
+Запрос версии через RST 8: _VERSION в «A» возвращает для какой сборки собран ROM файл и
+соответствие прошивке FPGA.	 
+976	2021-11-22 17:04:41	dimkam	/	Обновлена документация	 
+975	2021-11-06 15:02:44	savelij	/	ERS 0.58.19: исправлено демонтирование образов TRD при сбросе.
+csum32: утилита написана с нуля для возможности сборки под Linux.
+Обновлен асм компилятор до текущей версии.	 
+974	2021-11-06 12:22:02	alone	/	fix PATH (DimkaM)	 
+973	2021-11-05 23:48:00	alone	/	+port #bf bit 5: switch on 444 palette	 
+972	2021-11-05 19:19:43	alone	/	+R4G4B4 palette (A15..8 when writing a palette register)	 
+971	2021-11-05 17:21:22	lvd	/	avr: baseconf: changed Makefile to not use 'sed' due to шindoшs users unability to use it	 
+970	2021-11-04 20:51:16	dimkam	/	avr забыл апдейтнуть мейкфайл	 
+969	2021-11-04 19:32:48	dimkam	/	cfgs добавлена сборка под windows'ом	 
+968	2021-11-02 22:38:31	lvd	/	avr: remove 'avreal' as long (>10 years) unsupported and closed-source tool. Use avrdude instead	 
+967	2021-10-18 14:08:16	savelij	/	Поправлен макрос генерации времени из времени компилятора. Прошивка пересобрана.	 
+966	2021-10-08 14:40:37	savelij	/	Поправлены вызовы из bat файлов асм компилера по новому имени.	 
+965	2021-10-08 12:29:39	savelij	/	Добавлены пропущенные файлы.	 
+964	2021-10-07 23:46:45	savelij	/	Обновлен асм компилер до текущей версии. Асм возвращено исходное имя и соответственно переименована папка. В папку асма к бинарикам добавлены файлы для использования под Linux. Добавлены скрипты для сборки прошивки под Linux. Переделаны макросы для генерации даты и времени ввиду того что асм возвращает дату немного по другому.	 
+963	2021-09-24 10:52:55	savelij	/	Обновление асм компилера и пересобрана прошивка.	 
+962	2021-08-30 10:04:03	savelij	/	Обновил асм до текущей версии. Прошивка только пересобрана, без изменений.	 
+961	2021-08-01 20:11:54	savelij	/	- добавлено сохранение/восстановление порта виртуальных дисководов для RST 8, NMI.
+- переписана работа с FAT.
+- поправлены запускалки форматов Hobeta, SNA, SPG	 
+960	2021-07-14 11:15:49	savelij	/	Обновлен асм компилер.	 
+959	2021-07-04 20:41:23	lvd	/	base_trdemu: fixed sndpix.c to not to close socket repeatedly	 
+958	2021-07-04 14:52:08	lvd	/	base_trdemu: wave.do update	 
+957	2021-07-03 21:54:24	lvd	/	base_trdemu: new zxevo.rom to simulate autorun	 
+956	2021-06-20 19:34:21	lvd	/	base_trdemu: fixed Makefile for sndpix.so to compile for 64bit and for newer q10.7c path	 
+955	2021-06-14 22:14:18	chrv	/	чето добавил в supported_monitors.odt - не помню	 
+954	2021-05-26 10:13:04	savelij	/	Добавлен пропущенный файл glukpen.rom	 
+953	2021-05-26 10:10:26	savelij	/	Добавил пропущенный файл tr-dos 5.03 необходимый для сборки zxevo_fe.rom	 
+952	2021-05-26 10:06:01	savelij	/	- изменено дефолтное значение турборежима на 3.5 МГц при сбросе CMOS.
+- в связи с поддержкой LBA48 (пока не добавлена) добавлена функция установки номера сектора для чтения/записи.
+- из теста HDD убран показ CHS параметров.
+Добавлены исходные файлы кошки.	 
+951	2021-05-25 21:48:40	lvd	/	base_trdemu: add timestamping to tb_top.v	 
+950	2021-05-25 21:47:52	lvd	/	cfgs/standalone_base_trdemu: rebuilt with version.txt	 
+949	2021-05-25 21:47:11	lvd	/	avr: baseconf: add forgotten version.txt	 
+948	2021-05-25 13:30:27	lvd	/	cfgs/standalone_base_trdemu: zxevo_fw.bin updated	 
+947	2021-05-25 09:49:42	savelij	/	Обновление ассемблера asw до версии 1.42 Beta [Bld 204]	 
+946	2021-05-24 16:45:54	lvd	/	cfgs: added README	 
+945	2021-05-24 12:48:40	lvd	/	base_trdemu: replace zxevo.rom with fixed write to ROM, add timestamps to INI trap	 
+944	2021-05-24 10:05:25	lvd	/	base_trdemu: updated wave.do	 
+943	2021-05-24 01:31:49	lvd	/	base_trdemu: adding tr-dos INI logging to debug RAGE	 
+942	2021-05-23 18:36:04	lvd	/	base_trdemu: boot seems to work (worked for adm.bin)	 
+941	2021-05-23 00:15:50	lvd	/	base_trdemu: adding boot from ramdisk at start to check some demos screwup	 
+940	2021-05-22 10:43:37	chrv	/	- add supported monitors	 
+939	2021-04-27 09:28:09	savelij	/	Добавлен make.exe версии 3.81 с которой все собирается.	 
+938	2021-04-27 09:17:12	savelij	/	Удалил файлы создаваемые в результате сборки асма.	 
+937	2021-04-26 11:05:52	savelij	/	Залил исходники асма с парой изменений, сделал через батник. Мейкфайл для меня слишком сложен :)	 
+936	2021-04-20 14:34:17	lvd	/	sdload	 
+935	2021-04-04 10:00:26	chrv	/	add monitor to monitors_list	 
+934	2021-03-21 18:11:04	lvd	/	base_trdemu: updated test to check write disable during INI	 
+933	2021-02-28 23:11:08	lvd	/	zxevo_base_configuration.odt/pdf rebuild	 
+932	2021-02-28 21:42:16	lvd	/	adding zxevo_fw.bin to cfgs	 
+931	2021-02-28 21:41:42	lvd	/	removing .rbf/.sof from fpga folders	 
+930	2021-02-28 21:40:14	lvd	/	removing .rbf/.sof from fpga folders	 
+929	2021-02-28 19:57:50	lvd	/	fpga: trdemu: added write disable to prevent writes to page FE when INI is executed	 
+928	2021-02-25 16:16:11	chrv	/	ОБновил список мониторов	 
+927	2021-02-07 14:01:35	chrv	/	update monitors list	 
+926	2021-02-01 12:31:47	chrv	/	update supported monitors list	 
+925	2021-01-28 14:29:18	bruxy	/	test commit	 
+924	2021-01-28 14:26:29	lvd	/	test commit	 
+923	2021-01-10 17:05:53	chrv	/	Перевел один заголовок (бал русский) в Manual ''EVO Reset Service''.odt	 
+922	2021-01-10 16:49:08	chrv	/	Added supported monitors to list (tested by BruXy)	 
+921	2020-12-29 19:36:23	DimkaM	/	unreal fix atm-nmi	 
+920	2020-12-05 22:30:23	dimkam	/		 
+919	2020-11-29 18:43:00	lvd	/	pentevo: sdload: added some fonts (in 6912 format)	 
+918	2020-11-29 18:39:06	lvd	/	pentevo: initial sdload config (copied from baseconf)	 
+917	2020-11-27 10:18:16	dimkam	/	sdload увеличены таймауты sd	 
+916	2020-11-26 11:25:15	dimkam	/		 
+915	2020-11-24 19:17:21	DimkaM	/	sdload добавил логов	 
+914	2020-11-24 15:46:44	chrv	/	add solegstar's PCB variant	 
+913	2020-11-22 19:42:36	lvd	/	pentevo: crcfix finished	 
+912	2020-11-21 16:38:29	lvd	/	sdload: changed make_fw path	 
+911	2020-11-21 16:37:06	lvd	/	sdload: removed top.rbf dependency	 
+910	2020-11-21 16:34:05	dimkam	/	sdload добавлен	 
+909	2020-11-21 16:25:54	lvd	/	pentevo: removed older unreal versions	 
+908	2020-11-20 02:47:49	lvd	/	pentevo: spawned a new crcfix tool	 
+907	2020-11-15 17:07:20	lvd	/	added configuration for trdemu	 
+906	2020-11-15 17:02:55	lvd	/	fpga: trdemu: changing dir structure	 
+905	2020-11-15 16:52:48	lvd	/	fpga: trdemu: changing dir structure	 
+904	2020-11-15 14:43:15	lvd	/	avr: baseconf: makefile changed to automatic dependencies generation	 
+903	2020-11-15 14:23:15	lvd	/	avr: baseconf: makefile update	 
+902	2020-11-15 14:16:38	lvd	/	avr: baseconf: makefile update	 
+901	2020-11-15 02:01:13	lvd	/	Added make script for new build system	 
+900	2020-11-15 02:00:14	lvd	/	Fixed avr makefile for new build system	 
+899	2020-11-15 01:36:41	lvd	/	Added preliminary Makefile for avr firmware build	 
+898	2020-11-14 20:52:43	lvd	/	pentevo: changing repo structure	 
+897	2020-11-14 20:48:42	lvd	/	Added Makefile for baseconf	 
+896	2020-11-14 20:24:33	lvd	/	pentevo: changing repo structure	 
+895	2020-11-06 02:26:49	lvd	/	avr: fixed bug in zx_fifo_isempty()	 
+894	2020-11-02 19:17:34	lvd	/	supported monitors list updated	 
+893	2020-10-28 22:19:37	lvd	/	removed 3.5mhzonly build	 
+892	2020-10-08 21:31:32	dimkam	/	trdemu: buid zxevo_fw.bin	 
+891	2020-10-08 20:19:11	lvd	/	trdemu: added 'dos' and 'romnram[0]' into 'in_trdemu' turn-on logic	 
+890	2020-09-28 09:59:06	DimkaM	/	fix драйвер sd-card не инитил некоторые карты(багрепорт Artem Vasilev)	 
+889	2020-09-28 08:17:11	DimkaM	/		 
+888	2020-09-25 23:19:44	savelij	/	- при отсутствии MBR неправильно определялся тип FAT.
+- исправлено (в fat_boot, для запуска хобет и прочего) неправильное высчитывание начала корневой
+директории (для FAT12/16), не учитывалось количество FAT таблиц.
+- залил пропущенные файлики исходников.	 
+887	2020-08-23 17:01:29	lvd	/	unreal 0.39.0, fix_labels: change to have virtual labels as ':xxxx label'	 
+886	2020-08-20 21:08:42	lvd	/	fix_labels: fixed labels in cmd args	 
+885	2020-08-20 20:47:57	lvd	/	Made new Makefile.w64 for ubuntu-bases i686-w64-mingw-gcc/g++, fixed some shindoshisms	 
+884	2020-07-20 19:49:39	DimkaM	/	unreal: собрал exe	 
+883	2020-07-20 18:44:53	lvd	/	unreal_fix: added a branch of 0.39.0 where labels loaded from user.l are now always virtual	 
+882	2020-06-11 18:46:35	chrv	/	add supported monitors	 
+881	2020-05-06 21:47:23	chrv	/	Добавлены версии PCB производимые tetroid'oм: ревижены C2..C4	 
+880	2020-03-18 22:20:24	dimkam	/	unreal:сброс порта 13bd по ресету	 
+879	2020-03-18 21:37:51	lvd	/	trdemu: added reset for fdd_mask	 
+878	2020-03-18 16:35:55	lvd	/	built zxevo_fw.bin for trdemu	 
+877	2020-03-15 19:03:21	DimkaM	/	unreal: неработал FM в ym2203	 
+876	2020-03-15 16:24:22	lvd	/	supported monitors list updated	 
+875	2020-03-03 23:22:11	savelij	/	ERS 0.58.15:
+- исправлено неправильное высчитывание начала корневой директории, не учитывалось количество
+FAT таблиц.
+- добавлена запускалка хобета файла с фиксированным именем “sd_boot.$C” с SD карты из корневой
+директории карточки.	 
+874	2020-02-29 12:58:16	dimkam	/	unreal: фикс чтения порта FF дисковода	 
+873	2020-02-28 20:00:26	DimkaM	/	unreal: чтение теневого FF порта (не проверял)	 
+872	2020-02-27 13:35:30	lvd	/	fpga: trdemu: spawned temporary doc, changes added	 
+871	2020-02-26 13:02:15	lvd	/	fpga: trdemu: added port FF readback, trap-after-write. updated test	 
+870	2020-02-23 18:46:41	lvd	/	fpga: trdemu: test update	 
+869	2020-02-23 18:38:20	lvd	/	fpga: trdemu: test update	 
+868	2020-02-23 13:54:07	chrv	/	Добавил мониторы	 
+867	2020-02-22 21:42:13	lvd	/	fpga: trdemu: removed VG93 chipselect when fdd_mask is 1, TODO: remove port FF trapping, add readback for port FF	 
+866	2020-02-22 20:31:12	lvd	/	fpga: trdemu: basic functions, TODO: subtle effects	 
+865	2020-02-20 21:38:40	lvd	/	fpga: trdemu: updated test ROM	 
+864	2020-02-20 21:12:40	lvd	/	fpga: trying to run new tb	 
+863	2020-02-20 17:34:38	lvd	/	fpga: spawned new simulation dir	 
+862	2020-02-19 22:51:22	lvd	/	fpga:	 
+861	2020-02-11 13:31:07	lvd	/	avr: faster power led blinking in powered on condition, pause before powering on from standby	 
+860	2020-02-11 10:59:24	lvd	/	avr: fixed F12 working after F12-initiated ATX poweroff	 
+859	2020-02-10 23:57:49	lvd	/	fpga:	 
+858	2020-02-10 19:14:30	lvd	/	avr: removed .hex from repo	 
+857	2020-02-10 19:13:41	lvd	/	z80_soft:	 
+856	2020-02-10 01:11:23	lvd	/	fpga:	 
+855	2020-02-10 00:40:24	lvd	/	avr: added config loop for the case when CONF_DONE not goes up	 
+854	2020-02-09 19:47:41	lvd	/	avr: no hang at poweroff with non-ATX power supplies	 
+853	2020-02-09 01:34:10	lvd	/	docs/revC: updated user manual, generated .pdf for it	 
+852	2020-02-09 01:32:23	lvd	/	avr: fixed poweroff conditions	 
+851	2020-02-04 22:26:02	lvd	/	removed unneeded files	 
+850	2020-02-04 20:36:01	lvd	/	supported monitors list updated	 
+849	2020-01-09 23:16:31	lvd	/	spawned a branch, added fdd mask register	 
+848	2020-01-09 21:44:19	lvd	/	pentevo: some scripts added	 
+847	2019-12-30 11:34:25	DimkaM	/	изменён порт маски перехвата портов FDD	 
+846	2019-12-14 17:32:54	lvd	/	supported monitors list updated	 
+845	2019-12-01 21:05:25	savelij	/	Версии без изменений, добавил 2 файлика необходимых для сборки и пропущенных при последнем апдейте.	 
+844	2019-11-24 21:52:36	lvd	/	updated supported_monitors file	 
+843	2019-10-16 15:59:53	savelij	/	В список поддерживаемых мониторов добавлен Benq FP51G.	 
+842	2019-10-08 19:53:32	lvd	/	updated supported_monitors file	 
+841	2019-09-15 09:33:03	savelij	/	Обновлен список поддерживаемых мониторов. Описание ERS немного поправлено, прошивка только пересобрана без изменений.	 
+840	2019-08-22 20:22:44	savelij	/	Evo-DOS 0.51 Переделан резидент, стек теперь не используется.	 
+839	2019-08-21 21:17:22	savelij	/	Evo-DOS 0.50 Изменен адрес стека в резиденте.	 
+838	2019-08-20 22:38:14	savelij	/	ERS 0.58.14 Evo-DOS 0.49 Доработки для работы резидента.	 
+837	2019-08-15 00:00:29	savelij	/	Обновил номера версий ERS и Evo-DOS до правильных в самой прошивке.	 
+836	2019-08-14 23:39:17	savelij	/	ERS 0.58.13, Evo-DOS 0.48 Сделал принудительную установку 7Мгц для NMI service для правильного чтения загруженного шрифта и добавил резидент от АТМ Turbo (в документации пока не описано, включение/выключение в Setup)	 
+835	2019-08-05 20:35:43	savelij	/	ERS 0.58.12 Evo-DOS 0.47 Некоторые переделки.	 
+834	2019-07-29 22:09:21	savelij	/	ERS 0.58.11 Исправлено отображение буквы примонтированнного диска в главном меню.	 
+833	2019-07-28 18:57:08	savelij	/	ERS 0.58.10 и EVO-DOS 0.46. Мелкие исправления и переделки.	 
+832	2019-07-14 23:22:04	savelij	/	Evo-DOS 0.45 и ERS 0.58.09 Исправлена работа с виртульными дисками	 
+831	2019-07-11 22:45:25	savelij	/	ERS 0.58.08 Исправление ошибки монтирования дисков и небольшие переделки.	 
+830	2019-06-23 12:52:19	dimkam	/	unreal: добавил в визнет IPRAW	 
+829	2019-05-25 13:37:49	lvd	/	added 3.5 MHz only build (untested\!)	 
+828	2019-05-25 13:27:41	lvd	/	monitors list updated	 
+827	2019-05-16 15:55:09	chrv	/	Добавлены мониторы	 
+826	2019-05-16 14:29:51	lvd	/	new features addition in progress	 
+825	2019-05-13 14:53:16	lvd	/	TODO for fpga firmware	 
+824	2019-05-12 22:41:04	savelij	/	Добавил еще один монитор в список поддержки Pentevo и заодно сделал pdf.	 
+823	2019-05-06 13:13:46	savelij	/	Версия 0.58.07 Исправлена порча таблицы TRD в рамдиске при загрузке TAP файла. Убрал из свн некоторые промежуточно-генерируемые ROM файлы	 
+822	2019-05-03 21:38:53	savelij	/	Дополнительные файла от обновленного асма.	 
+821	2019-05-03 15:43:34	savelij	/	Версия 0.58.06. Исправления ошибок и обновил ассемблер на пока тестовую версию. Сорцы на подходе.	 
+820	2019-04-16 16:49:00	DimkaM	/	Unreal: собрал в gcc	 
+819	2019-04-12 20:31:53	DimkaM	/	unreal добавил wiznet	 
+818	2019-04-09 12:27:38	chrv	/	Добавил два монитора TVS	 
+817	2019-04-02 22:01:12	savelij	/	ERS 0.58.05 Исправил запуск Basic файлов из TRD из режима просмотра.	 
+816	2019-03-31 18:25:54	DimkaM	/	w5300_branch: добавил инверсию визнета по портам	 
+815	2019-03-23 13:29:52	dimkam	/	unreal 0.38.3 add wiznet sources	 
+814	2019-03-23 10:19:54	dimkam	/		 
+813	2019-03-20 14:36:48	DimkaM	/	добавил сейвилку рамдиска на дискету	 
+812	2019-03-20 05:36:55	lvd	/	pentevo: supported monitors list updated	 
+811	2019-03-17 16:37:49	savelij	/	ERS 0.58.04 Изменил обработчик вызов RST 8 и убрал сброс дисководов через 3D13 (конфликтовал с perfect comander)	 
+810	2019-03-14 11:41:27	lvd	/	pentevo: supported monitors list updated	 
+809	2019-03-13 14:22:54	lvd	/	pentevo: supported monitors list updated	 
+808	2019-03-10 22:33:06	dimkam	/		 
+807	2019-03-10 21:34:04	dimkam	/	fix wiz_unreal	 
+806	2019-02-07 22:57:55	savelij	/	EVO-DOS 0.44 Исправлено неформатирование реальной дискеты	 
+805	2019-02-01 18:30:34	DimkaM	/	unreal: fix makefile	 
+804	2019-01-31 23:19:53	savelij	/	Пересобрал ром.	 
+803	2019-01-31 23:11:07	savelij	/	Версия не изменилась. Еще несколько потерянных файлов.	 
+802	2019-01-30 23:18:03	savelij	/	Залил некоторые пропущеные файлы.	 
+801	2019-01-30 20:33:07	savelij	/	ERS 0.58.03 Косметические изменения в распределении кода в прошивке, освободил место в 0 странице.	 
+800	2019-01-30 20:07:14	DimkaM	/	unreal: update to .39.0	 
+799	2019-01-30 19:52:27	DimkaM	/	unreal: copy for update version	 
+798	2019-01-30 19:50:14	DimkaM	/	unreal: copy for update version	 
+797	2019-01-30 17:17:34	DimkaM	/		 
+796	2019-01-30 17:08:08	DimkaM	/	unreal:original: update to .38.4	 
+795	2018-11-24 21:55:28	savelij	/	ERS 0.58.02 Доделан резидент Honey Comander и вновь добавленный для него код убран за ключи компиляции. В данной версии резидента нет.	 
+794	2018-11-23 16:21:02	lvd	/	us0.38.4: rebuilt gcc exe	 
+793	2018-11-16 15:51:53	savelij	/	ERS 0.58.01 Исправлен очень старый код установки турбо режимов при сбросе с нажатыми клавишами Shift	 
+792	2018-11-13 20:43:03	savelij	/	При предыдущей заливке забыл добавить 2 файлики сорцов.	 
+791	2018-11-13 20:24:14	DimkaM	/	unreal: разрешил доступ атму(710) к глюк-часам	 
+790	2018-11-12 23:24:34	savelij	/	Версия ERS не изменилась. Исправил мелкую неточность в функциях RST 8 и немного дописал доку.	 
+789	2018-11-11 23:35:40	savelij	/	ERS 0.58 Добавлен показ подключенных винтов и сделан резидент для Honey Comander	 
+788	2018-10-16 15:18:28	lvd	/	us0.38.4: returned afxres.h, now compiles in gcc6.2.0 (mingw) with afxres.h and winres.h	 
+787	2018-10-16 15:10:15	DimkaM	/	unreal add WinRes.h	 
+786	2018-10-16 14:45:59	lvd	/	us0.38.4: fixed tape.cpp for gcc bug, built new mingw exe	 
+785	2018-10-16 14:42:12	lvd	/	us0.38.4: removed unnecessary afxres.h	 
+784	2018-10-15 10:34:17	DimkaM	/	upgate to 0.38.4	 
+783	2018-10-15 10:23:41	DimkaM	/	copy for update version	 
+782	2018-10-14 23:27:11	savelij	/	Версия 0.57h Пара исправлений в новом драйвере HDD	 
+781	2018-10-13 21:41:26	savelij	/	Версия 0.57g Заменен драйвер HDD	 
+780	2018-04-29 12:42:10	savelij	/	ERS v0.57f не отображалось имя FDI образа загруженного в рамдиск	 
+779	2018-04-07 17:16:09	dimkam	/	unreal: патч от deathsoft'а
+unreal: добавлено чтение номера текущей рисуемой строки(порт 0x13BE)	 
+778	2018-03-14 23:01:06	lvd	/	added recreated by DDp srcs of zexfix, added newer raxsoft's tests	 
+777	2018-03-04 13:05:28	lvd	/	zexfix: fails list updated	 
+776	2018-03-04 04:33:44	lvd	/	added z084 and z84c datasheet	 
+775	2018-02-27 20:17:41	savelij	/	Изменений никаких, только обновление некоторых файликов.	 
+774	2018-02-25 21:25:35	dimkam	/		 
+773	2018-02-22 12:57:07	lvd	/	zexfix: passes list created	 
+772	2018-02-22 10:36:42	lvd	/	zexfix: fails list created	 
+771	2018-02-19 21:50:58	lvd	/	added trd for zexfix	 
+770	2018-02-19 13:34:59	lvd	/	added zexfix test in .tap	 
+769	2017-11-29 16:22:10	dimkam	/	unreal:w5000: add tcp	 
+768	2017-11-29 15:59:50	dimkam	/		 
+767	2017-11-13 21:55:20	lvd	/	unreal0.38.3: rebuilt emul-mingw	 
+766	2017-11-12 22:43:13	dimkam	/	unreal: fix .ini	 
+765	2017-11-12 22:05:18	dimkam	/	unreal: добавил маску в перехват портов ВГшки	 
+764	2017-09-05 23:41:47	savelij	/	ERS 0.57e Убрано использование портов-ячеек.	 
+763	2017-08-28 18:09:14	lvd	/	removed zxevo.rom	 
+762	2017-08-27 22:21:00	savelij	/	Обновил номер версии ERS в доке	 
+761	2017-08-27 22:11:42	savelij	/	ERS 0.57d Несколько мелких измененний	 
+760	2017-08-01 13:22:18	dimkam	/	unreal: fix emul.ini	 
+759	2017-08-01 13:20:31	dimkam	/	unreal: добавил подключение FE страницы при fdd io	 
+758	2017-03-14 23:54:38	dimkam	/	unreal: fix ini file	 
+757	2017-03-14 23:50:33	dimkam	/	unreal: add symlink to zxevo.rom	 
+756	2017-01-14 02:06:04	lvd	/	unreal0.38.3: rebuilt emul-mingw	 
+755	2017-01-13 20:41:19	DimkaM	/	unreal вернул заполнение регистров csd и cid	 
+754	2017-01-13 16:33:50	DimkaM	/	Add sd-card log	 
+753	2017-01-12 19:21:47	lvd	/	unreal0.38.3: rebuilt emul-mingw	 
+752	2017-01-12 01:14:49	DimkaM	/	unreal: fd0 fix(deathsoft), sd-card fix	 
+751	2017-01-11 18:02:36	lvd	/	pentevo: nmi: doc update	 
+750	2017-01-11 14:12:04	DimkaM	/	unreal: удалил симлинк	 
+749	2017-01-10 17:52:23	lvd	/	unreal0.38.3: fixed Makefile.lvd to add settings.o into linking, rebuilt gcc exe	 
+748	2017-01-10 17:24:41	lvd	/	unreal0.38.3: fixed gcc exe from rev.747	 
+747	2017-01-10 16:39:29	lvd	/	unreal0.38.3: built gcc .exe for rev.745	 
+746	2017-01-10 16:35:30	lvd	/	unreal0.38.3: added working gnu Makefile.lvd	 
+745	2017-01-10 15:46:04	DimkaM	/	unreal: add TurboFMpro	 
+744	2017-01-10 15:38:18	lvd	/	unreal0.38.3: added removal of *pdb files into some Makefiles	 
+743	2017-01-10 15:30:02	lvd	/	unreal0.38.3: reverted wrong rollbacks (returned back fixes for gcc buildability), refreshed emul_*.exe built by gcc	 
+742	2017-01-09 13:03:50	DimkaM	/	собрал zxevo_fw.bin	 
+741	2017-01-08 23:00:13	DimkaM	/	unreal: sync с DeathSoft веткой от 08.01.2017	 
+740	2017-01-08 21:36:37	DimkaM	/	unreal: фикс фикса	 
+739	2017-01-08 21:05:11	DimkaM	/	unreal 0.38.3: font reinit fix, sd-card fix	 
+738	2017-01-07 17:43:28	lvd	/	pentevo: fix for nmi fix #2	 
+737	2017-01-07 16:57:04	lvd	/	pentevo: nmi fix try #2	 
+736	2017-01-07 15:45:34	savelij	/	ERS 0.57c пара исправлений ошибок и некоторые изменения в сорцах.	 
+735	2017-01-07 14:13:10	lvd	/	unreal0.38.3: ini change to access pentevo/roms/zxevo.rom directly	 
+734	2017-01-07 14:05:57	lvd	/	unreal0.38.3: 'fix' branch deleted	 
+733	2017-01-07 13:54:30	lvd	/	unreal0.38.3: added symlink to zxevo.rom instead of file itself	 
+732	2017-01-07 13:50:24	lvd	/	unreal0.38.3: added gcc-built exe	 
+731	2017-01-07 13:40:45	lvd	/	unreal0.38.3: DimkaM fix for font write (font read by deathsoft removed)	 
+730	2017-01-07 13:39:19	lvd	/	unreal0.38.3: DimkaM fix inclusion from 0.37.6	 
+729	2017-01-04 18:01:50	DimkaM	/	unreal 0.38.3 font fix	 
+728	2017-01-04 17:18:30	lvd	/	unreal 0383: removed junk files	 
+727	2017-01-03 23:29:06	lvd	/	pentevo: fpga: new version of dimkamnmi test	 
+726	2017-01-03 18:33:27	dimkam	/	fix unreal 0.38.3	 
+725	2017-01-02 03:31:53	lvd	/	pentevo: unreal0383: added custom Makefiles	 
+724	2017-01-02 03:10:17	lvd	/	pentevo: unreal0383: mingw exe built	 
+723	2017-01-02 02:55:00	lvd	/	pentevo: unreal0383: adapted to mingw-w64 (gcc 6.2.0)	 
+722	2017-01-02 00:30:28	lvd	/	pentevo: nmi seems to be fixed now, also new .rbf and zxevo_fw have been built	 
+721	2017-01-01 21:26:07	lvd	/	pentevo: nmitest by DimkaM loaded and executes (no actual NMI)	 
+720	2017-01-01 20:13:52	lvd	/	pentevo: M48K without 'force'	 
+719	2016-12-31 21:25:35	lvd	/	pentevo: unreal0383: adapting to mingw (gcc 6.x.x) (in progress)	 
+718	2016-12-30 23:14:43	lvd	/	pentevo: updated modelsim switches	 
+717	2016-12-30 20:12:36	lvd	/	pentevo: removed unnecessary file	 
+716	2016-12-30 20:09:32	lvd	/	pentevo: added unchanged 0383 (just fixed for msvc9.0)	 
+715	2016-12-29 00:02:49	lvd	/		 
+714	2016-12-28 15:54:34	lvd	/		 
+713	2016-12-27 23:07:05	lvd	/		 
+712	2016-12-26 11:11:09	lvd	/	pentevo: moved z80 docs to the folder, added one more z80 doc	 
+711	2016-12-04 00:37:36	lvd	/	monitor list updated	 
+710	2016-06-24 13:24:58	DimkaM	/	ERS: sna-execute: fix R-register	 
+709	2016-05-08 22:34:55	dimkam	/	ERS: фикс доки и фикс запуска sna, авторазлочивание 7FFD порта	 
+708	2016-05-05 20:35:41	DimkaM	/	DOC update	 
+707	2016-05-05 12:38:36	dimkam	/	ERS: change version to .57b	 
+706	2016-05-05 12:32:09	Dimkam	/	ERS: added run .SNA 48&128	 
+705	2016-03-19 13:47:11	savelij	/	Версия 0.57a исправлена загрузка TAP файлов	 
+704	2016-03-14 00:51:10	lvd	/	continued corrections in english ers doc	 
+703	2016-02-28 23:27:18	savelij	/	Заливаю последнюю версию без изменений. Забыл отладочные фишки отключить.	 
+702	2016-02-08 18:28:42	savelij	/	Версия ERS 0.57, evodos 0.42. Некоторый правки в доке. Обновил компилятор.	 
+701	2016-02-04 20:52:45	lvd	/	started corrections in english ers doc	 
+700	2016-02-04 16:31:49	chrv	/	Evo service manual (english)	 
+699	2016-01-28 15:20:33	lvd	/	nmi-zero?	 
+698	2016-01-27 23:09:53	dimkam	/	cp/m: speed optimize ramdisk	 
+697	2016-01-26 00:06:51	lvd	/	added another z80 doc	 
+696	2016-01-24 17:56:09	lvd	/		 
+695	2016-01-04 19:58:00	chrv	/	+ Eng and Rus version (by directories)
++ Eng documentation	 
+694	2015-12-07 03:45:08	lvd	/	small fixes in zxevo_base_config*	 
+693	2015-11-17 23:42:56	lvd	/	unreal fix: font write wasn't writing to RAM	 
+692	2015-09-04 18:25:07	chrv	/	update monitor list	 
+691	2015-08-28 23:49:25	DimkaM	/	CP/M ramdisk fix. ERS-ramdisk compatible	 
+690	2015-08-23 11:46:08	dimkam	/	Add RAM-Disk saver to zxsoft	 
+689	2015-03-11 14:17:22	savelij	/	EVODOS 0.41 исправления	 
+688	2015-02-08 01:33:32	lvd	/	updated Z80 doc from fresh zilog PDF	 
+687	2015-01-14 11:13:51	savelij	/	ERS 0.56c Небольшое исправление и добавка дополнительных пзу.	 
+686	2015-01-13 20:45:06	lvd	/	correct patch of AVR firmware for new switching algo (only scrolllock: pent15khz->pent31khz->60hz15khz->60hz31khz->48k15khz->48k31khz->128k15khz->128k31khz->loop)	 
+685	2015-01-13 20:35:37	lvd	/		 
+684	2015-01-13 17:53:16	lvd	/	updated srcs for ULA emulation	 
+683	2014-12-08 15:57:37	savelij	/	evodos 0.40 исправлена небольшая ошибка	 
+682	2014-12-08 15:00:35	lvd	/	docs: added Z80 appnote regarding interrupt modes (im0, im1, im2, nmi)	 
+681	2014-12-02 00:30:48	savelij	/		 
+680	2014-12-01 23:43:52	savelij	/	Мелкие изменения в коде и сборочно bat файле.	 
+679	2014-11-22 16:25:03	savelij	/		 
+678	2014-11-22 16:09:37	savelij	/	ers 0.56/evodos 0.39	 
+677	2014-10-27 15:26:13	lvd	/	fpga: readonly mode described in docs now	 
+676	2014-10-26 19:02:41	lvd	/	RAM readonly mode, yet no docs	 
+675	2014-10-26 15:49:45	lvd	/	no RO in nmi-page mode	 
+674	2014-10-22 14:49:05	lvd	/	regenerated PDF from doc, some experimental features in fpga	 
+673	2014-10-21 22:05:18	lvd	/	updated docs	 
+672	2014-10-05 11:34:20	chrv	/	Update:
+* - Add any (left or right) Ctrl,Alt keys and exclude mapped Ctrl,Alt keys from Ctrl-Alt-Del functionality (reset).
+* - Add reading state of LCTRL,RCTRL,LALT,RALT,LSHIFT,RSHIFT,F12 keyboard states from RTC register D (bits 0-6).
+* - Add reading state of NUM LOCK LED from RTC register C (bit 0).	 
+671	2014-08-05 15:54:19	savelij	/	Восстановил в батнике копирование бинарика прошивки в каталог Unreal	 
+670	2014-08-04 23:22:30	savelij	/	Перезаливка, почему то не обновился бинарик пзу.	 
+669	2014-07-30 23:55:33	lvd	/	pentevo: updated docs for ulaplus mode	 
+668	2014-07-29 10:01:19	lvd	/	pentevo: added ulaplus, fixed NMI to RAM (DimkaM request)	 
+667	2014-07-18 09:32:38	chrv	/	Fix update_keys function in zx.c .	 
+666	2014-07-17 19:22:57	savelij	/	ERS 0.55f Исправлено зависание при входе в Perfect commander	 
+665	2014-07-16 23:12:34	savelij	/	ERS v0.55e EVODOS v0.38 испраления ошибок	 
+664	2014-07-02 13:09:06	lvd	/		 
+663	2014-07-02 13:08:27	lvd	/	pentevo: alonecoders branch	 
+662	2014-05-19 19:53:06	savelij	/	Версия ERS 0.55d Исправление в определении фат при отсуствии мбр	 
+661	2014-05-18 19:41:22	savelij	/	Мелкое испраление доки на ERS	 
+660	2014-05-18 18:04:28	savelij	/	Версия ERS 0.55c Добавлена индикация видео режима	 
+659	2014-05-18 16:24:44	lvd	/	pentevo: added in docs description of reading AVR flags	 
+658	2014-05-16 22:53:28	lvd	/	pentevo: added readback of some config register (50/60hz, tv/vga) via clock regs	 
+657	2014-05-16 21:40:33	chrv	/	Doc update	 
+656	2014-05-16 21:40:11	chrv	/	- Add EEPROM access via RTC interface.
+- Add reset PS2 keyboard after error.
+- Fix change resolution command (need for some PS2 mouses).	 
+655	2014-05-15 12:15:21	chrv	/	- Add version changes to zxevo_base_configuration.odt
+- Add formatting to EVO Reset Service	 
+654	2014-05-15 11:24:27	chrv	/		 
+653	2014-05-06 22:23:36	lvd	/	pentevo: virt_vg: fixed rst8 and nmi: moved nmi recognition/exit into step()	 
+652	2014-05-05 23:15:52	lvd	/	pentevo: virt_vg: added rst8 trap	 
+651	2014-05-01 02:08:03	lvd	/	pentevo: int signal length corrected for extensive wait states: while wait_n==0, int length counter doesn't count	 
+650	2014-04-29 23:05:28	lvd	/	unreal: virt_vg: adding savelij stuff	 
+649	2014-04-29 11:46:32	lvd	/	updated TODO for savelij	 
+648	2014-04-25 22:16:37	ddp	/	kmapper: win32 / linux x86	 
+647	2014-04-20 10:32:46	savelij	/	ERS 0.55b Исправил сброс при запуске hobeta и spg файлов.	 
+646	2014-04-16 22:18:50	savelij	/	Версия 0.55а Мелкие исправления	 
+645	2014-04-13 18:31:58	ddp	/	kmapper: тулза-редактор клавиатурной раскладки (win32) beta	 
+644	2014-04-13 18:29:25	ddp	/	avr: исправлены ошибки при работе с пользовательской раскладкой клавиатуры (kbmap from eeprom)	 
+643	2014-04-08 19:34:05	savelij	/	ERS версия 0.55. Исправленный просмотрщик BMP и просмотр/запуск басик файлов из образов SCL/TRD	 
+642	2014-04-03 19:21:17	ddp	/	В бинарник(hex,e2p) avrboot-а залит свежий Test&Service.	 
+641	2014-04-03 18:23:13	ddp	/	Небольшое изменение переключения 49<>60
+(например, Shift+ScrollLock из "TV49" переключает в "TV60")	 
+640	2014-03-30 12:54:05	lvd	/	unreal_fix 0376: added 8th color change, fix by Alone Coder	 
+639	2014-03-29 15:36:25	savelij	/	Сделал версии zmodem загрузки для Пентагона 2.2 и Профи через zxmc2. На реале не проверялось, только в Unreal.	 
+638	2014-03-25 23:06:28	savelij	/	Добавил сорцы утилиты загрузки tap и trd по компорту.	 
+637	2014-03-06 19:08:00	ddp	/	Test&Service: флешер: release флаг в бинарнике; history.txt	 
+636	2014-03-02 13:25:45	ddp	/	Test&Service: флешер: 1) правильно отображает финальное сообщение о результате записи;
+2) обновлена распознавалка ROM-ом	 
+635	2014-02-19 12:45:32	savelij	/	Переименовал папку zx-utils в zx_soft. Добавил сорцы запускалки timegal с компиляцией в хобету.	 
+634	2014-02-16 21:06:21	savelij	/	Добавил проверку на размер файла во внешний обновлятор, дописал в доку про внешнюю утилиту обновления прошивок.	 
+633	2014-02-16 20:00:22	savelij	/	Версия 0.54d с косметическими измениями. Создал папку zx_utils куда залил внешний обновлятор rom в 2-х видах (hobeta и scl) с сорцами. В прошлом обновлении удалил за ненадобностью лишние доки.	 
+632	2014-02-11 22:37:16	savelij	/	Перекомпилил со старым file browser вместо нового, был сломан обновитель ROM.	 
+631	2014-02-10 21:49:32	savelij	/	Мелкие исправления в evodos и ers. Добавлен загрузчик isdos в service menu. Свалил все доки и хистори в один документ. Старые доки за гегадобностью удалю позже.	 
+630	2013-12-21 19:26:48	chrv	/	update documents	 
+629	2013-12-20 14:19:33	savelij	/	Дописал в доку и хистори про просмотрщик BMP картинок который сделал еще год примерно назад.	 
+628	2013-12-18 21:43:26	savelij	/	Версия ERS 0.54a. Исправил проблему невидимости файлов на больших карточках. Добавил доки на части Gluk service присланные Alone Coder'ом.	 
+627	2013-12-15 12:56:38	savelij	/	Прикрутил ATM CP/M, MSX-dos пока не стал добавлять, откатил EVO-DOS с некоторыми изменениями. Образ загрузочной дискеты с измененным FDISK залил в папку DOCS. Залил TR-DOS 6.11Е для GLUK прошивки, теперь он компилится на общих основаниях и имеет доступ к рамдиске ERS.	 
+626	2013-12-14 23:20:59	chrv	/	update monitor list	 
+625	2013-12-01 14:54:25	ddp	/	AVR может компилироваться текущей версией AtmelAVRToolchain.	 
+624	2013-12-01 14:52:24	ddp	/	C-версия Test&Service может компилироваться текущей версией AtmelAVRToolchain.	 
+623	2013-11-17 23:18:22	savelij	/	Некоторые изменения в evo-dos папках. Добавил сорцы tr-dos 5.03 с устранения некоторых ошибок и небольшими изменениями от исходной версии.	 
+622	2013-11-11 12:56:51	lvd	/	unreal_fix/virt_vg: changes according to fresh wishes of savelij (see TODO)	 
+621	2013-11-08 18:07:45	ddp	/	inverse signal 60Hz-mode; remove obsolete file	 
+620	2013-11-08 10:24:24	lvd	/	put modified srcs back to tmp dir -- now we can make all-files diff	 
+619	2013-11-08 10:23:06	lvd	/	restored orig 0376 srcs over modified in tmp dir -- to ease diffing	 
+618	2013-11-08 10:18:07	lvd	/	added c.bat for building us0381	 
+617	2013-11-08 10:17:15	lvd	/	added files for us0381 exe to work	 
+616	2013-11-08 10:12:52	lvd	/	added unchanged src of us0.38.1	 
+615	2013-11-07 21:52:04	ddp	/	"60Hz" mode control change	 
+614	2013-11-07 21:49:02	ddp	/	remove obsolete dirs	 
+613	2013-10-21 22:18:36	lvd	/	virt_vg: savelij's wishes	 
+612	2013-10-07 23:25:11	lvd	/	changed vg emu options for savelij	 
+611	2013-09-23 10:47:09	lvd	/	removed obsolete dirs in avr directory	 
+610	2013-09-21 13:24:32	lvd	/	unreal_fix: removed masks for readback of FF reg	 
+609	2013-09-16 11:18:54	lvd	/	unreal: added branch of unreal for savelij (virt_vg)	 
+608	2013-06-18 23:03:23	ddp	/	added 60Hz video mode	 
+607	2013-06-03 19:37:40	chrv	/	Update monitor list	 
+606	2013-05-19 08:53:55	chrv	/	fix some errors	 
+605	2013-05-18 10:56:40	savelij	/	Версия 0.53c Исправление ошибок	 
+604	2013-04-17 12:01:33	chrv	/	Update PCB	 
+603	2013-04-17 11:10:33	chrv	/	update RS103 element	 
+602	2013-04-14 18:31:22	ddp	/	Uncomplete C version of Test&Service (2 of 2)	 
+601	2013-04-14 18:20:28	ddp	/	Uncomplete C version of Test&Service (1 of 2)	 
+600	2013-04-02 09:34:26	lvd	/	unreal: changed bit4 of 0CBE to reflect remembered during NMI trdos state, not current trdos state	 
+599	2013-03-25 21:09:36	chrv	/	update some documents	 
+598	2013-02-27 19:29:38	chrv	/	update supported monitors	 
+597	2013-02-26 23:59:12	savelij	/	Версия 0.53а Восстановил работу FAT/SPG загрузчика	 
+596	2013-02-25 21:28:52	savelij	/	Версия 0.53 По требованию lvd добавил Perfect commander	 
+595	2013-02-12 12:09:09	lvd	/	removed z80/clocking from unsupported branch	 
+594	2013-01-23 02:19:06	lvd	/	added patch for solegstar -- no kempston joystick port	 
+593	2013-01-20 21:39:55	savelij	/	Версия 0.52b исправлена ошибка обнуления секунд	 
+592	2013-01-11 22:40:35	chrv	/	add CMOS Z80 feature: Out(C)0 -> Out(C)FF	 
+591	2013-01-11 15:32:53	chrv	/	some doc fix	 
+590	2012-12-29 23:07:11	savelij	/	Исправил потерю шрифта в profrom	 
+589	2012-12-29 20:45:35	chrv	/	Make release	 
+588	2012-12-26 21:45:07	savelij	/	Версия 052а. Пара мелких исправлений в драйверах.	 
+587	2012-12-08 19:02:34	savelij	/	ers/evodos 0.52/0/33 исправил мелкие ошибки и сделал обнуление памяти для запуска басик прог	 
+586	2012-12-04 21:39:07	savelij	/	Версия 0.51a Мелкое исправление + мелкое исправление в evodos. Рабочий асм тоже обновлен.	 
+585	2012-12-04 00:52:20	savelij	/	Версия 0.51. Исправления ошибок. Новое пока не вставил. рст8 дока в недописанном состоянии.	 
+584	2012-10-27 11:39:06	chrv	/	Update doc (some errors)	 
+583	2012-10-21 18:51:26	lvd	/	added hardware breakpoint description to zxevo_base_configuration	 
+582	2012-10-21 18:30:22	lvd	/	returned port BD in fpga, rebuilt zxevo_fw.bin	 
+581	2012-10-21 18:16:54	lvd	/	added breakpoint port to unreal	 
+580	2012-10-21 12:14:13	lvd	/	changed breakpoint port to , changed a bit IDE decoding (less LE), only quartus project compiled	 
+579	2012-10-08 22:37:58	chrv	/	Add PS2 keyboards hot combinations to User Manual	 
+578	2012-10-07 22:10:05	lvd	/	updated makefile: added -B avr:51 to avr-objcopy creating .o from binary	 
+577	2012-10-07 21:47:27	lvd	/	compiled avr firmware for breakpoints	 
+576	2012-10-07 21:46:12	lvd	/	added breakpoint functionality (not tested, not compiled in avr firmware	 
+575	2012-10-05 18:37:21	chrv	/	fix manuals	 
+574	2012-05-27 13:31:48	chrv	/	Update DOCs	 
+573	2012-05-27 12:57:24	savelij	/	Версия 0.5. Изменения в доках	 
+572	2012-04-11 11:54:20	dimkam	/	unreal: fix ps2 in debug mode	 
+571	2012-04-10 12:31:25	dimkam	/	unreal:
+direct access to ps/2 keyboard buffer(by thims)
+micro-fix rs232, empty receive_buffer zero returned(by me)	 
+570	2012-04-09 00:21:11	chrv	/		 
+569	2012-03-12 12:38:56	lvd	/	unreal_fix: exe built	 
+568	2012-03-12 12:16:24	lvd	/	unreal_fix: change pentevo xxf7 ports decoding to more closely match the hardware	 
+567	2012-02-24 22:05:38	chrv	/	add comments
+add documents
+recompile	 
+566	2012-02-23 23:41:30	lvd	/	fpga/vmodes	 
+565	2012-02-19 13:52:27	dimkam	/	не сбрасывался бит переполнения фифо-приёма уарта.
+Извиняюсь, что влез без разрешения. протестил, бит стал сбрасыватся.	 
+564	2012-02-18 14:04:32	lvd	/	fpga/vmodes	 
+563	2012-02-15 08:12:09	lvd	/	fpga/vmodes: started	 
+562	2012-02-13 23:24:58	chrv	/	- Create release 13.02.2012
+- Update documentation.
+- Add SD WRP and SD DET to C gluk's register.	 
+561	2012-02-12 21:30:28	lvd	/	changed ARCH to UTF-8	 
+560	2012-02-09 22:47:30	lvd	/	same	 
+559	2012-02-09 09:33:10	lvd	/	same	 
+558	2012-02-08 10:07:11	lvd	/	same	 
+557	2012-02-07 00:24:05	lvd	/	vmodes TODO updated	 
+556	2012-01-29 18:10:26	chrv	/	update docs	 
+555	2012-01-26 00:13:05	lvd	/	unreal_fix: removed Z-controller debug printfs	 
+554	2012-01-25 01:02:54	lvd	/	unreal_fix 0.37.6: turned on NGS DMA in ZX-EVO mode, compiled; added some ini files, changed bootgs.rom to bootgs.bin in ini files	 
+553	2012-01-24 19:50:27	savelij	/	Еще раз поменял шрифты :)	 
+552	2012-01-24 19:33:26	ddp	/	unreal: sdcard.* zc.*	 
+551	2012-01-23 23:47:05	ddp	/	T&S and AVRboot. (приём данных с SD карты)	 
+550	2012-01-23 16:35:08	savelij	/	Исправил ошибки при работе с принтера из-за чего зависало при выходе в Basic 48. Обновил и добавил шрифты.	 
+549	2012-01-19 20:19:42	savelij	/	Исправил проблему неправильного считывания шрифта и вывода некоторых регистров в магик меню.	 
+548	2012-01-18 23:00:47	savelij	/	Сделал поддержку кнопки Magic. Пока минимально.	 
+547	2012-01-16 03:00:17	lvd	/	unreal_fix: added forgotten files	 
+546	2012-01-16 02:55:02	lvd	/	fpga/vmodes: just added some info to TODO file	 
+545	2012-01-16 02:54:02	lvd	/	unreal_fix: fixed port FF77 readback (was error in original), added TRDOS bit to FF77 readback port (0CBE), added fake ZXEVO fontread capability (only compatible with fontread.src), tested with fontread.src itself	 
+544	2012-01-16 02:02:50	lvd	/	changed patch by DimkaM in Z-controller, since 57 port in read mode is not decoding A15, removed IDE patch since NEMO-DIVIDE (the one realized in pentevo) is already accessible regardless of DOS state. Also changed emul.ini to NEMO-DIVIDE mode	 
+543	2012-01-15 23:09:23	lvd	/	fpga/current: merged all features to current (avr sdcard access, updated NMI behavior, font read, some bugfixes), built new zxevo_fw.bin	 
+542	2012-01-15 22:56:51	lvd	/	updated base_config: fixed NMI behavior; added #0EBE port (fontrom read); added DOS bit to 0CBE port in fpga/vmodes for TRDOS in NMI detection	 
+541	2012-01-15 17:15:28	lvd	/	zxevo_base_config: reformatted code example by DimkaM, reverted back to correct shadow-mode SDcard handling, added #0EBE port description	 
+540	2012-01-15 13:43:23	dimkam	/	пофиксил пример работы с z-sd в шадовмоде.
+добавил пример расчёта адреса для нового текстмода.	 
+539	2012-01-15 03:38:01	lvd	/	unreal_fix: changes http:// info in fix	 
+538	2012-01-15 00:47:26	lvd	/	commented fontrom.src	 
+537	2012-01-15 00:14:42	lvd	/	fpga/vmodes: fixed NMI a little, fixed AY ports 14mhz throttling bug (tnx to ts-labs), added source code for reading fontrom (no commentz yet)	 
+536	2012-01-14 23:06:17	chrv	/	FIX: PS2 keyboard hangup bug
+ADD: Autoreset PS2 keyboard log after overload (reading FF code)	 
+535	2012-01-14 20:35:15	dimkam	/	пофиксил nemo-IDE и Z-SD под шадовмод	 
+534	2012-01-14 12:52:10	lvd	/	added to fpga/vmodes: NMI fix, after ROM 0066 M1 RAM page FF is on; AVR access to SDcard, see slave/spi_fmt.txt; fontrom readback (no Z80 examples yet)	 
+533	2012-01-13 15:40:40	savelij	/	Добавил bass.dll+bootGS.bin и pentevo.bat+pentevo.ini со своими настройками в диру Unreal.	 
+532	2012-01-10 21:43:40	lvd	/	fixed unreal 0.37.6: pentevo features added	 
+531	2012-01-10 21:16:55	lvd	/	fpga: just TODO additions and comments in src	 
+530	2012-01-06 22:36:00	lvd	/	updated base_configuration doc with new textmode	 
+529	2012-01-06 22:22:38	lvd	/	built zxevo_fw.bin and SOF for new 1page textmode	 
+528	2012-01-06 22:18:41	lvd	/	fpga: merged new 1page textmode from vmodes to current	 
+527	2012-01-06 21:38:21	lvd	/	IDE fix try #1 -- built zxevo_fw.bin	 
+526	2012-01-06 21:37:25	lvd	/	IDE fix try #1	 
+525	2012-01-06 20:19:16	lvd	/	added single-page atm-like text mode, not tested yet	 
+524	2012-01-06 17:03:33	lvd	/	branched fpga/current to vmodes (videomodes)	 
+523	2012-01-06 16:58:17	lvd	/	updated base_configuration doc: fixed bugs	 
+522	2012-01-06 16:47:30	lvd	/	removed fpga/z14 branch	 
+521	2012-01-04 12:11:53	savelij	/	Исправил номер прошивик custom rom, не туда прошивалось. А ведь проверял...	 
+520	2012-01-03 20:52:40	chrv	/	modify ps2 logger	 
+519	2012-01-03 18:53:44	lvd	/	updated TODO, created errors file for zxevo_base_configuration	 
+518	2012-01-02 11:43:13	lvd	/	added ROM nmi behavior, compiled, NOT TESTED, doc updated	 
+517	2012-01-01 14:05:51	savelij	/	Забыл обновить версию сервиса.	 
+516	2012-01-01 13:57:40	savelij	/	Поправил пару мелочей. Подновил список поддерживаемых мониторов.	 
+515	2011-12-27 20:19:48	lvd	/	intermediate commit	 
+514	2011-12-27 14:53:32	lvd	/	multicolor bug fixed, new zxevo_fw.bin built	 
+513	2011-12-27 14:43:26	lvd	/	multicolor bug fixed, only fpga	 
+512	2011-12-27 14:15:47	lvd	/	trying to fix multicolor bug	 
+511	2011-12-27 12:49:28	lvd	/	changed simulation evnironment to support windows-based old modelsim, added signals to wave	 
+510	2011-12-26 00:26:58	lvd	/	changed dram init in model; added waves to wave.do	 
+509	2011-12-25 23:01:50	lvd	/	fixed testbench for new vg93 fapch	 
+508	2011-12-20 23:51:43	chrv	/	update (about floppy drives)	 
+507	2011-12-17 18:40:52	savelij	/	Некоторые мелкие доработки, ревизия сорцов.	 
+506	2011-12-17 18:09:24	chrv	/	Update doc	 
+505	2011-12-16 23:34:52	chrv	/	Upgrade PS2 keyboard supporting.	 
+504	2011-12-10 21:04:31	chrv	/	Update documentations	 
+503	2011-12-06 13:37:15	savelij	/	Очень мелкое исправление в CMOS editor.	 
+502	2011-12-05 20:09:47	savelij	/	Забыл при обновлении засвнить исходник теста PC клавиатуры.	 
+501	2011-12-04 22:53:13	savelij	/	Обновление. Поправил ProfROM, устранил кое какие мелочи. Кое что добавил в сервисах.	 
+500	2011-11-22 13:40:48	chrv	/	up monitors list	 
+499	2011-11-17 14:26:55	chrv	/	update monitor list	 
+498	2011-11-11 00:01:35	ddp	/	T&S slight changes (also injected into bootloader file)	 
+497	2011-10-31 18:01:36	chrv	/	PS2 PAUSE not logged	 
+496	2011-10-25 13:53:02	chrv	/	ps2 keyboard to zx update	 
+495	2011-10-18 11:03:56	chrv	/	add monitors to list	 
+494	2011-10-12 15:38:26	chrv	/	Add access to PS2 keyboards log via gluk extensions.	 
+493	2011-10-09 15:25:03	savelij	/	Устранил ошибки и переделал турбокнопку в профром.	 
+492	2011-10-05 22:49:43	lvd	/	modularized VG93 dpll design, compiled with zek one, avr firmware rebuilt	 
+491	2011-10-05 20:43:16	lvd	/	just compiled with qu7.2, avr firmware also compiled	 
+490	2011-09-30 12:15:07	chrv	/	Up (add version description)	 
+489	2011-09-30 11:35:51	chrv	/	Make release 29.09.2011	 
+488	2011-09-28 23:38:26	savelij	/	Обновил доку на Evo Service.	 
+487	2011-09-28 23:15:19	savelij	/	Обновление Evo Service, Evo-DOS, ProfROM. В прошивку Gluk вернул как оно должно быть.	 
+486	2011-09-27 21:57:43	chrv	/	Add support BCD or HEX format in emulation Gluk clock.	 
+485	2011-09-27 21:56:24	chrv	/	Up monitors support list.	 
+484	2011-09-27 21:55:46	chrv	/	Update PLL by Zek	 
+483	2011-09-27 19:11:39	tsl	/	Deleted developing branch by TS-Labs	 
+482	2011-09-14 21:44:12	chrv	/	fix pll (rdat_n)	 
+481	2011-09-12 22:47:29	chrv	/	add VG93 PLL by ZEK	 
+480	2011-09-10 23:02:11	lvd	/	updated zxinet description	 
+479	2011-09-10 11:21:48	chrv	/	update manuals and monitors list	 
+478	2011-09-10 11:20:45	chrv	/	RS232 RTC fix	 
+477	2011-08-04 09:15:50	lvd	/	fpga/current: added slow_slew_rate=on, avr/current: compiled with new fpga firmware	 
+476	2011-07-31 20:02:32	lvd	/	fpga/current: added self-nmi-generation, added ports for savelij	 
+475	2011-07-26 15:57:08	chrv	/	some docs updated	 
+474	2011-07-22 19:33:54	savelij	/	Исправил обнаруженную ошибку и переделал перебор и отображение текущего турборежима в виде цифр.	 
+473	2011-07-22 14:18:31	chrv	/	Switching to beeper if value changed	 
+472	2011-07-21 14:30:17	savelij	/	Сделал переключение турбо 3,5, 7, 14, сам сервис пока на частоте 7 остался. Расширирил файловое окно и сделал показ расширений файлов.	 
+471	2011-07-20 09:16:06	lvd	/	added turbo selection (3.5, 7, 14), updated doc, built zxevo_fw.bin	 
+470	2011-07-19 00:29:26	chrv	/	up docs	 
+469	2011-07-18 13:22:03	lvd	/	fpga/current: added 16bit buffer for read data	 
+468	2011-07-14 23:44:57	lvd	/	built 14mhz testing firmware	 
+467	2011-07-14 23:08:27	lvd	/	merged z14 with trunk	 
+466	2011-07-14 21:54:18	lvd	/	z14: merged with current	 
+465	2011-07-14 21:52:58	lvd	/	z14: merged with current>	 
+464	2011-07-14 00:27:13	lvd	/	fpga/z14: fixed sdcard for 14mhz	 
+463	2011-07-12 08:31:51	lvd	/	fpga/z14: 3.5, 7 and 14 tested with memory waits (bw=11), added iorq 14mhz waits	 
+462	2011-07-12 08:31:34	lvd	/	fpga/z14: 3.5, 7 and 14 tested with memory waits (bw=11), added iorq 14mhz waits	 
+461	2011-07-07 10:36:40	lvd	/	fpga/z14: log change to allow comparing with unreal logs	 
+460	2011-07-06 01:08:28	lvd	/	fpga/z14: added missing files and changed Makefile for mudosim 10.0b	 
+459	2011-07-06 00:39:31	lvd	/	fpga/z14: now even 7mhz broken (does not goes to evoservice menu)	 
+458	2011-07-02 23:49:08	lvd	/	fpga/z14 - intermediate	 
+457	2011-06-27 18:42:17	chrv	/	add keyboard stickers source	 
+456	2011-06-27 18:40:24	chrv	/	finalize pcb routing and send to "rezonit"	 
+455	2011-06-27 11:26:30	lvd	/	z14 upd	 
+454	2011-06-26 13:15:25	lvd	/	rev_C - changed ft232 connection on SCH, added 2 vias on PCB	 
+453	2011-06-26 11:36:50	chrv	/	USB-RS232 bridge on FT232RL	 
+452	2011-06-25 00:18:46	chrv	/	USB-RS232 bridge add	 
+451	2011-06-23 11:28:04	chrv	/	rev C up	 
+450	2011-06-17 20:31:52	chrv	/	pcb revision C up	 
+449	2011-06-16 12:57:25	lvd	/	fpga/z14	 
+448	2011-06-15 17:26:14	lvd	/	fpga/z14	 
+447	2011-06-15 16:02:26	lvd	/	fpga/z14	 
+446	2011-06-14 23:09:36	lvd	/	fpga/z14	 
+445	2011-06-13 22:22:01	chrv	/	rev C up	 
+444	2011-06-13 01:47:28	lvd	/	fpga/z14 14mhz thoughts	 
+443	2011-06-12 11:34:03	lvd	/	compiled AVR firmware for latest changes in FPGA (inversed vs noninversed)	 
+442	2011-06-12 01:06:02	lvd	/	fpga/z14 arbiter thoughts	 
+441	2011-06-11 14:48:56	lvd	/	docs: changed base_config in accordance wiht previous revision	 
+440	2011-06-11 14:46:38	lvd	/	fpga/current: changed pages readback from non-inversed to inversed	 
+439	2011-06-11 14:29:14	chrv	/	Release 11.06.2011 up	 
+438	2011-06-11 14:06:12	lvd	/	fpga/current: fixed INT length to ~14us - now hexafiller in multicolor catches int correctly	 
+437	2011-06-11 13:50:18	chrv	/	Release 2011.06.11	 
+436	2011-06-11 13:04:04	lvd	/	fpga/current: border fix #2	 
+435	2011-06-11 11:58:32	chrv	/	up pcb and sch	 
+434	2011-06-11 00:21:38	lvd	/	removing old branches	 
+433	2011-06-11 00:19:21	lvd	/	removing old branches	 
+432	2011-06-11 00:08:21	lvd	/	z14	 
+431	2011-06-10 23:51:40	lvd	/	fpga/current: fixed INT position	 
+430	2011-06-08 18:45:18	chrv	/	base configuration on english add	 
+429	2011-06-08 18:29:13	lvd	/	14mhz turbo started	 
+428	2011-06-08 12:13:49	lvd	/	branched z80 14mhz	 
+427	2011-06-05 18:50:10	lvd	/	updated index in base_config doc	 
+426	2011-06-05 17:12:45	lvd	/	added docs for nmi, palette read, font set, ports read	 
+425	2011-06-05 17:12:18	lvd	/	atm_nmi merging with current	 
+424	2011-06-05 15:18:13	lvd	/	atm_nmi: built zxevo_fw.bin - now corrected - try #2	 
+423	2011-06-05 15:17:26	lvd	/	atm_nmi: built zxevo_fw.bin - now corrected\!	 
+422	2011-06-05 15:11:44	lvd	/	atm_nmi: built zxevo_fw.bin	 
+421	2011-06-05 00:59:10	lvd	/	nmi seems to work OK in simulation	 
+420	2011-06-04 17:12:50	lvd	/	atm_nmi: screen output OK	 
+419	2011-06-04 17:12:46	lvd	/	atm_nmi: screen output OK	 
+418	2011-06-01 23:57:27	lvd	/	added screen data sender to atm_nmi TB	 
+417	2011-06-01 11:04:49	lvd	/	atm_nmi: testing...	 
+416	2011-06-01 00:32:09	lvd	/	atm_nmi: testbench	 
+415	2011-05-31 23:48:19	lvd	/	updated bin2v a bit, win32 recompile required	 
+414	2011-05-31 23:48:02	lvd	/	atm_nmi: started adding testbench	 
+413	2011-05-31 19:18:48	lvd	/	--atm_nmi: testbench start	 
+412	2011-05-31 10:34:24	lvd	/	atm_nmi: int to be shifted, palette read tested, nmi not working yet	 
+411	2011-05-29 14:54:47	ddp	/	T&S: rev.C ready!(also injected into bootloader file) |
+Flasher: rev.C ready!	 
+410	2011-05-28 22:22:05	ddp	/	masked incorrect value RTC_PS2MOUSE_RES_REG	 
+409	2011-05-23 22:17:01	chrv	/	up pcb	 
+408	2011-05-23 10:12:15	chrv	/		 
+407	2011-05-19 09:04:40	lvd	/	atm_nmi ready for testing	 
+406	2011-05-19 08:26:07	lvd	/	atm_nmi	 
+405	2011-05-18 00:44:41	lvd	/	atm_nmi	 
+404	2011-05-17 00:47:29	lvd	/	atm_nmi	 
+403	2011-05-16 16:10:06	savelij	/	Сваял версию 0.4. С загрузчиком шрифтов с фат и из пзу. Сделал отключаемый драйвер ау принтера.	 
+402	2011-05-16 13:13:30	chrv	/	up scheme	 
+401	2011-05-16 01:44:54	lvd	/	merged from current to atm_nmi	 
+400	2011-05-15 18:16:44	lvd	/	added tool bin2mif	 
+399	2011-05-15 18:14:50	lvd	/	built new zxevo_fw.bin with font-updatable FPGA softcore	 
+398	2011-05-15 18:09:18	lvd	/	added new default font (better pseudographics)	 
+397	2011-05-15 17:44:10	lvd	/	intermediate commit	 
+396	2011-05-15 17:38:12	lvd	/	font write bugfixed	 
+395	2011-05-14 09:29:04	lvd	/	NORMAL font write now :)	 
+394	2011-05-14 06:03:12	tsl	/	Added font loading for textmode (port #BF, bit2=1 enables writing, addresses: #0000-#07FF)	 
+393	2011-05-14 05:53:19	tsl	/	test	 
+392	2011-05-13 01:05:47	lvd	/	added csync repeater to schematics	 
+391	2011-05-11 23:39:46	chrv	/	native mode for RS232	 
+390	2011-05-11 20:39:50	chrv	/	scheme up	 
+389	2011-05-11 09:42:07	lvd	/	branched atm_nmi to do nmi-related stuff	 
+388	2011-05-11 09:40:21	lvd	/	added 2 additional audioinputs	 
+387	2011-05-10 15:10:21	chrv	/	Revision C update	 
+386	2011-05-09 15:48:26	savelij	/	Укоротил имя ром файла.	 
+385	2011-05-09 14:46:20	savelij	/	Немного понаводил порядок в сервисной паге и заодно пристроил к использованию Глюка. Все равно место в пзу жо сих пор занимает.	 
+384	2011-05-04 17:28:23	savelij	/	Попилил немного ошибки доса и сделал грузилку онли для TAP файлов.	 
+383	2011-05-02 21:08:15	lvd	/	evonmi info added	 
+382	2011-05-02 13:26:01	chrv	/	Revision C started	 
+381	2011-05-01 20:54:49	ddp	/	T&S released, also injected into bootloader file	 
+380	2011-05-01 16:29:34	ddp	/	переписаны тесты видео и однобитного звука	 
+379	2011-04-28 11:55:59	lvd	/	evonmi updated	 
+378	2011-04-26 18:54:18	lvd	/	evo NMI preliminary doc added	 
+377	2011-04-26 18:43:18	chrv	/	support rs232 official release	 
+376	2011-04-26 18:41:01	lvd	/	zxinet protocol update	 
+375	2011-04-26 16:55:44	lvd	/	zxinet project docs added	 
+374	2011-04-13 22:04:22	chrv	/	- Add RS232 supporting.
+- Increase delay for reset FPGA (nCONFIG pin) before download it.
+
+- Add supported monitors to list.	 
+373	2011-04-07 19:46:57	tsl	/	Created Developing branch by TS-Labs	 
+372	2011-04-02 22:55:00	lvd	/	fixed: random write to cmos bug, border shift in RAGE bug	 
+371	2011-04-01 22:30:25	chrv	/	- fix RTC (return normal speed)	 
+370	2011-03-30 12:44:09	chrv	/	Release 30.03.2011.	 
+369	2011-03-29 00:39:14	lvd	/	updated docs (base config) for atm video modes, covox	 
+368	2011-03-25 12:06:55	chrv	/	add description for NVRAM extension (0x40..0xFE cells)	 
+367	2011-03-24 23:40:11	savelij	/	Еводос 0.25. Поправил перехват LDIR.	 
+366	2011-03-23 23:41:55	savelij	/	Евосервис 0.37. Доработка редактора CMOS.	 
+365	2011-03-22 21:10:32	savelij	/	Евосервис 0.36. Исправлена ошибка загрузки некоторых SCL файлов.	 
+364	2011-03-22 20:01:51	chrv	/	- Add access to 0..EF cells of PC8583.
+- Fix RTC PC8583 dayweek 0..6 convert to DS12788 dayweek 1..7 and vice versa.	 
+363	2011-03-19 21:42:37	savelij	/	Евосервис 0.35. Небольшые доработки.	 
+362	2011-03-17 23:07:40	savelij	/	Исправил ошибку не работы некоторых демок из за исправлений внесенных в басик48. Сделал редактор кмос для текстмода.	 
+361	2011-03-13 23:38:11	chrv	/	up monitor list	 
+360	2011-03-13 14:26:28	lvd	/	fpga/current: textmode fixed, covox (FB) added, zxevofwbin built	 
+359	2011-03-09 22:40:02	chrv	/	Fix RTC PC8583 dayweek 0..6 convert to DS12788 dayweek 1..7 and vice versa.	 
+358	2011-03-09 09:15:32	lvd	/	small modif. for fontrom	 
+357	2011-03-09 00:35:36	ddp	/	fixed textmode 1st line - test passed. zxevo_fw.bin rebuiled.	 
+356	2011-03-09 00:09:49	lvd	/	fpga/current: probably fixed textmode 1st line, not tested nor compiled! only src change	 
+355	2011-03-08 23:40:04	lvd	/	fpga/current: textmode finally fixed, zxevofwbin made	 
+354	2011-03-08 19:39:19	lvd	/	fixing textmode 1symb shift...	 
+353	2011-03-08 19:03:37	ddp	/	фак... не удалился. теперь удалил.	 
+352	2011-03-08 19:01:45	ddp	/	Test&Service (110308)
++недодока	 
+351	2011-03-05 01:49:08	lvd	/	fpga/current: fixed attr/pix text mode, still right symbol is absent, zxevofwbin built	 
+350	2011-03-03 01:19:07	lvd	/	1 symbol lag for text mode	 
+349	2011-03-02 09:49:26	lvd	/	atm_textmode: trying to fix...	 
+348	2011-03-02 00:35:01	lvd	/	textmode: fixed start address, not fixed attr shit :(. also zxevo_fw rebuilt	 
+347	2011-03-01 00:17:53	lvd	/	oops wrong comment. fixed small typo in video_render.v	 
+346	2011-03-01 00:13:54	lvd	/	begin making insertfixup for rbtree	 
+345	2011-02-28 23:15:21	savelij	/	Евосервис/еводос 0.33/023. Исправил зависание из за запрещенных прерываний при выходе из перезватчика портов.	 
+344	2011-02-28 22:23:57	ddp	/	fixed fontrom (символы уже видно)	 
+343	2011-02-28 09:49:26	lvd	/	fpga/current: added correct memory init to fontrom, NOT TESTED YET!	 
+342	2011-02-27 23:02:13	savelij	/	Версии евосервис/еводос 0.33/0.22. Добавил 2 диры для страниц ROM, но пока не свню. Там все только начинается.	 
+341	2011-02-27 22:16:02	lvd	/	compiled zxevo_fw with new videomodes	 
+340	2011-02-27 22:10:33	lvd	/	atm_video: merged to current, everything seems to work except text-mode	 
+339	2011-02-27 18:08:21	lvd	/	atm_video: fixed and tested modes: zx, zx-multicolor, zx-16c, atm-16c. atm-640 and atm-text not tested yet	 
+338	2011-02-27 16:58:41	lvd	/	atm_video: fixed flash and bitreverse, still errors in fetching	 
+337	2011-02-22 23:50:42	lvd	/	atm_video: videomodes first build, yet not tested\!	 
+336	2011-02-22 20:29:25	lvd	/	atm_video: adding videomodes...	 
+335	2011-02-21 23:46:51	lvd	/	still adding videomodes	 
+334	2011-02-20 21:35:05	lvd	/	started adding videomodes	 
+333	2011-02-18 01:05:06	lvd	/	atm_video: bugs fixed, ready to add videomodes	 
+332	2011-02-18 00:09:52	lvd	/	atm_video: addr_gen fuckup, to be repaired	 
+331	2011-02-17 22:38:47	lvd	/	atm_video: fixed more typos	 
+330	2011-02-17 08:58:04	lvd	/	atm_video: fixed some more typos	 
+329	2011-02-17 00:22:23	lvd	/	atm_video: corrected some little typos	 
+328	2011-02-16 23:44:08	lvd	/	atm_video: added forgotten interrupt generation	 
+327	2011-02-12 11:16:05	savelij	/	Версии евосервис/еводос 032/021. Исправление ошибок.	 
+326	2011-02-07 18:08:17	savelij	/	Небольшие изменения в еводосе.	 
+325	2011-02-01 08:27:40	lvd	/	atm_video: compiled in quartus, still not checked	 
+324	2011-02-01 07:48:22	lvd	/	atm_video: small update	 
+323	2011-01-31 15:46:54	lvd	/	atm_video: almost complete first approach	 
+322	2011-01-31 09:32:38	lvd	/	atm_video: small update	 
+321	2011-01-31 00:23:18	lvd	/	atm_video: small update	 
+320	2011-01-30 22:13:20	lvd	/	atm_video: merged 'current' branch	 
+319	2011-01-30 22:11:58	lvd	/	atm_video: small update	 
+318	2011-01-28 17:50:16	lvd	/	atm_video: small update	 
+317	2011-01-27 21:02:17	lvd	/	atm_video small commit	 
+316	2011-01-27 00:08:49	savelij	/	Устранил невозможность отформатировать реальный диск в досе.	 
+315	2011-01-26 20:42:10	ddp	/	T&S (уже чуть лучше;)	 
+314	2011-01-24 15:47:31	ddp	/	засунул в файл прошивки zxevo_bl.* ещё и test&service	 
+313	2011-01-24 15:12:14	ddp	/	AVRBOOT v101231 (релиз "задним числом";)	 
+312	2011-01-24 14:46:35	ddp	/	1) T&S tiny change 2) tag AVRBOOT v100328 (rev.311)	 
+311	2011-01-24 14:14:48	ddp	/		 
+310	2011-01-22 19:05:22	chrv	/	add monitors	 
+309	2011-01-22 19:01:24	savelij	/	Исправил найденные ошибки, добавил перехват LDIR в досе. Более ничего нового не вносил пока.	 
+308	2011-01-08 23:16:13	savelij	/	Исправил ошибку загрузчика FDI образов и прибил супербумкалку.	 
+307	2010-12-30 18:11:03	chrv	/	up monitors list	 
+306	2010-12-30 17:16:27	savelij	/	По горячим следам пока предыдущая версия не попала на сайт. Версии EVO-DOS 0.17 и EVO Service 0.28 с исправленными ошибками	 
+305	2010-12-30 00:09:23	savelij	/	Весрии EVO-DOS 0.16 и EVO Service 0.27. Доки только такие осилил. На реале проверил. Запуск и работа IS-DOS особенно в турбе это нечто. И все надо проверять. Но проблем вроде не видно.	 
+304	2010-12-08 21:21:00	savelij	/	Убрал пункт копирования дискет из сервиса, все равно не работает. А исправить забывайтунг ;)	 
+303	2010-12-07 22:36:09	savelij	/	Повоевал тут с свн, вроде все восстановил.	 
+302	2010-12-07 20:58:24	savelij	/		 
+301	2010-12-07 19:57:49	savelij	/		 
+300	2010-12-07 14:17:22	chrv	/	doc base configuration up	 
+299	2010-12-07 14:01:21	chrv	/	+ control ps/2 mouse resolution
++ mapping ps2 -> zx keyboard without ram
++ documentation update	 
+298	2010-12-07 00:27:07	savelij	/	В связи с воплями о не работе тех или иных программ (в основном игр) сделал некоторые исправления.	 
+297	2010-11-29 23:53:43	chrv	/	base configuration add	 
+296	2010-11-29 23:48:49	chrv	/	fix: not create eeprom data	 
+295	2010-11-29 16:08:33	chrv	/	fix documentation and make release 29.11.2010	 
+294	2010-11-28 23:51:12	savelij	/	Подправил кое-что по мелочи, изменил прошиватор. Доки поправил. Доки на еводос все еще нету. Еводос 0.13 и евосервис 0.24.	 
+293	2010-11-27 21:12:59	chrv	/	update zxevo_base_configuration.odt	 
+292	2010-11-27 19:02:18	chrv	/	* - "NumLock" switch mode to beeper/pwm or tapeout ("NumLock" led light on tapeout mode).
+* - Create full translation map (0x00-0x7f for extended scan codes).
+
+update compatible monitors list	 
+291	2010-11-27 00:29:23	ddp	/	(folder rename)	 
+290	2010-11-27 00:16:51	ddp	/	Test&Service 101124b	 
+289	2010-11-20 19:09:11	savelij	/	Закончил работу над ДОСом, наиздевался над 3,5 и 5,25 дисководами. Ничего страшного не обнаружил, все работает. Поэтому выкладываю EVO-DOS 0.11 и EVO Reset Service 0.23. Доку на EVO-DOS пока не начал, есть только хистори.	 
+288	2010-11-15 21:35:51	ddp	/	cAsE fix	 
+287	2010-11-14 17:26:02	ddp	/	added ATM pallette	 
+286	2010-11-13 23:44:10	chrv	/	update monitors list
+add english firmware update manual	 
+285	2010-11-12 12:21:17	lvd	/	tools/make_fw: changed source code name back to LOWER CASE, compiled new version for linux	 
+284	2010-11-12 01:54:50	lvd	/	fpga/current: changed shadow gluclock access, added tapeout-beeper mux, docs changed accordingly, zxevo_fw.bin built accordingly	 
+283	2010-11-10 19:03:58	ddp	/	убрал лишнее	 
+282	2010-11-10 19:00:40	lvd	/	fpga/atm_video: small update	 
+281	2010-11-10 11:45:48	lvd	/	recompiled fpga/current with q72sp3	 
+280	2010-11-10 10:05:08	lvd	/	fpga/current: merged important changes from atm_mem2	 
+279	2010-11-07 23:25:57	lvd	/	gate-level for atm_mem2: functions OK	 
+278	2010-11-07 12:40:22	lvd	/	gate-level start	 
+277	2010-11-06 13:10:21	ddp	/	"service" update (101106b)	 
+276	2010-10-31 20:42:34	lvd	/	trying to locate eef7 bug \(nothing found\)	 
+275	2010-10-29 07:12:22	lvd	/	fpga/atm_video: added some code	 
+274	2010-10-29 00:39:25	lvd	/	minor src update	 
+273	2010-10-25 12:09:50	lvd	/	atm_video in progress...	 
+272	2010-10-25 00:55:41	lvd	/	fpga/atm_video: new branch to develop ATM video modes	 
+271	2010-10-23 21:30:46	lvd	/	docs: updated base_config with NEW shadow-accessible EFF7/DFF7/BFF7 (pentagon & glukclock) port variants
+fpga/atm_mem2: fixed latest changes to atm memory functioning here	 
+270	2010-10-23 12:46:16	lvd	/	changed reset to ATM-mode (with manager off), works ONLY with new services.rom!	 
+269	2010-10-22 21:46:55	savelij	/	Отловил еще один мелкий глючок и подновил доку на неглюк.	 
+268	2010-10-21 20:14:57	savelij	/	Немного дописал доку.	 
+267	2010-10-21 20:11:56	savelij	/	Исправлена ошибка из-за которой в турбе при создании рамдиска происходил сброс или зависало. Переделан инит манагера для атм режима.	 
+266	2010-10-21 00:28:45	lvd	/	fixed bug in base_configuration	 
+265	2010-10-18 11:02:49	lvd	/	added datasheet for am29f040b	 
+264	2010-10-18 10:53:06	lvd	/	branched current to atm_mem2 - almost finished, needs final test after negluck rom fixes	 
+263	2010-10-17 23:54:32	chrv	/	some rs232 modifications (baseconf)
+add realease description to odt	 
+262	2010-10-17 23:19:13	lvd	/	added just a comment to fpga/current sources	 
+261	2010-10-17 11:42:37	ddp	/	изм. в процедуре обмена с РS/2 клавиатурой (АСК при приёме)	 
+260	2010-10-15 10:48:44	lvd	/	updated base_conf a little	 
+259	2010-10-14 10:31:31	lvd	/	fuck forever to CAPSLOCK KIDDIES!	 
+258	2010-10-14 10:25:47	lvd	/	removed ZXEVO_FW.BIN	 
+257	2010-10-14 10:24:55	lvd	/	compiled zxevo_fw.bin with new ROM map and turbo in TRDOS	 
+256	2010-10-13 09:48:00	lvd	/	changed to ATM-like ROM layout - zxevo_full.rom will work, zxevo_pent - will NOT WORK, turned on turbo in trdos	 
+255	2010-10-12 21:02:02	ddp	/	"Service". src (101012)	 
+254	2010-10-12 18:44:50	savelij	/	Сделал версию 0.2. Отказался от задуманных наворотов, сначала надо разобраться с менеджером памяти. Доки поправил. Вроде ничего не забыл. Если никакх проблем обнаружено не будет (на своей пентеве ненашол), то выкладывать с сорцами.	 
+253	2010-10-10 22:00:53	ddp	/	make_fw - some change	 
+252	2010-10-10 21:38:01	chrv	/	up list	 
+251	2010-10-09 20:06:06	lvd	/	base_config updated: memory model	 
+250	2010-10-09 09:41:12	savelij	/	Последняя версия не глюка, который на форуме выкладывал. Доку пока не переписывал.	 
+249	2010-10-08 22:39:35	ddp	/	"Service" (new "Flasher")	 
+248	2010-09-25 11:39:28	lvd	/	zxevo_base_config small update: more to come	 
+247	2010-09-19 13:43:15	savelij	/	Добавил в прошивку НЕ ГЛЮК сигнатуру и дату в вадироформате в последнии 8 байт по просьбе DDP. Пересобрал ром файлы. Залил считалку суммы для SCL файлов производства Deathsoft.	 
+246	2010-09-19 09:41:36	savelij	/	Залил приготовленные к экзекуции сорцы TR-DOS 5.03	 
+245	2010-09-19 08:55:05	chrv	/	- up monitors list
+- correction eng docs	 
+244	2010-09-17 21:07:42	savelij	/	Сделал версию НЕ ГЛЮКа 0.1А, для тестирование, слишком много переделано. Нового только сброс нгса. Все что вспомнил вписал в хистори, в доке добалась 1 строчка про сброс нгса. Заодно заливаю асм с прибамбасами на который перешел отказавшить от ужасма.	 
+243	2010-09-14 08:26:38	lvd	/	fixed nemo-divide write; fixed makefile - case problems	 
+242	2010-09-12 22:59:12	chrv	/	fucking office	 
+241	2010-09-12 22:48:41	chrv	/	english version	 
+240	2010-09-12 13:59:50	chrv	/	1) Add monitors to list
+2) F12 not switch off power (only hard reset)	 
+239	2010-09-11 06:17:55	lvd	/	updated base_config for new features	 
+238	2010-09-10 22:23:01	lvd	/	small unfinished update of base_configuration	 
+237	2010-09-10 21:54:52	lvd	/	correct zxevo_fw.bin for previous commit	 
+236	2010-09-10 21:52:15	lvd	/	nemo-divide: build as zxevo_fw.bin; patched avr Makefile: now make - for test, make release - for release version	 
+235	2010-09-10 09:23:28	lvd	/	nemo-divide: now works OK with old scheme, new scheme not tested yet. No new AVR firmware, just .sof and .rbf	 
+234	2010-09-09 08:58:21	lvd	/	nemo-divide: finally fixed normal read: inir-read needs testing, otir-write not supported yet	 
+233	2010-09-08 22:20:43	lvd	/	nemo-divide: fix try #3	 
+232	2010-09-08 05:32:30	lvd	/	nemo-divide: fix try #2	 
+231	2010-09-07 22:02:31	lvd	/	nemo-divide: fix try #1	 
+230	2010-09-06 09:31:58	lvd	/	added nemo-divide, SD-trdos, both not tested in HW.
+added description of SD-trdos to base-config.
+added XOR-mixing of tapeout and beeper
+FPGA .rbf compiled but AVR .hex not built	 
+229	2010-08-26 22:43:01	lvd	/	fixed f12+5sec no hardreset bug	 
+228	2010-08-26 21:38:01	lvd	/	fpga/current: adding SDcard in trdos, thinking about nemo-divide. added description of RS232 ports	 
+227	2010-08-22 21:58:44	chrv	/	update doc base-conf
+rom negluk 019	 
+226	2010-08-20 22:19:44	savelij	/	Сменил номер версии и пересобрал НЕ ГЛЮК	 
+225	2010-08-20 18:51:34	savelij	/	Забыл пересобрать прошивку для Пентевы которая на 64к размером.	 
+224	2010-08-20 18:49:06	savelij	/	Поправил НЕ ГЛЮК версии 0.18. В общем выкрутился за счет перенесения драйвера нгс ниже по адресам и только так избавился от глюка компилятора. Сейчас проблем вроде нет. Как далее будет не знаю. Номер версии остался тот же.	 
+223	2010-08-18 07:44:33	lvd	/	docs: updated base-configuration a little, added docs for ZC and nemo-divide	 
+222	2010-08-18 00:51:22	chrv	/	add monitors	 
+221	2010-08-17 23:40:45	savelij	/		 
+220	2010-08-17 23:15:42	chrv	/	add files	 
+219	2010-08-17 23:12:50	chrv	/	- "F9","F10","F11" on PS/2 keyboard not used for reset function.
+- "F12" on PS/2 keyboard worked like soft reset key. Short press (<5sec) - soft reset, long press (5sec) - hard reset and switch off ATX power.
+- "Ctrl-Alt-Del" on PS/2 keyboard reset ZX (hard reset). If all keys is mapped to ZX keyboard - function not work.
+- Create translating map (PS/2 to ZX keyboard) in eeprom (default in progmem).
+- Fix PS/2 mouse and keyboard send mode (without 'delay' function).
+- Support load from tape input.	 
+218	2010-08-04 23:05:25	savelij	/	Обновил НЕ ГЛЮК до версии 0.18, перенес кошкен на правую сторону и приделал анимацию, паузу анимации сделал пока маленькую. Добавил пункт загрузки с ленты.	 
+217	2010-08-04 00:23:27	lvd	/	CHRV: added tape iface	 
+216	2010-07-26 08:50:39	lvd	/	added some comments to base-configuration,
+added 16550 PDF	 
+215	2010-07-16 23:53:54	chrv	/	add monitors	 
+214	2010-07-09 19:57:57	chrv	/	up monitors list	 
+213	2010-06-21 03:30:22	lvd	/	fpga: added tape_read bit (.d6)	 
+212	2010-06-09 00:39:59	chrv	/	refresh monitor list and baseconf doc	 
+211	2010-06-01 17:10:22	savelij	/	Подправил доку на НЕ ГЛЮК, сделал сборщик апдейта для флешера с заголовком.	 
+210	2010-05-29 21:44:07	chrv	/	Add warnings and ByteBlasterMV scheme	 
+209	2010-05-22 22:07:11	savelij	/	Пока никуда не выложена вставил упущеный лейбл нарисованный robatом. Пока без анимации.	 
+208	2010-05-21 22:54:34	savelij	/	Сваял версию НЕ ГЛЮК под номером 0.17. Серьезных изменений нет. Переписаны рестартовые кнопки, сделал версию для запуска без перекомпиляции и на пенте и на атм. Поправил драйвер винта. Дополнительными батниками можно собирать версии для режимов пента и атм и для сборки полной пзу на 512кил. Пропатченный тырдос присвоил номер 6.12е. Текстовый файлик положил рядом с сорцом патча.	 
+207	2010-05-21 00:38:05	savelij	/	Сваял пзу не гдюка для АТМ (64к) и полное пзу (512к). Для АТМ не глюк еще не весь обезглючен. Некоторые резет сервисы рвут крышу. С инитом почти полностью разобрался, глюки поправлю чуть позже. Основное даже типа работает.	 
+206	2010-05-20 22:56:21	chrv	/	add monitors	 
+205	2010-05-15 23:41:26	savelij	/		 
+204	2010-05-15 20:43:49	savelij	/	Выложил патченный тырдос 6.10. Доку отдельную не создавал. Все в сорце отписал.	 
+203	2010-05-15 14:12:42	chrv	/	add GB1 description	 
+202	2010-05-15 13:08:37	chrv	/	add monitors	 
+201	2010-05-12 22:51:43	savelij	/	Пропатчил тырдос 6.10е. Прибил запись в порт #F7 и добавил модифицированное исправление от VELESOFT. Проверил только на анрыле. Но в порт #EFF7 тырдос уже не гадит.	 
+200	2010-04-30 01:29:13	lvd	/	merged atm_mem to current	 
+199	2010-04-27 23:16:36	chrv	/	add monitors	 
+198	2010-04-27 23:11:08	lvd	/	experimental build with atm_mem firmware for FPGA	 
+197	2010-04-27 21:12:34	lvd	/	probably fixed atm_mem bug	 
+196	2010-04-26 01:12:21	lvd	/	added savelij romable test to testcase of atm_mem	 
+195	2010-04-21 23:24:53	lvd	/	atm_mem: docs/atm_proj.txt	 
+194	2010-04-15 23:06:03	lvd	/	atm-mem seems to work. needs testing.	 
+193	2010-04-13 22:19:46	lvd	/	linux build of make_fw	 
+192	2010-04-13 22:07:25	ddp	/	cr/lf vs lf	 
+191	2010-04-08 21:54:14	ddp	/	sd logger	 
+190	2010-04-01 12:40:40	lvd	/	small correction to previous commit	 
+189	2010-04-01 12:35:52	lvd	/	test build of ZXEVO_FW.BIN in linux, please test...	 
+188	2010-03-31 12:00:49	lvd	/	make_fw build for linux	 
+187	2010-03-31 08:38:18	lvd	/	atm-mem runs up to B128	 
+186	2010-03-30 00:18:05	chrv	/	Fix fpga load and ZX part init (optimize)	 
+185	2010-03-28 23:04:17	chrv	/	add monitors	 
+184	2010-03-28 22:18:15	chrv	/	history update	 
+183	2010-03-28 15:32:20	ddp	/	AVRBOOT, FLASHER, CRCBLDR - изменён формат хранения даты релиза (swap lo/hi bytes)	 
+182	2010-03-28 12:43:35	chrv	/	Fix PS/2 mouse error handler (analize error and reinit mouse if need it)	 
+181	2010-03-28 00:27:14	savelij	/	Испек версию 0.16 НЕ ГЛЮКа с отображением версий прошивок Пентевы.	 
+180	2010-03-27 22:48:11	chrv	/	Swap bytes in release date packing.	 
+179	2010-03-27 19:17:32	chrv	/	- Add support for get version info (via Gluk cmos extra registers 0xF0..0xFF).
+- Optimize sources, some correction (log, fpga load).	 
+178	2010-03-26 07:32:00	lvd	/	atm-mem testbench: neGLUK runs successfully with ints up to HALT+keyboard read loop	 
+177	2010-03-25 22:42:18	lvd	/	atm-mem: testbench upgraded	 
+176	2010-03-25 19:02:36	chrv	/	Fix PS/2 timeout error handler.	 
+175	2010-03-25 09:43:00	lvd	/	atm-mem testbench: comes to the HALT at ~589ms	 
+174	2010-03-24 23:25:36	ddp	/	-устранена проблема с обновлением после работы флешера
+(приходилось отключать питание)
++поддержка VGA режима
+("вспоминает" текущий режим из NVRAM)
+*изменения в процедуре обмена с SD карточками.
+(не работали некоторые карточки)	 
+173	2010-03-24 22:51:31	ddp	/	поправлена процедура обмена с SD картой	 
+172	2010-03-24 22:48:32	chrv	/	Fix Power Led behavior (it off while atx power off).	 
+171	2010-03-24 21:53:58	lvd	/	atm-mem testbench - neGLUK starts to work	 
+170	2010-03-24 10:41:18	lvd	/	atm-mem testbench continuing	 
+169	2010-03-23 22:30:34	lvd	/	atm-mem: first working model commit	 
+168	2010-03-23 11:58:54	lvd	/	linux build updated	 
+167	2010-03-23 11:57:17	lvd	/	bin2v/win32 added (requires msvcrt90.dll to run), some nedobug fixed	 
+166	2010-03-23 02:30:44	lvd	/	one more bug to bin2v fixed	 
+165	2010-03-23 02:20:10	lvd	/	bin2v debugged and linux executable built	 
+164	2010-03-23 02:07:27	lvd	/	Added new tool to tools: bin2v (binary to verilog)	 
+163	2010-03-21 18:41:26	chrv	/	- "Print Screen" PS2 keyboard key set NMI on ZX.
+- Soft reset (Z80 only) to service (0) page if pressed "softreset" key <5 seconds.
+- documentation	 
+162	2010-03-21 13:06:06	chrv	/	add monitors	 
+161	2010-03-19 22:52:07	lvd	/	atm-mem continuing	 
+160	2010-03-19 17:41:26	savelij	/	Исправил вылезшие старые дрожжи. Не обнулялась без часов одна переменная. Номер версии и дока без изменений.	 
+159	2010-03-19 10:15:05	lvd	/	atm-mem continuing	 
+158	2010-03-18 01:50:33	lvd	/	atm-mem continuing	 
+157	2010-03-17 21:32:02	savelij	/	Версия НЕ ГЛЮК 0.15. Устранил ошибку невозможности выбора дисковода при отсутствии часов.	 
+156	2010-03-17 20:32:19	savelij	/	Перенес описание и хистори на НЕ ГЛЮК	 
+155	2010-03-16 12:29:04	lvd	/	atm-mem continuing	 
+154	2010-03-13 01:12:27	lvd	/	added some handy doc files	 
+153	2010-03-12 21:31:38	lvd	/	atm-mem continuing	 
+152	2010-03-11 01:25:51	lvd	/	atm-mem: intermediate commit (not working)	 
+151	2010-03-10 22:30:40	chrv	/	fix AAA keyboard bug	 
+150	2010-03-10 20:54:30	savelij	/	Обновил НЕ ГЛЮК до версии 0.14. Исправил невыставление режимов при переходе в бейсики и тырдос. Подправил проверку умоса.	 
+149	2010-03-08 21:15:24	chrv	/	Add PS2 keyboard led controlling: "Scroll Lock" led equal VGA mode.	 
+148	2010-03-06 19:33:33	ddp	/	Added EEPROM update feature (avrboot, make_fw)	 
+147	2010-03-06 19:24:24	ddp	/	avrboot tag	 
+146	2010-03-06 19:22:00	ddp	/	make_fm tag	 
+145	2010-03-01 21:47:49	lvd	/	correct atm_proj.txt by now	 
+144	2010-03-01 21:28:10	lvd	/	atm_proj updated with fresh thoughts	 
+143	2010-03-01 20:46:26	ddp	/	atm_proj.txt-discussion. DDp's opinion.	 
+142	2010-03-01 20:46:13	savelij	/	Фаталл и рейдж переехал в диру nedopc\soft\hobetas	 
+141	2010-03-01 18:01:32	lvd	/	docs/atm_proj.txt added for discussion	 
+140	2010-02-28 23:05:50	savelij	/	Мелкое исправление без изменения версии. Добавил шрифты для будущей перестройки.	 
+139	2010-02-25 23:36:48	savelij	/	Собрал фаталл 0.22. Поборол дискоглюки и сделал страничную листалку по файлам. Выложил в хобете для запуска из сервиса. Искать здесь: rom\page0	 
+138	2010-02-25 11:11:17	lvd	/	atm2 architecture manual added in PDF form	 
+137	2010-02-24 17:06:32	savelij	/	Добавил для теста Рейдж, обновил версию сервиса до 0.13 (добавил поддержку SMUC)	 
+136	2010-02-24 17:04:05	savelij	/	Отписал про Самсунг 2250G	 
+135	2010-02-23 23:40:10	chrv	/	Fix mapping gluk (DS12887) nvram to PCF8583.	 
+134	2010-02-23 11:53:32	ddp	/	fpga back to rev.127	 
+133	2010-02-22 13:48:53	savelij	/	Исправил еще пару глюков. Поправил/дополнил доку	 
+132	2010-02-22 11:14:03	savelij	/	Версия прошивки 0.11. Исправлен первый глюк	 
+131	2010-02-22 01:03:49	savelij	/	Выложил сорцы и сборщик сервис прошивки. Рядом с РОМ файлом прошивки выложил Фаталл ввиде кодового блока в формате Хобета.	 
+130	2010-02-22 01:00:41	savelij	/	Добавил тулзу sjasmplus в соотвествующую диру	 
+129	2010-02-21 22:08:10	chrv	/	- fix Gluk C reg UF bit behaviour (thanks Savelij)
+- update comments and headers	 
+128	2010-02-21 18:14:13	ddp	/	finest tune video-out	 
+127	2010-02-17 00:40:02	chrv	/	update comments for doxygen	 
+126	2010-02-16 00:19:03	chrv	/	add save/restore vga mode from RTC NVRAM	 
+125	2010-02-15 20:53:55	ddp	/	supported_monitors.odt	 
+124	2010-02-15 20:16:36	ddp	/	fix vga video (black band on border)	 
+123	2010-02-14 20:55:39	lvd	/	added nmi control	 
+122	2010-02-14 17:47:40	lvd	/	supported_monitors.odt: added author column	 
+121	2010-02-12 21:50:03	chrv	/	add monitors	 
+120	2010-02-11 15:44:27	chrv	/	add monitors	 
+119	2010-02-07 23:42:53	ddp	/	more fine tune realkbd	 
+118	2010-02-07 21:06:47	chrv	/	add monitors	 
+117	2010-02-07 16:35:03	ddp	/	fine optimize realkbd	 
+116	2010-02-06 11:53:09	chrv	/	Add monitors	 
+115	2010-02-06 10:35:08	ddp	/	added real matrix keyboard support	 
+114	2010-02-05 00:05:23	chrv	/	Savelij tebe pole dejatelnosti :)	 
+113	2010-02-05 00:02:14	chrv	/	new spi mapping and joystick support	 
+112	2010-02-04 22:30:26	chrv	/	Add joystick support	 
+111	2010-02-04 00:33:04	chrv	/	Add monitors
+Few changes in user docs	 
+110	2010-02-04 00:18:05	lvd	/	slave spi addressing changed, KJ port added (see spi_fmt.txt)	 
+109	2010-01-31 15:18:26	ddp	/	fix video out (TV and VGA)	 
+108	2010-01-30 18:08:53	ddp	/	upd supported_monitors.odt	 
+107	2010-01-29 23:19:06	chrv	/	add AAA monitors	 
+106	2010-01-29 21:58:16	lvd	/	_ver1.00 is fixed in avr and fpga subdirs - first usable!	 
+105	2010-01-29 21:34:40	chrv	/	fix bug this year saving to rtc	 
+104	2010-01-29 19:39:35	chrv	/	full Gluk clock emulation	 
+103	2010-01-29 18:28:21	savelij	/	docs/kbd-map_s.txt added	 
+102	2010-01-29 16:10:37	lvd	/	docs/kbd-map.txt added	 
+101	2010-01-29 13:44:46	chrv	/		 
+100	2010-01-28 23:44:25	chrv	/	Switcher VGA/non-VGA on SCROLL LOCK.
+RTC some features (write/read NVRAM cells).	 
+99	2010-01-28 21:28:19	savelij	/		 
+98	2010-01-28 20:57:17	lvd	/	border brightness fixed, vga on-off added (AVR control), docs has now 'supported_monitors' file	 
+97	2010-01-28 11:22:23	lvd	/	vga-only; picture brightness corrected; mouse bug fixed (was X=Y); gluclock works, but badly	 
+96	2010-01-28 00:51:05	lvd	/	probably status bug fixed - forgot to compile in rev.95	 
+95	2010-01-28 00:50:08	lvd	/	probably status bug fixed	 
+94	2010-01-28 00:31:43	chrv	/	add wait ports processing	 
+93	2010-01-27 00:52:08	lvd	/	VGA mode WORKS!. avr is not updated, at rev.76. Needs adding clock support. gluckrom won't work. Use BBMV to upload directly to FPGA	 
+92	2010-01-26 23:57:16	lvd	/	vga scan-doubling initial commit (mey not work)	 
+91	2010-01-26 22:59:29	chrv	/	Update documents	 
+90	2010-01-25 23:38:25	chrv	/	ZXEvo user manual	 
+89	2010-01-25 21:49:08	ddp	/	fine polishing :)	 
+88	2010-01-24 23:02:30	lvd	/	wait-regs for gluck clocks made: gluck rom not working without software support in atmega; press F9-F11 to reset out of gluck rom.	 
+87	2010-01-24 18:36:16	chrv	/	correct orfografic	 
+86	2010-01-24 16:09:54	ddp	/	upd FLASHER (doc)
+upd MAKE_FW
+del UPX	 
+85	2010-01-24 15:13:53	chrv	/	to RevA folder	 
+84	2010-01-24 15:13:34	chrv	/		 
+83	2010-01-24 15:12:58	chrv	/	to revB catalog	 
+82	2010-01-24 15:12:25	chrv	/	renamed	 
+81	2010-01-24 15:07:13	chrv	/		 
+80	2010-01-24 15:05:16	chrv	/	Documentation on rev B	 
+79	2010-01-24 09:10:10	ddp	/	upd AVRBOOT
+upd CRCBLDR	 
+78	2010-01-23 20:16:50	chrv	/	hsync has now 31khz, while csync still 15khz, no scan-doubling.	 
+77	2010-01-23 19:56:51	lvd	/	31kHz on separate hsync output, no scandoubling	 
+76	2010-01-23 19:52:03	chrv	/	support mouse and atx power supply	 
+75	2010-01-23 19:50:51	chrv	/	support mouse and atx power supply	 
+74	2010-01-22 22:39:21	chrv	/		 
+73	2010-01-21 00:19:22	chrv	/	rtc released	 
+72	2010-01-21 00:18:18	chrv	/	rtc read/write released	 
+71	2010-01-20 00:18:53	chrv	/	mouse: send to zx port release	 
+70	2010-01-19 00:04:20	lvd	/	bugs fixed, kbd works now	 
+69	2010-01-17 22:10:20	lvd	/	probably bug in rev67 fixed	 
+68	2010-01-17 16:24:20	ddp	/	AVRBOOT (CONF_DONE after FPGA load; fine tune FAT32; DOCs)
+FLASHER (messages in rs232; fine tune FAT32; DOCs)	 
+67	2010-01-15 00:46:56	lvd	/	making new SPI slave engine in FPGA, not tested by now, and can be totally broken!	 
+66	2010-01-14 23:14:06	ddp	/	AVRASM32 (from Atmel) replaced AVRA (ГНУ)	 
+65	2010-01-13 22:00:07	savelij	/		 
+64	2010-01-13 20:52:26	ddp	/	update Flasher. Add video-out, fix some bugs (64K limit, etc)
+delete garbage.	 
+63	2010-01-11 20:39:41	chrv	/	first release and log to com support	 
+62	2010-01-11 01:57:29	lvd	/	deleted unneeded photos	 
+61	2010-01-10 21:02:31	chrv	/		 
+60	2010-01-10 20:59:18	chrv	/		 
+59	2010-01-10 20:38:23	ddp	/	no coments 2	 
+58	2010-01-10 19:07:45	ddp	/	no coments	 
+57	2010-01-10 18:11:52	ddp	/	TRYFLASH (try ...)	 
+56	2010-01-10 15:50:43	ddp	/	TRYFLASH (try again)	 
+55	2010-01-10 14:42:11	lvd	/	more shots	 
+54	2010-01-10 12:31:45	lvd	/	fotka	 
+53	2010-01-10 11:13:53	ddp	/	Flasher Test (tryflash)	 
+52	2010-01-10 00:59:49	ddp	/	evoflasher fix2 (hex only)	 
+51	2010-01-09 23:37:04	ddp	/	flasher fix1 (hex only)	 
+50	2010-01-09 22:59:16	lvd	/	orthographic fix in rescue flasher .odt	 
+49	2010-01-09 22:56:15	lvd	/	No .hex deleting in bat	 
+48	2010-01-03 19:09:42	ddp	/	added "flasher"-subproject
+added testrom by axlr	 
+47	2009-12-25 19:29:01	ddp	/	AVRBOOT: Fix critical error in SD-driver.	 
+46	2009-12-23 20:57:18	ddp	/	update ZXEvo_firmware_update.odt	 
+45	2009-12-22 22:13:39	chrv	/		 
+44	2009-12-22 22:11:16	chrv	/		 
+43	2009-12-19 18:02:27	ddp	/	fix LAZHA in fuse/lock bit ;)	 
+42	2009-12-19 15:25:57	ddp	/	BootLdr support ATX now.
+Support "version". Version(comment,date,officiality) show in the terminal when update process is running.	 
+41	2009-12-11 00:31:20	lvd	/	continuing...	 
+40	2009-12-08 00:12:49	lvd	/	starting redesign from two clocks (zports.v) to single clock (fclk) and zpos-zneg strobes (zclock.v). May be broken now, not tested in hardware	 
+39	2009-12-06 18:02:30	ddp	/	Fix Lock48K
+Variant for Lock128K ("koe's style" string in zports.v)	 
+38	2009-12-06 01:53:17	lvd	/	Probably bugfix for NMOS bug; changed Makefile in avr/ to automatically take top.rbf from fpga/current	 
+37	2009-12-06 00:21:46	lvd	/	Added timing info for z84c0010, tmpz84c00ap-8 and z0840008, modelling with z0840008 timings	 
+36	2009-12-05 12:29:26	lvd	/	intermediate	 
+35	2009-12-05 12:27:17	lvd	/	intermediate	 
+34	2009-12-05 12:25:39	lvd	/	tb somehow works, added timing info (oscillospoce screenshots) to z80/clocking	 
+33	2009-12-04 00:39:35	lvd	/	fixed bugs with Pullup1 going to vhld model	 
+32	2009-12-03 21:59:28	lvd	/	resetter.v fixed for simulation	 
+31	2009-12-03 21:38:49	lvd	/	T80 does not work in simulation	 
+30	2009-12-03 00:09:55	lvd	/	complete testbench. does not work.	 
+29	2009-12-03 00:09:33	lvd	/	complete testbench. does not work.	 
+28	2009-12-02 20:49:13	ddp	/	Just added ZXEVO_FW.BIN to avr/current/default/	 
+27	2009-11-28 21:56:33	chrv	/		 
+26	2009-11-28 21:55:27	chrv	/		 
+25	2009-11-28 21:54:53	chrv	/		 
+24	2009-11-28 21:54:15	chrv	/		 
+23	2009-11-27 18:55:13	chrv	/		 
+22	2009-11-27 18:54:43	chrv	/		 
+21	2009-11-27 18:54:08	chrv	/		 
+20	2009-11-27 18:53:30	chrv	/		 
+19	2009-11-27 18:53:00	chrv	/		 
+18	2009-11-27 18:52:02	chrv	/		 
+17	2009-11-27 00:34:49	lvd	/	Previous fix goes to _ver0.02	 
+16	2009-11-27 00:33:22	lvd	/	Some IDE fixes for old IDE drives	 
+15	2009-11-26 22:30:27	ddp	/	branch/tag for avrboot (v0.04)	 
+14	2009-11-26 22:23:52	ddp	/	more tools - more automatic (avrboot)	 
+13	2009-11-23 20:57:37	ddp	/	Added AVRBOOT and some tools
+Changed Makefile for AVR (auto create firmware for bootloader)
+(А что, комментарии кириллицей ни как нельзя?)	 
+12	2009-11-22 22:39:10	lvd	/	Added initial pause management	 
+11	2009-11-22 20:58:20	lvd	/	just intermediate	 
+10	2009-11-22 17:46:10	lvd	/	Compiled and fixed rev8	 
+9	2009-11-22 17:45:58	lvd	/	Compiled and fixed rev8	 
+8	2009-11-22 17:06:26	lvd	/	Added fifo for ZX keycodes	 
+7	2009-11-21 21:38:18	lvd	/	Added some TV-related docs	 
+6	2009-11-21 21:35:18	lvd	/	Added AVR files: last stable (_ver0.00) and current (under development, broken now) main firmware	 
+5	2009-11-21 21:10:35	lvd	/	Added some project directories	 
+4	2009-11-21 21:06:56	lvd	/	initial commit of FPGA files	 
+3	2009-11-21 20:21:22	ddp	/		 
+2	2009-11-21 17:25:13	lvd	/	commit #2	 
+1	2009-11-21 16:32:55	lvd	/	first test commit!

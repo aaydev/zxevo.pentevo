@@ -22,6 +22,7 @@
 #include "cpulist.h"
 #include "tempresult.h"
 #include "addrspace.h"
+#include "chartrans.h"
 
 typedef struct _TCrossRef
 {
@@ -88,17 +89,10 @@ extern char SrcSuffix[],IncSuffix[],PrgSuffix[],LstSuffix[],
 #define MomCPUIdentName  "MOMCPUNAME" /* mom. Prozessortyp */
 #define MomFPUIdentName  "MOMFPUNAME" /* mom. Koprozessortyp */
 #define MomPMMUIdentName  "MOMPMMUNAME" /* mom. MMU-Typ */
-#define SupAllowedCmdName "SUPMODE"   /* privilegierte Befehle erlaubt */
-#define SupAllowedSymName "INSUPMODE"
 #define DoPaddingName    "PADDING"    /* Padding an */
 #define PackingName      "PACKING"    /* gepackte Ablage an */
-#define MaximumName      "INMAXMODE"  /* CPU im Maximum-Modus */
-#define FPUAvailName     "HASFPU"     /* FPU-Befehle erlaubt */
-#define PMMUAvailName    "HASPMMU"    /* PMMU-Befehle erlaubt */
 #define ListOnName       "LISTON"     /* Listing an/aus */
 #define RelaxedName      "RELAXED"    /* alle Zahlenschreibweisen zugelassen */
-#define SrcModeName      "INSRCMODE"  /* CPU im Quellcode-kompatiblen Modus */
-#define BigEndianName    "BIGENDIAN"  /* Datenablage MSB first */
 #define BranchExtName    "BRANCHEXT"  /* Spruenge autom. verlaengern */
 #define FlagTrueName     "TRUE"	      /* Flagkonstanten */
 #define FlagFalseName    "FALSE"
@@ -116,7 +110,6 @@ extern char SrcSuffix[],IncSuffix[],PrgSuffix[],LstSuffix[],
 #define DefStackName     "DEFSTACK"   /* Default-Stack */
 #define NestMaxName      "NESTMAX"    /* max. nesting level of a macro */
 #define DottedStructsName "DOTTEDSTRUCTS" /* struct elements by default with . */
-#define CompModeName     "COMPMODE"   /* compatibility mode */
 
 extern const char *EnvName;
 
@@ -134,6 +127,8 @@ extern const char *EnvName;
 extern LongWord MaxCodeLen;
 
 #define DEF_NESTMAX 256
+
+#define LOCSYMSIGHT 3       /* max. sight for nameless temporary symbols */
 
 typedef void (*SimpProc)(
 #ifdef __PROTOS__
@@ -154,7 +149,7 @@ typedef struct _TTransTable
 {
   struct _TTransTable *Next;
   char *Name;
-  unsigned char *Table;
+  as_chartrans_table_t *p_table;
 } TTransTable, *PTransTable;
 
 typedef struct _TSaveState
@@ -162,7 +157,7 @@ typedef struct _TSaveState
   struct _TSaveState *Next;
   CPUVar SaveCPU;
   char *pSaveCPUArgs;
-  Integer SavePC;
+  as_addrspace_t SavePC;
   Byte SaveListOn;
   tLstMacroExp SaveLstMacroExp;
   tLstMacroExpMod SaveLstMacroExpModDefault,
@@ -222,7 +217,7 @@ extern LargeWord *Phases;
 extern Word Grans[SegCountPlusStruct];
 extern Word ListGrans[SegCountPlusStruct];
 extern ChunkList SegChunks[SegCountPlusStruct];
-extern Integer ActPC;
+extern as_addrspace_t ActPC;
 extern Boolean PCsUsed[SegCountPlusStruct];
 extern LargeWord *SegInits;
 extern LargeWord *SegLimits;
@@ -251,19 +246,17 @@ extern Boolean MakeCrossList;
 extern Boolean MakeSectionList;
 extern Boolean MakeIncludeList;
 extern Boolean DefRelaxedMode;
-extern Boolean CompMode, DefCompMode;
 extern Word ListMask;
 extern ShortInt ExtendErrors;
 extern Integer EnumSegment;
 extern LongInt EnumIncrement, EnumCurrentValue;
 extern LongWord MaxErrors;
-extern Boolean TreatWarningsAsErrors;
 
 extern LongInt MomSectionHandle;
 extern PSaveSection SectionStack;
 extern tSavePhase *pPhaseStacks[SegCount];
 
-extern tSymbolSize AttrPartOpSize;
+extern tSymbolSize AttrPartOpSize[2];
 extern LongInt CodeLen;
 extern Byte *BAsmCode;
 extern Word *WAsmCode;
@@ -276,7 +269,6 @@ extern Boolean NumericErrors;
 extern Boolean CodeOutput;
 extern Boolean MacProOutput;
 extern Boolean MacroOutput;
-extern Boolean QuietMode;
 extern Boolean HardRanges;
 extern const char *DivideChars;
 extern Boolean HasAttrs;
@@ -294,7 +286,6 @@ extern StringPtr OutName;
 extern Integer CurrIncludeLevel;
 extern StringPtr CurrFileName;
 extern LongInt CurrLine;
-extern LongInt MomLineCounter;
 extern LongInt LineSum;
 extern LongInt MacLineSum;
 
@@ -308,6 +299,7 @@ extern Boolean (*SetIsOccupiedFnc)(void),
                (*SaveIsOccupiedFnc)(void),
                (*RestoreIsOccupiedFnc)(void);
 extern Boolean SwitchIsOccupied, PageIsOccupied, ShiftIsOccupied;
+extern Boolean multi_char_le;
 extern Boolean (*DecodeAttrPart)(void);
 extern void (*MakeCode)(void);
 extern Boolean (*ChkPC)(LargeWord Addr);
@@ -319,7 +311,7 @@ extern DissectRegProc DissectReg;
 extern tQualifyQuoteFnc QualifyQuote;
 
 extern StringPtr IncludeList;
-extern Integer IncDepth,NextIncDepth;
+extern Integer IncDepth, NextIncDepth, MaxIncDepth;
 extern FILE *ErrorFile;
 extern FILE *LstFile;
 extern FILE *ShareFile;
@@ -336,22 +328,14 @@ extern char MomCPUIdent[20],
             MomFPUIdent[20],
             MomPMMUIdent[20];
 
-extern Boolean FPUAvail,
-               PMMUAvail;           /* PMMU-Befehle erlaubt? */
-extern Boolean DoPadding,
-               TargetBigEndian;
-extern Boolean Packing;
-extern Boolean DefSupAllowed, SupAllowed;
-extern Boolean Maximum;
-extern Boolean DoBranchExt;
-
 extern int OutRadixBase, ListRadixBase;
+extern Boolean ListPCZeroPad;
 extern const char *pCommentLeadIn;
 
 extern tStrComp *ArgStr;
-extern StringPtr pLOpPart;
 extern tStrComp LabPart, CommPart, ArgPart, OpPart, AttrPart;
 extern char AttrSplit;
+extern Boolean oppart_leading_dot;
 extern int ArgCnt;
 extern as_dynstr_t OneLine;
 #ifdef PROFILE_MEMO
@@ -377,7 +361,6 @@ extern Byte StopfZahl;
 
 extern Boolean SuppWarns;
 
-#define CharTransTable CurrTransTable->Table
 extern PTransTable TransTables, CurrTransTable;
 
 extern PDefinement FirstDefine;
@@ -402,10 +385,15 @@ extern void Default_DissectBit(char *pDest, size_t DestSize, LargeWord BitSpec);
 extern void AppendArg(size_t ReqSize);
 extern void InsertArg(int Index, size_t ReqSize);
 
+extern Boolean memo_set_pseudo(void);
+extern Boolean is_set_pseudo(void);
+extern Boolean is_save_pseudo(void);
+extern Boolean is_restore_pseudo(void);
+extern Boolean memo_switch_pseudo(void);
+extern Boolean memo_shift_pseudo(void);
+extern Boolean is_page_pseudo(void);
 
-extern Boolean SetIsOccupied(void);
-extern Boolean SaveIsOccupied(void);
-extern Boolean RestoreIsOccupied(void);
+extern void free_forward_symbol(PForwardSymbol p_symbol);
 
 extern void asmdef_init(void);
 #endif /* _ASMDEF_H */

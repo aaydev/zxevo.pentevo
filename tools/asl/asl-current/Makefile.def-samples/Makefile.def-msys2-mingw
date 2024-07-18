@@ -1,0 +1,31 @@
+# -------------------------------------------------------------------------
+# choose your compiler (must be ANSI-compliant!) and linker command, plus
+# any additionally needed flags
+
+# ...for host-side build tools:
+CC = gcc
+OBJDIR =
+CFLAGS = -O2 -Wall 
+LIBM =
+HOST_OBJEXTENSION = .o
+LD = $(CC)
+LDFLAGS =
+HOST_EXEXTENSION = .exe
+
+TARG_CC = $(CC)
+TARG_OBJDIR = $(OBJDIR)
+TARG_CFLAGS = $(CFLAGS)
+TARG_OBJEXTENSION = .o
+TARG_LD = $(LD)
+TARG_LDFLAGS = $(LDFLAGS)
+TARG_EXEXTENSION = $(HOST_EXEXTENSION)
+
+# -------------------------------------------------------------------------
+# directories where binaries, includes, and manpages should go during
+# installation
+
+BINDIR = C:/ASL/bin
+INCDIR = C:/ASL/include
+MANDIR = C:/ASL/man
+LIBDIR =
+DOCDIR = C:/ASL/doc

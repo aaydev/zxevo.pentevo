@@ -21,6 +21,7 @@
 #include "asmsub.h"
 #include "asmpars.h"
 #include "asmallg.h"
+#include "onoff_common.h"
 #include "asmitree.h"
 #include "asmstructs.h"
 #include "codepseudo.h"
@@ -38,7 +39,6 @@ static tSymbolSize OpSize;
 static tStrComp FormatPart;
 
 #define REG_SP 15
-#define REG_MARK 16
 
 typedef enum
 {
@@ -376,7 +376,7 @@ static Boolean DecodeRegCore(const char *pArg, Byte *pResult, Byte *pPrefix)
 
   if (!as_strcasecmp(pArg, "SP"))
   {
-    *pResult = REG_MARK | REG_SP;
+    *pResult = REGSYM_FLAG_ALIAS | REG_SP;
     *pPrefix = 0x00;
     return True;
   }
@@ -413,7 +413,7 @@ static void DissectReg_H16(char *pDest, size_t DestSize, tRegInt Reg, tSymbolSiz
   switch (Size)
   {
     case eSymbolSize32Bit:
-      if (Reg == (REG_MARK | REG_SP))
+      if (Reg == (REGSYM_FLAG_ALIAS | REG_SP))
         as_snprintf(pDest, DestSize, "SP");
       else
       {
@@ -431,6 +431,34 @@ static void DissectReg_H16(char *pDest, size_t DestSize, tRegInt Reg, tSymbolSiz
     default:
       as_snprintf(pDest, DestSize, "%d-%u", Size, Reg);
   }
+}
+
+/*!------------------------------------------------------------------------
+ * \fn     compare_reg_h16(tRegInt reg1_num, tSymbolSize reg1_size, tRegInt reg2_num, tRegInt reg2_size)
+ * \brief  compare two register symbols
+ * \param  reg1_num 1st register's number
+ * \param  reg1_size 1st register's data size
+ * \param  reg2_num 2nd register's number
+ * \param  reg2_size 2nd register's data size
+ * \return 0, -1, 1, -2
+ * ------------------------------------------------------------------------ */
+
+static int compare_reg_h16(tRegInt reg1_num, tSymbolSize size1, tRegInt reg2_num, tSymbolSize size2)
+{
+  if ((size1 != eSymbolSize32Bit)
+   || (size2 != eSymbolSize32Bit)
+   || (Hi(reg1_num) != Hi(reg2_num)))
+    return -2;
+
+  reg1_num = Lo(reg1_num) & ~REGSYM_FLAG_ALIAS;
+  reg2_num = Lo(reg2_num) & ~REGSYM_FLAG_ALIAS;
+
+  if (reg1_num < reg2_num)
+    return -1;
+  else if (reg1_num > reg2_num)
+    return 1;
+  else
+    return 0;
 }
 
 /*!------------------------------------------------------------------------
@@ -467,7 +495,7 @@ static tRegEvalResult DecodeReg(const tStrComp *pArg, Byte *pReg, Byte *pPrefix,
       RegEvalResult = MustBeReg ? eIsNoReg : eRegAbort;
     }
   }
-  *pReg &= ~REG_MARK;
+  *pReg &= ~REGSYM_FLAG_ALIAS;
   return RegEvalResult;
 }
 
@@ -968,7 +996,6 @@ static Boolean ClassComp(tStrComp *pArg, tAdrComps *pComps)
       }
       else
         return False;
-      break;
     case eIsNoReg:
       break;
     case eRegAbort:
@@ -3123,7 +3150,7 @@ static Boolean DecodeAttrPart_H16(void)
 
   if (*SizePart.str.p_str)
   {
-    if (!DecodeMoto16AttrSizeStr(&SizePart, &AttrPartOpSize, False))
+    if (!DecodeMoto16AttrSizeStr(&SizePart, &AttrPartOpSize[0], False))
       return False;
   }
   return True;
@@ -3137,7 +3164,7 @@ static void MakeCode_H16(void)
 
   if (Memo("")) return;
 
-  OpSize = AttrPartOpSize;
+  OpSize = AttrPartOpSize[0];
   if (DecodeMoto16Pseudo(OpSize, True))
     return;
 
@@ -3173,6 +3200,7 @@ static void InternSymbol_H16(char *pArg, TempResult *pResult)
     pResult->DataSize = eSymbolSize32Bit;
     pResult->Contents.RegDescr.Reg = ((Word)Prefix) << 8 | Reg;
     pResult->Contents.RegDescr.Dissect = DissectReg_H16;
+    pResult->Contents.RegDescr.compare = compare_reg_h16;
   }
 }
 
@@ -3183,7 +3211,7 @@ static void InternSymbol_H16(char *pArg, TempResult *pResult)
 
 static void SwitchTo_H16(void)
 {
-  const PFamilyDescr pDescr = FindFamilyByName("H16");
+  const TFamilyDescr *pDescr = FindFamilyByName("H16");
 
   TurnWords = False;
   SetIntConstMode(eIntConstModeMoto);
@@ -3208,12 +3236,11 @@ static void SwitchTo_H16(void)
   InternSymbol = InternSymbol_H16;
   InitFields();
 
-  AddONOFF(SupAllowedCmdName, &SupAllowed, SupAllowedSymName, False);
-  AddMoto16PseudoONOFF();
+  onoff_supmode_add();
 
   /* H16 code is byte-oriented, so no padding by default */
 
-  SetFlag(&DoPadding, DoPaddingName, False);
+  AddMoto16PseudoONOFF(False);
 }
 
 /*!------------------------------------------------------------------------

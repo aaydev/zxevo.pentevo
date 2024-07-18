@@ -6,10 +6,11 @@
 /*                                                                           */
 /* AS-Portierung                                                             */
 /*                                                                           */
-/* internal holder for int/float/string                                      */
+/* built-in (non-user-defined) functions                                     */
 /*                                                                           */
 /*****************************************************************************/
 
+#include <stddef.h>
 #include "datatypes.h"
 #include "tempresult.h"
 
@@ -18,9 +19,9 @@ typedef struct
   const char *pName;
   Byte MinNumArgs, MaxNumArgs;
   Byte ArgTypes[3];
-  void (*pFunc)(TempResult *pErg, const TempResult *pArgs, unsigned ArgCnt);
+  Boolean (*pFunc)(TempResult *pErg, const TempResult *pArgs, unsigned ArgCnt);
 } tFunction;
 
-extern const tFunction Functions[];
+extern const tFunction *function_find(const char *p_name);
 
 #endif /* _FUNCTION_H */

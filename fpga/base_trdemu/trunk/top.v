@@ -325,7 +325,7 @@ module top(
 
 
 	wire [5:0] palcolor; // palette readback
-
+	wire atm_pen2; // ATM palette write enable
 
 
 
@@ -549,6 +549,7 @@ module top(
 	           .dos_turn_off( |dos_turn_off ),
 
 	           .cpm_n(cpm_n),
+	           .atm_pen2(atm_pen2),
 
 	           .dos(dos),
 

@@ -1,0 +1,9 @@
+# tell source files to include .msh files
+
+MSX_FLAGS=-D_USE_MSH
+
+# do not generate .msg files
+
+ALLMSGTARGETS=
+
+DASMSGTARGETS=

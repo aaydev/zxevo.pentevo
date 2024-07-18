@@ -22,10 +22,12 @@
 #include "asmsub.h"
 #include "asmpars.h"
 #include "asmallg.h"
+#include "onoff_common.h"
 #include "errmsg.h"
 #include "codepseudo.h"
 #include "intpseudo.h"
 #include "asmitree.h"
+#include "asmcode.h"
 #include "codevars.h"
 #include "errmsg.h"
 
@@ -61,11 +63,6 @@ typedef struct
   Byte Code;
 } Condition;
 
-#define FixedOrderCnt 13
-#define ImmOrderCnt 3
-#define RegOrderCnt 8
-#define ConditionCnt 24
-
 #define ModNone (-1)
 #define ModReg 0
 #define MModReg (1  << ModReg)
@@ -78,11 +75,12 @@ typedef struct
 #define ModCReg 4
 #define MModCReg (1 << ModCReg)
 
+#define COND_CODE_TRUE 8
+
 static FixedOrder *FixedOrders;
 static RegOrder *RegOrders;
 static ImmOrder *ImmOrders;
 static Condition *Conditions;
-static LongInt DefaultCondition;
 
 static ShortInt AdrType;
 static ShortInt OpSize;        /* -1/0/1/2 = nix/Byte/Word/Long */
@@ -98,12 +96,12 @@ static CPUVar CPU96C141,CPU93C141;
 static Boolean IsRegBase(Byte No, Byte Size)
 {
   return ((Size == 2)
-       || ((Size == 1) && (No < 0xf0) && (!Maximum) && ((No & 3) == 0)));
+       || ((Size == 1) && (No < 0xf0) && (!MaxMode) && ((No & 3) == 0)));
 }
 
-static void ChkMaximum(Boolean MustMax, Byte *Result)
+static void ChkMaxMode(Boolean MustMax, Byte *Result)
 {
-  if (Maximum != MustMax)
+  if (MaxMode != MustMax)
   {
     *Result = 1;
     WrError((MustMax) ? ErrNum_OnlyInMaxmode : ErrNum_NotInMaxmode);
@@ -165,7 +163,7 @@ static Byte CodeEReg(char *Asc, Byte *ErgNo, Byte *ErgSize)
       *ErgNo = 0xe0 + (z << 2);
       *ErgSize = 2;
       if (z < 4)
-        ChkMaximum(True, &Result);
+        ChkMaxMode(True, &Result);
       return Result;
     }
   }
@@ -181,9 +179,9 @@ static Byte CodeEReg(char *Asc, Byte *ErgNo, Byte *ErgSize)
         if (*Asc == 'Q')
         {
           *ErgNo |= 2;
-          ChkMaximum(True, &Result);
+          ChkMaxMode(True, &Result);
         }
-        if (((*Asc == 'Q') || (Maximum)) && (Asc[2] > '3'))
+        if (((*Asc == 'Q') || (MaxMode)) && (Asc[2] > '3'))
         {
           WrError(ErrNum_OverRange);
           Result = 1;
@@ -206,9 +204,9 @@ static Byte CodeEReg(char *Asc, Byte *ErgNo, Byte *ErgSize)
         if (*Asc == 'Q')
         {
           *ErgNo |= 2;
-          ChkMaximum(True, &Result);
+          ChkMaxMode(True, &Result);
         }
-        if (((*Asc == 'Q') || (Maximum)) && (Asc[3] > '3'))
+        if (((*Asc == 'Q') || (MaxMode)) && (Asc[3] > '3'))
         {
           WrError(ErrNum_OverRange);
           Result = 1;
@@ -226,7 +224,7 @@ static Byte CodeEReg(char *Asc, Byte *ErgNo, Byte *ErgSize)
      if (strncmp(Asc, Reg32Names[z], 3) == 0)
      {
        *ErgNo = ((Asc[3] - '0') << 4) + (z << 2);
-       ChkMaximum(True, &Result);
+       ChkMaxMode(True, &Result);
        if (Asc[3] > '3')
        {
          WrError(ErrNum_OverRange); Result = 1;
@@ -243,7 +241,7 @@ static Byte CodeEReg(char *Asc, Byte *ErgNo, Byte *ErgSize)
     if (Asc[1] == Reg8Names[z])
     {
       *ErgNo = 0xe2 + ((z & 6) << 1) + (z & 1);
-      ChkMaximum(True, &Result);
+      ChkMaxMode(True, &Result);
       *ErgSize = 0;
       return Result;
     }
@@ -256,7 +254,7 @@ static Byte CodeEReg(char *Asc, Byte *ErgNo, Byte *ErgSize)
       if (!strcmp(Asc + 1, Reg16Names[z]))
       {
         *ErgNo = 0xe2 + (z << 2);
-        if (z < 4) ChkMaximum(True, &Result);
+        if (z < 4) ChkMaxMode(True, &Result);
         *ErgSize = 1;
         return Result;
       }
@@ -284,7 +282,7 @@ static Byte CodeEReg(char *Asc, Byte *ErgNo, Byte *ErgSize)
      if (Asc[l - 2] == Reg8Names[z])
      {
        *ErgNo = 0xd0 + ((z & 6) << 1) + ((strlen(Asc) - 2) << 1) + (z & 1);
-       if (l == 3) ChkMaximum(True, &Result);
+       if (l == 3) ChkMaxMode(True, &Result);
        *ErgSize = 0;
        return Result;
      }
@@ -299,7 +297,7 @@ static Byte CodeEReg(char *Asc, Byte *ErgNo, Byte *ErgSize)
       if (!strcmp(HAsc, Reg16Names[z]))
       {
         *ErgNo = 0xd0 + (z << 2) + ((strlen(Asc) - 3) << 1);
-        if (l == 4) ChkMaximum(True, &Result);
+        if (l == 4) ChkMaxMode(True, &Result);
         *ErgSize = 1;
         return Result;
       }
@@ -314,7 +312,7 @@ static Byte CodeEReg(char *Asc, Byte *ErgNo, Byte *ErgSize)
       if (!strcmp(HAsc, Reg32Names[z]))
       {
         *ErgNo = 0xd0 + (z << 2);
-        ChkMaximum(True, &Result);
+        ChkMaxMode(True, &Result);
         *ErgSize = 2;
         return Result;
       }
@@ -433,7 +431,7 @@ static Boolean IsRegCurrent(Byte No, Byte Size, Byte *Erg)
 
 static const char Sizes[] = "124";
 
-static int GetPostInc(const char *pArg, int ArgLen, ShortInt *pOpSize)
+static Boolean GetPostInc(const char *pArg, int ArgLen, ShortInt *pOpSize, int *pCutoffRight)
 {
   const char *pPos;
 
@@ -442,7 +440,8 @@ static int GetPostInc(const char *pArg, int ArgLen, ShortInt *pOpSize)
   if ((ArgLen > 2) && (pArg[ArgLen - 1] == '+'))
   {
     *pOpSize = eSymbolSizeUnknown;
-    return 1;
+    *pCutoffRight = 1;
+    return True;
   }
 
   /* <reg>++n, <reg>+:n */
@@ -453,7 +452,8 @@ static int GetPostInc(const char *pArg, int ArgLen, ShortInt *pOpSize)
     if (pPos)
     {
       *pOpSize = pPos - Sizes;
-      return 3;
+      *pCutoffRight = 3;
+      return True;
     }
   }
   return False;
@@ -565,7 +565,7 @@ static void DecodeAdrMem(const tStrComp *pArg)
   /* post-increment */
 
   if ((ArgLen > 2)
-   && (CutoffRight = GetPostInc(pArg->str.p_str, ArgLen, &IncOpSize)))
+   && GetPostInc(pArg->str.p_str, ArgLen, &IncOpSize, &CutoffRight))
   {
     String Reg;
     tStrComp RegComp;
@@ -627,7 +627,9 @@ static void DecodeAdrMem(const tStrComp *pArg)
   DispSize = eSymbolSizeUnknown;
   do
   {
-    EPos = QuotMultPos(Arg.str.p_str, "+-");
+    /* Split off one component: */
+
+    EPos = indir_split_pos(Arg.str.p_str);
     NNegFlag = EPos && (*EPos == '-');
     if ((EPos == Arg.str.p_str) || (EPos == Arg.str.p_str + strlen(Arg.str.p_str) - 1))
     {
@@ -904,6 +906,8 @@ static void DecodeAdr(const tStrComp *pArg, Byte Erl)
 
     StrCompRefRight(&Arg, pArg, 1);
     StrCompShorten(&Arg, 1);
+    KillPrefBlanksStrCompRef(&Arg);
+    KillPostBlanksStrComp(&Arg);
     DecodeAdrMem(&Arg);
     ChkAdr(Erl); return;
   }
@@ -1008,12 +1012,25 @@ static void CheckSup(void)
     WrError(ErrNum_PrivOrder);
 }
 
-static int DecodeCondition(const char *pAsc)
+/*!------------------------------------------------------------------------
+ * \fn     decode_condition(const char *p_asc, Byte *p_condition)
+ * \brief  decode condition code identifier
+ * \param  p_asc source argument
+ * \param  p_condition resulting code if found
+ * \return True if found
+ * ------------------------------------------------------------------------ */
+
+static Boolean decode_condition(const char *p_asc, Byte *p_condition)
 {
   int z;
 
-  for (z = 0; (z < ConditionCnt) && (as_strcasecmp(pAsc, Conditions[z].Name)); z++);
-  return z;
+  for (z = 0; Conditions[z].Name; z++)
+    if (!as_strcasecmp(p_asc, Conditions[z].Name))
+    {
+      *p_condition = Conditions[z].Code;
+      return True;
+    }
+  return False;
 }
 
 static void SetInstrOpSize(Byte Size)
@@ -1021,7 +1038,6 @@ static void SetInstrOpSize(Byte Size)
   if (Size != 255)
     OpSize = Size;
 }
-
 
 /*---------------------------------------------------------------------------*/
 
@@ -1052,51 +1068,36 @@ static void DecodeMULA(Word Index)
 
 static void DecodeJPCALL(Word Index)
 {
-  int z;
-
   if (ChkArgCnt(1, 2))
   {
-    z = (ArgCnt == 1) ? DefaultCondition : DecodeCondition(ArgStr[1].str.p_str);
-    if (z >= ConditionCnt) WrStrErrorPos(ErrNum_UndefCond, &ArgStr[1]);
-    else
+    Byte cond_code;
+
+    if (ArgCnt == 1)
+      cond_code = COND_CODE_TRUE;
+    else if (!decode_condition(ArgStr[1].str.p_str, &cond_code))
     {
-      OpSize = 2;
-      DecodeAdr(&ArgStr[ArgCnt], MModMem | MModImm);
-      if (AdrType == ModImm)
+      WrStrErrorPos(ErrNum_UndefCond, &ArgStr[1]);
+      return;
+    }
+
+    if (IsIndirect(ArgStr[ArgCnt].str.p_str))
+      DecodeAdr(&ArgStr[ArgCnt], MModMem);
+    else
+      DecodeAdrMem(&ArgStr[ArgCnt]);
+    if (AdrType == ModMem)
+    {
+      if ((cond_code == COND_CODE_TRUE) && ((AdrMode == 0x41) || (AdrMode == 0x42)))
       {
-        if (AdrVals[3] != 0)
-        {
-          WrError(ErrNum_OverRange);
-          AdrType=ModNone;
-        }
-        else if (AdrVals[2] != 0)
-        {
-          AdrType = ModMem;
-          AdrMode = 0x42;
-          AdrCnt = 3;
-        }
-        else
-        {
-          AdrType = ModMem;
-          AdrMode = 0x41;
-          AdrCnt = 2;
-        }
+        CodeLen = 1 + AdrCnt;
+        BAsmCode[0] = 0x1a + 2 * Index + (AdrCnt - 2);
+        memcpy(BAsmCode + 1, AdrVals, AdrCnt);
       }
-      if (AdrType == ModMem)
+      else
       {
-        if ((z == DefaultCondition) && ((AdrMode == 0x41) || (AdrMode == 0x42)))
-        {
-          CodeLen = 1 + AdrCnt;
-          BAsmCode[0] = 0x1a + 2 * Index + (AdrCnt - 2);
-          memcpy(BAsmCode + 1, AdrVals, AdrCnt);
-        }
-        else
-        {
-          CodeLen = 2 + AdrCnt;
-          BAsmCode[0] = 0xb0 + AdrMode;
-          memcpy(BAsmCode + 1, AdrVals, AdrCnt);
-          BAsmCode[1 + AdrCnt] = 0xd0 + (Index << 4) + (Conditions[z].Code);
-        }
+        CodeLen = 2 + AdrCnt;
+        BAsmCode[0] = 0xb0 + AdrMode;
+        memcpy(BAsmCode + 1, AdrVals, AdrCnt);
+        BAsmCode[1 + AdrCnt] = 0xd0 + (Index << 4) + cond_code;
       }
     }
   }
@@ -1104,47 +1105,50 @@ static void DecodeJPCALL(Word Index)
 
 static void DecodeJR(Word Index)
 {
-  Boolean OK;
-  int z;
-  LongInt AdrLong;
-  tSymbolFlags Flags;
-
   if (ChkArgCnt(1, 2))
   {
-    z = (ArgCnt==1) ? DefaultCondition : DecodeCondition(ArgStr[1].str.p_str);
-    if (z >= ConditionCnt) WrStrErrorPos(ErrNum_UndefCond, &ArgStr[1]);
-    else
+    Byte cond_code;
+    Boolean OK;
+    LongInt AdrLong;
+    tSymbolFlags Flags;
+
+    if (1 == ArgCnt)
+      cond_code = COND_CODE_TRUE;
+    else if (!decode_condition(ArgStr[1].str.p_str, &cond_code))
     {
-      AdrLong = EvalStrIntExpressionWithFlags(&ArgStr[ArgCnt], Int32, &OK, &Flags);
-      if (OK)
+      WrStrErrorPos(ErrNum_UndefCond, &ArgStr[1]);
+      return;
+    }
+
+    AdrLong = EvalStrIntExpressionWithFlags(&ArgStr[ArgCnt], Int32, &OK, &Flags);
+    if (OK)
+    {
+      if (Index==1)
       {
-        if (Index==1)
-        {
-          AdrLong -= EProgCounter() + 3;
-          if (((AdrLong > 0x7fffl) || (AdrLong < -0x8000l)) && !mSymbolQuestionable(Flags)) WrError(ErrNum_DistTooBig);
-          else
-          {
-            CodeLen = 3;
-            BAsmCode[0] = 0x70 + Conditions[z].Code;
-            BAsmCode[1] = Lo(AdrLong);
-            BAsmCode[2] = Hi(AdrLong);
-            if (!mFirstPassUnknown(Flags))
-            {
-              AdrLong++;
-              if ((AdrLong >= -128) && (AdrLong <= 127)) WrError(ErrNum_ShortJumpPossible);
-            }
-          }
-        }
+        AdrLong -= EProgCounter() + 3;
+        if (((AdrLong > 0x7fffl) || (AdrLong < -0x8000l)) && !mSymbolQuestionable(Flags)) WrError(ErrNum_DistTooBig);
         else
         {
-          AdrLong -= EProgCounter() + 2;
-          if (((AdrLong > 127) || (AdrLong < -128)) && !mSymbolQuestionable(Flags)) WrError(ErrNum_DistTooBig);
-          else
+          CodeLen = 3;
+          BAsmCode[0] = 0x70 + cond_code;
+          BAsmCode[1] = Lo(AdrLong);
+          BAsmCode[2] = Hi(AdrLong);
+          if (!mFirstPassUnknown(Flags))
           {
-            CodeLen = 2;
-            BAsmCode[0] = 0x60 + Conditions[z].Code;
-            BAsmCode[1] = Lo(AdrLong);
+            AdrLong++;
+            if ((AdrLong >= -128) && (AdrLong <= 127)) WrError(ErrNum_ShortJumpPossible);
           }
+        }
+      }
+      else
+      {
+        AdrLong -= EProgCounter() + 2;
+        if (((AdrLong > 127) || (AdrLong < -128)) && !mSymbolQuestionable(Flags)) WrError(ErrNum_DistTooBig);
+        else
+        {
+          CodeLen = 2;
+          BAsmCode[0] = 0x60 + cond_code;
+          BAsmCode[1] = Lo(AdrLong);
         }
       }
     }
@@ -1178,14 +1182,21 @@ static void DecodeCALR(Word Index)
 
 static void DecodeRET(Word Index)
 {
-  int z;
   UNUSED(Index);
 
   if (ChkArgCnt(0, 1))
   {
-    z = (ArgCnt == 0) ? DefaultCondition : DecodeCondition(ArgStr[1].str.p_str);
-    if (z >= ConditionCnt) WrStrErrorPos(ErrNum_UndefCond, &ArgStr[1]);
-    else if (z == DefaultCondition)
+    Byte cond_code;
+
+    if (ArgCnt == 0)
+      cond_code = COND_CODE_TRUE;
+    else if (!decode_condition(ArgStr[1].str.p_str, &cond_code))
+    {
+      WrStrErrorPos(ErrNum_UndefCond, &ArgStr[1]);
+      return;
+    }
+
+    if (cond_code == COND_CODE_TRUE)
     {
       CodeLen = 1;
       BAsmCode[0] = 0x0e;
@@ -1194,7 +1205,7 @@ static void DecodeRET(Word Index)
     {
       CodeLen = 2;
       BAsmCode[0] = 0xb0;
-      BAsmCode[1] = 0xf0 + Conditions[z].Code;
+      BAsmCode[1] = 0xf0 + cond_code;
     }
   }
 }
@@ -1764,7 +1775,7 @@ static void DecodeImm(Word Index)
       AdrWord = EvalStrIntExpression(&ArgStr[1], Int8, &OK);
     if (OK)
     {
-      if (((Maximum) && (AdrWord > ImmZ->MaxMax)) || ((!Maximum) && (AdrWord > ImmZ->MinMax))) WrError(ErrNum_OverRange);
+      if (((MaxMode) && (AdrWord > ImmZ->MaxMax)) || ((!MaxMode) && (AdrWord > ImmZ->MinMax))) WrError(ErrNum_OverRange);
       else if (Hi(ImmZ->Code) == 0)
       {
         CodeLen = 1;
@@ -2381,8 +2392,8 @@ static void DecodeLDxx(Word Code)
         ArgStr[2].str.p_str[l2 - 2] = '\0';
         if ((!as_strcasecmp(ArgStr[1].str.p_str + 1,"XIX")) && (!as_strcasecmp(ArgStr[2].str.p_str + 1, "XIY")))
           HReg = 2;
-        else if ((Maximum) && (!as_strcasecmp(ArgStr[1].str.p_str + 1, "XDE")) && (!as_strcasecmp(ArgStr[2].str.p_str + 1 , "XHL")));
-        else if ((!Maximum) && (!as_strcasecmp(ArgStr[1].str.p_str + 1, "DE")) && (!as_strcasecmp(ArgStr[2].str.p_str + 1 , "HL")));
+        else if ((MaxMode) && (!as_strcasecmp(ArgStr[1].str.p_str + 1, "XDE")) && (!as_strcasecmp(ArgStr[2].str.p_str + 1 , "XHL")));
+        else if ((!MaxMode) && (!as_strcasecmp(ArgStr[1].str.p_str + 1, "DE")) && (!as_strcasecmp(ArgStr[2].str.p_str + 1 , "HL")));
         else
           OK = False;
       }
@@ -2464,8 +2475,9 @@ static void DecodeSCC(Word Code)
 
   if (ChkArgCnt(2, 2))
   {
-    int Cond = DecodeCondition(ArgStr[1].str.p_str);
-    if (Cond >= ConditionCnt) WrStrErrorPos(ErrNum_UndefCond, &ArgStr[1]);
+    Byte cond_code;
+
+    if (!decode_condition(ArgStr[1].str.p_str, &cond_code)) WrStrErrorPos(ErrNum_UndefCond, &ArgStr[1]);
     else
     {
       DecodeAdr(&ArgStr[2], MModReg | MModXReg);
@@ -2477,13 +2489,13 @@ static void DecodeSCC(Word Code)
            case ModReg:
              CodeLen = 2;
              BAsmCode[0] = 0xc8 + (OpSize << 4) + AdrMode;
-             BAsmCode[1] = 0x70 + Conditions[Cond].Code;
+             BAsmCode[1] = 0x70 + cond_code;
              break;
            case ModXReg:
              CodeLen = 3;
              BAsmCode[0] = 0xc7 + (OpSize << 4);
              BAsmCode[1] = AdrMode;
-             BAsmCode[2] = 0x70 + Conditions[Cond].Code;
+             BAsmCode[2] = 0x70 + cond_code;
              break;
          }
       }
@@ -2534,7 +2546,7 @@ static void AddMod(const char *NName, Byte NCode)
 
 static void AddFixed(const char *NName, Word NCode, Byte NFlag, Boolean NSup)
 {
-  if (InstrZ >= FixedOrderCnt) exit(255);
+  order_array_rsv_end(FixedOrders, FixedOrder);
   FixedOrders[InstrZ].Code = NCode;
   FixedOrders[InstrZ].CPUFlag = NFlag;
   FixedOrders[InstrZ].InSup = NSup;
@@ -2543,7 +2555,7 @@ static void AddFixed(const char *NName, Word NCode, Byte NFlag, Boolean NSup)
 
 static void AddReg(const char *NName, Word NCode, Byte NMask)
 {
-  if (InstrZ >= RegOrderCnt) exit(255);
+  order_array_rsv_end(RegOrders, RegOrder);
   RegOrders[InstrZ].Code = NCode;
   RegOrders[InstrZ].OpMask = NMask;
   AddInstTable(InstTable, NName, InstrZ++, DecodeReg);
@@ -2552,7 +2564,7 @@ static void AddReg(const char *NName, Word NCode, Byte NMask)
 static void AddImm(const char *NName, Word NCode, Boolean NInSup,
                    Byte NMinMax, Byte NMaxMax, ShortInt NDefault)
 {
-  if (InstrZ >= ImmOrderCnt) exit(255);
+  order_array_rsv_end(ImmOrders, ImmOrder);
   ImmOrders[InstrZ].Code = NCode;
   ImmOrders[InstrZ].InSup = NInSup;
   ImmOrders[InstrZ].MinMax = NMinMax;
@@ -2588,7 +2600,7 @@ static void AddBit(const char *NName)
 
 static void AddCondition(const char *NName, Byte NCode)
 {
-  if (InstrZ >= ConditionCnt) exit(255);
+  order_array_rsv_end(Conditions, Condition);
   Conditions[InstrZ].Name = NName;
   Conditions[InstrZ++].Code = NCode;
 }
@@ -2634,7 +2646,7 @@ static void InitFields(void)
   AddInstTable(InstTable, "RRD", 0x07, DecodeRLD_RRD);
   AddInstTable(InstTable, "SCC", 0, DecodeSCC);
 
-  FixedOrders = (FixedOrder *) malloc(sizeof(FixedOrder) * FixedOrderCnt); InstrZ = 0;
+  InstrZ = 0;
   AddFixed("CCF"   , 0x0012, 3, False);
   AddFixed("DECF"  , 0x000d, 3, False);
   AddFixed("DI"    , 0x0607, 3, True );
@@ -2649,7 +2661,7 @@ static void InitFields(void)
   AddFixed("SCF"   , 0x0011, 3, False);
   AddFixed("ZCF"   , 0x0013, 3, False);
 
-  RegOrders = (RegOrder *) malloc(sizeof(RegOrder) * RegOrderCnt); InstrZ = 0;
+  InstrZ = 0;
   AddReg("CPL" , 0xc006, 3);
   AddReg("DAA" , 0xc010, 1);
   AddReg("EXTS", 0xc013, 6);
@@ -2659,7 +2671,7 @@ static void InitFields(void)
   AddReg("PAA" , 0xc014, 6);
   AddReg("UNLK", 0xc00d, 4);
 
-  ImmOrders = (ImmOrder *) malloc(sizeof(ImmOrder) * ImmOrderCnt); InstrZ = 0;
+  InstrZ = 0;
   AddImm("EI"  , 0x0600, True,  7, 7,  0);
   AddImm("LDF" , 0x1700, False, 7, 3, -1);
   AddImm("SWI" , 0x00f8, False, 7, 7,  7);
@@ -2702,9 +2714,8 @@ static void InitFields(void)
   AddBit("BIT");
   AddBit("TSET");
 
-  Conditions = (Condition *) malloc(sizeof(Condition) * ConditionCnt); InstrZ = 0;
-  AddCondition("F"   ,  0);
-  DefaultCondition = InstrZ;  AddCondition("T"   ,  8);
+  InstrZ = 0;
+  AddCondition("F"   ,  0); AddCondition("T"   , COND_CODE_TRUE);
   AddCondition("Z"   ,  6); AddCondition("NZ"  , 14);
   AddCondition("C"   ,  7); AddCondition("NC"  , 15);
   AddCondition("PL"  , 13); AddCondition("MI"  ,  5);
@@ -2716,15 +2727,16 @@ static void InitFields(void)
   AddCondition("GT"  , 10); AddCondition("LE"  ,  2);
   AddCondition("UGE" , 15); AddCondition("ULT" ,  7);
   AddCondition("UGT" , 11); AddCondition("ULE" ,  3);
+  AddCondition(NULL  ,  0);
 }
 
 static void DeinitFields(void)
 {
   DestroyInstTable(InstTable);
-  free(FixedOrders);
-  free(RegOrders);
-  free(ImmOrders);
-  free(Conditions);
+  order_array_free(FixedOrders);
+  order_array_free(RegOrders);
+  order_array_free(ImmOrders);
+  order_array_free(Conditions);
 }
 
 static void MakeCode_96C141(void)
@@ -2755,7 +2767,7 @@ static Boolean ChkPC_96C141(LargeWord Addr)
   switch (ActPC)
   {
     case SegCode:
-      if (Maximum) ok = (Addr <= 0xffffff);
+      if (MaxMode) ok = (Addr <= 0xffffff);
               else ok = (Addr <= 0xffff);
       break;
     default:
@@ -2791,13 +2803,14 @@ static void SwitchTo_96C141(void)
   Grans[SegCode] = 1;
   ListGrans[SegCode] = 1;
   SegInits[SegCode] = 0;
+  SegLimits[SegCode] = 0xfffffful;
 
   MakeCode = MakeCode_96C141;
   ChkPC = ChkPC_96C141;
   IsDef = IsDef_96C141;
   SwitchFrom = DeinitFields;
-  AddONOFF("MAXMODE", &Maximum   , MaximumName   , False);
-  AddONOFF(SupAllowedCmdName, &SupAllowed, SupAllowedSymName, False);
+  onoff_maxmode_add();
+  onoff_supmode_add();
 
   InitFields();
 }

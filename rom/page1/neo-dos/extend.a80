@@ -1,20 +1,20 @@
 
-; LAST UPDATE: 20.08.2022 savelij
+; LAST UPDATE: 12.02.2024 savelij
 
 		TITLE "extend.a80"
 
 ; инфа для создания 9 сектора нового диска
-DSKINFO		DB 0			; +0XE1 - номер первого свободного сектора
-		DB 1			; +0XE2 - номер первого свободного трека
-		DB 0X16			; +0XE3 - тип дискеты
-		DB 0			; +0XE4 - количество файлов на дискете
-SECFREE		DW 2544			; +0XE5 - количество свободных секторов
-		DB 0X10			; +0XE7 - идентификационный код TRDOS
-		DW 0			; +0XE8 - 2 байта 0
-		DUPL 9," "		; +0XEA - 9 байт 0x20
-		DB 0			; +0XF3 - 1 байт 0
-		DB 0			; +0XF4 - количество удаленных файлов
-		DB "RAMDISKO"		; +0XF5 - имя дискеты
+DSKINFO		DB 0			; +0xE1 - номер первого свободного сектора
+		DB 1			; +0xE2 - номер первого свободного трека
+		DB 0x16			; +0xE3 - тип дискеты
+		DB 0			; +0xE4 - количество файлов на дискете
+SECFREE		DW 2544			; +0xE5 - количество свободных секторов
+		DB 0x10			; +0xE7 - идентификационный код TRDOS
+		DW 0			; +0xE8 - 2 байта 0
+		DUPL 9," "		; +0xEA - 9 байт 0x20
+		DB 0			; +0xF3 - 1 байт 0
+		DB 0			; +0xF4 - количество удаленных файлов
+		DB "RAMDISKO"		; +0xF5 - имя дискеты
 DSK_END
 
 ; обработчик вызова RST 8
@@ -35,7 +35,7 @@ DOS2RST8	EX (SP),HL			; HL
 		LD BC,RD_1WINA0
 		IN A,(C)
 		LD H,A
-		AND 0X3E
+		AND 0x3E
 		RES 0,H
 		LD B,HIGH (RD_DOS7FFD)
 		IN E,(C)
@@ -48,7 +48,7 @@ DOS2RST8	EX (SP),HL			; HL
 		XOR A
 		JP ADR_SEL_ROM
 
-EDOS2RST8	LD A,ROM_BAS48 | 0X80
+EDOS2RST8	LD A,ROM_BAS48 | 0x80
 		LD BC,WIN_A0
 		CALL WR_BYTE_RET
 		LD A,L
@@ -73,9 +73,10 @@ EXTEND_COM
 		BBW "DRIVE",DRIVE		; показ найденных/переключение текущего FAT устройств
 		BBW "HELP",HELP			; вывод списка возможных команд
 		BBW "MOUNT",MOUNT		; монтирование образа на букву A..D
-		BBW "UMOUNT",UMOUNT		; демонтрование образа на букве A..D
+		BBW "UMOUNT",UMOUNT		; демонтирование образа на букве A..D
 		BBW "VER",PRT_VERS		; показ версии и даты сборки DOS
 		BBW "VIRT",SET_VIRT		; показ/переключение виртуального дисковода
+		BBW "TURBO",SET_TURBO		; принудительное переключение турбо
 		DB 0
 
 ; обработчик расширенных команд
@@ -112,7 +113,7 @@ SET_CURRVIRT	LD H,VIRT_REAL_DRIVE
 		RRCA
 		RRCA
 		AND 3
-		OR 0X3C
+		OR 0x3C
 		RET
 
 SELFATDRV	SUB 4
@@ -171,21 +172,64 @@ PRT_NUM_VIRT	LD HL,TXT4VIRTDRV
 		LD B,ETXT4VIRTDRV-TXT4VIRTDRV-1
 		CALL PRT_B_HL_
 		LD A," "
-		RST 0X10
+		RST 0x10
 		LD H,VIRT_REAL_DRIVE
 		CALL READCMOS
 		AND 3
 		ADD A,"A"
-		RST 0X10
-		LD A,0X0D
-		RST 0X10
+		RST 0x10
+		LD A,0x0D
+		RST 0x10
 		RET
 
 		DUPL 0x0B01 - $,0xFF
 
+; прирудительное переключение турбо
+SET_TURBO	LD A,(DE)
+		CP 0x0D
+		JR Z,.L2
+		SUB '0'
+		INC DE
+		CP 3
+		JP NC,SINTAX_ERROR
+		AND A
+		LD C,_TURBO_LOW
+		JR Z,.L1
+		DEC A
+		LD C,_TURBO_HIGH
+		JR Z,.L1
+		LD C,_TURBO_MAX
+.L1		LD A,C
+	RST8D _SET_MODE
+		RET
+
+; печать текущей яастоты процессора
+.L2		LD HL,.L3
+		LD B,.L4-.L3
+		CALL PRT_B_HL_
+		LD BC,RD_77
+		IN D,(C)
+		LD BC,RD_EFF7
+		IN E,(C)
+		LD BC,4
+		BIT 3,D
+		LD HL,.L4
+		JR NZ,.L5
+		BIT 4,E
+		ADD HL,BC
+		JR Z,.L5
+		ADD HL,BC
+.L5		LD B,C
+		JP PRT_B_HL_
+
+.L3		DB "Turbo: "
+.L4		DB "14.0"
+		DB "7.0 "
+		DB "3,5 "
+		
 ; установка виртуального диска
 SET_VIRT	LD A,(DE)
-		CP 0X0D
+		CP 0x0D
 		JR Z,PRT_NUM_VIRT
 		LD C,A
 		INC DE
@@ -198,11 +242,11 @@ SET_VIRT	LD A,(DE)
 		RET
 
 ; печать версии доса и даты компиляции
-PRT_VERS	LD HL,0X3FF8
+PRT_VERS	LD HL,0x3FF8
 		LD B,6
 		CALL PRT_B_HL_
 		LD A," "
-		RST 0X10
+		RST 0x10
 		LD C,(HL)
 		INC HL
 		LD B,(HL)
@@ -211,39 +255,39 @@ PRT_VERS	LD HL,0X3FF8
 		LD B,9
 		CALL PRT_B_HL_
 		LD A," "
-		RST 0X10
+		RST 0x10
 		POP BC
 		LD A,C
-		AND 0X1F			; нужны 5 бит-число месяца
+		AND 0x1F			; нужны 5 бит-число месяца
 		CALL A2TXT			; конверсия и укладка даты
 		SRL B
 		RR C				; сдвинули для целостности номера месяца
 		LD A,"."
-		RST 0X10
+		RST 0x10
 		LD A,C				; взяли биты месяца
 		RRCA
 		RRCA
 		RRCA
 		RRCA				; сдвинули в младшие биты
-		AND 0X0F			; нам нужны только 4 бита месяца
+		AND 0x0F			; нам нужны только 4 бита месяца
 		CALL A2TXT			; конверсия и укладка месяца
 		LD A,"."
-		RST 0X10
+		RST 0x10
 		LD A,B				; взяли номер года
-		AND 0X3F			; нужны только 6 бит
+		AND 0x3F			; нужны только 6 бит
 		CALL A2TXT			; конверсия и укладка года
 		BIT 6,B				; если бит 6 (сдвинутый бит 7) установлен
 		RET Z
 		LD HL,TXT_BETA
-PRT_ROMVER	RST 0X18
-		LD A,0X0D
-		RST 0X10
+PRT_ROMVER	RST 0x18
+		LD A,0x0D
+		RST 0x10
 		RET
 
 ; печать B = количество символов из HL = адрес текста для вывода
 PRT_B_HL_	LD A,(HL)
 		INC HL
-		RST 0X10
+		RST 0x10
 		DJNZ PRT_B_HL_
 		RET
 
@@ -260,10 +304,10 @@ A2TXT		LD L,A
 		JR NC,.L1
 		ADD HL,DE
 		ADD A,"0"
-		RST 0X10
+		RST 0x10
 		LD A,L
 		ADD A,"0"
-		RST 0X10
+		RST 0x10
 		RET
 
 DRIVES		DC "Drives: "
@@ -277,13 +321,13 @@ DRIVE
 		ADD A,E
 		PUSH AF
 		LD HL,DRIVES
-		RST 0X18
+		RST 0x18
 		LD A,"E"
-		RST 0X10
+		RST 0x10
 		LD A,"-"
-		RST 0X10
+		RST 0x10
 		POP AF
-		RST 0X10
+		RST 0x10
 		RET
 
 TXT_DIR		DC "<DIR> "
@@ -296,7 +340,7 @@ DIR		LD B,0
 		CP "/"
 		JR NZ,DIR06
 		LD A,(DE)
-		AND 0XDF
+		AND 0xDF
 		CP "L"
 		JR NZ,DIR06
 		LD B,A
@@ -305,7 +349,7 @@ DIR06
 		JR NC,DIR061
 FAT_NOT_FOUND	CALL OPEN_CHAN_0
 		LD HL,TXT_FATERR		; ни одного раздела не найдено
-		RST 0X18
+		RST 0x18
 		RET
 
 DIR061		PUSH IX
@@ -314,20 +358,20 @@ DIR061		PUSH IX
 		CALL OPEN_CHAN_2
 		LD A,2
 	RST8D _COM_FAT,_POS_FILES
-DIR05		LD E,0X17
+DIR05		LD E,0x17
 DIR01		PUSH DE
 		PUSH BC
 		LD HL,TRD_5D25
 	RST8D _COM_FAT,_READ_DIR
-		LD DE,0X0B
+		LD DE,0x0B
 		ADD HL,DE
 		LD A,(HL)
 		SBC HL,DE
-		AND 0X10
+		AND 0x10
 		JR Z,DIR04
 		PUSH HL
 		LD HL,TXT_DIR
-		RST 0X18
+		RST 0x18
 		POP HL
 DIR04		LD A,IXL
 		AND A
@@ -339,14 +383,14 @@ DIR03		LD A,(HL)
 		AND A
 		JR Z,DIR02
 		INC HL
-		RST 0X10
+		RST 0x10
 		JR DIR03
 
 DIR08		LD B,8
 DIR081		LD A,(HL)
 		CP " "
 		JR Z,DIR082
-		RST 0X10
+		RST 0x10
 		INC HL
 		DJNZ DIR081
 DIR082		LD A,B
@@ -361,16 +405,16 @@ DIR085		LD A,(HL)
 		CP " "
 		JR Z,DIR084
 		LD A,"."
-		RST 0X10
+		RST 0x10
 DIR084		LD B,3
 DIR083		LD A,(HL)
 		CP " "
 		JR Z,DIR02
-		RST 0X10
+		RST 0x10
 		INC HL
 		DJNZ DIR083
-DIR02		LD A,0X0D
-		RST 0X10
+DIR02		LD A,0x0D
+		RST 0x10
 		LD A,4
 		LD B,1
 	RST8D _COM_FAT,_POS_FILES
@@ -418,14 +462,14 @@ MOUNT		PUSH DE
 	RST8D _COM_FAT,_FIND_NAME
 		JP C,SINTAX_ERROR
 		POP DE
-		LD B,0X0C
+		LD B,0x0C
 MOUNT02		LD A,(DE)
 		CP "!"
 		JR C,MOUNT01
 		INC DE
 		DJNZ MOUNT02
 MOUNT01		LD A,(DE)
-		CP 0X0D
+		CP 0x0D
 		JP Z,SINTAX_ERROR
 		CP " "
 		JP NZ,SINTAX_ERROR
@@ -433,7 +477,7 @@ MOUNT01		LD A,(DE)
 		LD A,(DE)
 		CP "A"
 		JP C,SINTAX_ERROR
-		AND 0XDF
+		AND 0xDF
 		CP "E"
 		JP NC,SINTAX_ERROR
 		SUB "A"
@@ -449,7 +493,7 @@ MOUNT01		LD A,(DE)
 ; команда UMOUNT
 UMOUNT		LD A,(DE)
 		INC DE
-		AND 0XDF
+		AND 0xDF
 		LD B,A
 		LD A,(DE)
 		INC DE
@@ -481,10 +525,10 @@ HELP2		LD A,(HL)
 		LD B,A
 		PUSH BC
 		LD A,"."
-		RST 0X10
+		RST 0x10
 HELP1		LD A,(HL)
 		INC HL
-		RST 0X10
+		RST 0x10
 		DJNZ HELP1
 		INC HL
 		INC HL
@@ -493,12 +537,12 @@ HELP1		LD A,(HL)
 		SUB B
 		LD B,A
 HELP3		LD A," "
-		RST 0X10
+		RST 0x10
 		DJNZ HELP3
 		DEC C
 		JR NZ,HELP2
-		LD A,0X0D
-		RST 0X10
+		LD A,0x0D
+		RST 0x10
 		JR HELP4
 
 ; чтение CMOS

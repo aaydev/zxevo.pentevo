@@ -33,6 +33,7 @@ module zdos(
 	input  wire        dos_turn_off,
 
 	input  wire        cpm_n,
+	input  wire        atm_pen2, // atm palette write enable
 
 
 	output reg         dos,
@@ -57,7 +58,7 @@ module zdos(
 	output reg         trdemu_wr_disable
 );
 
-	wire trdemu_on = vg_rdwr_fclk && fdd_mask[vg_a] && dos && romnram;
+	wire trdemu_on = vg_rdwr_fclk && fdd_mask[vg_a] && dos && romnram && !atm_pen2;
 
 
 	// control of 'DOS' signal

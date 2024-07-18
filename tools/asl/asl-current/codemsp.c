@@ -14,7 +14,7 @@
 #include <string.h>
 
 #include "nls.h"
-#include "endian.h"
+#include "be_le.h"
 #include "strutil.h"
 #include "bpemu.h"
 #include "chunks.h"
@@ -24,11 +24,11 @@
 #include "asmcode.h"
 #include "asmpars.h"
 #include "asmallg.h"
+#include "onoff_common.h"
+#include "chartrans.h"
 #include "asmitree.h"
 #include "codepseudo.h"
 #include "codevars.h"
-
-#define OneOpCount 6
 
 typedef struct
 {
@@ -76,7 +76,6 @@ typedef enum
 #define REG_PC 0
 #define REG_SP 1
 #define REG_SR 2
-#define REG_MARK 16 /* internal mark to differentiate PC<->R0, SP<->R1, and SR<->R2 */
 
 typedef struct
 {
@@ -131,15 +130,15 @@ static Boolean DecodeRegCore(const char *pArg, Word *pResult)
 {
   if (!as_strcasecmp(pArg, "PC"))
   {
-    *pResult = REG_MARK | REG_PC; return True;
+    *pResult = REGSYM_FLAG_ALIAS | REG_PC; return True;
   }
   else if (!as_strcasecmp(pArg,"SP"))
   {
-    *pResult = REG_MARK | REG_SP; return True;
+    *pResult = REGSYM_FLAG_ALIAS | REG_SP; return True;
   }
   else if (!as_strcasecmp(pArg, "SR"))
   {
-    *pResult = REG_MARK | REG_SR; return True;
+    *pResult = REGSYM_FLAG_ALIAS | REG_SR; return True;
   }
   if ((as_toupper(*pArg) == 'R') && (strlen(pArg) >= 2) && (strlen(pArg) <= 3))
   {
@@ -168,13 +167,13 @@ static void DissectReg_MSP(char *pDest, size_t DestSize, tRegInt Value, tSymbolS
     case eSymbolSize8Bit:
       switch (Value)
       {
-        case REG_MARK | REG_PC:
+        case REGSYM_FLAG_ALIAS | REG_PC:
           as_snprintf(pDest, DestSize, "PC");
           break;
-        case REG_MARK | REG_SP:
+        case REGSYM_FLAG_ALIAS | REG_SP:
           as_snprintf(pDest, DestSize, "SP");
           break;
-        case REG_MARK | REG_SR:
+        case REGSYM_FLAG_ALIAS | REG_SR:
           as_snprintf(pDest, DestSize, "SR");
           break;
         default:
@@ -203,12 +202,12 @@ static Boolean DecodeReg(const tStrComp *pArg, Word *pResult, Boolean MustBeReg)
 
   if (DecodeRegCore(pArg->str.p_str, pResult))
   {
-    *pResult &= ~REG_MARK;
+    *pResult &= ~REGSYM_FLAG_ALIAS;
     return True;
   }
 
   RegEvalResult = EvalStrRegExpressionAsOperand(pArg, &RegDescr, &EvalResult, eSymbolSize8Bit, MustBeReg);
-  *pResult = RegDescr.Reg & ~REG_MARK;
+  *pResult = RegDescr.Reg & ~REGSYM_FLAG_ALIAS;
   return (RegEvalResult == eIsReg);
 }
 
@@ -484,7 +483,6 @@ static Word GetMult(const tStrComp *pArg, Boolean *pOK)
     case eIsReg:
       *pOK = True;
       return Result | 0x0080;
-      break;
     case eIsNoReg:
       break;
     case eRegAbort:
@@ -1181,8 +1179,6 @@ static void DecodeJmp(Word Code)
 
 static void DecodeBYTE(Word Index)
 {
-  Boolean OK;
-  int z;
   TempResult t;
 
   UNUSED(Index);
@@ -1190,50 +1186,58 @@ static void DecodeBYTE(Word Index)
   as_tempres_ini(&t);
   if (ChkArgCnt(1, ArgCntMax))
   {
-    z = 1; OK = True;
-    do
+    Boolean OK = True;
+    tStrComp *pArg;
+
+    forallargs(pArg, OK)
     {
-      KillBlanks(ArgStr[z].str.p_str);
-      EvalStrExpression(&ArgStr[z], &t);
+      KillBlanks(pArg->str.p_str);
+      EvalStrExpression(pArg, &t);
       switch (t.Typ)
       {
         case TempInt:
           if (mFirstPassUnknown(t.Flags)) t.Contents.Int &= 0xff;
-          if (!RangeCheck(t.Contents.Int, Int8)) WrError(ErrNum_OverRange);
+          if (!RangeCheck(t.Contents.Int, Int8)) WrStrErrorPos(ErrNum_OverRange, pArg);
           else if (SetMaxCodeLen(CodeLen + 1))
           {
-            WrError(ErrNum_CodeOverflow); OK = False;
+            WrStrErrorPos(ErrNum_CodeOverflow, pArg);
+            OK = False;
           }
-          else PutByte(t.Contents.Int);
+          else
+            PutByte(t.Contents.Int);
           break;
         case TempString:
         {
-          unsigned l = t.Contents.str.len;
-
-          if (SetMaxCodeLen(l + CodeLen))
-          {
-            WrError(ErrNum_CodeOverflow); OK = False;
-          }
+          if (as_chartrans_xlate_nonz_dynstr(CurrTransTable->p_table, &t.Contents.str, pArg))
+            OK = False;
           else
           {
-            char *pEnd = t.Contents.str.p_str + l, *p;
+            unsigned l = t.Contents.str.len;
 
-            TranslateString(t.Contents.str.p_str, l);
-            for (p = t.Contents.str.p_str; p < pEnd; PutByte(*(p++)));
+            if (SetMaxCodeLen(l + CodeLen))
+            {
+              WrStrErrorPos(ErrNum_CodeOverflow, pArg);
+              OK = False;
+            }
+            else
+            {
+              char *pEnd = t.Contents.str.p_str + l, *p;
+
+              for (p = t.Contents.str.p_str; p < pEnd; PutByte(*(p++)));
+            }
           }
           break;
         }
         case TempFloat:
-          WrStrErrorPos(ErrNum_StringOrIntButFloat, &ArgStr[z]);
+          WrStrErrorPos(ErrNum_StringOrIntButFloat, pArg);
           /* fall-through */
         default:
           OK = False;
           break;
       }
-      z++;
     }
-    while ((z <= ArgCnt) && (OK));
-    if (!OK) CodeLen = 0;
+    if (!OK)
+      CodeLen = 0;
   }
   as_tempres_free(&t);
 }
@@ -1379,7 +1383,7 @@ static void AddEmulOneToTwoX(const char *NName, Word NCode)
 
 static void AddOneOp(const char *NName, Boolean NMay, Boolean AllowX, Word NCode)
 {
-  if (InstrZ >= OneOpCount) exit(255);
+  order_array_rsv_end(OneOpOrders, OneOpOrder);
   OneOpOrders[InstrZ].MayByte = NMay;
   OneOpOrders[InstrZ].Code = NCode;
   AddInstTable(InstTable, NName, InstrZ, DecodeOneOp);
@@ -1435,7 +1439,7 @@ static void InitFields(void)
   AddEmulOneToTwo("SBC" , 0x7000); /* SUBC #0, dst */
   AddEmulOneToTwo("TST" , 0x9000); /* CMP #0, dst */
 
-  OneOpOrders = (OneOpOrder *) malloc(sizeof(OneOpOrder) * OneOpCount); InstrZ = 0;
+  InstrZ = 0;
   AddOneOp("RRC" , True , True , 0x1000); AddOneOp("RRA" , True , True , 0x1100);
   AddOneOp("PUSH", True , True , 0x1200); AddOneOp("SWPB", False, True , 0x1080);
   AddOneOp("CALL", False, False, 0x1280); AddOneOp("SXT" , False, True , 0x1180);
@@ -1498,7 +1502,7 @@ static void InitFields(void)
 
 static void DeinitFields(void)
 {
-  free(OneOpOrders);
+  order_array_free(OneOpOrders);
 
   DestroyInstTable(InstTable);
 }
@@ -1522,6 +1526,7 @@ static void InternSymbol_MSP(char *pArg, TempResult *pResult)
     pResult->DataSize = eSymbolSize8Bit;
     pResult->Contents.RegDescr.Reg = RegNum;
     pResult->Contents.RegDescr.Dissect = DissectReg_MSP;
+    pResult->Contents.RegDescr.compare = NULL;
   }
 }
 
@@ -1537,15 +1542,15 @@ static Boolean DecodeAttrPart_MSP(void)
     case '\0':
       break;
     case 'B':
-      AttrPartOpSize = eSymbolSize8Bit;
+      AttrPartOpSize[0] = eSymbolSize8Bit;
       break;
     case 'W':
-      AttrPartOpSize = eSymbolSize16Bit;
+      AttrPartOpSize[0] = eSymbolSize16Bit;
       break;
     case 'A':
       if (MomCPU >= CPUMSP430X)
       {
-        AttrPartOpSize = eSymbolSize24Bit; /* TODO: should be 20 bits */
+        AttrPartOpSize[0] = eSymbolSize24Bit; /* TODO: should be 20 bits */
         break;
       }
       /* else fall-through */
@@ -1566,7 +1571,7 @@ static void MakeCode_MSP(void)
 
   /* process attribute */
 
-  switch (AttrPartOpSize)
+  switch (AttrPartOpSize[0])
   {
     case eSymbolSize24Bit:
       OpSize = eOpSizeA;
@@ -1629,7 +1634,7 @@ static void SwitchTo_MSP(void)
   DispIntType = (MomCPU == CPUMSP430X) ? Int20 : Int16;
   SegLimits[SegCode] = IntTypeDefs[AdrIntType].Max;
 
-  AddONOFF("PADDING", &DoPadding, DoPaddingName, False);
+  AddONOFF(DoPaddingName, &DoPadding, DoPaddingName, False);
 
   DecodeAttrPart = DecodeAttrPart_MSP;
   MakeCode = MakeCode_MSP;

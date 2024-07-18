@@ -1,5 +1,5 @@
 
-; LAST UPDATE: 13.11.2022 savelij
+; LAST UPDATE: 14.10.2023 savelij
 
 ; последовательность для RST 8
 ; старый стек	HL AF BC RF ADR_RET DE	->
@@ -956,6 +956,9 @@ BUFF_TIME	DB 0x16,0x00,0x48,0x17,CYAN<<3+BLUE+0xC0
 TXT_TIME	DB "00:00:00",0x16,0x01,0x48
 TXT_DATA	DB "00.00.00",0x17,0xFF,0
 EBUFF_TIME
+TXT_FREQ	DZ "14.0"
+		DZ "7.0 "
+		DZ "3.5 "
 NAME_RAMDISK	DUPL 0x20,0
 FILE_DEST	DUPL 0x20,0xFF			; 20 описатель открытого файла (куда)
 FB_EXT		DUPL 0x0B,0xFF			; B буфер 8.3 для поиска имени

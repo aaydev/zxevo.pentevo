@@ -18,14 +18,17 @@
 #include <math.h>
 
 #include "strutil.h"
-#include "endian.h"
+#include "be_le.h"
 #include "ieeefloat.h"
 #include "asmdef.h"
 #include "asmsub.h"
 #include "asmpars.h"
 #include "asmitree.h"
+#include "onoff_common.h"
 #include "errmsg.h"
+#include "chartrans.h"
 
+#include "codepseudo.h"
 #include "fourpseudo.h"
 #include "tipseudo.h"
 
@@ -152,14 +155,20 @@ static void pseudo_store(tcallback callback, Word MaxMultCharLen)
         LEAVE;
       case TempString:
       {
-        unsigned char *cp = (unsigned char *)t.Contents.str.p_str,
-                    *cend = cp + t.Contents.str.len;
+        unsigned char *cp, *cend;
 
         if (MultiCharToInt(&t, MaxMultCharLen))
           goto ToInt;
 
-        while (cp < cend)
-          callback(&ok, &adr, CharTransTable[((usint)*cp++) & 0xff], t.Flags);
+        if (as_chartrans_xlate_nonz_dynstr(CurrTransTable->p_table, &t.Contents.str, pArg))
+          ok = False;
+        else
+        {
+          cp = (unsigned char *)t.Contents.str.p_str;
+          cend = cp + t.Contents.str.len;
+          while (cp < cend)
+            callback(&ok, &adr, *cp++ & 0xff, t.Flags);
+        }
         break;
       }
       case TempInt:
@@ -170,6 +179,8 @@ static void pseudo_store(tcallback callback, Word MaxMultCharLen)
         ok = False;
         break;
     }
+    if (!ok)
+      break;
   }
 
   if (!ok)
@@ -787,18 +798,13 @@ static void DecodeDATA_TI34x(Word Code)
             break;
           case TempString:
           {
-            unsigned z2;
-
             if (MultiCharToInt(&t, 4))
               goto ToInt;
 
-            for (z2 = 0; z2 < t.Contents.str.len; z2++)
-            {
-             if (!(z2 & 3))
-               DAsmCode[CodeLen++] = 0;
-             DAsmCode[CodeLen - 1] |=
-                (((LongWord)CharTransTable[((usint)t.Contents.str.p_str[z2]) & 0xff])) << (8 * (3 - (z2 & 3)));
-            }
+            if (as_chartrans_xlate_nonz_dynstr(CurrTransTable->p_table, &t.Contents.str, pArg))
+              OK = False;
+            else
+              string_2_dasm_code(&t.Contents.str, Packing ? 4 : 1, True);
             break;
           }
           default:

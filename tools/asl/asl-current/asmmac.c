@@ -196,11 +196,6 @@ void Preprocess(void)
   CodeLen = 0;
 }
 
-static Boolean ExpandDefines_NErl(char inp)
-{
-  return (((inp >= '0') && (inp <= '9')) || ((inp >= 'A') && (inp <= 'Z')) || ((inp >= 'a') && (inp <= 'z')));
-}
-
 #define t_toupper(ch) ((CaseSensitive) ? (ch) : (as_toupper(ch)))
 
 void ExpandDefines(char *Line)
@@ -240,8 +235,8 @@ void ExpandDefines(char *Line)
         }
         if (z2 == -1)
         {
-          if (((p2 == 0) || (!ExpandDefines_NErl(Line[p2 - 1])))
-           && ((p2 + FromLen == p) || (!ExpandDefines_NErl(Line[p2 + FromLen]))))
+          if (((p2 == 0) || !ChkMacSymbChar(Line[p2 - 1]))
+           && ((p2 + FromLen == p) || !ChkMacSymbChar(Line[p2 + FromLen])))
           {
             if (Diff != 0)
               memmove(Line + p2 + ToLen, Line + p2 + FromLen, strlen(Line) - p2 - FromLen + 1);
@@ -341,22 +336,17 @@ static PMacroRec FoundMacro_FNode(LongInt Handle, char *Part)
   return Result;
 }
 
-Boolean FoundMacro(PMacroRec *Erg)
+Boolean FoundMacro(PMacroRec *Erg, const tStrComp *p_name)
 {
   PSaveSection Lauf;
-  String Part;
 
-  strmaxcpy(Part, pLOpPart, STRINGSIZE);
-  if (!CaseSensitive)
-    NLS_UpString(Part);
-
-  *Erg = FoundMacro_FNode(MomSectionHandle, Part);
+  *Erg = FoundMacro_FNode(MomSectionHandle, p_name->str.p_str);
   if (*Erg)
     return True;
   Lauf = SectionStack;
   while (Lauf)
   {
-    *Erg = FoundMacro_FNode(Lauf->Handle, Part);
+    *Erg = FoundMacro_FNode(Lauf->Handle, p_name->str.p_str);
     if (*Erg)
       return True;
     Lauf = Lauf->Next;

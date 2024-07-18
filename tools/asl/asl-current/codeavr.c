@@ -20,18 +20,17 @@
 #include "asmsub.h"
 #include "asmpars.h"
 #include "asmallg.h"
+#include "onoff_common.h"
 #include "asmitree.h"
 #include "asmcode.h"
 #include "codepseudo.h"
 #include "intpseudo.h"
 #include "codevars.h"
 #include "errmsg.h"
+#include "onoff_common.h"
+#include "chartrans.h"
 
 #include "codeavr.h"
-
-#define FixedOrderCnt 27
-#define Reg1OrderCnt 10
-#define Reg2OrderCnt 12
 
 #define RegBankSize 32
 #define IOAreaStdSize 64
@@ -434,53 +433,55 @@ static void PlaceValue(Word Value, Boolean IsByte)
 static void DecodeDATA_AVR(Word Index)
 {
   Integer Trans;
-  int z;
-  Boolean OK;
   TempResult t;
   LongInt MinV, MaxV;
 
   UNUSED(Index);
 
   as_tempres_ini(&t);
-  MaxV = ((ActPC == SegCode) && (!Packing)) ? 65535 : 255;
+  MaxV = ((ActPC == SegCode) && !Packing) ? 65535 : 255;
   MinV = (-((MaxV + 1) >> 1));
   WordAccFull = FALSE;
   if (ChkArgCnt(1, ArgCntMax))
   {
-    OK = True;
-    for (z = 1; z <= ArgCnt; z++)
-     if (OK)
-     {
-       EvalStrExpression(&ArgStr[z], &t);
-       if (mFirstPassUnknown(t.Flags) && (t.Typ == TempInt)) t.Contents.Int &= MaxV;
-       switch (t.Typ)
-       {
-         case TempString:
-         {
-           int z2;
+    Boolean OK = True;
+    const tStrComp *pArg;
 
-           if (MultiCharToInt(&t, 2))
-             goto ToInt;
+    forallargs(pArg, OK)
+    {
+      EvalStrExpression(pArg, &t);
+      if (mFirstPassUnknown(t.Flags) && (t.Typ == TempInt)) t.Contents.Int &= MaxV;
+      switch (t.Typ)
+      {
+        case TempString:
+        {
+          int z2;
 
-           for (z2 = 0; z2 < (int)t.Contents.str.len; z2++)
-           {
-             Trans = CharTransTable[((usint) t.Contents.str.p_str[z2]) & 0xff];
-             PlaceValue(Trans, True);
-           }
-           break;
-         }
-         ToInt:
-         case TempInt:
-           if (ChkRange(t.Contents.Int, MinV, MaxV))
-             PlaceValue(t.Contents.Int, Packing);
-           break;
-         case TempFloat:
-           WrStrErrorPos(ErrNum_StringOrIntButFloat, &ArgStr[z]);
-           /* fall-through */
-         default:
-           OK = False;
-       }
-     }
+          if (MultiCharToInt(&t, 2))
+            goto ToInt;
+
+          if (as_chartrans_xlate_nonz_dynstr(CurrTransTable->p_table, &t.Contents.str, pArg))
+            OK = False;
+          else
+            for (z2 = 0; z2 < (int)t.Contents.str.len; z2++)
+            {
+              Trans = ((usint) t.Contents.str.p_str[z2]) & 0xff;
+              PlaceValue(Trans, True);
+            }
+          break;
+        }
+        ToInt:
+        case TempInt:
+          if (ChkRange(t.Contents.Int, MinV, MaxV))
+            PlaceValue(t.Contents.Int, Packing);
+          break;
+        case TempFloat:
+          WrStrErrorPos(ErrNum_StringOrIntButFloat, pArg);
+          /* fall-through */
+        default:
+          OK = False;
+      }
+    }
     if (!OK)
       CodeLen = 0;
     else if (WordAccFull)
@@ -918,7 +919,7 @@ static void DecodeBIT(Word Code)
 
 static void AddFixed(const char *NName, Word NMin, Word NCode)
 {
-  if (InstrZ >= FixedOrderCnt) exit(255);
+  order_array_rsv_end(FixedOrders, FixedOrder);
   FixedOrders[InstrZ].Code = NCode;
   FixedOrders[InstrZ].CoreMask = NMin;
   AddInstTable(InstTable, NName, InstrZ++, DecodeFixed);
@@ -926,7 +927,7 @@ static void AddFixed(const char *NName, Word NMin, Word NCode)
 
 static void AddReg1(const char *NName, Word NMin, Word NCode)
 {
-  if (InstrZ >= Reg1OrderCnt) exit(255);
+  order_array_rsv_end(Reg1Orders, FixedOrder);
   Reg1Orders[InstrZ].Code = NCode;
   Reg1Orders[InstrZ].CoreMask = NMin;
   AddInstTable(InstTable, NName, InstrZ++, DecodeReg1);
@@ -934,7 +935,7 @@ static void AddReg1(const char *NName, Word NMin, Word NCode)
 
 static void AddReg2(const char *NName, Word NMin, Word NCode)
 {
-  if (InstrZ >= Reg2OrderCnt) exit(255);
+  order_array_rsv_end(Reg2Orders, FixedOrder);
   Reg2Orders[InstrZ].Code = NCode;
   Reg2Orders[InstrZ].CoreMask = NMin;
   AddInstTable(InstTable, NName, InstrZ++, DecodeReg2);
@@ -969,7 +970,7 @@ static void InitFields(void)
 {
   InstTable = CreateInstTable(203);
 
-  FixedOrders = (FixedOrder*)malloc(sizeof(*FixedOrders) * FixedOrderCnt); InstrZ = 0;
+  InstrZ = 0;
   AddFixed("IJMP" , MinCoreMask(eCoreClassic) | (1 << eCoreMinTiny), 0x9409);
   AddFixed("ICALL", MinCoreMask(eCoreClassic) | (1 << eCoreMinTiny), 0x9509);
   AddFixed("RET"  , MinCoreMask(eCoreMinTiny), 0x9508); AddFixed("RETI"  , MinCoreMask(eCoreMinTiny), 0x9518);
@@ -987,7 +988,7 @@ static void InitFields(void)
   AddFixed("SPM"  , MinCoreMask(eCoreTiny   ), 0x95e8);
   AddFixed("BREAK" , MinCoreMask(eCoreTiny   ) | (1 << eCoreMinTiny), 0x9598);
 
-  Reg1Orders = (FixedOrder*)malloc(sizeof(*Reg1Orders) * Reg1OrderCnt); InstrZ = 0;
+  InstrZ = 0;
   AddReg1("COM"  , MinCoreMask(eCoreMinTiny), 0x9400); AddReg1("NEG"  , MinCoreMask(eCoreMinTiny), 0x9401);
   AddReg1("INC"  , MinCoreMask(eCoreMinTiny), 0x9403); AddReg1("DEC"  , MinCoreMask(eCoreMinTiny), 0x940a);
   AddReg1("PUSH" , MinCoreMask(eCoreClassic) | (1 << eCoreMinTiny), 0x920f);
@@ -995,7 +996,7 @@ static void InitFields(void)
   AddReg1("LSR"  , MinCoreMask(eCoreMinTiny), 0x9406); AddReg1("ROR"  , MinCoreMask(eCoreMinTiny), 0x9407);
   AddReg1("ASR"  , MinCoreMask(eCoreMinTiny), 0x9405); AddReg1("SWAP" , MinCoreMask(eCoreMinTiny), 0x9402);
 
-  Reg2Orders = (FixedOrder*)malloc(sizeof(*Reg2Orders) * Reg2OrderCnt); InstrZ = 0;
+  InstrZ = 0;
   AddReg2("ADD"  , MinCoreMask(eCoreMinTiny), 0x0c00); AddReg2("ADC"  , MinCoreMask(eCoreMinTiny), 0x1c00);
   AddReg2("SUB"  , MinCoreMask(eCoreMinTiny), 0x1800); AddReg2("SBC"  , MinCoreMask(eCoreMinTiny), 0x0800);
   AddReg2("AND"  , MinCoreMask(eCoreMinTiny), 0x2000); AddReg2("OR"   , MinCoreMask(eCoreMinTiny), 0x2800);
@@ -1075,9 +1076,9 @@ static void InitFields(void)
 static void DeinitFields(void)
 {
   DestroyInstTable(InstTable);
-  free(FixedOrders);
-  free(Reg1Orders);
-  free(Reg2Orders);
+  order_array_free(FixedOrders);
+  order_array_free(Reg1Orders);
+  order_array_free(Reg2Orders);
 }
 
 /*---------------------------------------------------------------------------*/
@@ -1117,11 +1118,6 @@ static void MakeCode_AVR(void)
     WrStrErrorPos(ErrNum_UnknownInstruction, &OpPart);
 }
 
-static void InitCode_AVR(void)
-{
-  SetFlag(&Packing, PackingName, False);
-}
-
 static Boolean IsDef_AVR(void)
 {
   return (Memo("PORT")
@@ -1147,6 +1143,7 @@ static void InternSymbol_AVR(char *pArg, TempResult *pResult)
     pResult->DataSize = eSymbolSize8Bit;
     pResult->Contents.RegDescr.Reg = RegValue;
     pResult->Contents.RegDescr.Dissect = DissectReg_AVR;
+    pResult->Contents.RegDescr.compare = NULL;
   }
 }
 
@@ -1184,7 +1181,7 @@ static void SwitchTo_AVR(void *pUser)
   if (!CodeSegSize)
   {
     SegLimits[SegCode] = (SegLimits[SegCode] << 1) + 1;
-    AddONOFF("PADDING", &DoPadding, DoPaddingName, False);
+    AddONOFF(DoPaddingName, &DoPadding, DoPaddingName, False);
   }
   SegLimits[SegData] = (pCurrCPUProps->RegistersMapped ? RegBankSize : 0)
                      + pCurrCPUProps->IOAreaSize
@@ -1197,8 +1194,8 @@ static void SwitchTo_AVR(void *pUser)
   SignMask = (SegLimits[SegCode] + 1) >> 1;
   ORMask = ((LongInt) - 1) - SegLimits[SegCode];
 
+  onoff_packing_add(False);
   AddONOFF("WRAPMODE", &WrapFlag, WrapFlagName, False);
-  AddONOFF("PACKING", &Packing, PackingName, False);
   SetFlag(&WrapFlag, WrapFlagName, False);
 
   MakeCode = MakeCode_AVR;
@@ -1339,6 +1336,4 @@ void codeavr_init(void)
 
   for (pProp = CPUProps; pProp->pName; pProp++)
     (void)AddCPUUserWithArgs(pProp->pName, SwitchTo_AVR, (void*)pProp, NULL, AVRArgs);
-
-   AddInitPassProc(InitCode_AVR);
 }

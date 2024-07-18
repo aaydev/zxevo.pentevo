@@ -22,15 +22,14 @@
 #include "asmitree.h"
 #include "headids.h"
 #include "codevars.h"
+#include "codepseudo.h"
+#include "onoff_common.h"
 #include "errmsg.h"
+#include "chartrans.h"
 
 #include "code7720.h"
 
 /*---------------------------------------------------------------------------*/
-
-#define DestRegCnt 16
-#define SrcRegCnt 16
-#define ALUSrcRegCnt 4
 
 typedef struct
 {
@@ -65,16 +64,18 @@ static PInstTable OpTable;
 /*---------------------------------------------------------------------------*/
 /* Hilfsroutinen */
 
-static Boolean DecodeReg(char *Asc, LongWord *Code, TReg *Regs, int Cnt)
+static Boolean DecodeReg(char *Asc, LongWord *Code, TReg *Regs)
 {
   int z;
 
-  for (z = 0; z < Cnt; z++)
+  for (z = 0; Regs[z].Name; z++)
     if (!as_strcasecmp(Asc, Regs[z].Name))
-      break;
+    {
+      *Code = Regs[z].Code;
+      return True;
+    }
 
-  if (z < Cnt) *Code = Regs[z].Code;
-  return z < Cnt;
+  return False;
 }
 
 static Boolean ChkOpPresent(OpComps Comp)
@@ -112,8 +113,6 @@ static void DecodeDATA_7720(Word Index)
 {
   LongInt MinV, MaxV;
   TempResult t;
-  int z;
-  Boolean OK;
 
   as_tempres_ini(&t);
   UNUSED(Index);
@@ -125,11 +124,12 @@ static void DecodeDATA_7720(Word Index)
   MinV = (-((MaxV + 1) >> 1));
   if (ChkArgCnt(1, ArgCntMax))
   {
-    OK = True;
-    z = 1;
-    while ((OK) & (z <= ArgCnt))
+    Boolean OK = True;
+    tStrComp *pArg;
+
+    forallargs(pArg, OK)
     {
-      EvalStrExpression(&ArgStr[z], &t);
+      EvalStrExpression(pArg, &t);
       if (mFirstPassUnknown(t.Flags) && (t.Typ == TempInt))
         t.Contents.Int &= MaxV;
 
@@ -137,30 +137,15 @@ static void DecodeDATA_7720(Word Index)
       {
         case TempString:
         {
-          unsigned z2, CharsPerWord, Pos;
-          LongWord Trans;
-
-          CharsPerWord = ((ActPC == SegCode) && (MomCPU >= CPU7725)) ? 3 : 2;
-
           if (MultiCharToInt(&t, 3))
             goto ToInt;
 
-          Pos = 0;
-          for (z2 = 0; z2 < t.Contents.str.len; z2++)
-          {
-            Trans = CharTransTable[((usint) t.Contents.str.p_str[z2]) & 0xff];
-            if (ActPC == SegCode)
-              DAsmCode[CodeLen] = (Pos == 0) ? Trans : (DAsmCode[CodeLen] << 8) | Trans;
-            else
-              WAsmCode[CodeLen] = (Pos == 0) ? Trans : (WAsmCode[CodeLen] << 8) | Trans;
-            if (++Pos == CharsPerWord)
-            {
-              Pos = 0;
-              CodeLen++;
-            }
-          }
-          if (Pos != 0)
-            CodeLen++;
+          if (as_chartrans_xlate_nonz_dynstr(CurrTransTable->p_table, &t.Contents.str, pArg))
+            OK = False;
+          else if (ActPC == SegCode)
+            string_2_dasm_code(&t.Contents.str, Packing ? ((MomCPU >= CPU7725) ? 3 : 2) : 1, True);
+          else
+            string_2_wasm_code(&t.Contents.str, Packing ? 2 : 1, True);
           break;
         }
         case TempInt:
@@ -175,12 +160,11 @@ static void DecodeDATA_7720(Word Index)
           }
           break;
         case TempFloat:
-          WrStrErrorPos(ErrNum_StringOrIntButFloat, &ArgStr[z]);
+          WrStrErrorPos(ErrNum_StringOrIntButFloat, pArg);
           /* fall-through */
         default:
           OK = False;
       }
-      z++;
     }
   }
   as_tempres_free(&t);
@@ -218,7 +202,7 @@ static void DecodeALU2(Word Code)
     return;
 
   if (!ChkArgCnt(2, 2));
-  else if (!DecodeReg(ArgStr[2].str.p_str, &Src, ALUSrcRegs, ALUSrcRegCnt)) WrStrErrorPos(ErrNum_InvReg, &ArgStr[2]);
+  else if (!DecodeReg(ArgStr[2].str.p_str, &Src, ALUSrcRegs)) WrStrErrorPos(ErrNum_InvReg, &ArgStr[2]);
   else
   {
     if ((strlen(ArgStr[1].str.p_str) == 4) && (!as_strncasecmp(ArgStr[1].str.p_str, "ACC", 3)))
@@ -311,7 +295,7 @@ static void DecodeLDI(Word Index)
   UNUSED(Index);
 
   if (!ChkArgCnt(2, 2));
-  else if (!DecodeReg(ArgStr[1].str.p_str, &Reg, DestRegs, DestRegCnt)) WrStrErrorPos(ErrNum_InvReg, &ArgStr[1]);
+  else if (!DecodeReg(ArgStr[1].str.p_str, &Reg, DestRegs)) WrStrErrorPos(ErrNum_InvReg, &ArgStr[1]);
   else
   {
     Value = EvalStrIntExpression(&ArgStr[2], Int16, &OK);
@@ -365,8 +349,8 @@ static void DecodeMOV(Word Index)
     return;
 
   if (!ChkArgCnt(2, 2));
-  else if (!DecodeReg(ArgStr[1].str.p_str, &Dest, DestRegs, DestRegCnt)) WrStrErrorPos(ErrNum_InvReg, &ArgStr[1]);
-  else if (!DecodeReg(ArgStr[2].str.p_str, &Src, SrcRegs, SrcRegCnt)) WrStrErrorPos(ErrNum_InvReg, &ArgStr[2]);
+  else if (!DecodeReg(ArgStr[1].str.p_str, &Dest, DestRegs)) WrStrErrorPos(ErrNum_InvReg, &ArgStr[1]);
+  else if (!DecodeReg(ArgStr[2].str.p_str, &Src, SrcRegs)) WrStrErrorPos(ErrNum_InvReg, &ArgStr[2]);
   else
     ActCode |= Dest + (Src << 4);
 }
@@ -393,24 +377,21 @@ static void AddALU1(const char *NName, Word NCode)
 
 static void AddDestReg(const char *NName, LongWord NCode)
 {
-  if (InstrZ >= DestRegCnt)
-    exit(255);
+  order_array_rsv_end(DestRegs, TReg);
   DestRegs[InstrZ].Name = NName;
   DestRegs[InstrZ++].Code = NCode;
 }
 
 static void AddSrcReg(const char *NName, LongWord NCode)
 {
-  if (InstrZ >= SrcRegCnt)
-    exit(255);
+  order_array_rsv_end(SrcRegs, TReg);
   SrcRegs[InstrZ].Name = NName;
   SrcRegs[InstrZ++].Code = NCode;
 }
 
 static void AddALUSrcReg(const char *NName, LongWord NCode)
 {
-  if (InstrZ >= ALUSrcRegCnt)
-    exit(255);
+  order_array_rsv_end(ALUSrcRegs, TReg);
   ALUSrcRegs[InstrZ].Name = NName;
   ALUSrcRegs[InstrZ++].Code = NCode;
 }
@@ -481,7 +462,7 @@ static void InitFields(void)
   AddALU1("SHL1", 12); AddALU1("SHL2", 13); AddALU1("SHL4", 14);
   AddALU1("XCHG", 15);
 
-  DestRegs = (TReg *) malloc(sizeof(TReg) * DestRegCnt); InstrZ = 0;
+  InstrZ = 0;
   AddDestReg("@NON",  0); AddDestReg("@A"  ,  1);
   AddDestReg("@B"  ,  2); AddDestReg("@TR" ,  3);
   AddDestReg("@DP" ,  4); AddDestReg("@RP" ,  5);
@@ -489,10 +470,11 @@ static void InitFields(void)
   AddDestReg("@SOL",  8); AddDestReg("@SOM",  9);
   AddDestReg("@K"  , 10); AddDestReg("@KLR", 11);
   AddDestReg("@KLM", 12); AddDestReg("@L"  , 13);
-  AddDestReg((MomCPU == CPU7725)?"@TRB":"", 14);
+  if (MomCPU == CPU7725) AddDestReg("@TRB", 14);
   AddDestReg("@MEM", 15);
+  AddDestReg(NULL, 0);
 
-  SrcRegs = (TReg *) malloc(sizeof(TReg) * SrcRegCnt); InstrZ = 0;
+  InstrZ = 0;
   AddSrcReg("NON" ,  0); AddSrcReg("A"   ,  1);
   AddSrcReg("B"   ,  2); AddSrcReg("TR"  ,  3);
   AddSrcReg("DP"  ,  4); AddSrcReg("RP"  ,  5);
@@ -501,19 +483,21 @@ static void InitFields(void)
   AddSrcReg("SR"  , 10); AddSrcReg("SIM" , 11);
   AddSrcReg("SIL" , 12); AddSrcReg("K"   , 13);
   AddSrcReg("L"   , 14); AddSrcReg("MEM" , 15);
+  AddSrcReg(NULL, 0);
 
-  ALUSrcRegs = (TReg *) malloc(sizeof(TReg) * ALUSrcRegCnt); InstrZ = 0;
+  InstrZ = 0;
   AddALUSrcReg("RAM", 0); AddALUSrcReg("IDB", 1);
   AddALUSrcReg("M"  , 2); AddALUSrcReg("N"  , 3);
+  AddALUSrcReg(NULL, 0);
 }
 
 static void DeinitFields(void)
 {
   DestroyInstTable(InstTable);
   DestroyInstTable(OpTable);
-  free(DestRegs);
-  free(SrcRegs);
-  free(ALUSrcRegs);
+  order_array_free(DestRegs);
+  order_array_free(SrcRegs);
+  order_array_free(ALUSrcRegs);
 }
 
 /*---------------------------------------------------------------------------*/
@@ -563,7 +547,7 @@ static void SwitchFrom_7720(void)
 
 static void SwitchTo_7720(void)
 {
-  PFamilyDescr FoundDescr;
+  const TFamilyDescr *FoundDescr;
 
   TurnWords = False;
   SetIntConstMode(eIntConstModeIntel);
@@ -612,6 +596,8 @@ static void SwitchTo_7720(void)
   MakeCode = MakeCode_7720;
   IsDef = IsDef_7720;
   SwitchFrom = SwitchFrom_7720;
+
+  onoff_packing_add(True);
 
   InOp = False;
   UsedOpFields = 0;

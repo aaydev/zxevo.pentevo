@@ -11,8 +11,7 @@
 /*****************************************************************************/
 
 #include <stddef.h>
-
-#define LISTLINESPACE 20
+#include "datatypes.h"
 
 struct sLineComp;
 struct sStrComp;
@@ -46,12 +45,18 @@ extern char *FirstBlank(const char *s);
 
 extern void SplitString(char *Source, char *Left, char *Right, char *Trenner);
 
-extern void TranslateString(char *s, int Length);
-
 extern ShortInt StrCaseCmp(const char *s1, const char *s2, LongInt Hand1, LongInt Hand2);
 
 extern char *MatchChars(const char *pStr, const char *pPattern, ...);
 extern char *MatchCharsRev(const char *pStr, const char *pPattern, ...);
+
+typedef struct as_quoted_iterator_cb_data
+{
+  const char *p_str;
+  Boolean in_single_quote, in_double_quote;
+} as_quoted_iterator_cb_data_t;
+typedef Boolean (*as_quoted_iterator_cb_t)(const char *p_pos, as_quoted_iterator_cb_data_t *p_cb_data);
+extern void as_iterate_str_quoted(const char *p_str, as_quoted_iterator_cb_t callback, as_quoted_iterator_cb_data_t *p_cb_data);
 
 extern char *FindClosingParenthese(const char *pStr);
 
@@ -79,7 +84,8 @@ extern char *PathPart(char *Name);
 
 extern void FloatString(char *pDest, size_t DestSize, Double f);
 
-extern void StrSym(const TempResult *t, Boolean WithSystem, struct as_dynstr *p_dest, unsigned Radix);
+struct sTempResult;
+extern void StrSym(const struct sTempResult *t, Boolean WithSystem, struct as_dynstr *p_dest, unsigned Radix);
 
 
 extern void ResetPageCounter(void);
@@ -88,9 +94,7 @@ extern void NewPage(ShortInt Level, Boolean WithFF);
 
 extern void WrLstLine(const char *Line);
 
-extern void SetListLineVal(TempResult *t);
-
-extern void LimitListLine(void);
+extern void SetListLineVal(struct sTempResult *t);
 
 extern void PrintOneLineMuted(FILE *pFile, const char *pLine,
                               const struct sLineComp *pMuteComponent,
@@ -135,7 +139,7 @@ extern LongWord StackRes(void);
 
 extern void AddCopyright(const char *NewLine);
 
-extern void WriteCopyrights(TSwitchProc NxtProc);
+extern void WriteCopyrights(void(*PrintProc)(const char *));
 
 
 extern char *ChkSymbNameUpTo(const char *pSym, const char *pUpTo);
@@ -143,13 +147,14 @@ extern Boolean ChkSymbName(const char *pSym);
 
 extern char *ChkMacSymbNameUpTo(const char *pSym, const char *pUpTo);
 extern Boolean ChkMacSymbName(const char *pSym);
+extern Boolean ChkMacSymbChar(char ch);
 
 extern unsigned visible_strlen(const char *pSym);
 
 
-extern void AddIncludeList(char *NewPath);
+extern void AddIncludeList(const char *NewPath);
 
-extern void RemoveIncludeList(char *RemPath);
+extern void RemoveIncludeList(const char *RemPath);
 
 
 extern void ClearOutList(void);
@@ -158,7 +163,7 @@ extern void AddToOutList(const char *NewName);
 
 extern void RemoveFromOutList(const char *OldName);
 
-extern char *GetFromOutList(void);
+extern char *MoveFromOutListFirst(void);
 
 
 extern void ClearShareOutList(void);
@@ -167,7 +172,7 @@ extern void AddToShareOutList(const char *NewName);
 
 extern void RemoveFromShareOutList(const char *OldName);
 
-extern char *GetFromShareOutList(void);
+extern char *MoveFromShareOutListFirst(void);
 
 
 extern void ClearListOutList(void);
@@ -176,7 +181,7 @@ extern void AddToListOutList(const char *NewName);
 
 extern void RemoveFromListOutList(const char *OldName);
 
-extern char *GetFromListOutList(void);
+extern char *MoveFromListOutListFirst(void);
 
 
 extern void BookKeeping(void);

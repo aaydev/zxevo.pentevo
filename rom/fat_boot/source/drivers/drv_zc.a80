@@ -1,8 +1,8 @@
 
-; LAST UPDATE: 21.12.2022 savelij
+; LAST UPDATE: 01.11.2023 savelij
 
 ;================áÄÉêìáóàä ë ZC SD äÄêíéóäà===================
-READ_SD		PUSH AF
+READ_ZSD	PUSH AF
 		LD A,1
 		OUT (P_CONF),A
 		POP AF
@@ -12,7 +12,7 @@ READ_SD		PUSH AF
 		EX AF,AF'
 RDMULT1		EX AF,AF'
 RDMULT2		CALL IN_OOUT
-		CP 0XFE
+		CP 0xFE
 		JR NZ,RDMULT2
 		PUSH BC
 		LD BC,P_DATA
@@ -80,7 +80,7 @@ SECN200		POP AF
 		OUT (C),D
 		NOP
 		OUT (C),E
-		LD A,0XFF
+		LD A,0xFF
 		OUT (C),A
 		POP BC
 		POP DE
@@ -106,7 +106,7 @@ OUT_COM		PUSH BC
 		RET
 
 IN_OOUT		PUSH DE
-		LD DE,0X20FF
+		LD DE,0x20FF
 IN_WAIT		IN A,(P_DATA)
 		CP E
 		JR NZ,IN_EXIT

@@ -17,7 +17,7 @@
 
 #include "strutil.h"
 #include "nls.h"
-#include "endian.h"
+#include "be_le.h"
 #include "ieeefloat.h"
 #include "bpemu.h"
 
@@ -27,20 +27,15 @@
 #include "asmitree.h"
 #include "headids.h"
 #include "codevars.h"
+#include "codepseudo.h"
+#include "onoff_common.h"
 #include "errmsg.h"
+#include "chartrans.h"
 
 #include "code77230.h"
 
 /*---------------------------------------------------------------------------*/
 /* Definitionen */
-
-#define SrcRegCnt 32
-#define DestRegCnt 32
-#define ALUSrcRegCnt 4
-
-#define JmpOrderCnt 32
-#define ALU1OrderCnt 15
-#define ALU2OrderCnt 10
 
 #define CaseCnt 17
 
@@ -189,11 +184,11 @@ static void AddComp(int Index, LongWord Value)
   }
 }
 
-static Boolean DecodeReg(char *Asc, LongWord *Erg, Register *Regs, int Cnt)
+static Boolean DecodeReg(char *Asc, LongWord *Erg, Register *Regs)
 {
   int z;
 
-  for (z = 0; z < Cnt; z++)
+  for (z = 0; Regs[z].Name; z++)
     if (!as_strcasecmp(Asc, Regs[z].Name))
     {
       *Erg = Regs[z].Code;
@@ -234,12 +229,12 @@ static void DecodeMOV(Word Index)
 
   if (!SplitArgs(2))
     return;
-  if (!DecodeReg(ArgStr[1].str.p_str, &DReg, DestRegs, DestRegCnt))
+  if (!DecodeReg(ArgStr[1].str.p_str, &DReg, DestRegs))
   {
     WrStrErrorPos(ErrNum_InvReg, &ArgStr[1]);
     Error = True;
   }
-  else if (!DecodeReg(ArgStr[2].str.p_str, &SReg, SrcRegs, SrcRegCnt))
+  else if (!DecodeReg(ArgStr[2].str.p_str, &SReg, SrcRegs))
   {
     WrStrErrorPos(ErrNum_InvReg, &ArgStr[2]);
     Error = True;
@@ -256,7 +251,7 @@ static void DecodeLDI(Word Index)
 
   if (!SplitArgs(2))
     return;
-  if (!DecodeReg(ArgStr[1].str.p_str, &DReg, DestRegs, DestRegCnt))
+  if (!DecodeReg(ArgStr[1].str.p_str, &DReg, DestRegs))
   {
     WrStrErrorPos(ErrNum_InvReg, &ArgStr[1]);
     Error = True;
@@ -286,7 +281,7 @@ static void DecodeALU1(Word Index)
 
   if (!SplitArgs(1))
     return;
-  if ((!DecodeReg(ArgStr[1].str.p_str, &DReg, DestRegs, DestRegCnt))
+  if ((!DecodeReg(ArgStr[1].str.p_str, &DReg, DestRegs))
    || (DReg < 16) || (DReg > 23))
   {
     WrStrErrorPos(ErrNum_InvReg, &ArgStr[1]);
@@ -303,13 +298,13 @@ static void DecodeALU2(Word Index)
   LongWord DReg, SReg;
 
   if (!SplitArgs(2)) return;
-  if ((!DecodeReg(ArgStr[1].str.p_str, &DReg, DestRegs, DestRegCnt))
+  if ((!DecodeReg(ArgStr[1].str.p_str, &DReg, DestRegs))
    || (DReg < 16) || (DReg > 23))
   {
     WrStrErrorPos(ErrNum_InvReg, &ArgStr[1]);
     Error = True;
   }
-  else if (!DecodeReg(ArgStr[2].str.p_str, &SReg, ALUSrcRegs, ALUSrcRegCnt))
+  else if (!DecodeReg(ArgStr[2].str.p_str, &SReg, ALUSrcRegs))
   {
     WrStrErrorPos(ErrNum_InvReg, &ArgStr[2]);
     Error = True;
@@ -591,46 +586,37 @@ static void DecodeNAL(Word Index)
 
 static Boolean DecodePseudo(void)
 {
-  int z;
-  Boolean OK;
   LongWord temp;
   LongInt sign, mant, expo, Size;
-  char *cp, *cend;
 
   if (Memo("DW"))
   {
     if (ChkArgCnt(1, ArgCntMax))
     {
       TempResult t;
+      Boolean OK = True;
+      tStrComp *pArg;
 
       as_tempres_ini(&t);
-      z = 1; OK = True;
-      while ((OK) && (z <= ArgCnt))
+      forallargs(pArg, OK)
       {
-        EvalStrExpression(&ArgStr[z], &t);
+        EvalStrExpression(pArg, &t);
         switch(t.Typ)
         {
           case TempString:
             if (MultiCharToInt(&t, 4))
               goto ToInt;
 
-            for (z = 0, cp = t.Contents.str.p_str, cend = cp + t.Contents.str.len; cp < cend; cp++, z++)
-            {
-              DAsmCode[CodeLen] = (DAsmCode[CodeLen] << 8) + CharTransTable[((usint)*cp) & 0xff];
-              if ((z & 3) == 3)
-                CodeLen++;
-            }
-            if ((z & 3) != 0)
-            {
-              DAsmCode[CodeLen] = (DAsmCode[CodeLen]) << ((4 - (z & 3)) << 3);
-              CodeLen++;
-            }
+            if (as_chartrans_xlate_nonz_dynstr(CurrTransTable->p_table, &t.Contents.str, pArg))
+              OK = False;
+            else
+              OK = !string_2_dasm_code(&t.Contents.str, Packing ? 4 : 1, True);
             break;
           case TempInt:
           ToInt:
             if (!RangeCheck(t.Contents.Int, Int32))
             {
-              WrError(ErrNum_OverRange);
+              WrStrErrorPos(ErrNum_OverRange, pArg);
               OK = False;
               break;
             }
@@ -639,7 +625,7 @@ static Boolean DecodePseudo(void)
           case TempFloat:
             if (!FloatRangeCheck(t.Contents.Float, Float32))
             {
-              WrError(ErrNum_OverRange);
+              WrStrErrorPos(ErrNum_OverRange, pArg);
               OK = False;
               break;
             }
@@ -671,7 +657,6 @@ static Boolean DecodePseudo(void)
           default:
             OK = False;
         }
-        z++;
       }
       if (!OK)
         CodeLen = 0;
@@ -685,6 +670,7 @@ static Boolean DecodePseudo(void)
     if (ChkArgCnt(1, 1))
     {
       tSymbolFlags Flags;
+      Boolean OK;
 
       Size = EvalStrIntExpressionWithFlags(&ArgStr[1], Int16, &OK, &Flags);
       if (mFirstPassUnknown(Flags))
@@ -712,42 +698,42 @@ static Boolean DecodePseudo(void)
 
 static void AddJmp(const char *NName, LongWord NCode)
 {
-  if (InstrZ >= JmpOrderCnt) exit(255);
+  order_array_rsv_end(JmpOrders, FixedOrder);
   JmpOrders[InstrZ].Code = NCode;
   AddInstTable(InstTable, NName, InstrZ++, DecodeJmp);
 }
 
 static void AddALU1(const char *NName, LongWord NCode)
 {
-  if (InstrZ >= ALU1OrderCnt) exit(255);
+  order_array_rsv_end(ALU1Orders, FixedOrder);
   ALU1Orders[InstrZ].Code = NCode;
   AddInstTable(InstTable, NName, InstrZ++, DecodeALU1);
 }
 
 static void AddALU2(const char *NName, LongWord NCode)
 {
-  if (InstrZ >= ALU2OrderCnt) exit(255);
+  order_array_rsv_end(ALU2Orders, FixedOrder);
   ALU2Orders[InstrZ].Code = NCode;
   AddInstTable(InstTable, NName, InstrZ++, DecodeALU2);
 }
 
 static void AddSrcReg(const char *NName, LongWord NCode)
 {
-  if (InstrZ >= SrcRegCnt) exit(255);
+  order_array_rsv_end(SrcRegs, Register);
   SrcRegs[InstrZ].Name = NName;
   SrcRegs[InstrZ++].Code = NCode;
 }
 
 static void AddALUSrcReg(const char *NName, LongWord NCode)
 {
-  if (InstrZ >= ALUSrcRegCnt) exit(255);
+  order_array_rsv_end(ALUSrcRegs, Register);
   ALUSrcRegs[InstrZ].Name = NName;
   ALUSrcRegs[InstrZ++].Code = NCode;
 }
 
 static void AddDestReg(const char *NName, LongWord NCode)
 {
-  if (InstrZ >= DestRegCnt) exit(255);
+  order_array_rsv_end(DestRegs, Register);
   DestRegs[InstrZ].Name = NName;
   DestRegs[InstrZ++].Code = NCode;
 }
@@ -845,7 +831,7 @@ static void InitFields(void)
   AddInstTable(InstTable, "SPCRA", 0, DecodeRPS);
   AddInstTable(InstTable, "JBLK" , 0, DecodeNAL);
 
-  JmpOrders = (FixedOrder*) malloc(sizeof(FixedOrder)*JmpOrderCnt); InstrZ = 0;
+  InstrZ = 0;
   AddJmp("JMP"   , 0x0100); AddJmp("CALL"  , 0x0101); AddJmp("RET"   , 0x0002);
   AddJmp("JNZRP" , 0x0103); AddJmp("JZ0"   , 0x0104); AddJmp("JNZ0"  , 0x0105);
   AddJmp("JZ1"   , 0x0106); AddJmp("JNZ1"  , 0x0107); AddJmp("JC0"   , 0x0108);
@@ -858,20 +844,20 @@ static void InitFields(void)
   AddJmp("JNZIX1", 0x011b); AddJmp("JNZBP0", 0x011c); AddJmp("JNZBP1", 0x011d);
   AddJmp("JRDY"  , 0x011e); AddJmp("JRQM"  , 0x011f);
 
-  ALU1Orders = (FixedOrder*) malloc(sizeof(FixedOrder)*ALU1OrderCnt); InstrZ = 0;
+  InstrZ = 0;
   AddALU1("INC"  , 0x01); AddALU1("DEC"  , 0x02); AddALU1("ABS"  , 0x03);
   AddALU1("NOT"  , 0x04); AddALU1("NEG"  , 0x05); AddALU1("SHLC" , 0x06);
   AddALU1("SHRC" , 0x07); AddALU1("ROL"  , 0x08); AddALU1("ROR"  , 0x09);
   AddALU1("SHLM" , 0x0a); AddALU1("SHRM" , 0x0b); AddALU1("SHRAM", 0x0c);
   AddALU1("CLR"  , 0x0d); AddALU1("NORM" , 0x0e); AddALU1("CVT"  , 0x0f);
 
-  ALU2Orders = (FixedOrder*) malloc(sizeof(FixedOrder)*ALU2OrderCnt); InstrZ = 0;
+  InstrZ = 0;
   AddALU2("ADD"  , 0x10); AddALU2("SUB"  , 0x11); AddALU2("ADDC" , 0x12);
   AddALU2("SUBC" , 0x13); AddALU2("CMP"  , 0x14); AddALU2("AND"  , 0x15);
   AddALU2("OR"   , 0x16); AddALU2("XOR"  , 0x17); AddALU2("ADDF" , 0x18);
   AddALU2("SUBF" , 0x19);
 
-  SrcRegs = (Register*) malloc(sizeof(Register)*SrcRegCnt); InstrZ = 0;
+  InstrZ = 0;
   AddSrcReg("NON" , 0x00); AddSrcReg("RP"  , 0x01); AddSrcReg("PSW0" , 0x02);
   AddSrcReg("PSW1", 0x03); AddSrcReg("SVR" , 0x04); AddSrcReg("SR"   , 0x05);
   AddSrcReg("LC"  , 0x06); AddSrcReg("STX" , 0x07); AddSrcReg("M"    , 0x08);
@@ -882,13 +868,14 @@ static void InitFields(void)
   AddSrcReg("WR5" , 0x15); AddSrcReg("WR6" , 0x16); AddSrcReg("WR7"  , 0x17);
   AddSrcReg("RAM0", 0x18); AddSrcReg("RAM1", 0x19); AddSrcReg("BP0"  , 0x1a);
   AddSrcReg("BP1" , 0x1b); AddSrcReg("IX0" , 0x1c); AddSrcReg("IX1"  , 0x1d);
-  AddSrcReg("K"   , 0x1e); AddSrcReg("L"   , 0x1f);
+  AddSrcReg("K"   , 0x1e); AddSrcReg("L"   , 0x1f); AddSrcReg(NULL   , 0);
 
-  ALUSrcRegs = (Register*) malloc(sizeof(Register)*ALUSrcRegCnt); InstrZ = 0;
+  InstrZ = 0;
   AddALUSrcReg("IB"  , 0x00); AddALUSrcReg("M"   , 0x01);
   AddALUSrcReg("RAM0", 0x02); AddALUSrcReg("RAM1", 0x03);
+  AddALUSrcReg(NULL  , 0);
 
-  DestRegs = (Register*) malloc(sizeof(Register)*DestRegCnt); InstrZ = 0;
+  InstrZ = 0;
   AddDestReg("NON" , 0x00); AddDestReg("RP"  , 0x01); AddDestReg("PSW0" , 0x02);
   AddDestReg("PSW1", 0x03); AddDestReg("SVR" , 0x04); AddDestReg("SR"   , 0x05);
   AddDestReg("LC"  , 0x06); AddDestReg("STK" , 0x07); AddDestReg("LKR0" , 0x08);
@@ -899,10 +886,10 @@ static void InitFields(void)
   AddDestReg("WR5" , 0x15); AddDestReg("WR6" , 0x16); AddDestReg("WR7"  , 0x17);
   AddDestReg("RAM0", 0x18); AddDestReg("RAM1", 0x19); AddDestReg("BP0"  , 0x1a);
   AddDestReg("BP1" , 0x1b); AddDestReg("IX0" , 0x1c); AddDestReg("IX1"  , 0x1d);
-  AddDestReg("K"   , 0x1e); AddDestReg("L"   , 0x1f);
+  AddDestReg("K"   , 0x1e); AddDestReg("L"   , 0x1f); AddDestReg(NULL   , 0);
 
-  InstrComps = (LongWord*) malloc(sizeof(LongWord)*InstrCnt);
-  InstrDefs = (LongWord*) malloc(sizeof(LongWord)*InstrCnt);
+  InstrComps = (LongWord*) malloc(sizeof(LongWord) * InstrCnt);
+  InstrDefs = (LongWord*) malloc(sizeof(LongWord) * InstrCnt);
   for (InstrZ = 0; InstrZ < InstrCnt; InstrDefs[InstrZ++] = 0xffffffff);
   InstrDefs[InstrALU] = 0;
   InstrDefs[InstrMove] = 0;
@@ -928,13 +915,13 @@ static void DeinitFields(void)
 {
   DestroyInstTable(InstTable);
 
-  free(SrcRegs);
-  free(ALUSrcRegs);
-  free(DestRegs);
+  order_array_free(SrcRegs);
+  order_array_free(ALUSrcRegs);
+  order_array_free(DestRegs);
 
-  free(JmpOrders);
-  free(ALU1Orders);
-  free(ALU2Orders);
+  order_array_free(JmpOrders);
+  order_array_free(ALU1Orders);
+  order_array_free(ALU2Orders);
 
   free(InstrComps);
   free(InstrDefs);
@@ -971,7 +958,7 @@ static void MakeCode_77230(void)
       Error = True;
     }
   }
-  while ((!Error) && (*OpPart.str.p_str != '\0'));
+  while (!Error && (*OpPart.str.p_str != '\0'));
 
   /* passende Verknuepfung suchen */
 
@@ -1120,7 +1107,7 @@ static void SwitchFrom_77230(void)
 
 static void SwitchTo_77230(void)
 {
-  PFamilyDescr FoundDescr;
+  const TFamilyDescr *FoundDescr;
 
   FoundDescr = FindFamilyByName("77230");
 
@@ -1141,6 +1128,8 @@ static void SwitchTo_77230(void)
   SegLimits[SegYData] = 0x1ff;
   Grans[SegRData] = 4; ListGrans[SegRData] = 4; SegInits[SegRData] = 0;
   SegLimits[SegRData] = 0x3ff;
+
+  onoff_packing_add(True);
 
   MakeCode = MakeCode_77230;
   IsDef = IsDef_77230;

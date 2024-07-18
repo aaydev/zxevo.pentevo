@@ -11,7 +11,7 @@
 #include "stdinc.h"
 #include <string.h>
 #include <ctype.h>
-#include "endian.h"
+#include "be_le.h"
 
 #include "strutil.h"
 #include "bpemu.h"
@@ -25,7 +25,9 @@
 #include "codepseudo.h"
 #include "asmitree.h"
 #include "codevars.h"
+#include "onoff_common.h"
 #include "nlmessages.h"
+#include "chartrans.h"
 #include "as.rsc"
 
 /*---------------------------------------------------------------------------*/
@@ -90,12 +92,6 @@ static const char UnitNames[UnitCnt][3] =
 
 #define MaxParCnt 8
 #define FirstUnit L1
-
-#define LinAddCnt 6
-#define CmpCnt 5
-#define MemCnt 8
-#define MulCnt 20
-#define CtrlCnt 13
 
 enum
 {
@@ -334,7 +330,7 @@ static Boolean DecodeCtrlReg(char *Asc, LongWord *Erg, Boolean Write)
 {
   int z;
 
-  for (z = 0; z < CtrlCnt; z++)
+  for (z = 0; CtrlRegs[z].Name; z++)
     if (!as_strcasecmp(Asc, CtrlRegs[z].Name))
     {
       *Erg = CtrlRegs[z].Code;
@@ -634,7 +630,8 @@ static void SwapReg(LongWord *r1, LongWord *r2)
 static Boolean DecodePseudo(void)
 {
   Boolean OK;
-  int z, cnt;
+  unsigned dword_index;
+  tStrComp *pArg;
   LongInt Size;
 
   if (Memo("SINGLE"))
@@ -642,15 +639,18 @@ static Boolean DecodePseudo(void)
     if (ChkArgCnt(1, ArgCntMax))
     {
       OK = True;
-      for (z = 0; z < ArgCnt; z++)
+      forallargs(pArg, OK)
       {
-        double Float = EvalStrFloatExpression(&ArgStr[z + 1], Float32, &OK);
+        double Float = EvalStrFloatExpression(pArg, Float32, &OK);
 
-        if (!OK)
-          break;
-        Double_2_ieee4(Float, (Byte *) (DAsmCode + z), HostBigEndian);
+        if (OK)
+        {
+          dword_index = CodeLen >> 2;
+          Double_2_ieee4(Float, (Byte *) (DAsmCode + dword_index), HostBigEndian);
+          CodeLen += 4;
+        }
       }
-      if (OK) CodeLen = ArgCnt << 2;
+      if (!OK) CodeLen = 0;
     }
     return True;
   }
@@ -659,26 +659,26 @@ static Boolean DecodePseudo(void)
   {
     if (ChkArgCnt(1, ArgCntMax))
     {
-      int z2;
       double Float;
 
       OK = True;
-      for (z = 0; z < ArgCnt; z++)
+      forallargs(pArg, OK)
       {
-        z2 = z << 1;
-        Float = EvalStrFloatExpression(&ArgStr[z + 1], Float64, &OK);
-        if (!OK)
-          break;
-        Double_2_ieee8(Float, (Byte *) (DAsmCode + z2), HostBigEndian);
-        if (!HostBigEndian)
+        Float = EvalStrFloatExpression(pArg, Float64, &OK);
+        if (OK)
         {
-          DAsmCode[z2 + 2] = DAsmCode[z2 + 0];
-          DAsmCode[z2 + 0] = DAsmCode[z2 + 1];
-          DAsmCode[z2 + 1] = DAsmCode[z2 + 2];
+          dword_index = CodeLen >> 2;
+          Double_2_ieee8(Float, (Byte *) (DAsmCode + dword_index), HostBigEndian);
+          if (!HostBigEndian)
+          {
+            DAsmCode[dword_index + 2] = DAsmCode[dword_index + 0];
+            DAsmCode[dword_index + 0] = DAsmCode[dword_index + 1];
+            DAsmCode[dword_index + 1] = DAsmCode[dword_index + 2];
+          }
+          CodeLen += 8;
         }
       }
-      if (OK)
-        CodeLen = ArgCnt << 3;
+      if (!OK) CodeLen = 0;
     }
     return True;
   }
@@ -688,59 +688,67 @@ static Boolean DecodePseudo(void)
     if (ChkArgCnt(1, ArgCntMax))
     {
       TempResult t;
+      int cnt = 0;
 
       as_tempres_ini(&t);
       OK = True;
-      cnt = 0;
-      for (z = 1; z <= ArgCnt; z++)
-       if (OK)
-       {
-         EvalStrExpression(&ArgStr[z], &t);
-         switch (t.Typ)
-         {
-           case TempString:
-           {
-             unsigned z2;
+      forallargs (pArg, OK)
+      {
+        EvalStrExpression(pArg, &t);
+        switch (t.Typ)
+        {
+          case TempString:
+          {
+            unsigned z2;
+            LongWord Trans;
 
             if (MultiCharToInt(&t, 4))
               goto ToInt;
 
-             for (z2 = 0; z2 < t.Contents.str.len; z2++)
-             {
-               if ((z2 & 3) == 0) DAsmCode[cnt++] = 0;
-               DAsmCode[cnt - 1] +=
-                  (((LongWord)CharTransTable[((usint)t.Contents.str.p_str[z2]) & 0xff])) << (8 * (3 - (z2 & 3)));
-             }
-             break;
-           }
-           case TempInt:
-           ToInt:
+            if (as_chartrans_xlate_nonz_dynstr(CurrTransTable->p_table, &t.Contents.str, pArg))
+              OK = False;
+            else
+              for (z2 = 0; z2 < t.Contents.str.len; z2++)
+              {
+                Trans = t.Contents.str.p_str[z2] & 0xff;
+                if (Packing)
+                {
+                  if ((z2 & 3) == 0) DAsmCode[cnt++] = 0;
+                  DAsmCode[cnt - 1] += Trans << (8 * (3 - (z2 & 3)));
+                }
+                else
+                  DAsmCode[cnt++] = Trans;
+              }
+            break;
+          }
+          case TempInt:
+          ToInt:
 #ifdef HAS64
-             if (!RangeCheck(t.Contents.Int, Int32))
-             {
-               OK = False;
-               WrError(ErrNum_OverRange);
-             }
-             else
+            if (!RangeCheck(t.Contents.Int, Int32))
+            {
+              OK = False;
+              WrStrErrorPos(ErrNum_OverRange, pArg);
+            }
+            else
 #endif
-               DAsmCode[cnt++] = t.Contents.Int;
-             break;
-           case TempFloat:
-             if (!FloatRangeCheck(t.Contents.Float, Float32))
-             {
-               OK = False;
-               WrError(ErrNum_OverRange);
-             }
-             else
-             {
-               Double_2_ieee4(t.Contents.Float, (Byte *) (DAsmCode + cnt), HostBigEndian);
-               cnt++;
-             }
-             break;
-           default:
-             OK = False;
-         }
-       }
+              DAsmCode[cnt++] = t.Contents.Int;
+            break;
+          case TempFloat:
+            if (!FloatRangeCheck(t.Contents.Float, Float32))
+            {
+              OK = False;
+              WrStrErrorPos(ErrNum_OverRange, pArg);
+            }
+            else
+            {
+              Double_2_ieee4(t.Contents.Float, (Byte *) (DAsmCode + cnt), HostBigEndian);
+              cnt++;
+            }
+            break;
+          default:
+            OK = False;
+        }
+      }
       if (OK)
         CodeLen = cnt << 2;
       as_tempres_free(&t);
@@ -2783,14 +2791,14 @@ static void MakeCode_3206X(void)
 
 static void AddLinAdd(const char *NName, LongInt NCode)
 {
-  if (InstrZ >= LinAddCnt) exit(255);
+  order_array_rsv_end(LinAddOrders, FixedOrder);
   LinAddOrders[InstrZ].Code = NCode;
   AddInstTable(InstTable, NName, InstrZ++, DecodeLinAdd);
 }
 
 static void AddCmp(const char *NName, LongInt NCode)
 {
-  if (InstrZ >= CmpCnt) exit(255);
+  order_array_rsv_end(CmpOrders, CmpOrder);
   CmpOrders[InstrZ].WithImm = NName[strlen(NName) - 1] != 'U';
   CmpOrders[InstrZ].Code = NCode;
   AddInstTable(InstTable, NName, InstrZ++, DecodeCmp);
@@ -2798,7 +2806,7 @@ static void AddCmp(const char *NName, LongInt NCode)
 
 static void AddMem(const char *NName, LongInt NCode, LongInt NScale)
 {
-  if (InstrZ >= MemCnt) exit(255);
+  order_array_rsv_end(MemOrders, MemOrder);
   MemOrders[InstrZ].Code = NCode;
   MemOrders[InstrZ].Scale = NScale;
   AddInstTable(InstTable,NName, InstrZ++, DecodeMemO);
@@ -2807,7 +2815,7 @@ static void AddMem(const char *NName, LongInt NCode, LongInt NScale)
 static void AddMul(const char *NName, LongInt NCode,
                    Boolean NDSign, Boolean NSSign1, Boolean NSSign2, Boolean NMay)
 {
-  if (InstrZ >= MulCnt) exit(255);
+  order_array_rsv_end(MulOrders, MulOrder);
   MulOrders[InstrZ].Code = NCode;
   MulOrders[InstrZ].DSign = NDSign;
   MulOrders[InstrZ].SSign1 = NSSign1;
@@ -2819,7 +2827,7 @@ static void AddMul(const char *NName, LongInt NCode,
 static void AddCtrl(const char *NName, LongInt NCode,
                     Boolean NWr, Boolean NRd)
 {
-  if (InstrZ >= CtrlCnt) exit(255);
+  order_array_rsv_end(CtrlRegs, CtrlReg);
   CtrlRegs[InstrZ].Name = NName;
   CtrlRegs[InstrZ].Code = NCode;
   CtrlRegs[InstrZ].Wr = NWr;
@@ -2869,20 +2877,20 @@ static void InitFields(void)
   AddInstTable(InstTable, "SSUB", 0, DecodeSSUB);
   AddInstTable(InstTable, "B", 0, DecodeB);
 
-  LinAddOrders = (FixedOrder *) malloc(sizeof(FixedOrder)*LinAddCnt); InstrZ = 0;
+  InstrZ = 0;
   AddLinAdd("ADDAB", 0x30); AddLinAdd("ADDAH", 0x34); AddLinAdd("ADDAW", 0x38);
   AddLinAdd("SUBAB", 0x31); AddLinAdd("SUBAH", 0x35); AddLinAdd("SUBAW", 0x39);
 
-  CmpOrders = (CmpOrder *) malloc(sizeof(CmpOrder)*CmpCnt); InstrZ = 0;
+  InstrZ = 0;
   AddCmp("CMPEQ", 0x50); AddCmp("CMPGT", 0x44); AddCmp("CMPGTU", 0x4c);
   AddCmp("CMPLT", 0x54); AddCmp("CMPLTU", 0x5c);
 
-  MemOrders = (MemOrder *) malloc(sizeof(MemOrder)*MemCnt); InstrZ = 0;
+  InstrZ = 0;
   AddMem("LDB", 2, 1);  AddMem("LDH", 4, 2);  AddMem("LDW", 6, 4);
   AddMem("LDBU", 1, 1); AddMem("LDHU", 0, 2); AddMem("STB", 3, 1);
   AddMem("STH", 5, 2);  AddMem("STW", 7, 4);
 
-  MulOrders = (MulOrder *) malloc(sizeof(MulOrder)*MulCnt); InstrZ = 0;
+  InstrZ = 0;
   AddMul("MPY"    , 0x19, True , True , True , True );
   AddMul("MPYU"   , 0x1f, False, False, False, False);
   AddMul("MPYUS"  , 0x1d, True , False, True , False);
@@ -2904,7 +2912,7 @@ static void InitFields(void)
   AddMul("SMPYLH" , 0x12, True , True , True , False);
   AddMul("SMPYH"  , 0x02, True , True , True , False);
 
-  CtrlRegs = (CtrlReg *) malloc(sizeof(CtrlReg)*CtrlCnt); InstrZ = 0;
+  InstrZ = 0;
   AddCtrl("AMR"    ,  0, True , True );
   AddCtrl("CSR"    ,  1, True , True );
   AddCtrl("IFR"    ,  2, False, True );
@@ -2918,16 +2926,17 @@ static void InitFields(void)
   AddCtrl("OUT"    ,  9, True , True );
   AddCtrl("PCE1"   , 16, False, True );
   AddCtrl("PDATA_O", 15, True , True );
+  AddCtrl(NULL     ,  0, False, False);
 }
 
 static void DeinitFields(void)
 {
   DestroyInstTable(InstTable);
-  free(LinAddOrders);
-  free(CmpOrders);
-  free(MemOrders);
-  free(MulOrders);
-  free(CtrlRegs);
+  order_array_free(LinAddOrders);
+  order_array_free(CmpOrders);
+  order_array_free(MemOrders);
+  order_array_free(MulOrders);
+  order_array_free(CtrlRegs);
 }
 
 /*------------------------------------------------------------------------*/
@@ -2976,6 +2985,8 @@ static void SwitchTo_3206X(void)
   SwitchFrom = SwitchFrom_3206X;
   ParRecs = (InstrRec*)malloc(sizeof(InstrRec) * MaxParCnt);
   InitFields();
+
+  onoff_packing_add(True);
 
   ParCnt = 0;
   PacketAddr = 0;
