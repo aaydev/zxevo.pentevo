@@ -217,11 +217,14 @@ READ_REG_FUNC(read_SSR){
 	FD_ZERO(&fd_s);
 	FD_SET(s->s, &fd_s);
 	iResult = select(0, NULL, NULL, &fd_s, &select_timeout);
-	if (iResult == SOCKET_ERROR)
-		return SOCK_CLOSED;
-	if (s->tcpState == TCP_STATE::LISTEN){
+	
+	if (iResult == SOCKET_ERROR) return SOCK_CLOSED;
+	
+	if (s->tcpState == TCP_STATE::LISTEN)
+	{
 		s->list = accept(s->s, (sockaddr *)&s->sa_in, &ns);
-		if (s->list != (unsigned int)SOCKET_ERROR){
+		if ( s->list != INVALID_SOCKET )
+		{
 			ioctlsocket(s->s, FIONBIO, &is_blocked);
 			closesocket(s->s);
 			s->s = s->list;
@@ -233,6 +236,7 @@ READ_REG_FUNC(read_SSR){
 		}
 		return SOCK_LISTEN;
 	}
+	
 	FD_ZERO(&fd_s);
 	FD_SET(s->s, &fd_s);
 	iResult = select(0, NULL, &fd_s, NULL, &select_timeout);
@@ -338,11 +342,11 @@ READ_REG_FUNC(read_PROTOR){
 
 READ_REG_FUNC(read_TX_FSR32){
 	if (z == 0) return 0;
-	return ((sizeof(s->tx) - ((u_int)(s->tx_ptr - s->tx))) & 0x00010000) >> 16;
+	return ((sizeof(s->tx) - (s->tx_ptr - s->tx)) & 0x00010000) >> 16;
 }
 
 READ_REG_FUNC(read_TX_FSR10){
-	if (z == 0) return ((sizeof(s->tx) - ((u_int)(s->tx_ptr - s->tx))) & 0x0000ff00) >> 8;
+	if (z == 0) return ((sizeof(s->tx) - (s->tx_ptr - s->tx)) & 0x0000ff00) >> 8;
 	return (sizeof(s->tx) - ((u_int)(s->tx_ptr - s->tx))) & 0x000000fF;
 }
 
