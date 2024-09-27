@@ -24,7 +24,7 @@ Z80INLINE u8 *am_r(u32 addr);
 Z80INLINE unsigned char m1_cycle(Z80 *cpu);
 unsigned char in(unsigned port);
 void out(unsigned port, unsigned char val);
-// FIXME: Сделать переключаемый интерфейс в зависимости от флага gscpu.dbgchk
+// FIXME: РЎРґРµР»Р°С‚СЊ РїРµСЂРµРєР»СЋС‡Р°РµРјС‹Р№ РёРЅС‚РµСЂС„РµР№СЃ РІ Р·Р°РІРёСЃРёРјРѕСЃС‚Рё РѕС‚ С„Р»Р°РіР° gscpu.dbgchk
 namespace z80fast
 {
 Z80INLINE unsigned char xm(unsigned addr);
@@ -137,7 +137,7 @@ static unsigned char gsvol[8], gsbyte[8]{ 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x
 static unsigned char gsdata_in, gsdata_out, gspage = 0;
 static unsigned char gscmd, gsstat;
 
-static bool GsSilent = false; // Признак нулевой громкости во всех каналах
+static bool GsSilent = false; // РџСЂРёР·РЅР°Рє РЅСѓР»РµРІРѕР№ РіСЂРѕРјРєРѕСЃС‚Рё РІРѕ РІСЃРµС… РєР°РЅР°Р»Р°С…
 
 static unsigned long long mult_gs, mult_gs2;
 
@@ -355,6 +355,7 @@ static inline void UpdateMemMapping()
 
         if(RamRo)
         {
+            gsbankw[0] = TRASH_M;
             if(gspage == 0 || gspage == 1) // RAM0 or RAM1 in PG2
                gsbankw[2] = TRASH_M;
             if(ngs_mode_pg1 == 0 || ngs_mode_pg1 == 1) // RAM0 or RAM1 in PG3
