@@ -308,7 +308,7 @@ static double p_fps;
 __inline void update_perf_led()
 {
    u64 now = led_updtime - p_time;
-   if (now >= temp.cpufq) // ÛÒÂ‰ÌÂÌËÂ Á‡ ÒÂÍÛÌ‰Û
+   if (now >= temp.cpufq) // —É—Å—Ä–µ–¥–Ω–µ–Ω–∏–µ –∑–∞ —Å–µ–∫—É–Ω–¥—É
    {
       p_fps = (p_frames * temp.cpufq) / double(now) + 0.005;
       p_frames = 0;
@@ -472,7 +472,7 @@ static void show_mband(unsigned char *dst, unsigned start)
    for(i = 0; i < 8; i++)
    {
        dst[i*pitch] |= 0x80;
-       dst[i*pitch - 17 * 2] |= 0x01;
+       dst[i*pitch - 17LL * 2LL] |= 0x01;
    }
 }
 
@@ -575,7 +575,7 @@ static void time_led()
    text_i(temp.led.time, bf, 0x0D);
 }
 
-// ¬˚Á˚‚‡ÂÚÒˇ ‡Á ‚ Í‡‰
+// –í—ã–∑—ã–≤–∞–µ—Ç—Å—è —Ä–∞–∑ –≤ –∫–∞–¥—Ä
 void showleds()
 {
    led_updtime = rdtsc();
