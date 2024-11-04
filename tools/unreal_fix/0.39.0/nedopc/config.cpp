@@ -845,7 +845,7 @@ void load_config(const char *fname)
    if(conf.gs_type == 1) // z80gs mode
    {
        GetPrivateProfileString(ngs, "SDCARD", nullptr, conf.ngs_sd_card_path, _countof(conf.ngs_sd_card_path), ininame);
-       if ( strcmp(conf.ngs_sd_card_path, "<CH341>") != 0 ) addpath(conf.ngs_sd_card_path);
+       addpath(conf.ngs_sd_card_path);
        if(conf.ngs_sd_card_path[0])
            printf("NGS SDCARD='%s'\n", conf.ngs_sd_card_path);
    }

@@ -5,13 +5,15 @@
 class TZc
 {
     TSdCard SdCard;
+    u8 Cfg;
     u8 Status;
     u8 RdReg;
     u8 RdBuff;
+    u8 IsCh341;
 public:
     void Reset();
-    void Open(const char *Name) { SdCard.Open(Name); }
-    void Close() { SdCard.Close(); }
+    void Open(const char *Name);
+    void Close();
     void Wr(u32 Port, u8 Val);
     u8 Rd(u32 Port);
 };
