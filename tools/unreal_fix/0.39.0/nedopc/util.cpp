@@ -11,15 +11,19 @@ static void cpuid(unsigned CpuInfo[4], unsigned _eax)
 {
 #ifdef _MSC_VER
    __cpuid((int *)CpuInfo, int(_eax));
-#endif
+#endif // _MSC_VER
 
 #ifdef __GNUC__
-#ifdef __clang__
+ #ifdef __clang__
    __cpuid((int *)CpuInfo, _eax);
-#else
+ #else
+  #ifdef __cpuid
    __cpuid(_eax, CpuInfo[0], CpuInfo[1], CpuInfo[2], CpuInfo[3]);
-#endif // __clang__
-#endif
+  #else // __cpuid
+   __cpuid((int *)CpuInfo, _eax);
+  #endif // __cpuid
+ #endif // __clang__
+#endif // __GNUC__
 }
 
 void fillCpuString(char dst[49])
