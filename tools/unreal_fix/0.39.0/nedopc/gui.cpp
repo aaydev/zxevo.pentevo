@@ -546,7 +546,11 @@ static void HddDlg_show_info(int device)
 
    SetDlgItemText(dlg, device? IDE_HDD1 : IDE_HDD0, c1.ide[device].image);
    char textbuf[512];
+#ifdef _MSC_VER
    *textbuf = 0; if (*c1.ide[device].image) sprintf(textbuf, "%I64u", l);
+#else // _MSC_VER
+   *textbuf = 0; if (*c1.ide[device].image) sprintf(textbuf, "%llu", l);
+#endif // _MSC_VER
    SetWindowText(edit_l, textbuf);
    *textbuf = 0; if (*c1.ide[device].image) sprintf(textbuf, "%u/%u/%u", c,h,s);
    SetWindowText(edit_c, textbuf);

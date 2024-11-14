@@ -24,7 +24,11 @@ void show_time()
    Z80 &cpu = CpuMgr.Cpu();
    tprint(time_x, time_y, "time delta:", W_OTHEROFF);
    char text[32];
+#ifdef _MSC_VER
    sprintf(text, "%14I64d", cpu.Delta());
+#else // _MSC_VER
+   sprintf(text, "%14lld", cpu.Delta());
+#endif // _MSC_VER
    tprint(time_x+11, time_y, text, W_OTHER);
    tprint(time_x+25, time_y, "t", W_OTHEROFF);
    frame(time_x, time_y, 26, 1, FRAME);

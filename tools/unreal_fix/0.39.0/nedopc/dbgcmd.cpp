@@ -42,13 +42,13 @@ int find2dlg(unsigned start)
    static unsigned code = 0xF3, mask = 0xFF; char ln[64];
    filledframe(10,10,16,5);
    tprint(10,10,"   find data    ", FRM_HEADER);
-   sprintf(ln, "code: %08lX", _byteswap_ulong(code)); tprint(11,12,ln, FFRAME_INSIDE);
-   sprintf(ln, "mask: %08lX", _byteswap_ulong(mask)); tprint(11,13,ln, FFRAME_INSIDE);
-   sprintf(str, "%08lX", _byteswap_ulong(code));
+   sprintf(ln, "code: %08lX", ((unsigned long)((unsigned)_byteswap_ulong(code)))); tprint(11,12,ln, FFRAME_INSIDE);
+   sprintf(ln, "mask: %08lX", ((unsigned long)((unsigned)_byteswap_ulong(mask)))); tprint(11,13,ln, FFRAME_INSIDE);
+   sprintf(str, "%08lX", ((unsigned long)((unsigned)_byteswap_ulong(code))));
    if (!inputhex(17,12,8,true)) return -1;
    sscanf(str, "%x", &code); code = _byteswap_ulong(code);
    tprint(17,12,str, FFRAME_INSIDE);
-   sprintf(str, "%08lX", _byteswap_ulong(mask));
+   sprintf(str, "%08lX", ((unsigned long)((unsigned)_byteswap_ulong(mask))));
    if (!inputhex(17,13,8,true)) return -1;
    sscanf(str, "%x", &mask); mask = _byteswap_ulong(mask);
    unsigned i; //Alone Coder 0.36.7
