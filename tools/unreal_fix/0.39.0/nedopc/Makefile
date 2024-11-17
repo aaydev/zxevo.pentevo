@@ -30,7 +30,7 @@ endif
 
 CFLAGS_COMMON+=$(ARCH)
 
-CFLAGS_RELEASE=-O3 -static $(CXX_LTO) -fomit-frame-pointer
+CFLAGS_RELEASE=-O3 -fno-exceptions -static $(CXX_LTO) -fomit-frame-pointer
 LDFLAGS_DEBUG=-O3 $(CXX_LTO) -static $(ARCH) 
 
 CXXFLAGS=$(CFLAGS_COMMON) $(CFLAGS_DEBUG) $(CFLAGS_RELEASE)
