@@ -51,3 +51,4 @@ void main_border_full();
 void main_help();
 void mon_help();
 void m_nmi(ROM_MODE page);
+void main_breakpoints();

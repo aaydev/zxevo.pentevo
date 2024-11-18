@@ -1354,3 +1354,7 @@ cpu ngs и cpu спектрума)
 24 nov 2021:
 * исправлено направление колеса мыши (Alone Coder)
 * исправлен noise 0 (Dexus)
+
+18 nov 2024:
++ добавлено глобальное откл-вкл всех точек останова из режима эмуляции (alt Q). Code borrowed from procyon (intueor), https://gitflic.ru/project/intueor/unrealspeccy-procyon-branch.git
+

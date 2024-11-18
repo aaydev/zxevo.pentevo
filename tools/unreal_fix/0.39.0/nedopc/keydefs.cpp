@@ -72,6 +72,7 @@ action ac_main[] =
    { "main.border_small", main_border_small },
    { "main.border_full", main_border_full },
    { "main.help", main_help },
+   { "main.breakpoints", main_breakpoints },
 
    { nullptr, nullptr },
 };

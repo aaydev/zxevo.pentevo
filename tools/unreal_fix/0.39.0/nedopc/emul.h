@@ -225,7 +225,7 @@ struct CONFIG
       unsigned char perf_t;
       unsigned char reserved1;
       unsigned bandBpp;
-      #define NUM_LEDS 7
+      #define NUM_LEDS 8
       unsigned ay;
       unsigned perf;
       unsigned load;
@@ -233,6 +233,7 @@ struct CONFIG
       unsigned time;
       unsigned osw;
       unsigned memband;
+      unsigned bkpts;
    } led;
 
    struct {
@@ -334,6 +335,7 @@ struct TEMP
       unsigned char *time;
       unsigned char *osw;
       unsigned char *memband;
+      unsigned char *bkpts;
       unsigned char *fdd;
 
       __int64 tape_started;

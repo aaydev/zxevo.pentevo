@@ -19,6 +19,9 @@
 
 unsigned char trace_labels;
 
+unsigned bkpts_ena;
+unsigned user_mon_req = 0;
+
 unsigned show_scrshot;
 unsigned user_watches[3] = { 0x4000, 0x8000, 0xC000 };
 
@@ -296,7 +299,16 @@ void debug_events(Z80 *cpu)
    brk_port_in = brk_port_out = -1U; // reset only when breakpoints active
 
    if (cpu->dbgbreak)
+   {
+       if(!bkpts_ena && !user_mon_req)
+       {
+           dbgbreak = 0;
+           cpu->dbgbreak = 0;
+           return;
+       }
+       user_mon_req = 0;
        debug(cpu);
+   }
 }
 
 #endif // MOD_MONITOR
@@ -306,6 +318,7 @@ unsigned char isbrk(const Z80 &cpu) // is there breakpoints active or any other 
 #ifndef MOD_DEBUGCORE
    return 0;
 #else
+   if(!bkpts_ena) return 0;
 
    #ifdef MOD_MEMBAND_LED
    if (conf.led.memband & 0x80000000)

@@ -124,6 +124,8 @@ extern unsigned user_watches[3];
 extern unsigned regs_curs;
 
 extern unsigned char trace_labels;
+extern unsigned bkpts_ena;
+extern unsigned user_mon_req;
 
 unsigned char isbrk(const Z80 &cpu); // is there breakpoints active or any other reason to use debug z80 loop?
 void debugscr();

@@ -303,6 +303,7 @@ void load_config(const char *fname)
    static const char* ula = "ULA";
    static const char* beta128 = "Beta128"; 
    static const char* USBZXNET = "USBZXNET"; 
+   static const char* debug = "DEBUG";
    static const char* leds = "LEDS";
    static const char* sound = "SOUND";
    static const char* input = "INPUT";
@@ -555,7 +556,7 @@ void load_config(const char *fname)
    conf.led.bandBpp = GetPrivateProfileInt(leds, "BandBpp", 512, ininame);
    if (conf.led.bandBpp != 64 && conf.led.bandBpp != 128 && conf.led.bandBpp != 256 && conf.led.bandBpp != 512) conf.led.bandBpp = 512;
 
-   static char nm[] = "AY\0Perf\0LOAD\0Input\0Time\0OSW\0MemBand";
+   static char nm[] = "AY\0Perf\0LOAD\0Input\0Time\0OSW\0MemBand\0Breakpoints\0";
    char *n2 = nm;
    for (i = 0; i < NUM_LEDS; i++) {
       GetPrivateProfileString(leds, n2, nil, line, sizeof line, ininame);
@@ -565,6 +566,8 @@ void load_config(const char *fname)
       else r = (x & 0xFFFF) + ((y << 16) & 0x7FFFFFFF) + z*0x80000000;
       *(&conf.led.ay+i) = r;
    }
+
+   bkpts_ena = GetPrivateProfileInt(debug, "EnaBkpts", 1, ininame);
 
    conf.sound.do_sound = do_sound_none;
    GetPrivateProfileString(sound, "SoundDrv", nil, line, sizeof line, ininame);

@@ -340,6 +340,15 @@ static void perf_led()
    }
 }
 
+static void breakpoints_led()
+{
+   if (bkpts_ena)
+   {
+      const char* p_Label = "Br";
+      text_i(temp.led.bkpts, p_Label, 0x0E);
+   }
+}
+
 static void input_led()
 {
    if (input.kbdled != 0xFF) {
@@ -430,6 +439,7 @@ static void debug_led()
 #ifdef MOD_MEMBAND_LED
 static void show_mband(unsigned char *dst, unsigned start)
 {
+   unsigned char* dst_m = dst + 2;
    char xx[8]; sprintf(xx, "%02X", start >> 8);
    text_i(dst, xx, 0x0B); dst += 4;
 
@@ -472,7 +482,8 @@ static void show_mband(unsigned char *dst, unsigned start)
    for(i = 0; i < 8; i++)
    {
        dst[i*pitch] |= 0x80;
-       dst[i*pitch - 17LL * 2LL] |= 0x01;
+     //dst[i*pitch - 17LL * 2LL] |= 0x01;
+       dst_m[i * pitch] |= 0x01;
    }
 }
 
@@ -602,4 +613,5 @@ void showleds()
 #endif
    if (conf.led.flash_ay_kbd && hndKbdDev) ay_kbd();
    if (input.keymode == K_INPUT::KM_KEYSTICK) key_led();
+   if(temp.led.bkpts) breakpoints_led();
 }

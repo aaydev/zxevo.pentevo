@@ -335,6 +335,9 @@
 #define IDC_NGS_ENABLED                 1272
 #define IDC_LIST1                       1273
 #define IDC_LIST                        1273
+#define IDC_LED_BRPTS                   1274
+#define IDC_LED_BRPTS_X                 1275
+#define IDC_LED_BRPTS_Y                 1276
 #define IDC_PC_LAYOUT                   10050
 #define IDC_WHEEL_NONE                  10252
 #define IDC_WHEEL_KEYBOARD              10254

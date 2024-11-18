@@ -46,6 +46,7 @@ void main_debug()
 {
    Z80 &cpu = CpuMgr.Cpu();
 
+   user_mon_req = 1;
    cpu.dbgchk = 1;
    cpu.dbgbreak = 1;
    dbgbreak = 1;
@@ -520,4 +521,9 @@ void savesnap()
    savesnap(-1);
    eat();
    OnExitGui();
+}
+
+void main_breakpoints()
+{
+   bkpts_ena = !bkpts_ena;
 }
