@@ -6,68 +6,62 @@
 #include "../util.h"
 #include "dev_moonsound.h"
 
-#include "ymf262.h"
-#include "ymf278.h"
 
 #define MASTER_CLOCK 33868800
 
-struct ZXMMoonSound_priv
-{
-friend class ZXMMoonSound;
-
-public:
-	ZXMMoonSound_priv();
-	~ZXMMoonSound_priv();
-
-private:
-	YMF262 *ymf262;
-	int opl3latch;
-
-	YMF278 *ymf278;
-	int opl4latch;
-};
 
 inline EmuTime SystemTime()
 {
 	return cpu.t + comp.frame_counter * conf.frame;
 }
 
-ZXMMoonSound_priv::ZXMMoonSound_priv()
+ZXMMoonSound_priv::ZXMMoonSound_priv() : ymf262(0, 0), ymf278(0, 4096, 2048*1024, 0)
 {
 	EmuTime systemTime = 0;
 
-	ymf262 = new YMF262(0, systemTime);
-	ymf262->setSampleRate(44100, 1);
-	ymf262->setVolume(32767 * 2 / 10);
+//	ymf262 = new YMF262(0, systemTime);
+	ymf262.setSampleRate(44100, 1);
+	ymf262.setVolume(32767 * 2 / 10);
 
-	ymf278 = new YMF278(0, 4096, 2048*1024, systemTime);
-	ymf278->setSampleRate(44100, 1);
-	ymf278->setVolume(32767 * 2 / 10);
+//	ymf278 = new YMF278(0, 4096, 2048*1024, systemTime);
+	ymf278.setSampleRate(44100, 1);
+	ymf278.setVolume(32767 * 2 / 10);
 }
 
 ZXMMoonSound_priv::~ZXMMoonSound_priv()
 {
-	delete ymf262;
-	delete ymf278;
+//	delete ymf262;
+//	delete ymf278;
 }
 
 /*  */
 ZXMMoonSound::ZXMMoonSound() :
 	system_clock_rate( 0 )
 {
-	d = new ZXMMoonSound_priv();
+//	d = new ZXMMoonSound_priv();
 	reset();
 }
 
 int ZXMMoonSound::load_rom(char *path)
 {
+	u8 * moon_rom;
+
+	moon_rom = d.ymf278.getRom();
+
+	if( !moon_rom )
+		return -1;
+
 	FILE *fp = fopen( path, "rb" );
 	if ( !fp )
 	{
-		return -1;
+		return -2;
 	}
 
-	fread( d->ymf278->getRom(), 1, d->ymf278->getRomSize(), fp );
+	if( 1 != fread( moon_rom, d.ymf278.getRomSize(), 1, fp ) )
+	{
+		fclose(fp);
+		return -3;
+	}
 
 	fclose( fp );
 
@@ -79,8 +73,8 @@ void ZXMMoonSound::reset()
 	unsigned tStatesPerSecond = conf.frame * conf.intfq;
 	EmuTime systemTime = SystemTime();
 
-	d->ymf262->reset( systemTime, tStatesPerSecond );
-	d->ymf278->reset( systemTime );
+	d.ymf262.reset( systemTime, tStatesPerSecond );
+	d.ymf278.reset( systemTime );
 }
 
 bool ZXMMoonSound::write( u8 port, u8 val )
@@ -93,10 +87,10 @@ bool ZXMMoonSound::write( u8 port, u8 val )
 	{
 		switch (port & 0x01) {
 		case 0: // select register
-			d->opl4latch = val;
+			d.opl4latch = val;
 			break;
 		case 1:
-  			d->ymf278->writeRegOPL4(d->opl4latch, val, systemTime);
+  			d.ymf278.writeRegOPL4(d.opl4latch, val, systemTime);
 			break;
 		}
 
@@ -106,14 +100,14 @@ bool ZXMMoonSound::write( u8 port, u8 val )
 	{
 		switch (port & 0x03) {
 		case 0:
-			d->opl3latch = val;
+			d.opl3latch = val;
 			break;
 		case 2: // select register bank 1
-			d->opl3latch = val | 0x100;
+			d.opl3latch = val | 0x100;
 			break;
 		case 1:
 		case 3: // write fm register
-			d->ymf262->writeReg(d->opl3latch, val, systemTime);
+			d.ymf262.writeReg(d.opl3latch, val, systemTime);
 			break;
 		}
 
@@ -133,7 +127,7 @@ bool ZXMMoonSound::read( u8 port, u8 &val )
 	{
 		switch (port & 0x01) {
 		case 1: // read wave register
-			val = d->ymf278->readRegOPL4(d->opl4latch, systemTime);
+			val = d.ymf278.readRegOPL4(d.opl4latch, systemTime);
 			break;
 		}
 
@@ -144,11 +138,11 @@ bool ZXMMoonSound::read( u8 port, u8 &val )
 		switch (port & 0x03) {
 		case 0: // read status
 		case 2:
-			val = d->ymf262->readStatus(systemTime) | d->ymf278->readStatus(systemTime);
+			val = d.ymf262.readStatus(systemTime) | d.ymf278.readStatus(systemTime);
 			break;
 		case 1:
 		case 3: // read fm register
-			val = d->ymf262->readReg(d->opl3latch);
+			val = d.ymf262.readReg(d.opl3latch);
 			break;
 		}
 
@@ -161,10 +155,10 @@ bool ZXMMoonSound::read( u8 port, u8 &val )
 
 void ZXMMoonSound::set_timings(unsigned system_clock_rate, unsigned chip_clock_rate, unsigned sample_rate)
 {
-	d->ymf262->setSampleRate( sample_rate, 1 );
-	d->ymf262->setVolume((u16)(1 * (conf.sound.moonsound_vol / 8192.0))); // doesn't work
-	d->ymf278->setSampleRate( sample_rate, 1 );
-	d->ymf278->setVolume((u16)(2000 * (conf.sound.moonsound_vol / 8192.0)));
+	d.ymf262.setSampleRate( sample_rate, 1 );
+	d.ymf262.setVolume((u16)(1 * (conf.sound.moonsound_vol / 8192.0))); // doesn't work
+	d.ymf278.setSampleRate( sample_rate, 1 );
+	d.ymf278.setVolume((u16)(2000 * (conf.sound.moonsound_vol / 8192.0)));
 	
 	chip_clock_rate = sample_rate;
 
@@ -204,14 +198,14 @@ void ZXMMoonSound::flush(unsigned chiptick)
 
 		t++;
 
-		buf = d->ymf262->updateBuffer(1);
+		buf = d.ymf262.updateBuffer(1);
 		if ( buf )
 		{
 			buffer[0] += buf[0] / 10;
 			buffer[1] += buf[1] / 10;
 		}
 
-		buf = d->ymf278->updateBuffer(1);
+		buf = d.ymf278.updateBuffer(1);
 		if ( buf )
 		{
 			buffer[0] += buf[0];

@@ -6,8 +6,24 @@
 #define _SOUND_DEV_MOONSOUND_H
 
 #include "../sysdefs.h"
+#include "ymf262.h"
+#include "ymf278.h"
 
-struct ZXMMoonSound_priv;
+struct ZXMMoonSound_priv
+{
+friend class ZXMMoonSound;
+
+public:
+	ZXMMoonSound_priv();
+	~ZXMMoonSound_priv();
+
+private:
+	YMF262 ymf262;
+	int opl3latch;
+
+	YMF278 ymf278;
+	int opl4latch;
+};
 
 class ZXMMoonSound : public SNDRENDER
 {
@@ -28,7 +44,7 @@ public:
 	void flush(unsigned chiptick);
 
 private:
-	ZXMMoonSound_priv *d;
+	ZXMMoonSound_priv d;
 
 	unsigned chip_clock_rate;
 	unsigned system_clock_rate;

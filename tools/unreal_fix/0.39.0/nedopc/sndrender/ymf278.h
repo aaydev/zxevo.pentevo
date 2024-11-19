@@ -107,10 +107,10 @@ class YMF278 : public SoundDevice
 		u8 readRegOPL4(u8 reg, const EmuTime &time);
 		u8 peekStatus(const EmuTime &time);
 		u8 readStatus(const EmuTime &time);
-        void* getRom() { return rom; }	
-        void* getRam() { return ram; }	
+        u8 * getRom() { return rom; }	
+//        void* getRam() { return ram; }	
         int getRomSize() { return endRom; }
-        int getRamSize() { return endRam - endRom; }
+//        int getRamSize() { return endRam - endRom; }
 		virtual void setSampleRate(int sampleRate, int Oversampling);
 		virtual void setInternalVolume(short newVolume);
 		virtual int* updateBuffer(int length);

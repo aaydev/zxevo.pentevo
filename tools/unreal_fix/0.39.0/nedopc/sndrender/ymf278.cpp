@@ -766,8 +766,13 @@ YMF278::YMF278(short volume, int ramSize, int romSize,
 	ramSize *= 1024;	// in kb
 
     this->ramSize = ramSize;
-	rom = new u8[romSize];
-    ram = new u8[4096 * 1024];
+
+//	rom = new u8[romSize];
+//    ram = new u8[4096 * 1024];
+
+	rom = (u8 *)malloc(romSize);
+	ram = (u8 *)malloc(4096*1024); // NULL-checking is elsewhere
+
 
     oplOversampling = 1;
 
@@ -778,8 +783,12 @@ YMF278::YMF278(short volume, int ramSize, int romSize,
 
 YMF278::~YMF278()
 {
-	delete[] ram;
-	delete[] rom;
+//	delete[] ram;
+//	delete[] rom;
+	if(ram)
+		free(ram);
+	if(rom)
+		free(rom);
 }
 
 void YMF278::reset(const EmuTime &time)
@@ -822,9 +831,9 @@ void YMF278::setInternalVolume(short newVolume)
 
 u8 YMF278::readMem(unsigned int address)
 {
-	if (address < endRom) {
+	if (rom && address < endRom) {
 		return rom[address];
-	} else if (address < endRam) {
+	} else if (ram && address < endRam) {
 		return ram[address - endRom];
 	} else {
 		return 255;	// TODO check
@@ -835,7 +844,7 @@ void YMF278::writeMem(unsigned int address, u8 value)
 {
 	if (address < endRom) {
 		// can't write to ROM
-	} else if (address < endRam) {
+	} else if (ram && address < endRam) {
 		ram[address - endRom] = value;
 	} else {
 		// can't write to unmapped memory
