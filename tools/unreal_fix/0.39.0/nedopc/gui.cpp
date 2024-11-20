@@ -610,7 +610,7 @@ static void HddDlg_select_image(int device)
    textbuf[0] = 0;
    fn.lStructSize = (WinVerMajor < 5) ? OPENFILENAME_SIZE_VERSION_400 : sizeof(OPENFILENAME);
    fn.hwndOwner = dlg;
-   fn.lpstrFilter = "Hard disk drive image (*.HDD)\0*.HDD\0";
+   fn.lpstrFilter = "Hard disk drive image (*.*)\0*.*\0";
    fn.lpstrFile = textbuf;
    fn.nMaxFile = _countof(textbuf);
    fn.lpstrTitle = "Select image file for HDD emulator";

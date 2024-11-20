@@ -101,7 +101,7 @@ $(PCH): std.h
 	$(CXX) $(CXXFLAGS) -c -o $@ $<
 
 
-%.res: %.rc
+%.res: %.rc resource.h
 	$(RC) -o$@ -i$<
 
 settings.o: settings.res
