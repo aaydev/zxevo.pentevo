@@ -77,26 +77,11 @@ void ZXMMoonSound::reset()
 	d.ymf278.reset( systemTime );
 }
 
-bool ZXMMoonSound::write( u8 port, u8 val )
+bool ZXMMoonSound::wr_opl3( u8 port, u8 val )
 {
-	//printf("ZXM-MoonSound write(%.2x, %.2x)\n", port, val);
-
 	EmuTime systemTime = SystemTime();
 
-	if ( (port & 0xFE) == 0xC2 )
-	{
-		switch (port & 0x01) {
-		case 0: // select register
-			d.opl4latch = val;
-			break;
-		case 1:
-  			d.ymf278.writeRegOPL4(d.opl4latch, val, systemTime);
-			break;
-		}
-
-		return true;
-	}
-	else if ( (port & 0xFC) == 0xC4 )
+	if ( !(port & 0xFC) )
 	{
 		switch (port & 0x03) {
 		case 0:
@@ -117,23 +102,32 @@ bool ZXMMoonSound::write( u8 port, u8 val )
 	return false;
 }
 
-bool ZXMMoonSound::read( u8 port, u8 &val )
+bool ZXMMoonSound::wr_opl4( u8 port, u8 val )
 {
-	//printf("ZXM-MoonSound read(%.2x)\n", port);
-
 	EmuTime systemTime = SystemTime();
 
-	if ( (port & 0xFE) == 0xC2 )
+	if ( !(port & 0xFE) )
 	{
 		switch (port & 0x01) {
-		case 1: // read wave register
-			val = d.ymf278.readRegOPL4(d.opl4latch, systemTime);
+		case 0: // select register
+			d.opl4latch = val;
+			break;
+		case 1:
+  			d.ymf278.writeRegOPL4(d.opl4latch, val, systemTime);
 			break;
 		}
 
 		return true;
 	}
-	else if( (port & 0xFC) == 0xC4 )
+
+	return false;
+}
+
+bool ZXMMoonSound::rd_opl3( u8 port, u8 &val )
+{
+	EmuTime systemTime = SystemTime();
+
+	if( !(port & 0xFC) )
 	{
 		switch (port & 0x03) {
 		case 0: // read status
@@ -143,6 +137,24 @@ bool ZXMMoonSound::read( u8 port, u8 &val )
 		case 1:
 		case 3: // read fm register
 			val = d.ymf262.readReg(d.opl3latch);
+			break;
+		}
+
+		return true;
+	}
+
+	return false;
+}
+
+bool ZXMMoonSound::rd_opl4( u8 port, u8 &val )
+{
+	EmuTime systemTime = SystemTime();
+
+	if ( !(port & 0xFE) )
+	{
+		switch (port & 0x01) {
+		case 1: // read wave register
+			val = d.ymf278.readRegOPL4(d.opl4latch, systemTime);
 			break;
 		}
 

@@ -33,8 +33,10 @@ public:
 	int load_rom(char *path);
 
 	void reset();
-	bool write( u8 port, u8 val );
-	bool read( u8 port, u8 &val );
+	bool wr_opl3( u8 port, u8  val );
+	bool wr_opl4( u8 port, u8  val );
+	bool rd_opl3( u8 port, u8 &val );
+	bool rd_opl4( u8 port, u8 &val );
 
 	// set of functions that fills buffer in emulation progress
 	void set_timings(unsigned system_clock_rate, unsigned chip_clock_rate, unsigned sample_rate);

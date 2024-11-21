@@ -86,14 +86,24 @@ void out(unsigned port, unsigned char val)
    }
    #endif
 
-   // ZXM-MoonSound
-   if (conf.sound.moonsound &&
-       (conf.mem_model == MM_PROFI ? !(comp.pDFFD & 0x80) : 1) &&
-       (((p1 & 0xFC) == 0xC4) || ((p1 & 0xFE) == 0xC2)))
-   {
-       if (zxmmoonsound.write(port, val))
-           return;
-   }
+	// ZXM-MoonSound write
+	if(conf.sound.moonsound && (conf.mem_model == MM_PROFI ? !(comp.pDFFD & 0x80) : 1))
+	{
+		if( !conf.sound.moonsound_toc2c3 && !(comp.flags & CF_DOSPORTS) )
+		{
+			if( ((p1 & 0xFC) == 0xC4) && zxmmoonsound.wr_opl3(p1 & 3, val) )
+				return;
+			else if( ((p1 & 0xFE) == 0x7E) && zxmmoonsound.wr_opl4(p1 & 1, val) )
+				return;
+		}
+		else if( conf.sound.moonsound_toc2c3 )
+		{
+			if( ((p1 & 0xFC) == 0xC4) && zxmmoonsound.wr_opl3(p1 & 3, val) )
+				return;
+			else if( ((p1 & 0xFE) == 0xC2) && zxmmoonsound.wr_opl4(p1 & 1, val) )
+				return;
+		}
+	}		    
 
    // z-controller
    if (conf.zc && (port & 0xFF) == 0x57 )
@@ -826,16 +836,29 @@ __inline unsigned char in1(unsigned port)
        return in_gs(p1);
    #endif
 
-   // ZXM-MoonSound
-   if (conf.sound.moonsound &&
-       (conf.mem_model == MM_PROFI ? !(comp.pDFFD & 0x80) : 1) &&
-       (((p1 & 0xFC) == 0xC4) || ((p1 & 0xFE) == 0xC2)))
-   {
-       u8 val = 0xFF;
+	// ZXM-MoonSound read
+	if(conf.sound.moonsound && (conf.mem_model == MM_PROFI ? !(comp.pDFFD & 0x80) : 1))
+	{
+		u8 val = 0xFF;
 
-       if (zxmmoonsound.read(port, val))
-           return val;
-   }
+		if( (conf.mem_model == MM_ATM3 ? 1 : !(comp.flags & CF_DOSPORTS)) && (p1 & 0xFE) == 0xC6 )
+			conf.sound.moonsound_toc2c3 = 1;
+					
+		if( !conf.sound.moonsound_toc2c3 && !(comp.flags & CF_DOSPORTS) )
+		{
+			if( (p1 & 0xFC) == 0xC4 && zxmmoonsound.rd_opl3(p1 & 3, val) )
+				return val;
+			else if( ((p1 & 0xFE) == 0x7E) && zxmmoonsound.rd_opl4(p1 & 1, val) )
+				return val;
+		}
+		else if( conf.sound.moonsound_toc2c3 )
+		{
+			if( ((p1 & 0xFC) == 0xC4) && zxmmoonsound.rd_opl3(p1 & 3, val) )
+				return val;
+			else if( ((p1 & 0xFE) == 0xC2) && zxmmoonsound.rd_opl4(p1 & 1, val) )
+				return val;
+		}
+	}		    
 
    // z-controller
    if (conf.zc && (port & 0xFF) == 0x57)
