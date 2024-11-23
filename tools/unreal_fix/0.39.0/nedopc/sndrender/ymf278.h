@@ -98,7 +98,7 @@ static const int MASTER_CLK = 33868800;
 class YMF278 : public SoundDevice
 {
 	public:
-		YMF278(short volume, int ramSize, int romSize,
+		YMF278(short volume, size_t ramSizeKb, size_t romSizeKb,
 		       const EmuTime &time);
 		virtual ~YMF278();
 		void reset(const EmuTime &time);
@@ -107,15 +107,15 @@ class YMF278 : public SoundDevice
 		u8 readRegOPL4(u8 reg, const EmuTime &time);
 		u8 peekStatus(const EmuTime &time);
 		u8 readStatus(const EmuTime &time);
-        u8 * getRom() { return rom; }	
-//        void* getRam() { return ram; }	
-        int getRomSize() { return endRom; }
-//        int getRamSize() { return endRam - endRom; }
+		u8 * getRom();
+		size_t getRomSize();
 		virtual void setSampleRate(int sampleRate, int Oversampling);
 		virtual void setInternalVolume(short newVolume);
 		virtual int* updateBuffer(int length);
 	
 	private:
+		void attempt_alloc_rom();
+		void attempt_alloc_ram();
 		u8 readMem(unsigned int address);
 		void writeMem(unsigned int address, u8 value);
 		short getSample(YMF278Slot &op);
@@ -125,15 +125,24 @@ class YMF278 : public SoundDevice
 		void keyOnHelper(YMF278Slot& slot);
 
 		int buffer[2 * MAX_BUFFER_SIZE];
-		u8* rom;
-		u8* ram;
 
-        int oplOversampling;
+
+		size_t ramSize;
+		size_t romSize;
+		size_t endRom;
+		size_t endRam;
+
+		u8* rom;
+		bool rom_alloc_attempted;
+
+		u8* ram;
+		bool ram_alloc_attempted;
+
+
+		int oplOversampling;
 		double freqbase;
 
 		YMF278Slot slots[24];
-
-        int ramSize;
 		
 		unsigned int eg_cnt;	// global envelope generator counter
 		unsigned int eg_timer;	// global envelope generator counter
@@ -146,9 +155,6 @@ class YMF278 : public SoundDevice
 
 		int fm_l, fm_r;
 		int pcm_l, pcm_r;
-
-		unsigned int endRom;
-		unsigned int endRam;
 
 		// precalculated attenuation values with some marging for
 		// enveloppe and pan levels

@@ -15,7 +15,7 @@ inline EmuTime SystemTime()
 	return cpu.t + comp.frame_counter * conf.frame;
 }
 
-ZXMMoonSound_priv::ZXMMoonSound_priv() : ymf262(0, 0), ymf278(0, 4096, 2048*1024, 0)
+ZXMMoonSound_priv::ZXMMoonSound_priv() : ymf262(0, 0), ymf278(0, 4096/*ram*/, 2048/*rom*/, 0)
 {
 	EmuTime systemTime = 0;
 

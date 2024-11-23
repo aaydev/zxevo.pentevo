@@ -4,6 +4,9 @@
 // $Id: OpenMsxYMF278.cpp,v 1.3 2005/09/24 00:09:50 dvik Exp $
 
 #include "../std.h"
+#include "../emul.h"
+#include "../vars.h"
+#include "../util.h"
 
 #include "ymf278.h"
 #include <cmath>
@@ -756,35 +759,34 @@ u8 YMF278::readStatus(const EmuTime &time)
 	return result;
 }
 
-YMF278::YMF278(short volume, int ramSize, int romSize, 
+YMF278::YMF278(short volume, size_t ramSizeKb, size_t romSizeKb, 
                const EmuTime &time)
 {
-    LD_Time = 0;
-    BUSY_Time = 0;
-	memadr = 0;	// avoid UMR
+	ramSize = ramSizeKb * 1024;
+	romSize = romSizeKb * 1024;
+
 	endRom = romSize;
-	ramSize *= 1024;	// in kb
-
-    this->ramSize = ramSize;
-
-//	rom = new u8[romSize];
-//    ram = new u8[4096 * 1024];
-
-	rom = (u8 *)malloc(romSize);
-	ram = (u8 *)malloc(4096*1024); // NULL-checking is elsewhere
-
-
-    oplOversampling = 1;
-
 	endRam = endRom + ramSize;
+
+	rom_alloc_attempted = false;
+	ram_alloc_attempted = false;
+
+	rom = nullptr; // delayed allocation
+	ram = nullptr; //
+
+
+	LD_Time = 0;
+	BUSY_Time = 0;
+
+	memadr = 0;	// avoid UMR
+
+	oplOversampling = 1;
 	
 	reset(time);
 }
 
 YMF278::~YMF278()
 {
-//	delete[] ram;
-//	delete[] rom;
 	if(ram)
 		free(ram);
 	if(rom)
@@ -831,22 +833,72 @@ void YMF278::setInternalVolume(short newVolume)
 
 u8 YMF278::readMem(unsigned int address)
 {
-	if (rom && address < endRom) {
-		return rom[address];
-	} else if (ram && address < endRam) {
-		return ram[address - endRom];
-	} else {
-		return 255;	// TODO check
-	}
+	if (address < endRom)
+		return rom ? rom[address] : 0xFF; // ROM will be allocated only in getRom() or getRomSize() as to be prepared for loading
+	else if (address < endRam)
+		return ram ? ram[address - endRom] : 0x00; // RAM will be allocated only during first write attempt
+
+	return 255;	// TODO check
 }
 
 void YMF278::writeMem(unsigned int address, u8 value)
 {
-	if (address < endRom) {
-		// can't write to ROM
-	} else if (ram && address < endRam) {
-		ram[address - endRom] = value;
-	} else {
-		// can't write to unmapped memory
+	if(endRom <= address && address < endRam)
+	{
+		if(!ram && !ram_alloc_attempted)
+			attempt_alloc_ram();
+
+		if(ram) ram[address - endRom] = value;
 	}
 }
+
+u8 * YMF278::getRom()
+{
+	if(!rom && !rom_alloc_attempted)
+		attempt_alloc_rom();
+
+	return rom; // might be null
+}
+
+size_t YMF278::getRomSize()
+{
+	if(!rom && !rom_alloc_attempted)
+		attempt_alloc_rom();
+
+	return rom ? romSize : 0; // might be 0
+}
+
+void YMF278::attempt_alloc_rom()
+{
+	if(rom_alloc_attempted) return;
+
+	if(romSize>0)
+	{
+		if( (rom = (u8 *)malloc(romSize)) )
+			memset(rom, 0xFF, romSize);
+		else
+			errmsg("Can't allocate moonsound ROM!");
+	}
+	else
+		errmsg("moonsound ROM size is zero!");
+
+	rom_alloc_attempted = true;
+}
+
+void YMF278::attempt_alloc_ram()
+{
+	if(ram_alloc_attempted) return;
+
+	if(ramSize>0)
+	{
+		if( (ram = (u8 *)malloc(ramSize)) )
+			memset(ram, 0x00, ramSize);
+		else
+			errmsg("Can't allocate moonsound RAM!");
+	}
+	else
+		errmsg("moonsound RAM size is zero!");
+
+	ram_alloc_attempted = true;
+}
+
