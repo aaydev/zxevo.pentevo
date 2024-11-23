@@ -1,13 +1,13 @@
 #!/usr/bin/env python
 
 #import argparse,glob,os,subprocess,re,sys,pathlib,pickle,socket
-import argparse,os,re,sys
+import os,re,sys
 
-startnum_re = re.compile(r'^[ \t]*///[ \t]*<<<[ /t]*NedoPC_RENUMBER_STARTNUM[ \t]*(\d+)[ \t]*>>>[ \t]*$')
-step_re     = re.compile(r'^[ \t]*///[ \t]*<<<[ /t]*NedoPC_RENUMBER_STEP[ \t]*(\d+)[ \t]*>>>[ \t]*$')
+startnum_re = re.compile(r'^[ \t]*///[ \t]*<<<[ /t]*NedoPC_RENUMBER_STARTNUM[ \t]+(\d+)[ \t]*>>>[ \t]*$')
+step_re     = re.compile(r'^[ \t]*///[ \t]*<<<[ /t]*NedoPC_RENUMBER_STEP[ \t]+(\d+)[ \t]*>>>[ \t]*$')
 begin_re    = re.compile(r'^[ \t]*///[ \t]*<<<[ /t]*NedoPC_RENUMBER_BEGIN[ \t]*>>>[ \t]*$')
 end_re      = re.compile(r'^[ \t]*///[ \t]*<<<[ /t]*NedoPC_RENUMBER_END[ \t]*>>>[ \t]*$')
-define_re   = re.compile(r'^[ \t]*#define[ \t]*([_A-Za-z][_A-Za-z0-9]*)[ \t]*(\d+)(.*)$')
+define_re   = re.compile(r'^[ \t]*#define[ \t]+([_A-Za-z][_A-Za-z0-9]*)[ \t]+(\d+)(.*)$')
 
 
 
@@ -135,7 +135,7 @@ def main():
 
 
         if state != STATE_AFTER or startnum is None or step is None:
-            sys.stderr.write('Wrong structure, some of NedoPC_* statements is not present')
+            sys.stderr.write('Wrong structure, some of NedoPC_* statements are not present')
             sys.exit(1)
 
 
