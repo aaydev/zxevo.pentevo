@@ -161,7 +161,7 @@ void reset(ROM_MODE mode)
    ay[1].reset();
    Saa1099.reset();
    zxmmoonsound.reset();
-   conf.sound.moonsound_toc2c3 = 0;
+   comp.moonsound_toc2c3 = false;
 
    if (conf.sound.ay_scheme == AY_SCHEME_CHRV)
    {

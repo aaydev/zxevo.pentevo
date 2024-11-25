@@ -622,8 +622,9 @@ void load_config(const char *fname)
        conf.sound.saa1099 = SAA_ZXM;
    else if(!strnicmp(line, "TFMpro", 6))
        conf.sound.saa1099 = SAA_TFM_PRO;
-   conf.sound.moonsound = GetPrivateProfileInt(sound, "MoonSound", 0, ininame);
-   conf.sound.moonsound_vol = GetPrivateProfileInt(sound, "MoonSoundVol", 4000, ininame);
+   conf.sound.moonsound            = GetPrivateProfileInt(sound, "MoonSound", 0, ininame);
+   conf.sound.moonsound_dis_toc2c3 = GetPrivateProfileInt(sound, "MoonSound_dis_toc2c3", 0, ininame);
+   conf.sound.moonsound_vol        = GetPrivateProfileInt(sound, "MoonSoundVol", 4000, ininame);
 
    #ifdef MOD_GS
    conf.sound.gs_vol = int(GetPrivateProfileInt(sound, "GSVol", 8000, ininame));

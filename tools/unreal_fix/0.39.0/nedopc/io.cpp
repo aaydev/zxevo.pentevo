@@ -89,14 +89,14 @@ void out(unsigned port, unsigned char val)
 	// ZXM-MoonSound write
 	if(conf.sound.moonsound && (conf.mem_model == MM_PROFI ? !(comp.pDFFD & 0x80) : 1))
 	{
-		if( !conf.sound.moonsound_toc2c3 && !(comp.flags & CF_DOSPORTS) )
+		if( (conf.sound.moonsound_dis_toc2c3 || !comp.moonsound_toc2c3) && !(comp.flags & CF_DOSPORTS) )
 		{
 			if( ((p1 & 0xFC) == 0xC4) && zxmmoonsound.wr_opl3(p1 & 3, val) )
 				return;
 			else if( ((p1 & 0xFE) == 0x7E) && zxmmoonsound.wr_opl4(p1 & 1, val) )
 				return;
 		}
-		else if( conf.sound.moonsound_toc2c3 )
+		else if( !conf.sound.moonsound_dis_toc2c3 && comp.moonsound_toc2c3 )
 		{
 			if( ((p1 & 0xFC) == 0xC4) && zxmmoonsound.wr_opl3(p1 & 3, val) )
 				return;
@@ -841,17 +841,17 @@ __inline unsigned char in1(unsigned port)
 	{
 		u8 val = 0xFF;
 
-		if( (conf.mem_model == MM_ATM3 ? 1 : !(comp.flags & CF_DOSPORTS)) && (p1 & 0xFE) == 0xC6 )
-			conf.sound.moonsound_toc2c3 = 1;
+		if( !conf.sound.moonsound_dis_toc2c3 && (conf.mem_model == MM_ATM3 ? 1 : !(comp.flags & CF_DOSPORTS)) && (p1 & 0xFE) == 0xC6 )
+			comp.moonsound_toc2c3 = 1;
 					
-		if( !conf.sound.moonsound_toc2c3 && !(comp.flags & CF_DOSPORTS) )
+		if( (conf.sound.moonsound_dis_toc2c3 || !comp.moonsound_toc2c3) && !(comp.flags & CF_DOSPORTS) )
 		{
 			if( (p1 & 0xFC) == 0xC4 && zxmmoonsound.rd_opl3(p1 & 3, val) )
 				return val;
 			else if( ((p1 & 0xFE) == 0x7E) && zxmmoonsound.rd_opl4(p1 & 1, val) )
 				return val;
 		}
-		else if( conf.sound.moonsound_toc2c3 )
+		else if( !conf.sound.moonsound_dis_toc2c3 && comp.moonsound_toc2c3 )
 		{
 			if( ((p1 & 0xFC) == 0xC4) && zxmmoonsound.rd_opl3(p1 & 3, val) )
 				return val;

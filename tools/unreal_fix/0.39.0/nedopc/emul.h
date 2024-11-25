@@ -197,7 +197,7 @@ struct CONFIG
    struct
    {
       unsigned fq, ayfq, saa1099fq;
-      int covoxFB, covoxDD, sd, saa1099, moonsound, moonsound_toc2c3;
+      int covoxFB, covoxDD, sd, saa1099, moonsound, moonsound_dis_toc2c3;
       int beeper_vol, micout_vol, micin_vol, ay_vol, aydig_vol,
           covoxFB_vol, covoxDD_vol, sd_vol, gs_vol, bass_vol, moonsound_vol;
       VOID_FUNC do_sound;
@@ -505,6 +505,8 @@ struct COMPUTER
    u8 ula_plus_group;
    u8 ula_plus_pal_idx;
    bool ula_plus_en;
+
+   bool moonsound_toc2c3;
 
    COMPUTER();
 };
