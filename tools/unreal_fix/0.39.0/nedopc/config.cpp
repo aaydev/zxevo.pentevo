@@ -827,6 +827,21 @@ void load_config(const char *fname)
               conf.ide[ide_device].lba = unsigned(sz / 512);
           }
       }
+
+      if( conf.ide[ide_device].cd &&
+         conf.ide[ide_device].lba == 0 &&
+         conf.ide[ide_device].image[0] &&
+         conf.ide[ide_device].image[0] != '<')
+      {
+          int file = open(conf.ide[ide_device].image, O_RDONLY | O_BINARY, S_IREAD);
+          if(file >= 0)
+          {
+              __int64 sz = _filelengthi64(file);
+              close(file);
+              conf.ide[ide_device].lba = unsigned(sz / 2048);
+          }
+      }
+
    }
 
    addpath(line, "CMOS");

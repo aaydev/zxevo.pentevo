@@ -301,7 +301,7 @@ unsigned ATA_DEVICE::read_data()
    // DRQ=1, BSY=0, data present
    unsigned result = *(unsigned*)(transbf + transptr*2);
    transptr++;
-//   printf(__FUNCTION__" data=0x%04X\n", result & 0xFFFF);
+//   printf("%s data=0x%04X\n", __FUNCTION__, result & 0xFFFF);
 
    if (transptr < transcount)
        return result;
@@ -851,6 +851,192 @@ void ATA_DEVICE::handle_atapi_packet_emulate()
     case SCSIOP_SET_CD_SPEED:; // 12
           command_ok();
           return;
+
+    /////////////////////////////////////////////////////////////////////////
+    case SCSIOP_MODE_SENSE_10:
+    {
+    	unsigned len;
+
+        len = atapi_p.cdb.MODE_SENSE10.AllocationLength[0]*256 + atapi_p.cdb.MODE_SENSE10.AllocationLength[1];
+        memset(transbf,0,len);
+
+        // following piece of code taken from MAME
+        const uint8_t page = atapi_p.cdb.MODE_SENSE10.PageCode;
+        int ptr = 8;
+printf("5a: len=%04x, page=%02x\n",len,page);
+        if ((page == 0xe) || (page == 0x3f))
+        {
+            // CD Audio control page
+            transbf[ptr++] = 0x8e; // page E, parameter is savable
+            transbf[ptr++] = 0x0e; // page length
+            //transbf[ptr++] = (1 << 2) | (m_sotc << 1); // IMMED = 1
+            transbf[ptr++] = (1 << 2);
+            // reserved
+            transbf[ptr++] = 0;
+            transbf[ptr++] = 0;
+            transbf[ptr++] = 0;
+            transbf[ptr++] = 0;
+            transbf[ptr++] = 0;
+            // connect each audio channel to 1 output port and indicate max volume
+            transbf[ptr++] = 1;
+            transbf[ptr++] = 0xff;
+            transbf[ptr++] = 2;
+            transbf[ptr++] = 0xff;
+            transbf[ptr++] = 4;
+            transbf[ptr++] = 0xff;
+            transbf[ptr++] = 8;
+            transbf[ptr++] = 0xff;
+        }
+        if ((page == 0x0d) || (page == 0x3f))
+        {
+            // CD page
+            transbf[ptr++] = 0x0d;
+            transbf[ptr++] = 6;    // page length
+            transbf[ptr++] = 0;
+            transbf[ptr++] = 0;
+            transbf[ptr++] = 0;
+            transbf[ptr++] = 60;
+            transbf[ptr++] = 0;
+            transbf[ptr++] = 75;
+        }
+        if ((page == 0x2a) || (page == 0x3f))
+        {
+            // Page capabilities
+            transbf[ptr++] = 0x2a;
+            transbf[ptr++] = 0x14; // page length
+            transbf[ptr++] = 0x00;
+            transbf[ptr++] = 0x00; // CD-R only
+            transbf[ptr++] = (1 << 4) | // Mode 2 Form 1
+                             (1 << 1) | // XA Cmds Supported
+                             (1 << 0); // AudioPlay
+            transbf[ptr++] = 0;
+            transbf[ptr++] = 0;
+            transbf[ptr++] = 0;
+            transbf[ptr++] = 0x02;
+            transbf[ptr++] = 0xc0; // 4x speed
+            transbf[ptr++] = 0x01;
+            transbf[ptr++] = 0x00; // 256 volume levels supported
+            transbf[ptr++] = 0x00;
+            transbf[ptr++] = 0x00; // buffer
+            transbf[ptr++] = 0x02;
+            transbf[ptr++] = 0xc0; // 4x read speed
+            transbf[ptr++] = 0;
+            transbf[ptr++] = 0;
+            transbf[ptr++] = 0;
+            transbf[ptr++] = 0;
+            transbf[ptr++] = 0;
+            transbf[ptr++] = 0;
+        }
+
+        //
+        reg.atapi_count = u16(len);
+        reg.intreason = INT_IO;
+        reg.status = STATUS_DRQ;
+        transcount = (len+1)/2;
+        transptr = 0;
+        state = S_READ_ATAPI;
+        return;
+    }
+
+    /////////////////////////////////////////////////////////////////////////
+    case SCSIOP_READ_CAPACITY_10:
+    {
+    	unsigned len;
+
+        len = 8;
+
+        transbf[0] = (lba>>24) & 0xFF;
+        transbf[1] = (lba>>16) & 0xFF;
+        transbf[2] = (lba>> 8) & 0xFF;
+        transbf[3] =  lba      & 0xFF;
+
+        transbf[4] = 0;
+        transbf[5] = 0;
+        transbf[6] = 2048/256;
+        transbf[7] = 0;
+
+
+printf("25: lba=%08X\n",lba);
+        //
+        reg.atapi_count = u16(len);
+        reg.intreason = INT_IO;
+        reg.status = STATUS_DRQ;
+        transcount = (len+1)/2;
+        transptr = 0;
+        state = S_READ_ATAPI;
+        return;
+    }
+
+    /////////////////////////////////////////////////////////////////////////
+    case SCSIOP_READ_CD:
+    {
+        unsigned pos;
+        unsigned cnt;
+
+        pos = atapi_p.cdb.READ_CD.LogicalBlock[0] * 0x01000000 +
+              atapi_p.cdb.READ_CD.LogicalBlock[1] * 0x00010000 +
+              atapi_p.cdb.READ_CD.LogicalBlock[2] * 0x00000100 +
+              atapi_p.cdb.READ_CD.LogicalBlock[3]              ;
+
+        cnt = atapi_p.cdb.READ_CD.TransferLenBlk[0] * 0x010000 +
+              atapi_p.cdb.READ_CD.TransferLenBlk[1] * 0x000100 +
+              atapi_p.cdb.READ_CD.TransferLenBlk[2]            ;
+printf("be: lba=%08X, cnt=%06X, byte9=%02X, subch=%01X\n", pos, cnt, *(9+((uint8_t *)&atapi_p.cdb)), atapi_p.cdb.READ_CD.SubChSelBits);
+        if( atapi_p.cdb.READ_CD.Sync     ||
+            atapi_p.cdb.READ_CD.HdrCodes ||
+           !atapi_p.cdb.READ_CD.UserData ||
+            atapi_p.cdb.READ_CD.EdcEcc   ||
+            atapi_p.cdb.READ_CD.ErrField )
+        {
+            reg.err = 0;
+            state = S_IDLE;
+            reg.status = STATUS_DSC | STATUS_ERR | STATUS_DRDY;
+printf("be: BAD FLAGS!\n");
+            return;
+        }
+
+        // do below as in READ
+        if( cnt*2048 > sizeof(transbf) )
+        {
+            reg.status = STATUS_DRDY | STATUS_DSC | STATUS_ERR;
+            reg.err = ERR_UNC | ERR_IDNF;
+            state = S_IDLE;
+            return;
+        }
+
+        for(unsigned i = 0; i < cnt; i++, pos++)
+        {
+            if (!atapi_p.seek(pos))
+            {
+               reg.status = STATUS_DRDY | STATUS_DSC | STATUS_ERR;
+               reg.err = ERR_UNC | ERR_IDNF;
+               state = S_IDLE;
+               return;
+            }
+       
+            if (!atapi_p.read_sector(transbf + i * 2048))
+            {
+               reg.status = STATUS_DRDY | STATUS_DSC | STATUS_ERR;
+               reg.err = ERR_UNC | ERR_IDNF;
+               state = S_IDLE;
+               return;
+            }
+        }
+        intrq = 1;
+        reg.atapi_count = u16(cnt * 2048);
+        reg.intreason = INT_IO;
+        reg.status = STATUS_DRQ;
+        transcount = (cnt * 2048)/2;
+        transptr = 0;
+        state = S_READ_ATAPI;
+        return;
+    }
+
+
+
+
+
+
     }
 
     printf("*** unknown scsi cmd %02X ***\n", atapi_p.cdb.CDB12.OperationCode);

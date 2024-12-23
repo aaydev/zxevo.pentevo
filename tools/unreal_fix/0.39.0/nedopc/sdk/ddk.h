@@ -147,6 +147,32 @@ typedef union _CDB
         UCHAR Control;
     } CDB12;
 
+    struct _READ_CD {
+        // +0
+        UCHAR OperationCode;
+        // +1
+        UCHAR RelAdr : 1;
+        UCHAR Reserved1 : 1;
+        UCHAR SectorType : 3;
+        UCHAR Reserved2 : 3;
+        // +2..+5
+        UCHAR LogicalBlock[4];
+        // +6..+8
+        UCHAR TransferLenBlk[3];
+        // +9
+        UCHAR Reserved3 : 1;
+        UCHAR ErrField : 2;
+        UCHAR EdcEcc : 1;
+        UCHAR UserData : 1;
+        UCHAR HdrCodes : 2;
+        UCHAR Sync : 1;
+        // +10
+        UCHAR SubChSelBits : 3;
+        UCHAR Reserved4 : 5;
+        // +11
+        UCHAR Control;
+    } READ_CD;
+
     struct _START_STOP {
         UCHAR OperationCode;    // 0x1B - SCSIOP_START_STOP_UNIT
         UCHAR Immediate: 1;
@@ -414,9 +440,12 @@ typedef struct {
 #define SCSIOP_START_STOP_UNIT          0x1B
 #define SCSIOP_READ                     0x28
 #define SCSIOP_READ_TOC                 0x43
+#define SCSIOP_MODE_SENSE_10            0x5A
+#define SCSIOP_READ_CAPACITY_10         0x25
 
 // 12-byte commands
 #define SCSIOP_SET_CD_SPEED             0xBB
+#define SCSIOP_READ_CD                  0xBE
 
 #ifdef __cplusplus
 }
