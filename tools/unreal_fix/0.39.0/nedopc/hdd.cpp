@@ -250,6 +250,7 @@ unsigned char ATA_DEVICE::read_intrq()
 
 unsigned char ATA_DEVICE::read(unsigned n_reg)
 {
+//printf("%s: n_reg=%08x\n", __PRETTY_FUNCTION__, n_reg);
    if (!loaded())
        return 0xFF;
 
@@ -463,7 +464,7 @@ char ATA_DEVICE::exec_atapi_cmd(unsigned char cmd)
 {
    if (!atapi)
        return 0;
-
+//printf("atapi cmd: %02X\n", cmd);
    // soft reset
    if (cmd == 0x08)
    {
@@ -863,7 +864,7 @@ void ATA_DEVICE::handle_atapi_packet_emulate()
         // following piece of code taken from MAME
         const uint8_t page = atapi_p.cdb.MODE_SENSE10.PageCode;
         int ptr = 8;
-printf("5a: len=%04x, page=%02x\n",len,page);
+//printf("5a: len=%04x, page=%02x\n",len,page);
         if ((page == 0xe) || (page == 0x3f))
         {
             // CD Audio control page
@@ -956,7 +957,7 @@ printf("5a: len=%04x, page=%02x\n",len,page);
         transbf[7] = 0;
 
 
-printf("25: lba=%08X\n",lba);
+//printf("25: lba=%08llX\n",lba);
         //
         reg.atapi_count = u16(len);
         reg.intreason = INT_IO;
@@ -981,7 +982,7 @@ printf("25: lba=%08X\n",lba);
         cnt = atapi_p.cdb.READ_CD.TransferLenBlk[0] * 0x010000 +
               atapi_p.cdb.READ_CD.TransferLenBlk[1] * 0x000100 +
               atapi_p.cdb.READ_CD.TransferLenBlk[2]            ;
-printf("be: lba=%08X, cnt=%06X, byte9=%02X, subch=%01X\n", pos, cnt, *(9+((uint8_t *)&atapi_p.cdb)), atapi_p.cdb.READ_CD.SubChSelBits);
+//printf("be: lba=%08X, cnt=%06X, byte9=%02X, subch=%01X\n", pos, cnt, *(9+((uint8_t *)&atapi_p.cdb)), atapi_p.cdb.READ_CD.SubChSelBits);
         if( atapi_p.cdb.READ_CD.Sync     ||
             atapi_p.cdb.READ_CD.HdrCodes ||
            !atapi_p.cdb.READ_CD.UserData ||
@@ -991,7 +992,7 @@ printf("be: lba=%08X, cnt=%06X, byte9=%02X, subch=%01X\n", pos, cnt, *(9+((uint8
             reg.err = 0;
             state = S_IDLE;
             reg.status = STATUS_DSC | STATUS_ERR | STATUS_DRDY;
-printf("be: BAD FLAGS!\n");
+printf("scsi cmd be: BAD FLAGS!\n");
             return;
         }
 
@@ -1163,6 +1164,11 @@ void ATA_DEVICE::prepare_id()
 
 void ATA_DEVICE::update_regs()
 {
+//printf("%s: cyl_before = %04x\n", __PRETTY_FUNCTION__, reg.cyl);
+    if(atapi) return; // do not kill reg contents if ATAPI:
+                      // needed to keep EB14 signature after
+                      // IDENTIFY DEVICE issued for ATAPI device 
+
    if(reg.devhead & 0x40)
    { // lba
        if(lba > 0xFFFFFFFULL)
@@ -1190,6 +1196,7 @@ void ATA_DEVICE::update_regs()
        reg.devhead |= h_cur & 0xF;
        reg.sec = u8(s_cur);
    }
+//printf("%s: cyl_after = %04x\n", __PRETTY_FUNCTION__, reg.cyl);
 }
 
 void ATA_DEVICE::update_cur()
