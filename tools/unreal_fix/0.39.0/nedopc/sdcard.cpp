@@ -253,11 +253,11 @@ u8 TSdCard::Rd()
     if (!Image)
         return 0xFF;
 
-	if(a)
-	{
-		printf("SDCARD: %s, cpu=%p\n", ifname, &cpu);
-		a=0;
-	}
+//	if(a)
+//	{
+//		printf("SDCARD: %s, cpu=%p\n", ifname, &cpu);
+//		a=0;
+//	}
 
     switch(Cmd)
     {
