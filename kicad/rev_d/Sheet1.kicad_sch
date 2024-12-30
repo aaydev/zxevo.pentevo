@@ -49470,13 +49470,13 @@
 	)
 	(hierarchical_label "GND"
 		(shape passive)
-		(at 166.116 185.42 180)
+		(at 160.02 185.42 0)
 		(fields_autoplaced yes)
 		(effects
 			(font
 				(size 1.27 1.27)
 			)
-			(justify right)
+			(justify left)
 		)
 		(uuid "081137b5-ef29-4eb1-8aab-e2255a6641fe")
 	)
@@ -49878,13 +49878,13 @@
 	)
 	(hierarchical_label "VCC2V5"
 		(shape passive)
-		(at 168.148 350.52 180)
+		(at 160.02 350.52 0)
 		(fields_autoplaced yes)
 		(effects
 			(font
 				(size 1.27 1.27)
 			)
-			(justify right)
+			(justify left)
 		)
 		(uuid "11a9c686-7728-4f89-ad89-0dbda8357d70")
 	)
@@ -50550,13 +50550,13 @@
 	)
 	(hierarchical_label "GND"
 		(shape passive)
-		(at 166.116 292.1 180)
+		(at 160.02 292.1 0)
 		(fields_autoplaced yes)
 		(effects
 			(font
 				(size 1.27 1.27)
 			)
-			(justify right)
+			(justify left)
 		)
 		(uuid "240925b3-9bbb-4e4e-ba73-403989aab08d")
 	)
@@ -50622,13 +50622,13 @@
 	)
 	(hierarchical_label "VCC3V3"
 		(shape passive)
-		(at 168.148 269.24 180)
+		(at 160.02 269.24 0)
 		(fields_autoplaced yes)
 		(effects
 			(font
 				(size 1.27 1.27)
 			)
-			(justify right)
+			(justify left)
 		)
 		(uuid "263dc389-2dbc-401f-8edd-4b0d36555d33")
 	)
@@ -50826,13 +50826,13 @@
 	)
 	(hierarchical_label "VCC3V3"
 		(shape passive)
-		(at 168.148 200.66 180)
+		(at 160.02 200.66 0)
 		(fields_autoplaced yes)
 		(effects
 			(font
 				(size 1.27 1.27)
 			)
-			(justify right)
+			(justify left)
 		)
 		(uuid "2aac6562-a25e-431f-98ab-e023e59eb0cb")
 	)
@@ -51042,13 +51042,13 @@
 	)
 	(hierarchical_label "GND"
 		(shape passive)
-		(at 166.116 307.34 180)
+		(at 160.02 307.34 0)
 		(fields_autoplaced yes)
 		(effects
 			(font
 				(size 1.27 1.27)
 			)
-			(justify right)
+			(justify left)
 		)
 		(uuid "30def111-1080-4d8f-bc56-e244fc51d454")
 	)
@@ -51150,13 +51150,13 @@
 	)
 	(hierarchical_label "GND"
 		(shape passive)
-		(at 166.116 251.46 180)
+		(at 160.02 251.46 0)
 		(fields_autoplaced yes)
 		(effects
 			(font
 				(size 1.27 1.27)
 			)
-			(justify right)
+			(justify left)
 		)
 		(uuid "339fd644-9fe8-4f14-a981-d8ca254ab6dc")
 	)
@@ -51642,13 +51642,13 @@
 	)
 	(hierarchical_label "SPICK"
 		(shape input)
-		(at 167.132 226.06 180)
+		(at 160.02 226.06 0)
 		(fields_autoplaced yes)
 		(effects
 			(font
 				(size 1.27 1.27)
 			)
-			(justify right)
+			(justify left)
 		)
 		(uuid "4091da35-6385-4202-a827-4779945e6d07")
 	)
@@ -52122,13 +52122,13 @@
 	)
 	(hierarchical_label "VCC2V5"
 		(shape passive)
-		(at 168.148 304.8 180)
+		(at 160.02 304.8 0)
 		(fields_autoplaced yes)
 		(effects
 			(font
 				(size 1.27 1.27)
 			)
-			(justify right)
+			(justify left)
 		)
 		(uuid "4f048348-55eb-4eb8-9e1c-a2503bcffa18")
 	)
@@ -52494,13 +52494,13 @@
 	)
 	(hierarchical_label "~{RLCAS}"
 		(shape output)
-		(at 187.452 139.7 180)
+		(at 180.34 139.7 0)
 		(fields_autoplaced yes)
 		(effects
 			(font
 				(size 1.27 1.27)
 			)
-			(justify right)
+			(justify left)
 		)
 		(uuid "5778c21b-3f96-4702-b728-2a00d250256f")
 	)
@@ -52578,13 +52578,13 @@
 	)
 	(hierarchical_label "~{RRAS0}"
 		(shape output)
-		(at 187.452 137.16 180)
+		(at 180.34 137.16 0)
 		(fields_autoplaced yes)
 		(effects
 			(font
 				(size 1.27 1.27)
 			)
-			(justify right)
+			(justify left)
 		)
 		(uuid "5aa3454a-a775-4a34-93ec-8a6def26cf04")
 	)
@@ -52638,13 +52638,13 @@
 	)
 	(hierarchical_label "GND"
 		(shape passive)
-		(at 166.116 142.24 180)
+		(at 160.02 142.24 0)
 		(fields_autoplaced yes)
 		(effects
 			(font
 				(size 1.27 1.27)
 			)
-			(justify right)
+			(justify left)
 		)
 		(uuid "5bd0b133-76ab-47a8-b50d-20313423e819")
 	)
@@ -52674,13 +52674,13 @@
 	)
 	(hierarchical_label "SPIDO"
 		(shape input)
-		(at 167.132 223.52 180)
+		(at 160.02 223.52 0)
 		(fields_autoplaced yes)
 		(effects
 			(font
 				(size 1.27 1.27)
 			)
-			(justify right)
+			(justify left)
 		)
 		(uuid "5c674fbb-f6b2-4c61-b47b-4a81f34cdb52")
 	)
@@ -52698,13 +52698,13 @@
 	)
 	(hierarchical_label "~{RRAS1}"
 		(shape output)
-		(at 182.372 193.04 180)
+		(at 175.26 193.04 0)
 		(fields_autoplaced yes)
 		(effects
 			(font
 				(size 1.27 1.27)
 			)
-			(justify right)
+			(justify left)
 		)
 		(uuid "5ca7668f-f66f-41df-86d8-9455dff0e61c")
 	)
@@ -52938,13 +52938,13 @@
 	)
 	(hierarchical_label "~{CONFIG}"
 		(shape input)
-		(at 168.148 353.06 180)
+		(at 160.02 353.06 0)
 		(fields_autoplaced yes)
 		(effects
 			(font
 				(size 1.27 1.27)
 			)
-			(justify right)
+			(justify left)
 		)
 		(uuid "621cf274-3a3b-4d01-b14f-9f82cad1be80")
 	)
@@ -53046,13 +53046,13 @@
 	)
 	(hierarchical_label "VCC3V3"
 		(shape passive)
-		(at 168.148 248.92 180)
+		(at 160.02 248.92 0)
 		(fields_autoplaced yes)
 		(effects
 			(font
 				(size 1.27 1.27)
 			)
-			(justify right)
+			(justify left)
 		)
 		(uuid "64089b73-a887-47be-b92c-d84846aba7b4")
 	)
@@ -53142,13 +53142,13 @@
 	)
 	(hierarchical_label "~{RUCAS}"
 		(shape output)
-		(at 187.452 147.32 180)
+		(at 180.34 147.32 0)
 		(fields_autoplaced yes)
 		(effects
 			(font
 				(size 1.27 1.27)
 			)
-			(justify right)
+			(justify left)
 		)
 		(uuid "65854036-32f7-45e4-a526-a2586ecb95f0")
 	)
@@ -53358,13 +53358,13 @@
 	)
 	(hierarchical_label "GND"
 		(shape input)
-		(at 166.116 347.98 180)
+		(at 160.02 347.98 0)
 		(fields_autoplaced yes)
 		(effects
 			(font
 				(size 1.27 1.27)
 			)
-			(justify right)
+			(justify left)
 		)
 		(uuid "68f1d233-b483-4a87-9086-9f9699d47aea")
 	)
@@ -53730,13 +53730,13 @@
 	)
 	(hierarchical_label "VCC2V5"
 		(shape passive)
-		(at 168.148 149.86 180)
+		(at 160.02 149.86 0)
 		(fields_autoplaced yes)
 		(effects
 			(font
 				(size 1.27 1.27)
 			)
-			(justify right)
+			(justify left)
 		)
 		(uuid "71ff038d-8df8-45b5-b238-0929881ba5b2")
 	)
@@ -53778,13 +53778,13 @@
 	)
 	(hierarchical_label "GND"
 		(shape passive)
-		(at 166.116 160.02 180)
+		(at 160.02 160.02 0)
 		(fields_autoplaced yes)
 		(effects
 			(font
 				(size 1.27 1.27)
 			)
-			(justify right)
+			(justify left)
 		)
 		(uuid "7341050e-9882-4532-9cd2-9159a53878e9")
 	)
@@ -53802,13 +53802,13 @@
 	)
 	(hierarchical_label "VCC2V5"
 		(shape passive)
-		(at 168.148 233.68 180)
+		(at 160.02 233.68 0)
 		(fields_autoplaced yes)
 		(effects
 			(font
 				(size 1.27 1.27)
 			)
-			(justify right)
+			(justify left)
 		)
 		(uuid "73c38c2f-c6c3-4e36-9bac-537d01457e9a")
 	)
@@ -54018,13 +54018,13 @@
 	)
 	(hierarchical_label "VCC3V3"
 		(shape passive)
-		(at 168.148 320.04 180)
+		(at 160.02 320.04 0)
 		(fields_autoplaced yes)
 		(effects
 			(font
 				(size 1.27 1.27)
 			)
-			(justify right)
+			(justify left)
 		)
 		(uuid "7786baed-9be3-42dc-8631-d847b095158d")
 	)
@@ -54198,13 +54198,13 @@
 	)
 	(hierarchical_label "VCC3V3"
 		(shape passive)
-		(at 168.148 127 180)
+		(at 160.02 127 0)
 		(fields_autoplaced yes)
 		(effects
 			(font
 				(size 1.27 1.27)
 			)
-			(justify right)
+			(justify left)
 		)
 		(uuid "7b8f5eee-cd35-4997-91ee-6a7ee1f3213c")
 	)
@@ -55638,13 +55638,13 @@
 	)
 	(hierarchical_label "VCC2V5"
 		(shape passive)
-		(at 168.148 289.56 180)
+		(at 160.02 289.56 0)
 		(fields_autoplaced yes)
 		(effects
 			(font
 				(size 1.27 1.27)
 			)
-			(justify right)
+			(justify left)
 		)
 		(uuid "9f7d1ede-3e4d-4c64-9628-7fe948ba45f3")
 	)
@@ -55782,13 +55782,13 @@
 	)
 	(hierarchical_label "GND"
 		(shape input)
-		(at 166.116 345.44 180)
+		(at 160.02 345.44 0)
 		(fields_autoplaced yes)
 		(effects
 			(font
 				(size 1.27 1.27)
 			)
-			(justify right)
+			(justify left)
 		)
 		(uuid "a4697128-e913-44d0-9bdb-36aad16b8d38")
 	)
@@ -56190,13 +56190,13 @@
 	)
 	(hierarchical_label "GND"
 		(shape passive)
-		(at 166.116 271.78 180)
+		(at 160.02 271.78 0)
 		(fields_autoplaced yes)
 		(effects
 			(font
 				(size 1.27 1.27)
 			)
-			(justify right)
+			(justify left)
 		)
 		(uuid "af61f339-37d1-4832-9c7b-c741ef3073e4")
 	)
@@ -57402,13 +57402,13 @@
 	)
 	(hierarchical_label "VCC2V5"
 		(shape passive)
-		(at 168.148 109.22 180)
+		(at 160.02 109.22 0)
 		(fields_autoplaced yes)
 		(effects
 			(font
 				(size 1.27 1.27)
 			)
-			(justify right)
+			(justify left)
 		)
 		(uuid "cf959600-71a0-4c58-aba4-64788cbdc536")
 	)
@@ -57486,13 +57486,13 @@
 	)
 	(hierarchical_label "GND"
 		(shape passive)
-		(at 166.116 322.58 180)
+		(at 160.02 322.58 0)
 		(fields_autoplaced yes)
 		(effects
 			(font
 				(size 1.27 1.27)
 			)
-			(justify right)
+			(justify left)
 		)
 		(uuid "d0d5197f-c989-489f-a769-6303b09b1b51")
 	)
@@ -57666,13 +57666,13 @@
 	)
 	(hierarchical_label "TDI_FPGA"
 		(shape input)
-		(at 170.18 231.14 180)
+		(at 160.02 231.14 0)
 		(fields_autoplaced yes)
 		(effects
 			(font
 				(size 1.27 1.27)
 			)
-			(justify right)
+			(justify left)
 		)
 		(uuid "d4b2f5ec-f2dc-4e09-8cb5-76d0ac5cf24e")
 	)
@@ -57834,13 +57834,13 @@
 	)
 	(hierarchical_label "VCC3V3"
 		(shape passive)
-		(at 168.148 340.36 180)
+		(at 160.02 340.36 0)
 		(fields_autoplaced yes)
 		(effects
 			(font
 				(size 1.27 1.27)
 			)
-			(justify right)
+			(justify left)
 		)
 		(uuid "d98e9f35-8fa1-4c3b-89fa-3b3a5e60295e")
 	)
@@ -58242,13 +58242,13 @@
 	)
 	(hierarchical_label "SPICK"
 		(shape input)
-		(at 167.132 152.4 180)
+		(at 160.02 152.4 0)
 		(fields_autoplaced yes)
 		(effects
 			(font
 				(size 1.27 1.27)
 			)
-			(justify right)
+			(justify left)
 		)
 		(uuid "e5290ad0-e7b9-4e0b-a226-2ee43e5f1147")
 	)
@@ -58362,13 +58362,13 @@
 	)
 	(hierarchical_label "VCC3V3"
 		(shape passive)
-		(at 168.148 167.64 180)
+		(at 160.02 167.64 0)
 		(fields_autoplaced yes)
 		(effects
 			(font
 				(size 1.27 1.27)
 			)
-			(justify right)
+			(justify left)
 		)
 		(uuid "e8b7257a-3eec-48d0-91c9-193baa454acc")
 	)
@@ -58470,13 +58470,13 @@
 	)
 	(hierarchical_label "GND"
 		(shape input)
-		(at 166.116 228.6 180)
+		(at 160.02 228.6 0)
 		(fields_autoplaced yes)
 		(effects
 			(font
 				(size 1.27 1.27)
 			)
-			(justify right)
+			(justify left)
 		)
 		(uuid "ec75edeb-2aa9-4599-8e69-e2a6fe37d37a")
 	)
@@ -58614,13 +58614,13 @@
 	)
 	(hierarchical_label "GND"
 		(shape passive)
-		(at 166.116 236.22 180)
+		(at 160.02 236.22 0)
 		(fields_autoplaced yes)
 		(effects
 			(font
 				(size 1.27 1.27)
 			)
-			(justify right)
+			(justify left)
 		)
 		(uuid "efbb6c86-8d41-4a6e-b9b9-5c1dee2fc782")
 	)
@@ -58902,13 +58902,13 @@
 	)
 	(hierarchical_label "GND"
 		(shape passive)
-		(at 166.116 342.9 180)
+		(at 160.02 342.9 0)
 		(fields_autoplaced yes)
 		(effects
 			(font
 				(size 1.27 1.27)
 			)
-			(justify right)
+			(justify left)
 		)
 		(uuid "f71ad691-7102-4069-936f-8849ad2ac5af")
 	)
@@ -60511,7 +60511,7 @@
 			)
 		)
 		(property "Value" "EP1K50Q208"
-			(at 140.97 88.9 0)
+			(at 140.97 88.392 0)
 			(effects
 				(font
 					(size 1.27 1.27)
