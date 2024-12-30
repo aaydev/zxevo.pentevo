@@ -25318,6 +25318,28 @@
 			)
 		)
 	)
+	(global_label "VCC5"
+		(shape passive)
+		(at 246.38 91.44 180)
+		(fields_autoplaced yes)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify right)
+		)
+		(uuid "26ad2748-1880-44c6-829c-be814e3ea2fd")
+		(property "Intersheetrefs" "${INTERSHEET_REFS}"
+			(at 239.668 91.44 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify right)
+				(hide yes)
+			)
+		)
+	)
 	(global_label "PLLS0"
 		(shape output)
 		(at 231.14 132.08 180)
@@ -26671,18 +26693,6 @@
 			(justify right)
 		)
 		(uuid "6a9ea2be-d1e6-47ee-908e-e771443b6f08")
-	)
-	(hierarchical_label "VCC5"
-		(shape passive)
-		(at 246.38 91.44 180)
-		(fields_autoplaced yes)
-		(effects
-			(font
-				(size 1.27 1.27)
-			)
-			(justify right)
-		)
-		(uuid "6b91f6ed-2030-4eae-b021-e6bebe744f2f")
 	)
 	(hierarchical_label "PS2_MOUS_DAT"
 		(shape bidirectional)
