@@ -11,6 +11,7 @@ class TZc
     u8 RdBuff;
     u8 IsCh341;
 public:
+    TZc() : SdCard("zc.sdcard") {}
     void Reset();
     void Open(const char *Name);
     void Close();

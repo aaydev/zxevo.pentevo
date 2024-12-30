@@ -84,8 +84,13 @@ class TSdCard
 
     FILE *Image;
     u32 ImageSize; // размер SD карты в 512Кб блоках - 1
+
+    const char * ifname;
+
+    int a;
+
 public:
-    TSdCard() { Image = nullptr; Reset(); }
+    TSdCard(const char * name) { Image = nullptr; Reset(); ifname=name; printf("TSdCard: %s\n",name); a=1; }
     void Reset();
     void Open(const char *Name);
     void Close();

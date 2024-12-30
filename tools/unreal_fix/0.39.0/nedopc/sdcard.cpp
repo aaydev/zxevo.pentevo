@@ -253,6 +253,12 @@ u8 TSdCard::Rd()
     if (!Image)
         return 0xFF;
 
+	if(a)
+	{
+		printf("SDCARD: %s, cpu=%p\n", ifname, &cpu);
+		a=0;
+	}
+
     switch(Cmd)
     {
     case CMD_GO_IDLE_STATE:
@@ -648,6 +654,6 @@ void TSdCard::Close()
 
 //-----------------------------------------------------------------------------
 
-TSdCard SdCard;
+TSdCard SdCard("ngs.sdcard");
 
 //-----------------------------------------------------------------------------
