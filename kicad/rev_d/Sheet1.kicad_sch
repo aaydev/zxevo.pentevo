@@ -32669,6 +32669,16 @@
 	)
 	(wire
 		(pts
+			(xy 63.5 243.84) (xy 73.66 243.84)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "2824bf49-db40-49a2-a481-b7eac02e1c72")
+	)
+	(wire
+		(pts
 			(xy 388.62 261.62) (xy 391.16 261.62)
 		)
 		(stroke
@@ -32816,6 +32826,16 @@
 			(type default)
 		)
 		(uuid "2a70cfbf-ece1-4e8e-a30b-693bd4022cba")
+	)
+	(wire
+		(pts
+			(xy 27.94 243.84) (xy 38.1 243.84)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "2a7db4e6-7302-4814-a5ef-667dc8fd7159")
 	)
 	(wire
 		(pts
@@ -33990,6 +34010,16 @@
 			(type default)
 		)
 		(uuid "3b64ac00-2790-4d8a-9f18-b39b729faa0c")
+	)
+	(wire
+		(pts
+			(xy 27.94 248.92) (xy 38.1 248.92)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "3bcddd32-33c7-4331-a9ba-cc0852610055")
 	)
 	(bus
 		(pts
@@ -36021,6 +36051,16 @@
 	)
 	(wire
 		(pts
+			(xy 66.04 198.12) (xy 66.04 203.2)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "5c1e9404-8a04-4a6d-8bde-9e06c4b64168")
+	)
+	(wire
+		(pts
 			(xy 119.38 276.86) (xy 121.92 276.86)
 		)
 		(stroke
@@ -37208,6 +37248,16 @@
 	)
 	(wire
 		(pts
+			(xy 53.34 198.12) (xy 53.34 203.2)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "70995cb1-93b8-4a1a-bed5-427ed3e6f896")
+	)
+	(wire
+		(pts
 			(xy 467.36 276.86) (xy 464.82 276.86)
 		)
 		(stroke
@@ -37526,6 +37576,16 @@
 			(type default)
 		)
 		(uuid "75a983df-f024-4a12-b252-9e16a68088ca")
+	)
+	(wire
+		(pts
+			(xy 60.96 198.12) (xy 60.96 203.2)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "75bb2682-011b-485d-8277-beb01799ceba")
 	)
 	(wire
 		(pts
@@ -38742,6 +38802,16 @@
 	)
 	(wire
 		(pts
+			(xy 63.5 248.92) (xy 73.66 248.92)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "84521dda-8238-4ad1-ab75-7ef02457f48a")
+	)
+	(wire
+		(pts
 			(xy 241.3 86.36) (xy 246.38 86.36)
 		)
 		(stroke
@@ -39190,6 +39260,16 @@
 			(color 0 0 0 1)
 		)
 		(uuid "8d039d4d-9cb2-470f-a37f-3fc6bf08ddfe")
+	)
+	(wire
+		(pts
+			(xy 63.5 274.32) (xy 73.66 274.32)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "8d274687-5baf-461e-b431-98033e26ccd1")
 	)
 	(wire
 		(pts
@@ -39893,6 +39973,16 @@
 			(type default)
 		)
 		(uuid "96673c19-8f94-45a3-9c73-274cf0902c09")
+	)
+	(wire
+		(pts
+			(xy 27.94 274.32) (xy 38.1 274.32)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "968e90f3-27ac-4934-9296-b48a8c74480d")
 	)
 	(wire
 		(pts
@@ -41157,6 +41247,16 @@
 			(type default)
 		)
 		(uuid "a86ad721-1641-4ef6-91f4-5ccd15fc30b2")
+	)
+	(wire
+		(pts
+			(xy 63.5 198.12) (xy 63.5 203.2)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "a8e7c4f8-0af7-46e5-a7e8-546b3902aca1")
 	)
 	(polyline
 		(pts
@@ -44150,6 +44250,16 @@
 	)
 	(wire
 		(pts
+			(xy 58.42 198.12) (xy 58.42 203.2)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "d12e649d-7366-4778-9d5e-8559bf179d82")
+	)
+	(wire
+		(pts
 			(xy 381 289.56) (xy 388.62 289.56)
 		)
 		(stroke
@@ -46425,6 +46535,16 @@
 			(type default)
 		)
 		(uuid "edec6684-2504-4681-b6f5-112d8f4f1ff8")
+	)
+	(wire
+		(pts
+			(xy 50.8 198.12) (xy 50.8 203.2)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "ee0b3186-ed85-4672-bf57-ed2e2cb3f9a5")
 	)
 	(wire
 		(pts
@@ -49121,7 +49241,7 @@
 		(uuid "01d4ae7a-52fb-48a8-9588-a6d03f94d4f9")
 	)
 	(hierarchical_label "ROMPG2"
-		(shape bidirectional)
+		(shape input)
 		(at 55.88 144.78 90)
 		(fields_autoplaced yes)
 		(effects
@@ -49277,7 +49397,7 @@
 		(uuid "05a61bb1-2009-4b65-a7eb-1c740cd9556f")
 	)
 	(hierarchical_label "~{BUSA}"
-		(shape bidirectional)
+		(shape output)
 		(at 27.94 276.86 0)
 		(fields_autoplaced yes)
 		(effects
@@ -49601,7 +49721,7 @@
 		(uuid "0e504a0e-c704-407e-92ec-731971c07c43")
 	)
 	(hierarchical_label "RS"
-		(shape bidirectional)
+		(shape input)
 		(at 86.36 162.56 0)
 		(fields_autoplaced yes)
 		(effects
@@ -49673,7 +49793,7 @@
 		(uuid "10201986-7184-42d0-8a46-f9a8bb1be78c")
 	)
 	(hierarchical_label "~{DOS}"
-		(shape bidirectional)
+		(shape output)
 		(at 63.5 220.98 0)
 		(fields_autoplaced yes)
 		(effects
@@ -49733,7 +49853,7 @@
 		(uuid "115a9210-d11d-48b4-b94f-19a373b961e8")
 	)
 	(hierarchical_label "ROMPG3"
-		(shape bidirectional)
+		(shape input)
 		(at 66.04 144.78 90)
 		(fields_autoplaced yes)
 		(effects
@@ -50225,7 +50345,7 @@
 		(uuid "1e36f25f-90a5-4834-8129-8f84584316b4")
 	)
 	(hierarchical_label "A2"
-		(shape bidirectional)
+		(shape output)
 		(at 27.94 175.26 0)
 		(fields_autoplaced yes)
 		(effects
@@ -50381,7 +50501,7 @@
 		(uuid "22835ba0-9712-4437-be99-6b6cb526b106")
 	)
 	(hierarchical_label "~{M1}"
-		(shape bidirectional)
+		(shape output)
 		(at 27.94 358.14 0)
 		(fields_autoplaced yes)
 		(effects
@@ -50813,7 +50933,7 @@
 		(uuid "2d34e1ac-7b9b-497e-a9cb-3855ff8c00d8")
 	)
 	(hierarchical_label "A1"
-		(shape bidirectional)
+		(shape output)
 		(at 27.94 177.8 0)
 		(fields_autoplaced yes)
 		(effects
@@ -51041,7 +51161,7 @@
 		(uuid "339fd644-9fe8-4f14-a981-d8ca254ab6dc")
 	)
 	(hierarchical_label "A12"
-		(shape bidirectional)
+		(shape input)
 		(at 50.8 142.24 90)
 		(fields_autoplaced yes)
 		(effects
@@ -51257,7 +51377,7 @@
 		(uuid "38265702-7932-44ec-a626-bc97ec40c820")
 	)
 	(hierarchical_label "A13"
-		(shape bidirectional)
+		(shape input)
 		(at 86.36 165.1 0)
 		(fields_autoplaced yes)
 		(effects
@@ -51317,7 +51437,7 @@
 		(uuid "39d80fa5-be1c-4d2e-a9b6-e838e9c00cb6")
 	)
 	(hierarchical_label "A3"
-		(shape bidirectional)
+		(shape output)
 		(at 27.94 172.72 0)
 		(fields_autoplaced yes)
 		(effects
@@ -51353,7 +51473,7 @@
 		(uuid "3b0547c2-9aa3-40fb-8347-bd542d5ee989")
 	)
 	(hierarchical_label "~{DOS}"
-		(shape bidirectional)
+		(shape input)
 		(at 53.34 142.24 90)
 		(fields_autoplaced yes)
 		(effects
@@ -51473,7 +51593,7 @@
 		(uuid "3f0c3778-a22b-421b-aab0-fd0b2fbd4d50")
 	)
 	(hierarchical_label "A8"
-		(shape bidirectional)
+		(shape input)
 		(at 86.36 167.64 0)
 		(fields_autoplaced yes)
 		(effects
@@ -51833,7 +51953,7 @@
 		(uuid "49e81af2-ab34-4d0b-bd42-035dd5e4d5cb")
 	)
 	(hierarchical_label "A0"
-		(shape bidirectional)
+		(shape output)
 		(at 27.94 180.34 0)
 		(fields_autoplaced yes)
 		(effects
@@ -52613,7 +52733,7 @@
 		(uuid "5d31c0d0-4532-415b-8ab0-14d6a182cd3f")
 	)
 	(hierarchical_label "~{RDROM}"
-		(shape bidirectional)
+		(shape input)
 		(at 83.82 180.34 0)
 		(fields_autoplaced yes)
 		(effects
@@ -53009,7 +53129,7 @@
 		(uuid "64d71649-12a7-44ba-bdc9-027483f7ec0e")
 	)
 	(hierarchical_label "~{CSROM}"
-		(shape bidirectional)
+		(shape output)
 		(at 63.5 274.32 0)
 		(fields_autoplaced yes)
 		(effects
@@ -53093,7 +53213,7 @@
 		(uuid "664e357a-7e24-4658-8596-e3d266b5d2ec")
 	)
 	(hierarchical_label "A4"
-		(shape bidirectional)
+		(shape output)
 		(at 27.94 170.18 0)
 		(fields_autoplaced yes)
 		(effects
@@ -53177,7 +53297,7 @@
 		(uuid "68011a3a-c77c-41fd-b49d-695063dd1a53")
 	)
 	(hierarchical_label "IORQGE1"
-		(shape bidirectional)
+		(shape input)
 		(at 27.94 243.84 0)
 		(fields_autoplaced yes)
 		(effects
@@ -53393,7 +53513,7 @@
 		(uuid "6c83df57-40cd-430d-becb-f9596876080c")
 	)
 	(hierarchical_label "~{BUSA}"
-		(shape bidirectional)
+		(shape output)
 		(at 63.5 276.86 0)
 		(fields_autoplaced yes)
 		(effects
@@ -53501,7 +53621,7 @@
 		(uuid "6f49b70d-6395-40bb-9c05-c365e5f8bdd4")
 	)
 	(hierarchical_label "~{IORQ1}"
-		(shape bidirectional)
+		(shape output)
 		(at 27.94 340.36 0)
 		(fields_autoplaced yes)
 		(effects
@@ -53549,7 +53669,7 @@
 		(uuid "707f9efb-f3cf-4c0d-8d1e-1a55f7a507ce")
 	)
 	(hierarchical_label "~{BUSR}"
-		(shape bidirectional)
+		(shape input)
 		(at 63.5 259.08 0)
 		(fields_autoplaced yes)
 		(effects
@@ -53849,7 +53969,7 @@
 		(uuid "75f494bf-8855-4b0e-af4c-c88ffdba36f2")
 	)
 	(hierarchical_label "~{RFSH}"
-		(shape bidirectional)
+		(shape output)
 		(at 63.5 360.68 0)
 		(fields_autoplaced yes)
 		(effects
@@ -53909,7 +54029,7 @@
 		(uuid "7786baed-9be3-42dc-8631-d847b095158d")
 	)
 	(hierarchical_label "A7"
-		(shape bidirectional)
+		(shape output)
 		(at 27.94 162.56 0)
 		(fields_autoplaced yes)
 		(effects
@@ -53933,7 +54053,7 @@
 		(uuid "78724331-325e-4276-bdd8-867e8c1b6bb0")
 	)
 	(hierarchical_label "~{ROMOE}"
-		(shape bidirectional)
+		(shape input)
 		(at 83.82 175.26 0)
 		(fields_autoplaced yes)
 		(effects
@@ -55733,7 +55853,7 @@
 		(uuid "a586e783-d635-4772-a48c-8b7b19792323")
 	)
 	(hierarchical_label "A5"
-		(shape bidirectional)
+		(shape output)
 		(at 27.94 167.64 0)
 		(fields_autoplaced yes)
 		(effects
@@ -55829,7 +55949,7 @@
 		(uuid "a79ef8a3-e713-4554-b298-88c235685e34")
 	)
 	(hierarchical_label "~{RFSH}"
-		(shape bidirectional)
+		(shape output)
 		(at 27.94 360.68 0)
 		(fields_autoplaced yes)
 		(effects
@@ -55997,7 +56117,7 @@
 		(uuid "ad9894a7-bd78-4dcd-85de-3f7bd3b56349")
 	)
 	(hierarchical_label "~{M1}"
-		(shape bidirectional)
+		(shape output)
 		(at 63.5 358.14 0)
 		(fields_autoplaced yes)
 		(effects
@@ -56093,7 +56213,7 @@
 		(uuid "b02a5877-9380-439c-b026-267dedaf3111")
 	)
 	(hierarchical_label "~{HALT}"
-		(shape bidirectional)
+		(shape output)
 		(at 27.94 335.28 0)
 		(fields_autoplaced yes)
 		(effects
@@ -56141,7 +56261,7 @@
 		(uuid "b156a7d9-5b54-4a5a-a8c2-857d9e2dbfa3")
 	)
 	(hierarchical_label "A6"
-		(shape bidirectional)
+		(shape output)
 		(at 27.94 165.1 0)
 		(fields_autoplaced yes)
 		(effects
@@ -56225,7 +56345,7 @@
 		(uuid "b359e1fc-fada-44f6-a544-045ddc4b459d")
 	)
 	(hierarchical_label "~{BUSR}"
-		(shape bidirectional)
+		(shape input)
 		(at 27.94 259.08 0)
 		(fields_autoplaced yes)
 		(effects
@@ -56333,7 +56453,7 @@
 		(uuid "b888bb1d-94ef-4808-9d1d-a7cc435aeedf")
 	)
 	(hierarchical_label "ROMPG4"
-		(shape bidirectional)
+		(shape input)
 		(at 58.42 144.78 90)
 		(fields_autoplaced yes)
 		(effects
@@ -56681,7 +56801,7 @@
 		(uuid "bf5fe9e8-44ba-453c-845d-22428c4c0c30")
 	)
 	(hierarchical_label "~{ROMWE}"
-		(shape bidirectional)
+		(shape input)
 		(at 63.5 144.78 90)
 		(fields_autoplaced yes)
 		(effects
@@ -56693,7 +56813,7 @@
 		(uuid "bf67ad35-386a-4468-8396-05d71b111572")
 	)
 	(hierarchical_label "A10"
-		(shape bidirectional)
+		(shape input)
 		(at 86.36 177.8 0)
 		(fields_autoplaced yes)
 		(effects
@@ -56801,7 +56921,7 @@
 		(uuid "c163b032-aaf4-4ad2-a44c-6b47f7adf879")
 	)
 	(hierarchical_label "A9"
-		(shape bidirectional)
+		(shape input)
 		(at 86.36 170.18 0)
 		(fields_autoplaced yes)
 		(effects
@@ -57245,7 +57365,7 @@
 		(uuid "cf74837e-ef73-48c0-9282-9cd91d553b00")
 	)
 	(hierarchical_label "~{IORQ2}"
-		(shape bidirectional)
+		(shape output)
 		(at 63.5 340.36 0)
 		(fields_autoplaced yes)
 		(effects
@@ -57653,7 +57773,7 @@
 		(uuid "d772ec1a-8068-4edf-a6a7-e0da13304f00")
 	)
 	(hierarchical_label "IORQGE2"
-		(shape bidirectional)
+		(shape input)
 		(at 63.5 243.84 0)
 		(fields_autoplaced yes)
 		(effects
@@ -58193,7 +58313,7 @@
 		(uuid "e803e9c5-c07a-43f3-b669-bc757572ac35")
 	)
 	(hierarchical_label "~{CSROM}"
-		(shape bidirectional)
+		(shape output)
 		(at 27.94 274.32 0)
 		(fields_autoplaced yes)
 		(effects
@@ -58421,7 +58541,7 @@
 		(uuid "ee64402a-c234-4932-8f9c-8220378f4cac")
 	)
 	(hierarchical_label "~{HALT}"
-		(shape bidirectional)
+		(shape output)
 		(at 63.5 335.28 0)
 		(fields_autoplaced yes)
 		(effects
@@ -58565,7 +58685,7 @@
 		(uuid "f2157c11-5d20-4857-a3db-63511c2b5211")
 	)
 	(hierarchical_label "~{DOS}"
-		(shape bidirectional)
+		(shape output)
 		(at 27.94 220.98 0)
 		(fields_autoplaced yes)
 		(effects
@@ -58601,7 +58721,7 @@
 		(uuid "f336351a-d936-4d02-b8ac-9fcb609d5229")
 	)
 	(hierarchical_label "A11"
-		(shape bidirectional)
+		(shape input)
 		(at 86.36 172.72 0)
 		(fields_autoplaced yes)
 		(effects
@@ -65401,7 +65521,7 @@
 			)
 		)
 		(property "ALTIUM_VALUE" "0.1uF"
-			(at 37.338 149.606 0)
+			(at 34.544 142.24 0)
 			(effects
 				(font
 					(size 1.27 1.27)
