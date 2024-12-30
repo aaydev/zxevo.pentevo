@@ -18097,6 +18097,24 @@
 		)
 	)
 	(junction
+		(at 88.9 312.42)
+		(diameter 0)
+		(color 0 0 0 0)
+		(uuid "243c41ec-9c89-4bed-85e3-6dedc20e04a9")
+	)
+	(junction
+		(at 99.06 302.26)
+		(diameter 0)
+		(color 0 0 0 0)
+		(uuid "6925f39e-e56a-4f86-8910-441a974a9a95")
+	)
+	(junction
+		(at 93.98 307.34)
+		(diameter 0)
+		(color 0 0 0 0)
+		(uuid "69bcd8dd-d680-4c82-b58f-b5007cd8778b")
+	)
+	(junction
 		(at 347.98 121.92)
 		(diameter 0)
 		(color 0 0 0 0)
@@ -18150,7 +18168,7 @@
 	)
 	(wire
 		(pts
-			(xy 86.36 312.42) (xy 101.6 312.42)
+			(xy 87.63 312.42) (xy 88.9 312.42)
 		)
 		(stroke
 			(width 0)
@@ -20033,7 +20051,7 @@
 	)
 	(wire
 		(pts
-			(xy 86.36 307.34) (xy 104.14 307.34)
+			(xy 87.63 307.34) (xy 93.98 307.34)
 		)
 		(stroke
 			(width 0)
@@ -20532,6 +20550,16 @@
 	)
 	(wire
 		(pts
+			(xy 99.06 302.26) (xy 101.6 302.26)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "629c163a-1ea2-4056-a462-6b1c6d3eebdf")
+	)
+	(wire
+		(pts
 			(xy 259.08 363.22) (xy 259.08 355.6)
 		)
 		(stroke
@@ -20934,6 +20962,16 @@
 			(type default)
 		)
 		(uuid "6fe27e47-1db3-4157-9c00-82f47179756f")
+	)
+	(wire
+		(pts
+			(xy 88.9 312.42) (xy 101.6 312.42)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "71c7f0fb-2c9e-46e9-bfef-270fe7612939")
 	)
 	(polyline
 		(pts
@@ -23334,6 +23372,16 @@
 	)
 	(wire
 		(pts
+			(xy 93.98 307.34) (xy 104.14 307.34)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "d54ab044-0c36-4488-850f-293510c40489")
+	)
+	(wire
+		(pts
 			(xy 236.22 134.62) (xy 231.14 134.62)
 		)
 		(stroke
@@ -23468,7 +23516,7 @@
 	)
 	(wire
 		(pts
-			(xy 86.36 302.26) (xy 101.6 302.26)
+			(xy 87.63 302.26) (xy 99.06 302.26)
 		)
 		(stroke
 			(width 0)
@@ -25296,6 +25344,28 @@
 		)
 		(uuid "eae81f1f-274e-4c10-ad8a-cf565445b159")
 	)
+	(global_label "VCC5"
+		(shape passive)
+		(at 426.72 297.18 180)
+		(fields_autoplaced yes)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify right)
+		)
+		(uuid "08fe77ed-4b75-45a2-9e7b-9213e3222e48")
+		(property "Intersheetrefs" "${INTERSHEET_REFS}"
+			(at 420.008 297.18 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify right)
+				(hide yes)
+			)
+		)
+	)
 	(global_label "PLLS1"
 		(shape output)
 		(at 231.14 134.62 180)
@@ -25340,6 +25410,72 @@
 			)
 		)
 	)
+	(global_label "AVCC5"
+		(shape passive)
+		(at 152.4 208.28 0)
+		(fields_autoplaced yes)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify left)
+		)
+		(uuid "29860d2b-310a-4f5e-98cf-7473daf704c4")
+		(property "Intersheetrefs" "${INTERSHEET_REFS}"
+			(at 160.2006 208.28 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left)
+				(hide yes)
+			)
+		)
+	)
+	(global_label "CHB"
+		(shape input)
+		(at 87.63 307.34 180)
+		(fields_autoplaced yes)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify right)
+		)
+		(uuid "2befc51c-c018-467a-b247-4f0d8e918746")
+		(property "Intersheetrefs" "${INTERSHEET_REFS}"
+			(at 80.7743 307.34 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify right)
+				(hide yes)
+			)
+		)
+	)
+	(global_label "AVCC5"
+		(shape passive)
+		(at 353.06 228.6 180)
+		(fields_autoplaced yes)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify right)
+		)
+		(uuid "4fdb7389-481d-41b9-b633-40d8dd3a27c6")
+		(property "Intersheetrefs" "${INTERSHEET_REFS}"
+			(at 345.2594 228.6 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify right)
+				(hide yes)
+			)
+		)
+	)
 	(global_label "PLLS0"
 		(shape output)
 		(at 231.14 132.08 180)
@@ -25353,6 +25489,50 @@
 		(uuid "64893972-06a8-4b74-92f8-6f7888fde7b3")
 		(property "Intersheetrefs" "${INTERSHEET_REFS}"
 			(at 222.4096 132.08 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify right)
+				(hide yes)
+			)
+		)
+	)
+	(global_label "CHC"
+		(shape input)
+		(at 87.63 312.42 180)
+		(fields_autoplaced yes)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify right)
+		)
+		(uuid "95ee7475-2674-4b25-9178-6ea36349a8c1")
+		(property "Intersheetrefs" "${INTERSHEET_REFS}"
+			(at 80.7743 312.42 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify right)
+				(hide yes)
+			)
+		)
+	)
+	(global_label "CHA"
+		(shape input)
+		(at 87.63 302.26 180)
+		(fields_autoplaced yes)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify right)
+		)
+		(uuid "a03a844c-d575-46d3-9379-8b87481caade")
+		(property "Intersheetrefs" "${INTERSHEET_REFS}"
+			(at 80.9557 302.26 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -25862,30 +26042,6 @@
 		)
 		(uuid "26c66228-1fcc-4b80-bbaf-0db5f472599a")
 	)
-	(hierarchical_label "VCC5"
-		(shape passive)
-		(at 426.72 297.18 180)
-		(fields_autoplaced yes)
-		(effects
-			(font
-				(size 1.27 1.27)
-			)
-			(justify right)
-		)
-		(uuid "29103029-7884-45b5-9296-704c861c1b0c")
-	)
-	(hierarchical_label "CHC"
-		(shape input)
-		(at 86.36 312.42 180)
-		(fields_autoplaced yes)
-		(effects
-			(font
-				(size 1.27 1.27)
-			)
-			(justify right)
-		)
-		(uuid "2a400d7d-ec10-4404-a6ae-4717dc8ae264")
-	)
 	(hierarchical_label "GND"
 		(shape passive)
 		(at 444.5 297.18 0)
@@ -26329,18 +26485,6 @@
 			(justify right)
 		)
 		(uuid "4a09eb36-8a92-45e1-89b2-aea879235b08")
-	)
-	(hierarchical_label "CHB"
-		(shape input)
-		(at 86.36 307.34 180)
-		(fields_autoplaced yes)
-		(effects
-			(font
-				(size 1.27 1.27)
-			)
-			(justify right)
-		)
-		(uuid "533aa51e-3d08-4aed-8496-bf465e2763cb")
 	)
 	(hierarchical_label "JOYR"
 		(shape input)
@@ -26953,18 +27097,6 @@
 			(justify right)
 		)
 		(uuid "76ad024a-e3d0-4e58-8d01-f97d7e09b523")
-	)
-	(hierarchical_label "CHA"
-		(shape input)
-		(at 86.36 302.26 180)
-		(fields_autoplaced yes)
-		(effects
-			(font
-				(size 1.27 1.27)
-			)
-			(justify right)
-		)
-		(uuid "76b79509-0f13-4691-b391-66afd8f08951")
 	)
 	(hierarchical_label "~{BEEP}"
 		(shape output)
@@ -27589,18 +27721,6 @@
 			(justify right)
 		)
 		(uuid "a0a6b7ab-5f51-45c8-9c8c-764981dfd4e1")
-	)
-	(hierarchical_label "AVCC5"
-		(shape passive)
-		(at 353.06 228.6 180)
-		(fields_autoplaced yes)
-		(effects
-			(font
-				(size 1.27 1.27)
-			)
-			(justify right)
-		)
-		(uuid "a108e98d-7949-4da6-8628-d1908a7af10b")
 	)
 	(hierarchical_label "VCC5_MEGA"
 		(shape passive)
@@ -28525,18 +28645,6 @@
 			(justify right)
 		)
 		(uuid "e55b67d3-8504-4d80-be38-46623b0e4e14")
-	)
-	(hierarchical_label "AVCC5"
-		(shape passive)
-		(at 152.4 208.28 0)
-		(fields_autoplaced yes)
-		(effects
-			(font
-				(size 1.27 1.27)
-			)
-			(justify left)
-		)
-		(uuid "e895057f-93d9-4792-ba15-1e3e2e87fe8a")
 	)
 	(hierarchical_label "JOYF"
 		(shape output)
