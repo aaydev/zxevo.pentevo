@@ -18547,16 +18547,6 @@
 	)
 	(wire
 		(pts
-			(xy 236.22 132.08) (xy 231.14 132.08)
-		)
-		(stroke
-			(width 0)
-			(type default)
-		)
-		(uuid "14e5e9da-abfa-48c0-85e4-ec7d4e72cfeb")
-	)
-	(wire
-		(pts
 			(xy 424.18 96.52) (xy 424.18 88.9)
 		)
 		(stroke
@@ -23933,6 +23923,16 @@
 	)
 	(wire
 		(pts
+			(xy 231.14 132.08) (xy 236.22 132.08)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "ec0a64c1-73eb-4114-8592-168fb17c622c")
+	)
+	(wire
+		(pts
 			(xy 149.86 335.28) (xy 149.86 330.2)
 		)
 		(stroke
@@ -25296,6 +25296,50 @@
 		)
 		(uuid "eae81f1f-274e-4c10-ad8a-cf565445b159")
 	)
+	(global_label "PLLS1"
+		(shape output)
+		(at 231.14 134.62 180)
+		(fields_autoplaced yes)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify right)
+		)
+		(uuid "0fd119db-679a-4b4b-a124-73f22dfa0588")
+		(property "Intersheetrefs" "${INTERSHEET_REFS}"
+			(at 222.4096 134.62 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify right)
+				(hide yes)
+			)
+		)
+	)
+	(global_label "PLLS0"
+		(shape output)
+		(at 231.14 132.08 180)
+		(fields_autoplaced yes)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify right)
+		)
+		(uuid "64893972-06a8-4b74-92f8-6f7888fde7b3")
+		(property "Intersheetrefs" "${INTERSHEET_REFS}"
+			(at 222.4096 132.08 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify right)
+				(hide yes)
+			)
+		)
+	)
 	(hierarchical_label "RTC_X2"
 		(shape passive)
 		(at 173.228 76.2 180)
@@ -25991,18 +26035,6 @@
 			(justify left)
 		)
 		(uuid "365e9297-4242-486a-a1dd-1f94fb58f688")
-	)
-	(hierarchical_label "PLLS0"
-		(shape output)
-		(at 231.14 132.08 180)
-		(fields_autoplaced yes)
-		(effects
-			(font
-				(size 1.27 1.27)
-			)
-			(justify right)
-		)
-		(uuid "371a7700-8074-46a8-a2d1-7e1c537f8470")
 	)
 	(hierarchical_label "GND"
 		(shape passive)
@@ -28187,18 +28219,6 @@
 			(justify left)
 		)
 		(uuid "cdb22db8-e641-43bd-b1ae-d988dff16c2c")
-	)
-	(hierarchical_label "PLLS1"
-		(shape output)
-		(at 231.14 134.62 180)
-		(fields_autoplaced yes)
-		(effects
-			(font
-				(size 1.27 1.27)
-			)
-			(justify right)
-		)
-		(uuid "cf5c494b-4419-46e7-a38b-6c28d2bc9885")
 	)
 	(hierarchical_label "PS2_KEYB_DAT"
 		(shape bidirectional)
