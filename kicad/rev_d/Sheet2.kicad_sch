@@ -25362,6 +25362,50 @@
 			)
 		)
 	)
+	(global_label "SDWPR"
+		(shape input)
+		(at 233.68 157.48 180)
+		(fields_autoplaced yes)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify right)
+		)
+		(uuid "e5d6f24d-e075-493a-bf22-89adb4a25302")
+		(property "Intersheetrefs" "${INTERSHEET_REFS}"
+			(at 224.2239 157.48 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify right)
+				(hide yes)
+			)
+		)
+	)
+	(global_label "SDDET"
+		(shape input)
+		(at 233.68 160.02 180)
+		(fields_autoplaced yes)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify right)
+		)
+		(uuid "e873cdb3-829a-4a7d-9dc7-c91b8511c8c8")
+		(property "Intersheetrefs" "${INTERSHEET_REFS}"
+			(at 224.8287 160.02 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify right)
+				(hide yes)
+			)
+		)
+	)
 	(hierarchical_label "RTC_X2"
 		(shape passive)
 		(at 173.228 76.2 180)
@@ -26525,18 +26569,6 @@
 			(justify right)
 		)
 		(uuid "645381b9-f545-4071-803b-a15931ac40b0")
-	)
-	(hierarchical_label "SDDET"
-		(shape input)
-		(at 233.68 160.02 180)
-		(fields_autoplaced yes)
-		(effects
-			(font
-				(size 1.27 1.27)
-			)
-			(justify right)
-		)
-		(uuid "6482f1a9-b3e9-4d85-be24-b8b82beccfa1")
 	)
 	(hierarchical_label "PS2_MOUS_DAT"
 		(shape bidirectional)
@@ -28733,18 +28765,6 @@
 			(justify right)
 		)
 		(uuid "fcad8a3f-f7c1-4ddc-91e8-5cf0b6c0f439")
-	)
-	(hierarchical_label "SDWPR"
-		(shape input)
-		(at 233.68 157.48 180)
-		(fields_autoplaced yes)
-		(effects
-			(font
-				(size 1.27 1.27)
-			)
-			(justify right)
-		)
-		(uuid "feec49d7-f1e8-4afb-aba5-f9b7131eca33")
 	)
 	(hierarchical_label "VCC12"
 		(shape passive)
