@@ -25584,6 +25584,12 @@
 		(uuid "a562674d-f558-4c9b-9366-023930819dd0")
 	)
 	(junction
+		(at 161.29 222.25)
+		(diameter 0)
+		(color 0 0 0 0)
+		(uuid "a8c3cea7-05c8-4f82-9498-fea2323f89cd")
+	)
+	(junction
 		(at 48.26 127)
 		(diameter 0)
 		(color 0 0 0 0)
@@ -29829,6 +29835,16 @@
 			(type default)
 		)
 		(uuid "03823798-0840-4a4e-81f0-fc8a78db574a")
+	)
+	(wire
+		(pts
+			(xy 161.29 220.98) (xy 161.29 222.25)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "03c94a47-1c3a-438f-b3ba-0b7439083c95")
 	)
 	(wire
 		(pts
@@ -34886,6 +34902,16 @@
 		)
 		(uuid "49b3cc22-bdac-481c-8878-e0e32cad7741")
 	)
+	(wire
+		(pts
+			(xy 160.02 220.98) (xy 161.29 220.98)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "49ea11c0-bfae-4202-9674-53b916548e02")
+	)
 	(bus
 		(pts
 			(xy 247.65 281.94) (xy 247.65 279.4)
@@ -35838,6 +35864,16 @@
 			(type default)
 		)
 		(uuid "57124a40-d95c-4559-8d8e-774f4caa0827")
+	)
+	(wire
+		(pts
+			(xy 162.56 222.25) (xy 161.29 222.25)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "573b272c-c9ea-4230-bfa3-9f7ad16e6419")
 	)
 	(wire
 		(pts
@@ -37837,6 +37873,16 @@
 			(type default)
 		)
 		(uuid "7889c27c-4dce-45a1-9c5d-16c616991614")
+	)
+	(wire
+		(pts
+			(xy 161.29 222.25) (xy 161.29 223.52)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "78a3b884-019c-4562-81e4-773db566fd97")
 	)
 	(wire
 		(pts
@@ -40236,6 +40282,16 @@
 	)
 	(wire
 		(pts
+			(xy 161.29 223.52) (xy 160.02 223.52)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "9a5c3644-601d-42f3-8a52-31567dc1fcea")
+	)
+	(wire
+		(pts
 			(xy 419.1 165.1) (xy 439.42 165.1)
 		)
 		(stroke
@@ -40815,16 +40871,6 @@
 			(type default)
 		)
 		(uuid "a24c3464-bd07-47a5-a690-c8931b249f71")
-	)
-	(wire
-		(pts
-			(xy 162.56 220.98) (xy 160.02 220.98)
-		)
-		(stroke
-			(width 0)
-			(type default)
-		)
-		(uuid "a24fc16f-6b68-4d43-90a3-466ff930a813")
 	)
 	(bus
 		(pts
@@ -48682,6 +48728,28 @@
 			)
 		)
 	)
+	(global_label "SPICK"
+		(shape input)
+		(at 160.02 152.4 0)
+		(fields_autoplaced yes)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify left)
+		)
+		(uuid "2768b431-82cf-4477-ad3e-c80fdcdca7de")
+		(property "Intersheetrefs" "${INTERSHEET_REFS}"
+			(at 168.6295 152.4 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left)
+				(hide yes)
+			)
+		)
+	)
 	(global_label "TDI_FPGA"
 		(shape input)
 		(at 160.02 231.14 0)
@@ -48766,6 +48834,28 @@
 					(size 1.27 1.27)
 				)
 				(justify right)
+				(hide yes)
+			)
+		)
+	)
+	(global_label "SPIDI"
+		(shape output)
+		(at 162.56 218.44 0)
+		(fields_autoplaced yes)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify left)
+		)
+		(uuid "3439e26f-f425-4188-bacc-ea234c4e4258")
+		(property "Intersheetrefs" "${INTERSHEET_REFS}"
+			(at 170.5043 218.44 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left)
 				(hide yes)
 			)
 		)
@@ -48924,6 +49014,28 @@
 			)
 		)
 	)
+	(global_label "SPICK"
+		(shape input)
+		(at 160.02 226.06 0)
+		(fields_autoplaced yes)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify left)
+		)
+		(uuid "43d87307-ed69-4ef1-9824-a448aeb276e1")
+		(property "Intersheetrefs" "${INTERSHEET_REFS}"
+			(at 168.6295 226.06 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left)
+				(hide yes)
+			)
+		)
+	)
 	(global_label "VCC3V3"
 		(shape passive)
 		(at 121.92 256.54 180)
@@ -49012,6 +49124,28 @@
 			)
 		)
 	)
+	(global_label "~{CONFIG}"
+		(shape input)
+		(at 160.02 353.06 0)
+		(fields_autoplaced yes)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify left)
+		)
+		(uuid "5896b906-087c-48f1-99e8-747f3d0f7ed3")
+		(property "Intersheetrefs" "${INTERSHEET_REFS}"
+			(at 169.8996 353.06 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left)
+				(hide yes)
+			)
+		)
+	)
 	(global_label "SDDET"
 		(shape output)
 		(at 396.24 109.22 0)
@@ -49047,6 +49181,28 @@
 		(uuid "58d276bb-6805-44d4-b6ca-433524b552d5")
 		(property "Intersheetrefs" "${INTERSHEET_REFS}"
 			(at 191.9732 284.48 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left)
+				(hide yes)
+			)
+		)
+	)
+	(global_label "~{SPIINT}"
+		(shape output)
+		(at 162.56 215.9 0)
+		(fields_autoplaced yes)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify left)
+		)
+		(uuid "649f2c2e-f8fb-4b12-a120-3e36108214e3")
+		(property "Intersheetrefs" "${INTERSHEET_REFS}"
+			(at 171.5324 215.9 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -49232,6 +49388,28 @@
 			)
 		)
 	)
+	(global_label "~{SPICS}"
+		(shape input)
+		(at 162.56 157.48 0)
+		(fields_autoplaced yes)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify left)
+		)
+		(uuid "86f1f1d4-d254-4af8-a885-ce11bbe50b35")
+		(property "Intersheetrefs" "${INTERSHEET_REFS}"
+			(at 171.109 157.48 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left)
+				(hide yes)
+			)
+		)
+	)
 	(global_label "GND"
 		(shape passive)
 		(at 255.27 267.97 0)
@@ -49386,6 +49564,28 @@
 			)
 		)
 	)
+	(global_label "CONFDONE"
+		(shape output)
+		(at 121.92 93.98 180)
+		(fields_autoplaced yes)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify right)
+		)
+		(uuid "afc0d94d-528e-450a-8048-5de1f4a416cf")
+		(property "Intersheetrefs" "${INTERSHEET_REFS}"
+			(at 108.8352 93.98 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify right)
+				(hide yes)
+			)
+		)
+	)
 	(global_label "GND"
 		(shape passive)
 		(at 281.94 226.06 0)
@@ -49404,6 +49604,28 @@
 					(size 1.27 1.27)
 				)
 				(justify left)
+				(hide yes)
+			)
+		)
+	)
+	(global_label "~{STATUS}"
+		(shape output)
+		(at 121.92 220.98 180)
+		(fields_autoplaced yes)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify right)
+		)
+		(uuid "b37cdbc0-442e-4e41-98c3-624a41f595ec")
+		(property "Intersheetrefs" "${INTERSHEET_REFS}"
+			(at 112.1615 220.98 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify right)
 				(hide yes)
 			)
 		)
@@ -49580,6 +49802,28 @@
 					(size 1.27 1.27)
 				)
 				(justify right)
+				(hide yes)
+			)
+		)
+	)
+	(global_label "SPIDO"
+		(shape input)
+		(at 162.56 222.25 0)
+		(fields_autoplaced yes)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify left)
+		)
+		(uuid "d54e93aa-0864-4004-abf1-995d301dc68c")
+		(property "Intersheetrefs" "${INTERSHEET_REFS}"
+			(at 171.23 222.25 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left)
 				(hide yes)
 			)
 		)
@@ -50782,18 +51026,6 @@
 		)
 		(uuid "19f303f7-b0d8-4095-a683-a135e3eb000d")
 	)
-	(hierarchical_label "SPIDI"
-		(shape output)
-		(at 162.56 218.44 0)
-		(fields_autoplaced yes)
-		(effects
-			(font
-				(size 1.27 1.27)
-			)
-			(justify left)
-		)
-		(uuid "1a1b0859-f509-4954-832b-efef03cdc305")
-	)
 	(hierarchical_label "D4"
 		(shape bidirectional)
 		(at 297.18 190.5 0)
@@ -51069,18 +51301,6 @@
 			(justify left)
 		)
 		(uuid "22f00d72-42ec-4ac4-bf65-5a06c14fbbc4")
-	)
-	(hierarchical_label "~{STATUS}"
-		(shape output)
-		(at 121.92 220.98 180)
-		(fields_autoplaced yes)
-		(effects
-			(font
-				(size 1.27 1.27)
-			)
-			(justify right)
-		)
-		(uuid "2306d304-e9ce-4c42-8dd0-becdce90e06e")
 	)
 	(hierarchical_label "AYA2"
 		(shape bidirectional)
@@ -52162,18 +52382,6 @@
 		)
 		(uuid "401783e4-35b2-46c4-9bc7-1c175632b774")
 	)
-	(hierarchical_label "SPICK"
-		(shape input)
-		(at 160.02 226.06 0)
-		(fields_autoplaced yes)
-		(effects
-			(font
-				(size 1.27 1.27)
-			)
-			(justify left)
-		)
-		(uuid "4091da35-6385-4202-a827-4779945e6d07")
-	)
 	(hierarchical_label "D2"
 		(shape bidirectional)
 		(at 297.18 185.42 0)
@@ -53194,18 +53402,6 @@
 		)
 		(uuid "5bef6b1d-1d1b-4074-baaa-4a21b8c3ed59")
 	)
-	(hierarchical_label "SPIDO"
-		(shape input)
-		(at 160.02 223.52 0)
-		(fields_autoplaced yes)
-		(effects
-			(font
-				(size 1.27 1.27)
-			)
-			(justify left)
-		)
-		(uuid "5c674fbb-f6b2-4c61-b47b-4a81f34cdb52")
-	)
 	(hierarchical_label "D4"
 		(shape bidirectional)
 		(at 119.38 124.46 180)
@@ -53445,18 +53641,6 @@
 			(justify right)
 		)
 		(uuid "61fa0a43-98e3-4668-b7b2-79585173e5da")
-	)
-	(hierarchical_label "~{CONFIG}"
-		(shape input)
-		(at 160.02 353.06 0)
-		(fields_autoplaced yes)
-		(effects
-			(font
-				(size 1.27 1.27)
-			)
-			(justify left)
-		)
-		(uuid "621cf274-3a3b-4d01-b14f-9f82cad1be80")
 	)
 	(hierarchical_label "GND"
 		(shape passive)
@@ -54549,18 +54733,6 @@
 			(justify left)
 		)
 		(uuid "7940b202-0a03-4178-9369-1598c6387071")
-	)
-	(hierarchical_label "~{SPICS}"
-		(shape input)
-		(at 162.56 157.48 0)
-		(fields_autoplaced yes)
-		(effects
-			(font
-				(size 1.27 1.27)
-			)
-			(justify left)
-		)
-		(uuid "79bc8792-d120-4e33-9b1d-62f2522b6e92")
 	)
 	(hierarchical_label "PRN_D7"
 		(shape output)
@@ -57322,18 +57494,6 @@
 		)
 		(uuid "c2535afc-0a9f-488f-bf3a-8616ee4f9c84")
 	)
-	(hierarchical_label "SPIDO"
-		(shape input)
-		(at 162.56 220.98 0)
-		(fields_autoplaced yes)
-		(effects
-			(font
-				(size 1.27 1.27)
-			)
-			(justify left)
-		)
-		(uuid "c2aad9b9-ef85-44c3-b29e-a51b390e4a43")
-	)
 	(hierarchical_label "ID4"
 		(shape bidirectional)
 		(at 280.67 285.75 0)
@@ -57706,18 +57866,6 @@
 		)
 		(uuid "cf76623f-07d8-4fcb-8786-2b43defc9fbb")
 	)
-	(hierarchical_label "CONFDONE"
-		(shape output)
-		(at 121.92 93.98 180)
-		(fields_autoplaced yes)
-		(effects
-			(font
-				(size 1.27 1.27)
-			)
-			(justify right)
-		)
-		(uuid "cf7f7432-c66a-4aaa-bebf-d1f11e775b39")
-	)
 	(hierarchical_label "~{INT}"
 		(shape bidirectional)
 		(at 27.94 330.2 0)
@@ -57897,18 +58045,6 @@
 			(justify right)
 		)
 		(uuid "d21f7821-1189-4196-a08d-a792631620fd")
-	)
-	(hierarchical_label "~{SPIINT}"
-		(shape output)
-		(at 162.56 215.9 0)
-		(fields_autoplaced yes)
-		(effects
-			(font
-				(size 1.27 1.27)
-			)
-			(justify left)
-		)
-		(uuid "d26cf11c-43cd-484c-8346-42f2e6871a25")
 	)
 	(hierarchical_label "ID9"
 		(shape bidirectional)
@@ -58533,18 +58669,6 @@
 			(justify right)
 		)
 		(uuid "e5282989-07ab-4ba7-84fb-be939a2483ea")
-	)
-	(hierarchical_label "SPICK"
-		(shape input)
-		(at 160.02 152.4 0)
-		(fields_autoplaced yes)
-		(effects
-			(font
-				(size 1.27 1.27)
-			)
-			(justify left)
-		)
-		(uuid "e5290ad0-e7b9-4e0b-a226-2ee43e5f1147")
 	)
 	(hierarchical_label "IDE_RDY"
 		(shape output)
