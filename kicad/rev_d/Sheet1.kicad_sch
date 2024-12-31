@@ -48430,6 +48430,28 @@
 			)
 		)
 	)
+	(global_label "VCC3V3"
+		(shape passive)
+		(at 328.93 82.55 0)
+		(fields_autoplaced yes)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify left)
+		)
+		(uuid "11f09a97-47d0-4706-8f2e-fea7fcc5ea37")
+		(property "Intersheetrefs" "${INTERSHEET_REFS}"
+			(at 337.9401 82.55 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left)
+				(hide yes)
+			)
+		)
+	)
 	(global_label "AGND"
 		(shape passive)
 		(at 317.5 368.3 180)
@@ -48470,6 +48492,28 @@
 					(size 1.27 1.27)
 				)
 				(justify right)
+				(hide yes)
+			)
+		)
+	)
+	(global_label "VCC3V3"
+		(shape passive)
+		(at 160.02 200.66 0)
+		(fields_autoplaced yes)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify left)
+		)
+		(uuid "19ca4313-cb14-410a-ae45-4712d9ea8961")
+		(property "Intersheetrefs" "${INTERSHEET_REFS}"
+			(at 169.0301 200.66 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left)
 				(hide yes)
 			)
 		)
@@ -48518,6 +48562,28 @@
 			)
 		)
 	)
+	(global_label "VCC3V3"
+		(shape input)
+		(at 121.92 218.44 180)
+		(fields_autoplaced yes)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify right)
+		)
+		(uuid "1c84ceae-21ee-42af-bc04-e8a48236b906")
+		(property "Intersheetrefs" "${INTERSHEET_REFS}"
+			(at 111.7986 218.44 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify right)
+				(hide yes)
+			)
+		)
+	)
 	(global_label "AGND"
 		(shape passive)
 		(at 406.4 274.32 180)
@@ -48562,6 +48628,94 @@
 			)
 		)
 	)
+	(global_label "VCC3V3"
+		(shape passive)
+		(at 121.92 195.58 180)
+		(fields_autoplaced yes)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify right)
+		)
+		(uuid "22739ff6-6db4-4de5-8104-9eb901adeef1")
+		(property "Intersheetrefs" "${INTERSHEET_REFS}"
+			(at 112.9099 195.58 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify right)
+				(hide yes)
+			)
+		)
+	)
+	(global_label "VCC3V3"
+		(shape passive)
+		(at 121.92 302.26 180)
+		(fields_autoplaced yes)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify right)
+		)
+		(uuid "25ef3fa4-078c-471a-8d3d-ac1c7f7a605e")
+		(property "Intersheetrefs" "${INTERSHEET_REFS}"
+			(at 112.9099 302.26 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify right)
+				(hide yes)
+			)
+		)
+	)
+	(global_label "TDI_FPGA"
+		(shape input)
+		(at 160.02 231.14 0)
+		(fields_autoplaced yes)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify left)
+		)
+		(uuid "2a19219c-66df-4aaf-a296-9935481e8ec9")
+		(property "Intersheetrefs" "${INTERSHEET_REFS}"
+			(at 171.5324 231.14 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left)
+				(hide yes)
+			)
+		)
+	)
+	(global_label "VCC3V3"
+		(shape passive)
+		(at 309.88 350.52 180)
+		(fields_autoplaced yes)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify right)
+		)
+		(uuid "2b3986d2-da05-442c-9c8c-2b2ea4e7e9ae")
+		(property "Intersheetrefs" "${INTERSHEET_REFS}"
+			(at 300.8699 350.52 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify right)
+				(hide yes)
+			)
+		)
+	)
 	(global_label "SDWPR"
 		(shape output)
 		(at 467.36 106.68 0)
@@ -48575,6 +48729,28 @@
 		(uuid "31b92132-6f45-4df1-b972-baec9827a5f6")
 		(property "Intersheetrefs" "${INTERSHEET_REFS}"
 			(at 476.8161 106.68 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left)
+				(hide yes)
+			)
+		)
+	)
+	(global_label "VCC3V3"
+		(shape passive)
+		(at 160.02 167.64 0)
+		(fields_autoplaced yes)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify left)
+		)
+		(uuid "38b95dbb-524d-47df-bac6-5b540aa1ba93")
+		(property "Intersheetrefs" "${INTERSHEET_REFS}"
+			(at 169.0301 167.64 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -48650,6 +48826,28 @@
 			)
 		)
 	)
+	(global_label "TCK_FPGA"
+		(shape input)
+		(at 121.92 91.44 180)
+		(fields_autoplaced yes)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify right)
+		)
+		(uuid "3e4d7fb9-c6c4-4a60-9e66-79abef5489fc")
+		(property "Intersheetrefs" "${INTERSHEET_REFS}"
+			(at 109.7424 91.44 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify right)
+				(hide yes)
+			)
+		)
+	)
 	(global_label "VCC5"
 		(shape passive)
 		(at 212.09 175.26 180)
@@ -48685,6 +48883,28 @@
 		(uuid "43abd919-1bc0-43ef-92c6-2ef629c4ae7f")
 		(property "Intersheetrefs" "${INTERSHEET_REFS}"
 			(at 324.9394 289.56 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify right)
+				(hide yes)
+			)
+		)
+	)
+	(global_label "VCC3V3"
+		(shape passive)
+		(at 121.92 256.54 180)
+		(fields_autoplaced yes)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify right)
+		)
+		(uuid "47f051b9-07ed-4675-a2b2-f138ae394bd8")
+		(property "Intersheetrefs" "${INTERSHEET_REFS}"
+			(at 112.9099 256.54 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -48738,6 +48958,28 @@
 			)
 		)
 	)
+	(global_label "TMS_FPGA"
+		(shape input)
+		(at 121.92 215.9 180)
+		(fields_autoplaced yes)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify right)
+		)
+		(uuid "4f0f408c-4abf-403e-9dc8-e4f602ff1917")
+		(property "Intersheetrefs" "${INTERSHEET_REFS}"
+			(at 109.6215 215.9 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify right)
+				(hide yes)
+			)
+		)
+	)
 	(global_label "SDDET"
 		(shape output)
 		(at 396.24 109.22 0)
@@ -48756,6 +48998,72 @@
 					(size 1.27 1.27)
 				)
 				(justify left)
+				(hide yes)
+			)
+		)
+	)
+	(global_label "VCC3V3"
+		(shape passive)
+		(at 121.92 175.26 180)
+		(fields_autoplaced yes)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify right)
+		)
+		(uuid "651b1aa2-5b77-4851-b6e0-28489bc00086")
+		(property "Intersheetrefs" "${INTERSHEET_REFS}"
+			(at 112.9099 175.26 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify right)
+				(hide yes)
+			)
+		)
+	)
+	(global_label "VCC3V3"
+		(shape passive)
+		(at 121.92 337.82 180)
+		(fields_autoplaced yes)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify right)
+		)
+		(uuid "69718f98-1aaa-42be-a1e0-68d727c4ff42")
+		(property "Intersheetrefs" "${INTERSHEET_REFS}"
+			(at 112.9099 337.82 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify right)
+				(hide yes)
+			)
+		)
+	)
+	(global_label "TDO_FPGA"
+		(shape output)
+		(at 121.92 99.06 180)
+		(fields_autoplaced yes)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify right)
+		)
+		(uuid "6b76f731-b893-4146-bb30-08d23ce7d736")
+		(property "Intersheetrefs" "${INTERSHEET_REFS}"
+			(at 109.6819 99.06 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify right)
 				(hide yes)
 			)
 		)
@@ -48817,6 +49125,28 @@
 		(uuid "7e5df272-e651-471f-9ad3-7b12ebd75c93")
 		(property "Intersheetrefs" "${INTERSHEET_REFS}"
 			(at 241.662 167.64 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left)
+				(hide yes)
+			)
+		)
+	)
+	(global_label "VCC3V3"
+		(shape passive)
+		(at 190.5 365.76 0)
+		(fields_autoplaced yes)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify left)
+		)
+		(uuid "804a6aa5-7851-4ac1-8332-47358810980b")
+		(property "Intersheetrefs" "${INTERSHEET_REFS}"
+			(at 199.5101 365.76 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -48914,6 +49244,28 @@
 			)
 		)
 	)
+	(global_label "VCC3V3"
+		(shape passive)
+		(at 121.92 101.6 180)
+		(fields_autoplaced yes)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify right)
+		)
+		(uuid "a482fe6a-84f3-4416-afe1-5b09e35a3dbd")
+		(property "Intersheetrefs" "${INTERSHEET_REFS}"
+			(at 112.9099 101.6 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify right)
+				(hide yes)
+			)
+		)
+	)
 	(global_label "PLLS0"
 		(shape input)
 		(at 234.95 162.56 0)
@@ -48936,6 +49288,28 @@
 			)
 		)
 	)
+	(global_label "VCC3V3"
+		(shape passive)
+		(at 160.02 320.04 0)
+		(fields_autoplaced yes)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify left)
+		)
+		(uuid "afadc990-21e8-4ad9-96e7-48254abc6e07")
+		(property "Intersheetrefs" "${INTERSHEET_REFS}"
+			(at 169.0301 320.04 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left)
+				(hide yes)
+			)
+		)
+	)
 	(global_label "GND"
 		(shape passive)
 		(at 281.94 226.06 0)
@@ -48949,6 +49323,28 @@
 		(uuid "b14adffa-87be-48b1-8981-b117d49ead10")
 		(property "Intersheetrefs" "${INTERSHEET_REFS}"
 			(at 287.6844 226.06 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left)
+				(hide yes)
+			)
+		)
+	)
+	(global_label "VCC3V3"
+		(shape passive)
+		(at 160.02 269.24 0)
+		(fields_autoplaced yes)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify left)
+		)
+		(uuid "b7ae4edd-c9c9-4f08-ad02-4c95043cdd79")
+		(property "Intersheetrefs" "${INTERSHEET_REFS}"
+			(at 169.0301 269.24 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -49020,6 +49416,50 @@
 					(size 1.27 1.27)
 				)
 				(justify right)
+				(hide yes)
+			)
+		)
+	)
+	(global_label "VCC3V3"
+		(shape passive)
+		(at 121.92 144.78 180)
+		(fields_autoplaced yes)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify right)
+		)
+		(uuid "c66a5ac9-096d-4710-a821-0d91d3384d7b")
+		(property "Intersheetrefs" "${INTERSHEET_REFS}"
+			(at 112.9099 144.78 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify right)
+				(hide yes)
+			)
+		)
+	)
+	(global_label "VCC3V3"
+		(shape passive)
+		(at 160.02 340.36 0)
+		(fields_autoplaced yes)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify left)
+		)
+		(uuid "cd4dc070-a195-49e2-b558-e182c2db4a64")
+		(property "Intersheetrefs" "${INTERSHEET_REFS}"
+			(at 169.0301 340.36 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left)
 				(hide yes)
 			)
 		)
@@ -49112,6 +49552,28 @@
 			)
 		)
 	)
+	(global_label "VCC3V3"
+		(shape passive)
+		(at 160.02 248.92 0)
+		(fields_autoplaced yes)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify left)
+		)
+		(uuid "e2e94e2d-4fb4-475a-a659-af59af4fd070")
+		(property "Intersheetrefs" "${INTERSHEET_REFS}"
+			(at 169.0301 248.92 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left)
+				(hide yes)
+			)
+		)
+	)
 	(global_label "AGND"
 		(shape passive)
 		(at 464.82 280.67 270)
@@ -49152,6 +49614,28 @@
 					(size 1.27 1.27)
 				)
 				(justify right)
+				(hide yes)
+			)
+		)
+	)
+	(global_label "VCC3V3"
+		(shape passive)
+		(at 160.02 127 0)
+		(fields_autoplaced yes)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify left)
+		)
+		(uuid "fd67f7ef-9112-403e-8bec-7ab9ddf7db4d")
+		(property "Intersheetrefs" "${INTERSHEET_REFS}"
+			(at 169.0301 127 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left)
 				(hide yes)
 			)
 		)
@@ -49816,18 +50300,6 @@
 		)
 		(uuid "103da77a-0b62-4089-8ba3-bb3e6f21a1bd")
 	)
-	(hierarchical_label "VCC3V3"
-		(shape passive)
-		(at 121.92 175.26 180)
-		(fields_autoplaced yes)
-		(effects
-			(font
-				(size 1.27 1.27)
-			)
-			(justify right)
-		)
-		(uuid "10f730a0-b67a-4289-979c-1b17c9dcde5d")
-	)
 	(hierarchical_label "IDE_A1"
 		(shape output)
 		(at 119.38 350.52 180)
@@ -50416,18 +50888,6 @@
 		)
 		(uuid "1fd41638-7a07-474f-b24b-581fff6b92a1")
 	)
-	(hierarchical_label "VCC3V3"
-		(shape input)
-		(at 121.92 218.44 180)
-		(fields_autoplaced yes)
-		(effects
-			(font
-				(size 1.27 1.27)
-			)
-			(justify right)
-		)
-		(uuid "1ffe8a34-1f6c-402e-9210-8aed0e5422eb")
-	)
 	(hierarchical_label "WG"
 		(shape output)
 		(at 381 203.2 0)
@@ -50620,18 +51080,6 @@
 		)
 		(uuid "25801994-984d-4fd1-ae37-ff0e3f8bc8ab")
 	)
-	(hierarchical_label "VCC3V3"
-		(shape passive)
-		(at 160.02 269.24 0)
-		(fields_autoplaced yes)
-		(effects
-			(font
-				(size 1.27 1.27)
-			)
-			(justify left)
-		)
-		(uuid "263dc389-2dbc-401f-8edd-4b0d36555d33")
-	)
 	(hierarchical_label "VG_CLK"
 		(shape output)
 		(at 119.38 231.14 180)
@@ -50823,18 +51271,6 @@
 			(justify left)
 		)
 		(uuid "2a7bc91a-ad90-42eb-b96b-ec405d7c6a7c")
-	)
-	(hierarchical_label "VCC3V3"
-		(shape passive)
-		(at 160.02 200.66 0)
-		(fields_autoplaced yes)
-		(effects
-			(font
-				(size 1.27 1.27)
-			)
-			(justify left)
-		)
-		(uuid "2aac6562-a25e-431f-98ab-e023e59eb0cb")
 	)
 	(hierarchical_label "~{IDE_CS1}"
 		(shape input)
@@ -52768,18 +53204,6 @@
 		)
 		(uuid "5e34205c-15bd-4c82-9781-18d505df778a")
 	)
-	(hierarchical_label "TCK_FPGA"
-		(shape input)
-		(at 121.92 91.44 180)
-		(fields_autoplaced yes)
-		(effects
-			(font
-				(size 1.27 1.27)
-			)
-			(justify right)
-		)
-		(uuid "5ed7fc15-d3b7-420a-baa1-46d823e475fa")
-	)
 	(hierarchical_label "AYA5"
 		(shape bidirectional)
 		(at 396.24 261.62 0)
@@ -52972,18 +53396,6 @@
 		)
 		(uuid "624d373e-b54d-4ad0-a655-57005204b2c7")
 	)
-	(hierarchical_label "VCC3V3"
-		(shape passive)
-		(at 121.92 337.82 180)
-		(fields_autoplaced yes)
-		(effects
-			(font
-				(size 1.27 1.27)
-			)
-			(justify right)
-		)
-		(uuid "625d0a9c-fd9d-4f7b-9577-9ffda04d2fa1")
-	)
 	(hierarchical_label "~{RES}"
 		(shape bidirectional)
 		(at 27.94 261.62 0)
@@ -53043,18 +53455,6 @@
 			(justify right)
 		)
 		(uuid "63fc6fb6-11c3-4c6a-96b0-b8f422e2c212")
-	)
-	(hierarchical_label "VCC3V3"
-		(shape passive)
-		(at 160.02 248.92 0)
-		(fields_autoplaced yes)
-		(effects
-			(font
-				(size 1.27 1.27)
-			)
-			(justify left)
-		)
-		(uuid "64089b73-a887-47be-b92c-d84846aba7b4")
 	)
 	(hierarchical_label "~{RD}"
 		(shape output)
@@ -53175,18 +53575,6 @@
 			(justify left)
 		)
 		(uuid "65ce5d5d-a488-4bdb-96f0-ac3c9d5d0e0b")
-	)
-	(hierarchical_label "VCC3V3"
-		(shape passive)
-		(at 121.92 256.54 180)
-		(fields_autoplaced yes)
-		(effects
-			(font
-				(size 1.27 1.27)
-			)
-			(justify right)
-		)
-		(uuid "65e8c401-4177-49cc-a74b-482fe69c53a3")
 	)
 	(hierarchical_label "GND"
 		(shape passive)
@@ -54016,18 +54404,6 @@
 		)
 		(uuid "7782fb7e-4f5f-47b6-8a2d-7d8efdd9e8b2")
 	)
-	(hierarchical_label "VCC3V3"
-		(shape passive)
-		(at 160.02 320.04 0)
-		(fields_autoplaced yes)
-		(effects
-			(font
-				(size 1.27 1.27)
-			)
-			(justify left)
-		)
-		(uuid "7786baed-9be3-42dc-8631-d847b095158d")
-	)
 	(hierarchical_label "A7"
 		(shape output)
 		(at 27.94 162.56 0)
@@ -54196,18 +54572,6 @@
 		)
 		(uuid "7b850e85-568a-4ac5-8471-c09efea8d28c")
 	)
-	(hierarchical_label "VCC3V3"
-		(shape passive)
-		(at 160.02 127 0)
-		(fields_autoplaced yes)
-		(effects
-			(font
-				(size 1.27 1.27)
-			)
-			(justify left)
-		)
-		(uuid "7b8f5eee-cd35-4997-91ee-6a7ee1f3213c")
-	)
 	(hierarchical_label "~{TR00}"
 		(shape input)
 		(at 444.5 187.96 0)
@@ -54303,18 +54667,6 @@
 			(justify left)
 		)
 		(uuid "7d8eeeea-d74d-40ed-b97e-8718fc352603")
-	)
-	(hierarchical_label "VCC3V3"
-		(shape passive)
-		(at 121.92 302.26 180)
-		(fields_autoplaced yes)
-		(effects
-			(font
-				(size 1.27 1.27)
-			)
-			(justify right)
-		)
-		(uuid "7d909fba-b4eb-493f-a0f6-e08dd09948e9")
 	)
 	(hierarchical_label "~{M1}"
 		(shape input)
@@ -56008,18 +56360,6 @@
 		)
 		(uuid "aa3090af-f1ac-4c4a-aa59-dcfca8515dad")
 	)
-	(hierarchical_label "VCC3V3"
-		(shape passive)
-		(at 121.92 195.58 180)
-		(fields_autoplaced yes)
-		(effects
-			(font
-				(size 1.27 1.27)
-			)
-			(justify right)
-		)
-		(uuid "aa393d3c-784f-4c47-83d7-c78aa30a7b26")
-	)
 	(hierarchical_label "~{RWE}"
 		(shape output)
 		(at 241.3 111.76 0)
@@ -56644,30 +56984,6 @@
 		)
 		(uuid "bc177236-d07b-49ab-8012-b6774c896d42")
 	)
-	(hierarchical_label "VCC3V3"
-		(shape passive)
-		(at 309.88 350.52 180)
-		(fields_autoplaced yes)
-		(effects
-			(font
-				(size 1.27 1.27)
-			)
-			(justify right)
-		)
-		(uuid "bc1efe20-53a7-4c08-9fa5-57c4543ae3b3")
-	)
-	(hierarchical_label "TDO_FPGA"
-		(shape output)
-		(at 121.92 99.06 180)
-		(fields_autoplaced yes)
-		(effects
-			(font
-				(size 1.27 1.27)
-			)
-			(justify right)
-		)
-		(uuid "bc77b048-0cdd-4e8f-931f-0b9167119146")
-	)
 	(hierarchical_label "GND"
 		(shape passive)
 		(at 222.25 267.97 180)
@@ -56824,18 +57140,6 @@
 		)
 		(uuid "bf67d932-f688-4b02-ba18-d1388b06666d")
 	)
-	(hierarchical_label "VCC3V3"
-		(shape passive)
-		(at 121.92 144.78 180)
-		(fields_autoplaced yes)
-		(effects
-			(font
-				(size 1.27 1.27)
-			)
-			(justify right)
-		)
-		(uuid "bf69c73a-b545-4a44-8ebc-cfe12aec07cc")
-	)
 	(hierarchical_label "D0"
 		(shape bidirectional)
 		(at 119.38 134.62 180)
@@ -56871,18 +57175,6 @@
 			(justify left)
 		)
 		(uuid "c05418bb-90de-4090-a327-a4a6c307744d")
-	)
-	(hierarchical_label "TMS_FPGA"
-		(shape input)
-		(at 121.92 215.9 180)
-		(fields_autoplaced yes)
-		(effects
-			(font
-				(size 1.27 1.27)
-			)
-			(justify right)
-		)
-		(uuid "c0aa2d26-2d20-4baf-84a8-57bf0c658792")
 	)
 	(hierarchical_label "D6"
 		(shape bidirectional)
@@ -56943,18 +57235,6 @@
 			(justify left)
 		)
 		(uuid "c1a6f014-4455-44f5-9719-c864fb68595b")
-	)
-	(hierarchical_label "VCC3V3"
-		(shape passive)
-		(at 121.92 101.6 180)
-		(fields_autoplaced yes)
-		(effects
-			(font
-				(size 1.27 1.27)
-			)
-			(justify right)
-		)
-		(uuid "c1dd9a33-6d96-4acf-9e64-7253e3b6400a")
 	)
 	(hierarchical_label "IDE_D2"
 		(shape bidirectional)
@@ -57664,18 +57944,6 @@
 		)
 		(uuid "d45b125c-f0a1-42ae-926d-ae7c2538bc07")
 	)
-	(hierarchical_label "TDI_FPGA"
-		(shape input)
-		(at 160.02 231.14 0)
-		(fields_autoplaced yes)
-		(effects
-			(font
-				(size 1.27 1.27)
-			)
-			(justify left)
-		)
-		(uuid "d4b2f5ec-f2dc-4e09-8cb5-76d0ac5cf24e")
-	)
 	(hierarchical_label "VCC5"
 		(shape passive)
 		(at 349.25 214.63 0)
@@ -57832,18 +58100,6 @@
 		)
 		(uuid "d8dcc3d0-dc2b-40bf-aaea-29928d7b7b70")
 	)
-	(hierarchical_label "VCC3V3"
-		(shape passive)
-		(at 160.02 340.36 0)
-		(fields_autoplaced yes)
-		(effects
-			(font
-				(size 1.27 1.27)
-			)
-			(justify left)
-		)
-		(uuid "d98e9f35-8fa1-4c3b-89fa-3b3a5e60295e")
-	)
 	(hierarchical_label "A11"
 		(shape output)
 		(at 60.96 66.04 90)
@@ -57939,18 +58195,6 @@
 			(justify left)
 		)
 		(uuid "dd55f3de-e5b7-45ae-9aed-5401d0790858")
-	)
-	(hierarchical_label "VCC3V3"
-		(shape passive)
-		(at 190.5 365.76 0)
-		(fields_autoplaced yes)
-		(effects
-			(font
-				(size 1.27 1.27)
-			)
-			(justify left)
-		)
-		(uuid "ddff3015-7e57-46ed-92ab-f169db46948f")
 	)
 	(hierarchical_label "GND"
 		(shape passive)
@@ -58359,18 +58603,6 @@
 			(justify right)
 		)
 		(uuid "e88178e4-1583-47f6-ab95-ae369f0b0909")
-	)
-	(hierarchical_label "VCC3V3"
-		(shape passive)
-		(at 160.02 167.64 0)
-		(fields_autoplaced yes)
-		(effects
-			(font
-				(size 1.27 1.27)
-			)
-			(justify left)
-		)
-		(uuid "e8b7257a-3eec-48d0-91c9-193baa454acc")
 	)
 	(hierarchical_label "SDDI"
 		(shape output)
@@ -59079,18 +59311,6 @@
 			(justify right)
 		)
 		(uuid "fbbc0f03-5191-4f34-bd14-ed44a732e776")
-	)
-	(hierarchical_label "VCC3V3"
-		(shape passive)
-		(at 328.93 82.55 0)
-		(fields_autoplaced yes)
-		(effects
-			(font
-				(size 1.27 1.27)
-			)
-			(justify left)
-		)
-		(uuid "fbc8e6dd-d103-44e0-9047-d22474d4bed3")
 	)
 	(hierarchical_label "VCC5"
 		(shape passive)
