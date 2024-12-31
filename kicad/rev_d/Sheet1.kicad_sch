@@ -44963,6 +44963,16 @@
 	)
 	(wire
 		(pts
+			(xy 74.93 401.32) (xy 76.2 401.32)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "d99304e8-b410-4c07-b207-fb1d00f36a45")
+	)
+	(wire
+		(pts
 			(xy 27.94 172.72) (xy 33.02 172.72)
 		)
 		(stroke
@@ -48738,6 +48748,28 @@
 			)
 		)
 	)
+	(global_label "VCC12"
+		(shape passive)
+		(at 74.93 401.32 180)
+		(fields_autoplaced yes)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify right)
+		)
+		(uuid "32ad89da-bb02-48c2-96b0-9b833f4bc578")
+		(property "Intersheetrefs" "${INTERSHEET_REFS}"
+			(at 67.0085 401.32 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify right)
+				(hide yes)
+			)
+		)
+	)
 	(global_label "VCC3V3"
 		(shape passive)
 		(at 160.02 167.64 0)
@@ -48993,6 +49025,28 @@
 		(uuid "58d1bd0d-53a0-4176-86bf-51cb8c2004e9")
 		(property "Intersheetrefs" "${INTERSHEET_REFS}"
 			(at 405.0913 109.22 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left)
+				(hide yes)
+			)
+		)
+	)
+	(global_label "BEEP"
+		(shape output)
+		(at 184.15 284.48 0)
+		(fields_autoplaced yes)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify left)
+		)
+		(uuid "58d276bb-6805-44d4-b6ca-433524b552d5")
+		(property "Intersheetrefs" "${INTERSHEET_REFS}"
+			(at 191.9732 284.48 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -49279,6 +49333,28 @@
 		(uuid "a98782e6-c941-48f8-8c0d-5b93dba27525")
 		(property "Intersheetrefs" "${INTERSHEET_REFS}"
 			(at 243.6804 162.56 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left)
+				(hide yes)
+			)
+		)
+	)
+	(global_label "VCC12"
+		(shape passive)
+		(at 342.9 143.51 0)
+		(fields_autoplaced yes)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify left)
+		)
+		(uuid "acc4c720-1b08-4df8-903a-5ff3dfdb0a50")
+		(property "Intersheetrefs" "${INTERSHEET_REFS}"
+			(at 350.8215 143.51 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -49609,6 +49685,28 @@
 		(uuid "f548d6c4-084b-45b5-b02d-8323414a0462")
 		(property "Intersheetrefs" "${INTERSHEET_REFS}"
 			(at 255.27 177.1944 90)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify right)
+				(hide yes)
+			)
+		)
+	)
+	(global_label "VCC12"
+		(shape passive)
+		(at 29.21 393.7 180)
+		(fields_autoplaced yes)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify right)
+		)
+		(uuid "f944660a-70fe-4d56-a7e6-547c780b7aff")
+		(property "Intersheetrefs" "${INTERSHEET_REFS}"
+			(at 21.2885 393.7 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -51391,18 +51489,6 @@
 			(justify right)
 		)
 		(uuid "2e788b56-10a8-491c-807e-e4629b3411ba")
-	)
-	(hierarchical_label "VCC12"
-		(shape passive)
-		(at 30.48 394.97 180)
-		(fields_autoplaced yes)
-		(effects
-			(font
-				(size 1.27 1.27)
-			)
-			(justify right)
-		)
-		(uuid "2ed15a18-e326-425c-a193-4bfb076362a8")
 	)
 	(hierarchical_label "A2"
 		(shape input)
@@ -55064,18 +55150,6 @@
 		)
 		(uuid "882d7648-2437-451b-8b40-d8ef1341ddf9")
 	)
-	(hierarchical_label "BEEP"
-		(shape output)
-		(at 184.15 284.48 0)
-		(fields_autoplaced yes)
-		(effects
-			(font
-				(size 1.27 1.27)
-			)
-			(justify left)
-		)
-		(uuid "883482d1-a508-45c8-abe3-61d5f409ba94")
-	)
 	(hierarchical_label "~{RUCAS}"
 		(shape input)
 		(at 294.64 111.76 0)
@@ -55366,7 +55440,7 @@
 	)
 	(hierarchical_label "VCC12S"
 		(shape passive)
-		(at 38.1 394.97 0)
+		(at 36.83 393.7 0)
 		(fields_autoplaced yes)
 		(effects
 			(font
@@ -55603,18 +55677,6 @@
 			(justify right)
 		)
 		(uuid "97167604-35d1-4a21-83a8-cbaa1254c4bc")
-	)
-	(hierarchical_label "VCC12"
-		(shape passive)
-		(at 76.2 401.32 180)
-		(fields_autoplaced yes)
-		(effects
-			(font
-				(size 1.27 1.27)
-			)
-			(justify right)
-		)
-		(uuid "97464e2c-40d8-4d58-ad51-5a24c9387409")
 	)
 	(hierarchical_label "VG_RAWR"
 		(shape input)
@@ -57451,18 +57513,6 @@
 			(justify left)
 		)
 		(uuid "ca48c061-14c8-4cbd-9b70-1b92520313be")
-	)
-	(hierarchical_label "VCC12"
-		(shape passive)
-		(at 342.9 143.51 0)
-		(fields_autoplaced yes)
-		(effects
-			(font
-				(size 1.27 1.27)
-			)
-			(justify left)
-		)
-		(uuid "ca807921-6146-44fe-b4ea-ac1d9e72e5b4")
 	)
 	(hierarchical_label "DAT2"
 		(shape bidirectional)
@@ -69868,7 +69918,7 @@
 		(dnp no)
 		(uuid "b0b78db4-0d83-4f39-b846-582b110c7f7b")
 		(property "Reference" "R96"
-			(at 176.53 281.94 90)
+			(at 176.022 282.194 90)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -74105,7 +74155,7 @@
 	)
 	(symbol
 		(lib_id "eva-altium-import:Sheet1_0_JUMPER")
-		(at 30.48 394.97 0)
+		(at 29.21 393.7 0)
 		(unit 1)
 		(exclude_from_sim no)
 		(in_bom yes)
@@ -74113,7 +74163,7 @@
 		(dnp no)
 		(uuid "ef149386-12d2-43f7-99b3-ee4aacc6aa2f")
 		(property "Reference" "J4"
-			(at 34.29 393.7 0)
+			(at 33.02 392.43 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -74122,7 +74172,7 @@
 			)
 		)
 		(property "Value" "JUMPER"
-			(at 30.48 394.97 0)
+			(at 29.21 393.7 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -74132,7 +74182,7 @@
 			)
 		)
 		(property "Footprint" "JUMPER"
-			(at 30.48 394.97 0)
+			(at 29.21 393.7 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -74141,7 +74191,7 @@
 			)
 		)
 		(property "Datasheet" ""
-			(at 30.48 394.97 0)
+			(at 29.21 393.7 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -74150,7 +74200,7 @@
 			)
 		)
 		(property "Description" "12V enable"
-			(at 34.036 397.256 0)
+			(at 32.766 396.494 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -74158,7 +74208,7 @@
 			)
 		)
 		(property "ALTIUM_VALUE" "*"
-			(at 30.48 394.97 0)
+			(at 29.21 393.7 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -74168,7 +74218,7 @@
 			)
 		)
 		(property "DESCRIPTION" "enable IDERES"
-			(at 34.29 396.24 0)
+			(at 33.02 394.97 0)
 			(effects
 				(font
 					(size 1.27 1.27)
