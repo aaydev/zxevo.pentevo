@@ -6,7 +6,7 @@
 
 **ВНИМАНИЕ!** **Изделие поставляется независимым производителем. Обращаться по поводу приобретения к Виталию [tetroid@inbox.ru](mailto:tetroid@inbox.ru).**
 
-* * *
+- - -
 
 [![zxevo rev.C](%D0%9A%D0%BE%D0%BC%D0%BF%D1%8C%D1%8E%D1%82%D0%B5%D1%80-%D0%BA%D0%BE%D0%BD%D1%81%D1%82%D1%80%D1%83%D0%BA%D1%82%D0%BE%D1%80%20ZX%20Evolution_files/zxevo_sm_top_c.jpg)](http://nedopc.com/zxevo/zxevo_top_c.jpg) [![zxevo rev.C](%D0%9A%D0%BE%D0%BC%D0%BF%D1%8C%D1%8E%D1%82%D0%B5%D1%80-%D0%BA%D0%BE%D0%BD%D1%81%D1%82%D1%80%D1%83%D0%BA%D1%82%D0%BE%D1%80%20ZX%20Evolution_files/zxevo_sm_bot_c.jpg)](http://nedopc.com/zxevo/zxevo_bot_c.jpg) [![zxevo rev.C](%D0%9A%D0%BE%D0%BC%D0%BF%D1%8C%D1%8E%D1%82%D0%B5%D1%80-%D0%BA%D0%BE%D0%BD%D1%81%D1%82%D1%80%D1%83%D0%BA%D1%82%D0%BE%D1%80%20ZX%20Evolution_files/zxevo_sm_mnt_c.jpg)](http://nedopc.com/zxevo/zxevo_mnt_c.jpg) [![zxevo rev.C](%D0%9A%D0%BE%D0%BC%D0%BF%D1%8C%D1%8E%D1%82%D0%B5%D1%80-%D0%BA%D0%BE%D0%BD%D1%81%D1%82%D1%80%D1%83%D0%BA%D1%82%D0%BE%D1%80%20ZX%20Evolution_files/zxevo_sm_front_c.jpg)](http://nedopc.com/zxevo/zxevo_front_c.jpg)  
 
@@ -58,89 +58,13 @@ Cписок деталей (revision C) [здесь](http://nedopc.com/zxevo/zxe
 
 ### Прошивки и Документация:
 
-**Название**
-
-**Версия**
-
-**Назначение**
-
-**Документация**
-
-**Файлы**
-
-**SVN**
-
-**_EVO RESET SERVICE FE,  
-EVO DOS FE,  
-EVO PROF_**
-
-latest
-
-Улучшен эмулятор дисководов, теперь он работает с неизменной пзу TR-DOS.  
-Для работы требуется соответствующая прошивка FPGA  
-Стартовое меню, сервисные расширения и ZX ПЗУ.  
-Предназначена для прошивки в ROM.  
-_Прошивку можно произвести из предыдущей версии или с помощью **TEST&SERVICE**._  
-Поддержка: Savelij.
-
-[Описание сервис-прошивки ''EVO Reset Service''.pdf](http://svn.nedopc.com/filedetails.php?repname=pentevo&path=%2Fdocs%2F%D0%9E%D0%BF%D0%B8%D1%81%D0%B0%D0%BD%D0%B8%D0%B5+%D1%81%D0%B5%D1%80%D0%B2%D0%B8%D1%81-%D0%BF%D1%80%D0%BE%D1%88%D0%B8%D0%B2%D0%BA%D0%B8+%27%27EVO+Reset+Service%27%27.pdf)
-
-[zxevo\_fe.rom](http://svn.nedopc.com/filedetails.php?repname=pentevo&path=%2From%2Fzxevo_fe.rom)
-
-**_BASECONF FE_**
-
-latest
-
-Основная рабочая конфигурация (от NedoPC).  
-
-*   Поддержка эмуляции портов дисковода/ВГ93, для использования этой фичи нужен ROM zxevo\_fe.rom.
-*   Добавлена палитра DDP без ШИМа (alone).
-*   Ускорена работа процессора на 14 МГц (psk7).
-
-Предназначена для прошивки в ATMEGA128.  
-_Прошивка производится с помощью **BOOTLOADER**._  
-Поддержка: CHRV (ATMEGA128), LVD (EP1K50QC208).
-
-[zxevo\_base\_configuration.odt](http://svn.nedopc.com/filedetails.php?repname=pentevo&path=%2Fdocs%2Fzxevo_base_configuration.odt)
-
-[zxevo\_base\_configuration.pdf](http://svn.nedopc.com/filedetails.php?repname=pentevo&path=%2Fdocs%2Fzxevo_base_configuration.pdf)
-
-[zxevo\_fw.bin](http://svn.nedopc.com/filedetails.php?repname=pentevo&path=%2Fcfgs%2Fstandalone_base_trdemu%2Ftrunk%2Fzxevo_fw.bin)
-
-**_BOOTLOADER_**
-
-2012.01.24
-
-Загружает и обновляет рабочие конфигурации.  
-Предназначена для прошивки в ATMEGA128.  
-_Прошивка производится с помощью программатора._  
-Поддержка: DDp.
-
-[zxevo\_firmware\_update.pdf](http://nedopc.com/zxevo/rom/zxevo_firmware_update.pdf)
-
-[bootloader20120124.zip](http://nedopc.com/zxevo/rom/bootloader20120124.zip)
-
-[zxevo\_bl.hex](http://svn.nedopc.com/filedetails.php?repname=pentevo&path=%2Favrboot%2Ftrunk%2Favr%2Fzxevo_bl.hex)
-
-[zxevo\_bl.e2p](http://svn.nedopc.com/filedetails.php?repname=pentevo&path=%2Favrboot%2Ftrunk%2Favr%2Fzxevo_bl.e2p)
-
-[read\_me.txt](http://svn.nedopc.com/filedetails.php?repname=pentevo&path=%2Favrboot%2Ftrunk%2Fread_me.txt)
-
-**_TEST&SERVICE_**
-
-2016.01.04
-
-Cервисная конфигурация для тестирования и настройки ZXEvo. Полезная конфигурация для тех кто сам собирает ZXEvo.  
-Предназначена для прошивки в ATMEGA128.  
-_Прошивка производится с помощью **BOOTLOADER**._  
-Поддержка: DDp.
-
-[zxevo\_testservice.pdf](http://nedopc.com/zxevo/rom/zxevo_testservice.pdf)  
-[zxevo\_testservice\_flash.pdf](http://nedopc.com/zxevo/rom/zxevo_testservice_flash.pdf)
-
-[testservice20160104.zip](http://nedopc.com/zxevo/rom/testservice20160104.zip)
-
-[zxevo\_fw.bin](http://svn.nedopc.com/filedetails.php?repname=pentevo&path=%2Ftest_n_service%2Ftrunk%2Frus%2Fzxevo_fw.bin)
+|     |     |     |     |     |     |
+| --- | --- | --- | --- | --- | --- |
+| **Название** | **Версия** | **Назначение** | **Документация** | **Файлы** | **SVN** |
+| **_EVO RESET SERVICE FE,  <br>EVO DOS FE,  <br>EVO PROF_** | latest | Улучшен эмулятор дисководов, теперь он работает с неизменной пзу TR-DOS.  <br>Для работы требуется соответствующая прошивка FPGA  <br>Стартовое меню, сервисные расширения и ZX ПЗУ.  <br>Предназначена для прошивки в ROM.  <br>_Прошивку можно произвести из предыдущей версии или с помощью **TEST&SERVICE**._  <br>Поддержка: Savelij. | [Описание сервис-прошивки ''EVO Reset Service''.pdf](http://svn.nedopc.com/filedetails.php?repname=pentevo&path=%2Fdocs%2F%D0%9E%D0%BF%D0%B8%D1%81%D0%B0%D0%BD%D0%B8%D0%B5+%D1%81%D0%B5%D1%80%D0%B2%D0%B8%D1%81-%D0%BF%D1%80%D0%BE%D1%88%D0%B8%D0%B2%D0%BA%D0%B8+%27%27EVO+Reset+Service%27%27.pdf) |     | [zxevo\_fe.rom](http://svn.nedopc.com/filedetails.php?repname=pentevo&path=%2From%2Fzxevo_fe.rom) |
+| **_BASECONF FE_** | latest | Основная рабочая конфигурация (от NedoPC).  <br><br>*   Поддержка эмуляции портов дисковода/ВГ93, для использования этой фичи нужен ROM zxevo\_fe.rom.<br>*   Добавлена палитра DDP без ШИМа (alone).<br>*   Ускорена работа процессора на 14 МГц (psk7).<br><br>Предназначена для прошивки в ATMEGA128.  <br>_Прошивка производится с помощью **BOOTLOADER**._  <br>Поддержка: CHRV (ATMEGA128), LVD (EP1K50QC208). | [zxevo\_base\_configuration.odt](http://svn.nedopc.com/filedetails.php?repname=pentevo&path=%2Fdocs%2Fzxevo_base_configuration.odt)<br><br>[zxevo\_base\_configuration.pdf](http://svn.nedopc.com/filedetails.php?repname=pentevo&path=%2Fdocs%2Fzxevo_base_configuration.pdf) |     | [zxevo\_fw.bin](http://svn.nedopc.com/filedetails.php?repname=pentevo&path=%2Fcfgs%2Fstandalone_base_trdemu%2Ftrunk%2Fzxevo_fw.bin) |
+| **_BOOTLOADER_** | 2012.01.24 | Загружает и обновляет рабочие конфигурации.  <br>Предназначена для прошивки в ATMEGA128.  <br>_Прошивка производится с помощью программатора._  <br>Поддержка: DDp. | [zxevo\_firmware\_update.pdf](http://nedopc.com/zxevo/rom/zxevo_firmware_update.pdf) | [bootloader20120124.zip](http://nedopc.com/zxevo/rom/bootloader20120124.zip) | [zxevo\_bl.hex](http://svn.nedopc.com/filedetails.php?repname=pentevo&path=%2Favrboot%2Ftrunk%2Favr%2Fzxevo_bl.hex)<br><br>[zxevo\_bl.e2p](http://svn.nedopc.com/filedetails.php?repname=pentevo&path=%2Favrboot%2Ftrunk%2Favr%2Fzxevo_bl.e2p)<br><br>[read\_me.txt](http://svn.nedopc.com/filedetails.php?repname=pentevo&path=%2Favrboot%2Ftrunk%2Fread_me.txt) |
+| **_TEST&SERVICE_** | 2016.01.04 | Cервисная конфигурация для тестирования и настройки ZXEvo. Полезная конфигурация для тех кто сам собирает ZXEvo.  <br>Предназначена для прошивки в ATMEGA128.  <br>_Прошивка производится с помощью **BOOTLOADER**._  <br>Поддержка: DDp. | [zxevo\_testservice.pdf](http://nedopc.com/zxevo/rom/zxevo_testservice.pdf)  <br>[zxevo\_testservice\_flash.pdf](http://nedopc.com/zxevo/rom/zxevo_testservice_flash.pdf) | [testservice20160104.zip](http://nedopc.com/zxevo/rom/testservice20160104.zip) | [zxevo\_fw.bin](http://svn.nedopc.com/filedetails.php?repname=pentevo&path=%2Ftest_n_service%2Ftrunk%2Frus%2Fzxevo_fw.bin) |
 
 Зеркало исходников (SVN) доступно на сайте [**ZXEVO.RU**.](http://svn.zxevo.ru/listing.php?repname=pentevo)
 
@@ -148,36 +72,13 @@ _Прошивка производится с помощью **BOOTLOADER**._
 
 **ВНИМАНИЕ:** Вопросы по поддержке прошивок задавайте непосредственно авторам прошивок. NedoPC не несет ответственности за ошибки или недоработки в прошивках сторонних разработчиков.
 
-**Название**
+|     |     |     |     |     |
+| --- | --- | --- | --- | --- |
+| **Название** | **Версия** | **Назначение** | **Документация** | **Файлы** |
+| [**_ZXEVO TS_**](http://forum.tslabs.info/viewtopic.php?f=12&t=20) |     | ZXEVO TS конфигурация с поддержкой спрайтов и оригинальных расширенных видеорежимов. Полноценная рабочая конфигурации отличается не только схемой, но и ROM. Также под нее созданы специализированное утилиты, игры и прочее ПО. [Подробности здесь.](http://forum.tslabs.info/viewtopic.php?f=12&t=20) | [FAQ](http://forum.tslabs.info/viewtopic.php?f=12&t=157) | [Инструкция по установке конфигурации.](http://forum.nedopc.com/viewtopic.php?f=30&t=622&start=652) |
+| **_ScorpEvo_** | 6.1 (05.11.2011) | Scorpion Evolution (ScorpEvo) задуман как полноценная альтернатива (в дальнейшем – замена) самого знаменитого и в то же время противоречивого петербургского компьютера «Scorpion ZS 256 turbo+» Сергея Зонова. | [scorpevo.pdf](http://nedopc.com/zxevo/scorpion/scorpevo.pdf) | [scorpevo061.zip](http://nedopc.com/zxevo/scorpion/scorpevo061.zip)  <br>[svn scorpevo](http://svn.nedopc.com/listing.php?repname=pentevo&path=%2Fscorpevo%2F) |
 
-**Версия**
-
-**Назначение**
-
-**Документация**
-
-**Файлы**
-
-[**_ZXEVO TS_**](http://forum.tslabs.info/viewtopic.php?f=12&t=20)
-
-ZXEVO TS конфигурация с поддержкой спрайтов и оригинальных расширенных видеорежимов. Полноценная рабочая конфигурации отличается не только схемой, но и ROM. Также под нее созданы специализированное утилиты, игры и прочее ПО. [Подробности здесь.](http://forum.tslabs.info/viewtopic.php?f=12&t=20)
-
-[FAQ](http://forum.tslabs.info/viewtopic.php?f=12&t=157)
-
-[Инструкция по установке конфигурации.](http://forum.nedopc.com/viewtopic.php?f=30&t=622&start=652)
-
-**_ScorpEvo_**
-
-6.1 (05.11.2011)
-
-Scorpion Evolution (ScorpEvo) задуман как полноценная альтернатива (в дальнейшем – замена) самого знаменитого и в то же время противоречивого петербургского компьютера «Scorpion ZS 256 turbo+» Сергея Зонова.
-
-[scorpevo.pdf](http://nedopc.com/zxevo/scorpion/scorpevo.pdf)
-
-[scorpevo061.zip](http://nedopc.com/zxevo/scorpion/scorpevo061.zip)  
-[svn scorpevo](http://svn.nedopc.com/listing.php?repname=pentevo&path=%2Fscorpevo%2F)
-
-* * *
+- - -
 
 ### История версий:
 
@@ -242,8 +143,6 @@ Cписок деталей (revision A) [здесь](http://nedopc.com/zxevo/zxe
 
 Документация для производства (revision A) [здесь](http://nedopc.com/zxevo/zxevo_reva.zip) \[PCAD2002\] (использование в коммерческих целях только по договоренности с представителями [NedoPC](http://nedopc.com/aboutus.php)).
 
-* * *
-
-[На главную страницу.](http://www.nedopc.com/)
+- - -
 
 Email: [nedopc@mail.ru](mailto:nedopc@mail.ru), [nedopc@yandex.ru](mailto:nedopc@yandex.ru).
