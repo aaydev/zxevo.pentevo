@@ -969,22 +969,36 @@ static Boolean DecodeAdr(const tStrComp *pArg, tAdrVals *pDest, Boolean AddrMode
       }
       case eSymbolSizeFloat32Bit:
       {
-        Double Val = EvalStrFloatExpression(pArg, Float32, &OK);
+        as_float_t Val = EvalStrFloatExpression(pArg, &OK);
         if (OK)
         {
-          Double_2_ieee4(Val, pDest->Disp, True);
-          pDest->DispCnt = 4;
+          int ret;
+
+          if ((ret = as_float_2_ieee4(Val, pDest->Disp, True)) < 0)
+          {
+            asmerr_check_fp_dispose_result(ret, pArg);
+            OK = False;
+          }
         }
+        if (OK)
+          pDest->DispCnt = 4;
         break;
       }
       case eSymbolSizeFloat64Bit:
       {
-        Double Val = EvalStrFloatExpression(pArg, Float64, &OK);
+        as_float_t Val = EvalStrFloatExpression(pArg, &OK);
         if (OK)
         {
-          Double_2_ieee8(Val, pDest->Disp, True);
-          pDest->DispCnt = 8;
+          int ret;
+
+          if ((ret = as_float_2_ieee8(Val, pDest->Disp, True)) < 0)
+          {
+            asmerr_check_fp_dispose_result(ret, pArg);
+            OK = False;
+          }
         }
+        if (OK)
+          pDest->DispCnt = 8;
         break;
       }
       default:
@@ -2692,6 +2706,8 @@ static void InitFields(void)
   InstTable = CreateInstTable(605);
   SetDynamicInstTable(InstTable);
 
+  add_null_pseudo(InstTable);
+
   InstrZ = 0;
   AddCtl("UPSR"   , 0x00, True );
   AddCtl("DCR"    , 0x01, True );
@@ -2919,11 +2935,11 @@ static void InitFields(void)
   AddInstTable(InstTable, "WRVAL", 0x01 | (eSymbolSize32Bit << 8), DecodeRDVAL_WRVAL);
 
   AddInstTable(InstTable, "REG" , 0, CodeREG);
-  AddInstTable(InstTable, "BYTE"   , eIntPseudoFlag_AllowInt | eIntPseudoFlag_AllowString , DecodeIntelDB);
-  AddInstTable(InstTable, "WORD"   , eIntPseudoFlag_AllowInt | eIntPseudoFlag_AllowString , DecodeIntelDW);
-  AddInstTable(InstTable, "DOUBLE" , eIntPseudoFlag_AllowInt | eIntPseudoFlag_AllowString , DecodeIntelDD);
-  AddInstTable(InstTable, "FLOAT"  , eIntPseudoFlag_AllowFloat , DecodeIntelDD);
-  AddInstTable(InstTable, "LONG"   , eIntPseudoFlag_AllowFloat , DecodeIntelDQ);
+  AddInstTable(InstTable, "BYTE"   , eIntPseudoFlag_LittleEndian | eIntPseudoFlag_AllowInt | eIntPseudoFlag_AllowString , DecodeIntelDB);
+  AddInstTable(InstTable, "WORD"   , eIntPseudoFlag_LittleEndian | eIntPseudoFlag_AllowInt | eIntPseudoFlag_AllowString , DecodeIntelDW);
+  AddInstTable(InstTable, "DOUBLE" , eIntPseudoFlag_LittleEndian | eIntPseudoFlag_AllowInt | eIntPseudoFlag_AllowString , DecodeIntelDD);
+  AddInstTable(InstTable, "FLOAT"  , eIntPseudoFlag_LittleEndian | eIntPseudoFlag_AllowFloat , DecodeIntelDD);
+  AddInstTable(InstTable, "LONG"   , eIntPseudoFlag_LittleEndian | eIntPseudoFlag_AllowFloat , DecodeIntelDQ);
   AddInstTable(InstTable, "FPU"    , 0, CodeFPU);
   AddInstTable(InstTable, "PMMU"   , 0, CodePMMU);
 
@@ -2993,6 +3009,8 @@ static void InitFields(void)
   AddInstTable(InstTable, "SBITPS" , 0x2f, DecodeBITxT);
 
   AddInstTable(InstTable, "TBITS"  , 0x27, DecodeTBITS);
+
+  AddIntelPseudo(InstTable, eIntPseudoFlag_DynEndian);
 }
 
 /*!------------------------------------------------------------------------
@@ -3017,17 +3035,7 @@ static void DeinitFields(void)
 
 static void MakeCode_NS32K(void)
 {
-  CodeLen = 0; DontPrint = False;
   OpSize = eSymbolSizeUnknown;
-
-  /* to be ignored */
-
-  if (Memo("")) return;
-
-  /* Pseudo Instructions */
-
-  if (DecodeIntelPseudo(TargetBigEndian))
-    return;
 
   if (!LookupInstTable(InstTable, OpPart.str.p_str))
     WrStrErrorPos(ErrNum_UnknownInstruction, &OpPart);

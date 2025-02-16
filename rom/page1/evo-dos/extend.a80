@@ -1,5 +1,5 @@
 
-;LAST UPDATE: 04.08.2019 savelij
+; LAST UPDATE: 13.02.2025 savelij
 
 		TITLE "extend.a80"
 
@@ -11,7 +11,7 @@ DSKINFO		DB 0			;+0XE1-ŽŒ… …‚ŽƒŽ ‘‚ŽŽ„ŽƒŽ ‘…Š’Ž€
 SECFREE		DW 2544			;+0XE5-ŠŽ‹ˆ—…‘’‚Ž ‘‚ŽŽ„›• ‘…Š’ŽŽ‚
 		DB 0X10			;+0XE7-ˆ„…’ˆ”ˆŠ€–ˆŽ›‰ ŠŽ„ TRDOS
 		DW 0			;+0XE8-2 €‰’€ 0
-		DUPL 9," "		;+0XEA-9 €‰’ 0X20
+		DB 9 DUP ' '		;+0XEA-9 €‰’ 0X20
 		DB 0			;+0XF3-1 €‰’ 0
 		DB 0			;+0XF4-ŠŽ‹ˆ—…‘’‚Ž “„€‹…›• ”€‰‹Ž‚
 		DB "RAMDISKO"		;+0XF5-ˆŒŸ „ˆ‘Š…’›
@@ -108,7 +108,7 @@ END_EXT_COM	INC DE
 		LD (TRD_5D16),A			; ŠŽˆŸ	‘ˆ‘’…ŒŽƒŽ …ƒˆ‘’€ (Ž’ #FF)
 		LD HL,ERR_OK
 		PUSH HL
-SET_CURRVIRT	LD H,VIRT_REAL_DRIVE
+SET_CURRVIRT	LD H,CMOS.VIRT_REAL_DRIVE
 		CALL READCMOS
 		AND %00000011
 		LD L,A
@@ -184,7 +184,7 @@ PRT_NUM_VIRT	LD HL,TXT4VIRTDRV
 		CALL PRT_B_HL_
 		LD A," "
 		RST 0X10
-		LD H,VIRT_REAL_DRIVE
+		LD H,CMOS.VIRT_REAL_DRIVE
 		CALL READCMOS
 		AND 3
 		ADD A,"A"
@@ -205,7 +205,7 @@ SET_VIRT	LD A,(DE)
 		LD A,C
 		CALL NUMDSK2BYTE		;Ž‹“—ˆ‹ˆ Ž‚›‰ ŽŒ… „ˆ‘ŠŽ‚Ž„€ “Š€‡€›‰ ‚ ŠŽŒ€„Ž‰ ‘’ŽŠ…
 		LD D,A				;‘Ž•€ˆ‹ˆ ‚…Œ…Ž ‘„‚ˆ“’›‰ Ž‚›‰ ŽŒ… ‚ˆ’“€‹œŽƒŽ „ˆ‘ŠŽ‚Ž„€
-		LD H,VIRT_REAL_DRIVE
+		LD H,CMOS.VIRT_REAL_DRIVE
 		CALL READCMOS
 		AND %11111100			;‘Ž‘ ‘’€ŽƒŽ ŽŒ…€ ‚ˆ’“€‹œŽƒŽ „ˆ‘ŠŽ‚Ž„€
 		OR D				;„Ž€‚ˆ‹ˆ Ž‚›‰ ŽŒ… ‚ˆ’“€‹œŽƒŽ „ˆ‘ŠŽ‚Ž„€

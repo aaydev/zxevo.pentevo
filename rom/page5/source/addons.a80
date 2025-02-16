@@ -1,22 +1,22 @@
 
-; LAST UPDATE: 12.02.2024 savelij
+; LAST UPDATE: 14.02.2025 savelij
 
 	TITLE "addons.a80 ROM_RST82"
 
 DRV_VAR		EQU 0x4000
 
-		PHASE 0
+	PHASE 0
 		JP $
 
-		DUPL ADR_SEL_ROM-$,0xFF
+		DB ADR_SEL_ROM-$ DUP 0xFF
 		OUT (C),A
 		NOP
 		RET
 
-		DUPL 0x0030-$,0xFF
+		DB 0x0030-$ DUP 0xFF
 		JP CALL2PAGE
 
-		DUPL 0x0038-$,0xFF		; 0038
+		DB 0x0038-$ DUP 0xFF		; 0038
 		PUSH HL
 		LD HL,(ADR_INT)
 		EX (SP),HL
@@ -28,17 +28,18 @@ DRV_VAR		EQU 0x4000
 		JP UNPACK_DOS_FE
 		JP INST_SONGLN
 
-		DUPL 0x0080-$,0xFF
+		DB 0x0080-$ DUP 0xFF
 		binclude ../../dec40.bin
 
-		DUPL 0x00FF-$,0xFF
+		DB 0x00FF-$ DUP 0xFF
 		DW 0x0038
 
 ; ============================SD карта удалена============================
-SDCARD_LOST	DB 0x08,0x08,0x04,0x10,0x17,0,%00000000,0
-		DW 0,0
-		DW TXT_SDLOST,0,0,0
-TXT_SDLOST	DB 0x17,0xFF,0x0D,3,"SD card lost",0x0D,3,"Press RESET",0
+SDCARD_LOST
+ WINHDR 0x08,0x08,0x04,0x10,0x17,0,%00000000,0, \
+	0,0,.TXT_SDLOST,0,0,0
+
+.TXT_SDLOST	DB "\x17\xFF\r\x03SD card lost\r\x03Press RESET",0
 ; ============================SD карта удалена============================
 
 ; ========================мышиный курсор в двух видах=====================
@@ -46,7 +47,7 @@ SPRAR		DB 0x3F,0x00,0x1F,0x40,0x0F,0x60,0x07,0x50,0x03,0x48,0x01,0x4C,0x01,0x70,
 SPRAR2		DB 0x3F,0x00,0x1F,0x40,0x0F,0x60,0x07,0x70,0x03,0x78,0x01,0x7C,0x01,0x70,0x07,0x00
 ; ========================мышиный курсор в двух видах=====================
 
-		DUPL 0x0200-$,0xFF
+		DB 0x0200-$ DUP 0xFF
 CHARS		binclude altstd.bin
 
 BUFTSC		DW 0x4000,0x4100,0x4200,0x4300,0x4400,0x4500,0x4600,0x4700
@@ -211,7 +212,7 @@ TRSTPAL		DB 0x00,0x21,0x42,0x63,0x90,0xB1,0xD2,0xF3
 		DB 0xE0,0xE1,0xE2,0xE3,0xF0,0xF1,0xF2,0xF3
 
 SETUP_PAL1	LD HL,(RREG_L)
-		LD DE,EXTERN_PAL-CPU6
+		LD DE,EXTERN_PAL-CPU2
 		LD BC,0x10
 	ROMCALL LDIR_BYTES,ROM_RST83
 		LD HL,EXTERN_PAL
@@ -300,8 +301,8 @@ COORDINAT_REGS	DW Y_OFFSET +  1 + (X_OFFSET + 3      ) * 0x100	; SP
 		DW Y_OFFSET +  8 + (X_OFFSET + 3 + 10 ) * 0x100	; INT IM 1/2
 		DW Y_OFFSET + 11 + (X_OFFSET + 6      ) * 0x100	; CPU3 MAP0
 		DW Y_OFFSET + 11 + (X_OFFSET + 6 +  3 ) * 0x100	; CPU3 MAP1
-		DW Y_OFFSET + 12 + (X_OFFSET + 6      ) * 0x100	; CPU6 MAP0
-		DW Y_OFFSET + 12 + (X_OFFSET + 6 +  3 ) * 0x100	; CPU6 MAP1
+		DW Y_OFFSET + 12 + (X_OFFSET + 6      ) * 0x100	; CPU2 MAP0
+		DW Y_OFFSET + 12 + (X_OFFSET + 6 +  3 ) * 0x100	; CPU2 MAP1
 		DW Y_OFFSET + 13 + (X_OFFSET + 6      ) * 0x100	; CPU5 MAP0
 		DW Y_OFFSET + 13 + (X_OFFSET + 6 +  3 ) * 0x100	; CPU5 MAP1
 		DW Y_OFFSET + 14 + (X_OFFSET + 6      ) * 0x100	; CPU0 MAP0
@@ -353,19 +354,19 @@ PRT_PORTREGS	LD A,MAGIC_COLOR
 		LD HL,(NREG_IYL)
 		CALL PRINT_REGS			; IY
 		LD A,(INT_MODE)
-		ADD A,"0"
+		ADD A,'0'
 		CALL PRINT_1NUM			; INT ON/OFF
 		LD A,(NUM_IM)
-		ADD A,"1"
+		ADD A,'1'
 		CALL PRINT_1NUM			; IM 1/2
 		LD A,(B0_CPU3)
 		CALL PRINT_REG			; CPU3 MAP0
 		LD A,(B1_CPU3)
 		CALL PRINT_REG			; CPU3 MAP1
 		LD A,(B0_CPU2)
-		CALL PRINT_REG			; CPU6 MAP0
+		CALL PRINT_REG			; CPU2 MAP0
 		LD A,(B1_CPU2)
-		CALL PRINT_REG			; CPU6 MAP1
+		CALL PRINT_REG			; CPU2 MAP1
 		LD A,(B0_CPU1)
 		CALL PRINT_REG			; CPU5 MAP0
 		LD A,(B1_CPU1)
@@ -400,7 +401,7 @@ PRT_PORTREGS	LD A,MAGIC_COLOR
 		RRCA
 		RRCA
 		RRCA
-		ADD A,"0"
+		ADD A,'0'
 		CALL PRINT_1NUM
 		IN A,(0xFF)
 		AND %00111111
@@ -443,7 +444,7 @@ PRINT_1NUM	LD E,(IX)
 ; установка режимов
 SET_MODE	LD A,(RREG_A)
 ISET_MODE	AND A
-		JR Z,SET_MODE4			; если 0 то получение режима
+		JR Z,.L5			; если 0 то получение режима
 		LD E,A
 		LD (TEK_MODES),A		; сохранили устанавливаемые режимы
 		AND %00000111
@@ -484,7 +485,7 @@ ISET_MODE	AND A
 		RRCA
 		RRCA
 		AND 3				; выделили биты режима памяти
-		JR Z,SET_MODE4			; если 0 то режим памяти не меняем
+		JR Z,.L5			; если 0 то режим памяти не меняем
 ; смена режима памяти
 		DEC A
 		LD HL,0x0000			; память 1024К
@@ -503,7 +504,7 @@ ISET_MODE	AND A
 		LD (R_EFF7),A
 		RET
 
-SET_MODE4	LD A,(TEK_MODES)
+.L5		LD A,(TEK_MODES)
 		LD (RREG_A),A
 		RET
 
@@ -528,18 +529,18 @@ SONGLNBIN       binclude songln_pack.bin
 		include call_trdos.a80
 		include call_cmos.a80
 
-		PHASE $+CPU3
+	PHASE $+CPU3
 UNPACK_DOS_FE	LD HL,PACK_DOS_FE
 		LD DE,CPU2
 		JP UNPACK+CPU3
 
 PACK_DOS_FE	binclude ../../page1/dos_fe_pack.rom
-		DEPHASE
+	DEPHASE
 
 FREE_ADDONS	EQU 0x3FF6-$
 
-		DUPL FREE_ADDONS,0xFF
+		DB FREE_ADDONS DUP 0xFF
 		DW FREE_ADDONS			; размер свободного места
 		DB "ADDONS"
 		DW DATA_VERS
-		DEPHASE
+	DEPHASE

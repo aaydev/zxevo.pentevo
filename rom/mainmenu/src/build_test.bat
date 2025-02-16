@@ -1,18 +1,32 @@
 
 echo off
 
-..\..\..\tools\asl\bin\asl -U -L -x -olist main.lst main.a80
-..\..\..\tools\asl\bin\p2bin main.p main.rom -r $-$ -k
+if not exist tmp md tmp
+set path=d:\yad\svn\pentevo\tools\asl\bin\;d:\yad\svn\pentevo\tools\mhmt\
+set includes=d:\yad\svn\pentevo\rom
 
-..\..\..\tools\asl\bin\asl -U -L -x -olist main_fe.lst -D DOS_FE main.a80
-..\..\..\tools\asl\bin\p2bin main.p main_fe.rom -r $-$ -k
+asl -U -L -C -x -olist tmp\main.lst -i %includes% main.a80 || goto error
+p2bin main.p main.rom -r $-$ -k
 
-..\..\..\tools\asl\bin\asl -U -L cmosset.a80
-..\..\..\tools\asl\bin\p2bin cmosset.p cmosset.rom -r $-$ -k
+asl -U -L -C -x -olist tmp\main_fe.lst -i %includes% -D DOS_FE main.a80 || goto error
+p2bin main.p main_fe.rom -r $-$ -k
 
-..\..\..\tools\mhmt\mhmt -mlz main.rom ..\main_pack.rom
-..\..\..\tools\mhmt\mhmt -mlz main_fe.rom ..\main_fe_pack.rom
-..\..\..\tools\mhmt\mhmt -mlz cmosset.rom ..\cmosset_pack.rom
-..\..\..\tools\mhmt\mhmt -mlz chars_eng.bin ..\chars_pack.rom
+asl -U -L -C -x -olist tmp\cmosset.lst -i %includes% cmosset.a80 || goto error
+p2bin cmosset.p cmosset.rom -r $-$ -k
 
-rem del *.rom
+mhmt -mlz main.rom ..\main_pack.rom
+mhmt -mlz main_fe.rom ..\main_fe_pack.rom
+mhmt -mlz cmosset.rom ..\cmosset_pack.rom
+mhmt -mlz chars_eng.bin ..\chars_pack.rom
+
+echo ########################
+echo # -= End Compile Ok =- #
+echo ########################
+goto exit
+
+:error
+echo #######################
+echo # -= Error Compile =- #
+echo #######################
+
+:exit

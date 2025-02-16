@@ -1,23 +1,23 @@
 
-; LAST UPDATE: 08.09.2022 savelij
+; LAST UPDATE: 16.02.2025 savelij
 
-X4DUMP		EQU 0X0C
-Y4DUMP		EQU 0X05
+X4DUMP		EQU 0x0C
+Y4DUMP		EQU 0x05
 
 EDIT_CMOS	DI
 		LD A,%01001111
 		CALL CLEAR_TXTSCR
-		LD H,CMOS_BYTE_00
+		LD H,CMOS.BYTE_00
 		CALL READCMOS
-		AND M_TYPE_FONT
+		AND CMOS_ED.M_TYPE_FONT
 		LD (TYPEFONT),A
 		LD DE,0
-		LD BC,0X5019
+		LD BC,0x5019
 		CALL RAMKA4TXTSCR
-		LD DE,0X2201
+		LD DE,0x2201
 		LD HL,TXT_EDITCMOS2
 		CALL PRTT_MSG
-		LD DE,0X1217
+		LD DE,0x1217
 		LD HL,TXT_EDITCMOS1
 		CALL PRTT_MSG
 		LD IX,0
@@ -28,19 +28,19 @@ EC02		CALL LOAD_CMOS
 		CALL TXTMODE_ON
 EC01		EI
 		HALT
-		LD H,0X0C
+		LD H,CMOS.REG_C
 		CALL READCMOS
-		BIT 4,A
+		BIT CMOSREG.B_C_RO_UF,A
 		CALL NZ,PRINT0STROKA
 		BIT 5,(IY+1)
 		JP Z,EC01
 		RES 5,(IY+1)
-		LD A,(0X5C08)
-		CP "l"
+		LD A,(0x5C08)
+		CP 'l'
 		JR Z,EC02
-		CP "x"
+		CP 'x'
 		JR Z,EC06
-		CP "s"
+		CP 's'
 		JR NZ,EC03
 		CALL SAVE_CMOS
 		JR EC01
@@ -49,45 +49,45 @@ EC03		CP 9
 		CALL Z,CUR_RIGHT
 		CP 8
 		CALL Z,CUR_LEFT
-		CP 0X0B
+		CP 0x0B
 		CALL Z,CUR_UP
-		CP 0X0A
+		CP 0x0A
 		CALL Z,CUR_DOWN
-		CP "0"
+		CP '0'
 		JR C,EC01
-		CP ":"
+		CP ':'
 		JR C,EC05
 		RES 5,A
-EC04		CP "A"
+EC04		CP 'A'
 		JR C,EC01
-		CP "G"
+		CP 'G'
 		JR NC,EC01
 EC05		CALL INPUT_HALFBYTE
 		JR EC01
 
 EC06		CALL TXTMODE_OFF
-		LD A,0X10
+		LD A,0x10
 		CALL SET_7FFD
 		JP RESTART
 
-;êàëéÇÄçàÖ ÑÇéâçéâ êÄåäà éäçÄ Ç íÖäëíåéÑÖ
-;D-X E-Y B-H C-V
+; ‡®·Æ¢†≠®• §¢Æ©≠Æ© ‡†¨™® Æ™≠† ¢ ‚•™·‚¨Æ§•
+; D-X E-Y B-H C-V
 RAMKA4TXTSCR	DEC B
 		DEC B
 		DEC C
 		DEC C
 		PUSH DE
 		PUSH BC
-		LD A,"…"
+		LD A,'…'
 		CALL PRTSYMTXTMODE
-R4TXTS1		LD A,"Õ"
+R4TXTS1		LD A,'Õ'
 		CALL PRTSYMTXTMODE
 		DJNZ R4TXTS1
-		LD A,"ª"
+		LD A,'ª'
 		CALL PRTSYMTXTMODE
 		DEC D
 		INC E
-R4TXTS2		LD A,"∫"
+R4TXTS2		LD A,'∫'
 		CALL PRTSYMTXTMODE
 		DEC D
 		INC E
@@ -96,33 +96,33 @@ R4TXTS2		LD A,"∫"
 		POP BC
 		POP DE
 		INC E
-R4TXTS3		LD A,"∫"
+R4TXTS3		LD A,'∫'
 		CALL PRTSYMTXTMODE
 		DEC D
 		INC E
 		DEC C
 		JR NZ,R4TXTS3
-		LD A,"»"
+		LD A,'»'
 		CALL PRTSYMTXTMODE
-R4TXTS4		LD A,"Õ"
+R4TXTS4		LD A,'Õ'
 		CALL PRTSYMTXTMODE
 		DJNZ R4TXTS4
-		LD A,"º"
+		LD A,'º'
 		JP PRTSYMTXTMODE
 
-INPUT_HALFBYTE	SUB "0"
-		CP 0X0A
+INPUT_HALFBYTE	SUB '0'
+		CP 0x0A
 		JR C,IHB1
 		SUB 7
 IHB1		LD E,A
 		LD A,IXH
 		LD L,A
-		LD H,0XC0
+		LD H,0xC0
 		LD A,IXL
 		AND A
 		JR NZ,LOW_HALF
 		LD A,(HL)
-		AND 0X0F
+		AND 0x0F
 		LD D,A
 		LD A,E
 		RRCA
@@ -133,7 +133,7 @@ IHB1		LD E,A
 		JR LOW_HALF1
 
 LOW_HALF	LD A,(HL)
-		AND 0XF0
+		AND 0xF0
 		OR E
 LOW_HALF1	LD (HL),A
 		LD A,L
@@ -149,21 +149,21 @@ LOW_HALF1	LD (HL),A
 CUR_UP		PUSH AF
 		CALL INVERS_CUR
 		LD A,IXH
-		SUB 0X10
-		CP 0XF0
+		SUB 0x10
+		CP 0xF0
 		JR C,CUR_UP1
-		AND 0X0F
-		OR 0XE0
+		AND 0x0F
+		OR 0xE0
 CUR_UP1		LD IXH,A
 		JR ECUR_RIGHT
 
 CUR_DOWN	PUSH AF
 		CALL INVERS_CUR
 		LD A,IXH
-		ADD A,0X10
-		CP 0XF0
+		ADD A,0x10
+		CP 0xF0
 		JR C,CUR_DOWN1
-		AND 0X0F
+		AND 0x0F
 CUR_DOWN1	LD IXH,A
 		JR ECUR_RIGHT
 
@@ -175,7 +175,7 @@ CUR_RIGHT	PUSH AF
 		JR C,ECUR_RIGHT
 		INC IXH
 		LD A,IXH
-		CP 0XF0
+		CP 0xF0
 		JR C,CUR_RIGHT1
 		LD IXH,0
 CUR_RIGHT1	LD IXL,0
@@ -191,14 +191,14 @@ CUR_LEFT	PUSH AF
 		LD IXL,1
 		DEC IXH
 		LD A,IXH
-		CP 0XF0
+		CP 0xF0
 		JR C,ECUR_RIGHT
-		LD IX,CRCCMOSHIGH*0X100+1
+		LD IX,CMOS.CRCHIGH << 8 + 1
 		JR ECUR_RIGHT
 
 HELP_REG	LD A,IXH
 		LD HL,EMPTY_STROKA
-		CP 0X12
+		CP 0x12
 		JR NC,HELP_REG1
 		LD L,A
 		LD H,0
@@ -209,13 +209,13 @@ HELP_REG	LD A,IXH
 		ADD HL,HL
 		LD DE,TXT_HELPREG
 		ADD HL,DE
-HELP_REG1	LD DE,0X1203
+HELP_REG1	LD DE,0x1203
 		JP PRTT_MSG
 
-INVERS_CUR	LD A,0X1B
+INVERS_CUR	LD A,0x1B
 		CALL SET_7FFD
 		LD A,IXH
-		AND 0XF0
+		AND 0xF0
 		RRCA
 		RRCA
 		RRCA
@@ -224,11 +224,11 @@ INVERS_CUR	LD A,0X1B
 		LD L,A
 		LD H,0
 		LD D,H
-		REPT 6
+	REPT 6
 		ADD HL,HL
-		ENDM
+	ENDM
 		LD A,IXH
-		AND 0X0F
+		AND 0x0F
 		LD E,A
 		ADD A,A
 		ADD A,E
@@ -243,45 +243,45 @@ INVERS_CUR	LD A,0X1B
 		RRCA
 		RRCA
 		RRCA
-		OR 0XC1
+		OR 0xC1
 		LD D,A
-		LD E,0XC0
+		LD E,0xC0
 		ADD HL,DE
 		LD A,(HL)
 		XOR %00000100
 		LD (HL),A
-		LD A,0X1F
+		LD A,0x1F
 		JP SET_7FFD
 
-;éóàëíäÄ íÖäëíåéÑçéÉé ùäêÄçÄ
+; ÆÁ®·‚™† ‚•™·‚¨Æ§≠Æ£Æ Ì™‡†≠†
 CLEAR_TXTSCR	PUSH AF
-		LD A,0X1F
+		LD A,0x1F
 		CALL SET_7FFD
-		LD HL,0XC1C0
-		LD A," "
+		LD HL,0xC1C0
+		LD A,' '
 		CALL CLS_TXTSCR
-		LD HL,0XE1C0
+		LD HL,0xE1C0
 		CALL CLS_TXTSCR
-		LD A,0X1B
+		LD A,0x1B
 		CALL SET_7FFD
-		LD HL,0XC1C0
+		LD HL,0xC1C0
 		POP AF
 		CALL CLS_TXTSCR
-		LD HL,0XE1C0
+		LD HL,0xE1C0
 		CALL CLS_TXTSCR
-		LD A,0X1F
+		LD A,0x1F
 		JP SET_7FFD
 
-;éóàëíäÄ äìëéóäÄ íÖäëíåéÑçéÉé ùäêÄçÄ
+; ÆÁ®·‚™† ™„·ÆÁ™† ‚•™·‚¨Æ§≠Æ£Æ Ì™‡†≠†
 CLS_TXTSCR	LD D,H
 		LD E,L
-		LD BC,0X63F
+		LD BC,0x63F
 		LD (HL),A
 		INC DE
 		LDIR
 		RET
 
-;èÖóÄíú íÖäëíéÇéâ ëíêéäà çÄ íÖëíåéÑçéå ùäêÄçÖ
+; Ø•Á†‚Ï ‚•™·‚Æ¢Æ© ·‚‡Æ™® ≠† ‚•·‚¨Æ§≠Æ¨ Ì™‡†≠•
 PRTT_MSG	LD A,(HL)
 		INC HL
 		AND A
@@ -289,15 +289,15 @@ PRTT_MSG	LD A,(HL)
 		CALL PRTSYMTXTMODE
 		JR PRTT_MSG
 
-PRINT0STROKA	LD H,0
+PRINT0STROKA	LD H,CMOS.SECOND
 		CALL READCMOS
-		LD (0XC000),A
-		LD H,2
+		LD (0xC000),A
+		LD H,CMOS.MINUTE
 		CALL READCMOS
-		LD (0XC002),A
-		LD H,4
+		LD (0xC002),A
+		LD H,CMOS.HOUR
 		CALL READCMOS
-		LD (0XC004),A
+		LD (0xC004),A
 		XOR A
 		LD L,A
 		PUSH IX
@@ -307,7 +307,7 @@ PRINT0STROKA	LD H,0
 		RET
 
 PRINT_STROKA	LD A,IXH
-		AND 0XF0
+		AND 0xF0
 		LD L,A
 PRINT_STROKA1	LD B,1
 		LD H,0
@@ -320,46 +320,36 @@ PRINT_STROKA1	LD B,1
 		LD D,X4DUMP
 		JR PRINT1STROKA
 
-PRINT_DUMP	
-;		LD DE,(X4DUMP+6)*0X100+Y4DUMP-2
-;		XOR A
-;		LD B,0X10
-;PRT_ADRB	PUSH AF
-;		CALL PRTT_A_
-;		LD A," "
-;		CALL PRTSYMTXTMODE
-;		POP AF
-;		DJNZ PRT_ADRB
-		LD B,0X0F
-		LD DE,X4DUMP*0X100+Y4DUMP
+PRINT_DUMP	LD B,0x0F
+		LD DE,X4DUMP*0x100+Y4DUMP
 		LD HL,0
 PRINT1STROKA	CALL PRTT_SMESH
-		LD A,0XC0
+		LD A,0xC0
 		OR H
 		LD H,A
 		CALL PRTT_STROKA
 		LD A,H
-		AND 0X3F
+		AND 0x3F
 		LD H,A
 		INC E
 		LD D,X4DUMP
 		DJNZ PRINT1STROKA
 		RET
 
-PRTT_STROKA	LD C,0X10
+PRTT_STROKA	LD C,0x10
 PRTT_STROKA1	LD A,(HL)
 		INC HL
 		CALL PRTT_A_
-		LD A," "
+		LD A,' '
 		CALL PRTSYMTXTMODE
 		DEC C
 		JR NZ,PRTT_STROKA1
 		RET
 
 PRTT_SMESH	CALL PRTT_HL_
-		LD A,":"
+		LD A,':'
 		CALL PRTSYMTXTMODE
-		LD A," "
+		LD A,' '
 		JR PRTSYMTXTMODE
 
 PRTT_HL_	LD A,H
@@ -372,14 +362,14 @@ PRTT_A_		PUSH AF
 		RRCA
 		CALL PRTT_A_1
 		POP AF
-PRTT_A_1	AND 0X0F
-		CP 0X0A
+PRTT_A_1	AND 0x0F
+		CP 0x0A
 		CCF
-		ADC A,"0"
+		ADC A,'0'
 		DAA
-		AND 0X7F
-;èÖóÄíú ëàåÇéãÄ çÄ íÖäëíåéÑçéå ùäêÄçÖ
-;D-X E-Y
+		AND 0x7F
+; Ø•Á†‚Ï ·®¨¢Æ´† ≠† ‚•™·‚¨Æ§≠Æ¨ Ì™‡†≠•
+; D-X E-Y
 PRTSYMTXTMODE	PUSH DE
 		PUSH HL
 		LD L,A
@@ -388,7 +378,7 @@ TYPEFONT	EQU $-1
 		AND A
 		LD A,L
 		JR NZ,.LOOP
-		CP 0X80
+		CP 0x80
 		JR C,.LOOP
 		LD HL,CONV_CP866_ATM
 		PUSH BC
@@ -416,9 +406,9 @@ TYPEFONT	EQU $-1
 		RRCA
 		RRCA
 		RRCA
-		OR 0XC1
+		OR 0xC1
 		LD D,A
-		LD E,0XC0
+		LD E,0xC0
 		ADD HL,DE
 		POP AF
 		LD (HL),A
@@ -430,7 +420,7 @@ TYPEFONT	EQU $-1
 SET_C_A		OUT (C),A
 		RET
 
-LOAD_CMOS	LD HL,0XC000
+LOAD_CMOS	LD HL,0xC000
 		LD D,0
 EDITCMOS1	EX DE,HL
 		CALL READCMOS
@@ -438,12 +428,12 @@ EDITCMOS1	EX DE,HL
 		LD (HL),E
 		INC HL
 		INC D
-		LD A,0XF0
+		LD A,0xF0
 		CP D
 		JR NZ,EDITCMOS1
 		RET
 
-SAVE_CMOS	LD HL,0XC000
+SAVE_CMOS	LD HL,0xC000
 		LD D,0
 SAVECMOS1	LD E,(HL)
 		EX DE,HL
@@ -451,23 +441,23 @@ SAVECMOS1	LD E,(HL)
 		EX DE,HL
 		INC HL
 		INC D
-		LD A,0XF0
+		LD A,0xF0
 		CP D
 		JR NZ,SAVECMOS1
 		RET
 
-;çÄ ÇïéÑÖ: H-ÄÑêÖë üóÖâäà
-;	   L-èêéóàíÄççéÖ áçÄóÖçàÖ
+; ≠† ¢ÂÆ§•: H-†§‡•· ÔÁ•©™®
+;	    L-Ø‡ÆÁ®‚†≠≠Æ• ß≠†Á•≠®•
 READCMOS	DI
 		PUSH BC
 		LD BC,PENT_CONF
-		LD A,CMOS_ON			;êÄáêÖòÖçàÖ ÑéëíìèÄ ä äåéëì
+		LD A,CMOS_ON			; ‡†ß‡•Ë•≠®• §Æ·‚„Ø† ™ ™¨Æ·„
 		OUT (C),A
 		LD B,HIGH (CMOS_SET_ADR)
 		OUT (C),H
 		LD B,HIGH (CMOS_RD_WR)
 		IN L,(C)
-		LD A,CMOS_OFF			;áÄèêÖí ÑéëíìèÄ ä äåéëì
+		LD A,CMOS_OFF			; ß†Ø‡•‚ §Æ·‚„Ø† ™ ™¨Æ·„
 		LD B,HIGH (PENT_CONF)
 		OUT (C),A
 		POP BC
@@ -475,144 +465,144 @@ READCMOS	DI
 		AND A
 		RET
 
-;çÄ ÇïéÑÖ: H-ÄÑêÖë üóÖâäà
-;	   L-óíé íìÑÄ áÄèàëÄíú
+; ≠† ¢ÂÆ§•: H-†§‡•· ÔÁ•©™®
+;	    L-Á‚Æ ‚„§† ß†Ø®·†‚Ï
 WRITECMOS
 	RST8 _CMOS_RW,_WRITE_CMOS
 		RET
 
-;óíÖçàÖ ÇÖêëàà FPGA àãà BOOTLOADER, Öëãà ùíé èÖçíÖÇÄ
+; Á‚•≠®• ¢•‡·®® FPGA ®´® BOOTLOADER, •·´® Ì‚Æ Ø•≠‚•¢†
 GET_VERS_EVO	LD C,L
-		LD H,0XF0
-		CALL WRITECMOS			;èàòÖå Ç ÄÑêÖë 0XF0 Ñãü èéãìóÖçàü ÇÖêëàà
-		CALL READCMOS			;óàíÄÖå éíÇÖí
-		CP C				;ëéÇèÄãé ë íÖå óíé áÄèàëÄçé, çÖ èéÑÑÖêÜàÇÄÖíëü
-		RET Z				;à ùíé çÖ èÖçíÖÇÄ (àãà ÇÖêëàü FPGA ëíÄêÄü). ÇõïéÑàå
-		INC A				;èêàòÖã 0XFF, áçÄóàí óÄëéÇ çÖíì
-		RET Z				;ÇõïéÑàå
+		LD H,CMOS.READ_PS2
+		CALL WRITECMOS			; Ø®Ë•¨ ¢ †§‡•· 0xF0 §´Ô ØÆ´„Á•≠®Ô ¢•‡·®®
+		CALL READCMOS			; Á®‚†•¨ Æ‚¢•‚
+		CP C				; ·Æ¢Ø†´Æ · ‚•¨ Á‚Æ ß†Ø®·†≠Æ, ≠• ØÆ§§•‡¶®¢†•‚·Ô
+		RET Z				; ® Ì‚Æ ≠• Ø•≠‚•¢† (®´® ¢•‡·®Ô FPGA ·‚†‡†Ô). ¢ÎÂÆ§®¨
+		INC A				; Ø‡®Ë•´ 0xFF, ß≠†Á®‚ Á†·Æ¢ ≠•‚„
+		RET Z				; ¢ÎÂÆ§®¨
 		DI
-		DEC A				;ÇéáÇêÄôÄÖå ëóàíÄççéÖ áçÄóÖçàÖ
+		DEC A				; ¢Æß¢‡†È†•¨ ·Á®‚†≠≠Æ• ß≠†Á•≠®•
 		PUSH DE
-		LD (DE),A			;èéãéÜàãà Ç ÅìîÖê ìÜÖ èêéóàíÄççõâ ÅÄâí
+		LD (DE),A			; ØÆ´Æ¶®´® ¢ °„‰•‡ „¶• Ø‡ÆÁ®‚†≠≠Î© °†©‚
 		INC DE
-		LD B,0X0F			;éëíÄãéëú èêéóàíÄíú éëíÄãúçõÖ ÖôÖ 15 ÅÄâí
+		LD B,0x0F			; Æ·‚†´Æ·Ï Ø‡ÆÁ®‚†‚Ï Æ·‚†´Ï≠Î• •È• 15 °†©‚
 GVE1		INC H
-		CALL READCMOS			;óàíÄÖå ÅÄâí
+		CALL READCMOS			; Á®‚†•¨ °†©‚
 		LD (DE),A
 		INC DE
-		DJNZ GVE1			;óàíÄÖå èéäÄ ÇëÖ ÅÄâíõ çÖ äéçóÄíëü
-		POP DE				;èêéÇÖêüå Ç ÅìîÖêÖ 12 ÅÄâí íÖäëíÄ
+		DJNZ GVE1			; Á®‚†•¨ ØÆ™† ¢·• °†©‚Î ≠• ™Æ≠Á†‚·Ô
+		POP DE				; Ø‡Æ¢•‡Ô¨ ¢ °„‰•‡• 12 °†©‚ ‚•™·‚†
 		LD H,D
 		LD L,E
-		LD B,0X0C			;Öëãà íÖäëí äéêéóÖ àôÖå ÅÄâí 0 (èêàáçÄä äéçñÄ íÖäëíÄ)
+		LD B,0x0C			; •·´® ‚•™·‚ ™Æ‡ÆÁ• ®È•¨ °†©‚ 0 (Ø‡®ß≠†™ ™Æ≠Ê† ‚•™·‚†)
 GVE2		LD A,(DE)
 		AND A
 		JR Z,GVE3
 		INC DE
 		DJNZ GVE2
-GVE3		LD BC,0X0C			;áÄÅêÄãà àá ÅìîÖêÄ 2 ÅÄâíÄ ÑÄíõ Ç ëèÖñîéêåÄíÖ
+GVE3		LD BC,0x0C			; ß†°‡†´® ®ß °„‰•‡† 2 °†©‚† §†‚Î ¢ ·Ø•Ê‰Æ‡¨†‚•
 		ADD HL,BC
 		LD C,(HL)
 		INC HL
 		LD B,(HL)
 		EX DE,HL
-		LD (HL)," "			;ÑéÅÄÇãüÖå ä íÖäëíì èêéÅÖã-êÄáÑÖãàíÖãú
+		LD (HL),' '			; §Æ°†¢´Ô•¨ ™ ‚•™·‚„ Ø‡Æ°•´-‡†ß§•´®‚•´Ï
 		INC HL
 
 ;êÄëèÄäéÇôàä ÑÄíõ
 UNVERS		LD A,C
-		AND 0X1F			;çìÜçõ 5 Åàí-óàëãé åÖëüñÄ
-		CALL A2TXT			;äéçÇÖêëàü à ìäãÄÑäÄ ÑÄíõ
+		AND 0x1F			; ≠„¶≠Î 5 °®‚-Á®·´Æ ¨•·ÔÊ†
+		CALL A2TXT			; ™Æ≠¢•‡·®Ô ® „™´†§™† §†‚Î
 		SRL B
-		RR C				;ëÑÇàçìãà Ñãü ñÖãéëíçéëíà çéåÖêÄ åÖëüñÄ
-		LD A,C				;Çáüãà Åàíõ åÖëüñÄ
+		RR C				; ·§¢®≠„´® §´Ô Ê•´Æ·‚≠Æ·‚® ≠Æ¨•‡† ¨•·ÔÊ†
+		LD A,C				; ¢ßÔ´® °®‚Î ¨•·ÔÊ†
 		RRCA
 		RRCA
 		RRCA
-		RRCA				;ëÑÇàçìãà Ç åãÄÑòàÖ Åàíõ
-		AND 0X0F			;çÄå çìÜçõ íéãúäé 4 ÅàíÄ åÖëüñÄ
-		LD (HL),"."			;êÄáÑÖãàíÖãúçÄü íéóäÄ
+		RRCA				; ·§¢®≠„´® ¢ ¨´†§Ë®• °®‚Î
+		AND 0x0F			; ≠†¨ ≠„¶≠Î ‚Æ´Ï™Æ 4 °®‚† ¨•·ÔÊ†
+		LD (HL),'.'			; ‡†ß§•´®‚•´Ï≠†Ô ‚ÆÁ™†
 		INC HL
-		CALL A2TXT			;äéçÇÖêëàü à ìäãÄÑäÄ åÖëüñÄ
-		LD (HL),"."			;êÄáÑÖãàíÖãúçÄü íéóäÄ
+		CALL A2TXT			; ™Æ≠¢•‡·®Ô ® „™´†§™† ¨•·ÔÊ†
+		LD (HL),'.'			; ‡†ß§•´®‚•´Ï≠†Ô ‚ÆÁ™†
 		INC HL
-		LD (HL),"2"
+		LD (HL),'2'
 		INC HL
-		LD (HL),"0"			;ÑéÅÄÇàãà ä ÉéÑì ÑÇÖ ñàîÖêäà
+		LD (HL),'0'			; §Æ°†¢®´® ™ £Æ§„ §¢• Ê®‰•‡™®
 		INC HL
-		LD A,B				;Çáüãà çéåÖê ÉéÑÄ
-		AND 0X3F			;çìÜçõ íéãúäé 6 Åàí
-		CALL A2TXT			;äéçÇÖêëàü à ìäãÄÑäÄ ÉéÑÄ
-		BIT 6,B				;Öëãà Åàí 6 (ëÑÇàçìíõâ Åàí 7) ìëíÄçéÇãÖç
-		RET NZ	;JR NZ,GVE4		;íé áÄÇÖêòÄÖå ëíêéäì
-		EX DE,HL			;àçÄóÖ ÇÖêëàü ÅÖíÄ, é óÖå ÑéÅÄÇãüÖå íÖäëí Ç ÅìîÖê
+		LD A,B				; ¢ßÔ´® ≠Æ¨•‡ £Æ§†
+		AND 0x3F			; ≠„¶≠Î ‚Æ´Ï™Æ 6 °®‚
+		CALL A2TXT			; ™Æ≠¢•‡·®Ô ® „™´†§™† £Æ§†
+		BIT 6,B				; •·´® °®‚ 6 (·§¢®≠„‚Î© °®‚ 7) „·‚†≠Æ¢´•≠
+		RET NZ				; ‚Æ ß†¢•‡Ë†•¨ ·‚‡Æ™„
+		EX DE,HL			; ®≠†Á• ¢•‡·®Ô °•‚†, Æ Á•¨ §Æ°†¢´Ô•¨ ‚•™·‚ ¢ °„‰•‡
 		LD HL,TXT_BETA
 		LD BC,5
 		LDIR
 		EX DE,HL
 		RET
 
-;êÄëèÖóÄíäÄ çÄ ùäêÄçÖ ÇêÖåÖçà, ÑÄíõ à Ñçü çÖÑÖãà
+; ‡†·Ø•Á†‚™† ≠† Ì™‡†≠• ¢‡•¨•≠®, §†‚Î ® §≠Ô ≠•§•´®
 PRINTTIME	LD A,(ERS_FLAGS)
 		AND M_CLOCK_ON
-		RET Z				;óÄëõ çÖ éÅçÄêìÜÖçõ, ÇõïéÑàå çàóÖÉé çÖ ÇõÇéÑü
-		LD H,0X0C
+		RET Z				; Á†·Î ≠• Æ°≠†‡„¶•≠Î, ¢ÎÂÆ§®¨ ≠®Á•£Æ ≠• ¢Î¢Æ§Ô
+		LD H,CMOS.REG_C
 		CALL READCMOS
-		AND 0X10
-		RET Z				;Öëãà ÇêÖåü ÖôÖ çÖ éÅçéÇàãéëú, ÇõïéÑàå çàóÖÉé çÖ ÇõÇéÑü
-		LD H,CMOS_BYTE_01
+		AND CMOSREG.M_C_RO_UF
+		RET Z				; •·´® ¢‡•¨Ô •È• ≠• Æ°≠Æ¢®´Æ·Ï, ¢ÎÂÆ§®¨ ≠®Á•£Æ ≠• ¢Î¢Æ§Ô
+		LD H,CMOS.BYTE_01
 		CALL READCMOS
-		AND M_CLOCK_VIEW
-		JR NZ,VIDEOMODE			;éíéÅêÄÜÖçàÖ ÇõäãûóÖçé, ÇõïéÑàå çàóÖÉé çÖ ÇõÇéÑü
+		AND CMOS_EC.M_CLOCK_VIEW
+		JR NZ,VIDEOMODE			; Æ‚Æ°‡†¶•≠®• ¢Î™´ÓÁ•≠Æ, ¢ÎÂÆ§®¨ ≠®Á•£Æ ≠• ¢Î¢Æ§Ô
 		DI
 		EXX
-		LD BC,TXT_TIME			;óíÖçàÖ à èêÖéÅêÄáéÇÄçàÖ ÇêÖåÖçà
-		LD H,4
-		CALL READCMOS			;èêéóàíÄãà óÄëõ
+		LD BC,TXT_TIME			; Á‚•≠®• ® Ø‡•Æ°‡†ßÆ¢†≠®• ¢‡•¨•≠®
+		LD H,CMOS.HOUR
+		CALL READCMOS			; Ø‡ÆÁ®‚†´® Á†·Î
 		LD (SCRSAV.CURR+2),A
-		CALL BYTE2TXT			;ëäéçÇÖêíàãà óÄëõ ë ìäãÄÑäéâ Ç ÅìîÖê
+		CALL BYTE2TXT			; ·™Æ≠¢•‡‚®´® Á†·Î · „™´†§™Æ© ¢ °„‰•‡
 		LD A,(BC)
-		XOR ':'-' '			;äéçÇÖêëàü åàÉÄûôÖÉé ÑÇéÖíéóàü
+		XOR ':'-' '			; ™Æ≠¢•‡·®Ô ¨®£†ÓÈ•£Æ §¢Æ•‚ÆÁ®Ô
 		LD (BC),A
 		INC BC
-		LD H,2
-		CALL READCMOS			;èêéóàíÄãà åàçìíõ
+		LD H,CMOS.MINUTE
+		CALL READCMOS			; Ø‡ÆÁ®‚†´® ¨®≠„‚Î
 		LD (SCRSAV.CURR+1),A
-		CALL BYTE2TXT			;ëäéçÇÖêíàãà óÄëõ ë ìäãÄÑäéâ Ç ÅìîÖê
+		CALL BYTE2TXT			; ·™Æ≠¢•‡‚®´® Á†·Î · „™´†§™Æ© ¢ °„‰•‡
 		LD A,(BC)
-		XOR ':'-' '			;äéçÇÖêëàü åàÉÄûôÖÉé ÑÇéÖíéóàü
+		XOR ':'-' '			; ™Æ≠¢•‡·®Ô ¨®£†ÓÈ•£Æ §¢Æ•‚ÆÁ®Ô
 		LD (BC),A
 		INC BC
-		LD H,0
-		CALL READCMOS			;èêéóàíÄãà ëÖäìçÑõ
+		LD H,CMOS.SECOND
+		CALL READCMOS			; Ø‡ÆÁ®‚†´® ·•™„≠§Î
 		LD (SCRSAV.CURR),A
 		CALL BYTE2TXT
-		LD BC,TXT_DATA			;ÑÄãÖÖ óíÖçàÖ à èêÖéÅêÄáéÇÄçàÖ ÑÄíõ
-		LD H,7
+		LD BC,TXT_DATA			; §†´•• Á‚•≠®• ® Ø‡•Æ°‡†ßÆ¢†≠®• §†‚Î
+		LD H,CMOS.DAY_MONTH
 		CALL READCMOS
 		CALL BYTE2TXT
 		INC BC
-		LD H,8
+		LD H,CMOS.MONTH
 		CALL READCMOS
 		CALL BYTE2TXT
 		INC BC
-		LD H,9
+		LD H,CMOS.YEAR
 		CALL READCMOS
 		CALL BYTE2TXT
-		LD HL,BUFF_TIME			;èÖóÄíÖå ÇêÖåü àá ÅìîÖêÄ
+		LD HL,BUFF_TIME			; Ø•Á†‚•¨ ¢‡•¨Ô ®ß °„‰•‡†
 	RST8 _PRINT_MESSAGE
 		EXX
 
 VIDEOMODE	DI
-		LD HL,0XF003
+		LD HL,CMOS.READ_PS2 << 8 + 3
 		LD BC,PENT_CONF
-		LD A,CMOS_ON			;êÄáêÖòÖçàÖ ÑéëíìèÄ ä äåéëì
+		LD A,CMOS_ON			; ‡†ß‡•Ë•≠®• §Æ·‚„Ø† ™ ™¨Æ·„
 		OUT (C),A
 		LD B,HIGH (CMOS_SET_ADR)
 		OUT (C),H
 		LD B,HIGH (CMOS_RD_WR)
 		OUT (C),L
-		LD A,CMOS_OFF			;áÄèêÖí ÑéëíìèÄ ä äåéëì
+		LD A,CMOS_OFF			; ß†Ø‡•‚ §Æ·‚„Ø† ™ ™¨Æ·„
 		LD B,HIGH (PENT_CONF)
 		OUT (C),A
 		CALL READCMOS
@@ -640,11 +630,11 @@ VIDEOMODE	DI
 VMODE1		LDI
 		LDI
 		LDI
-		LD HL,TXT_VMODE			;èÖóÄíÖå íÖäìôàâ ÇàÑÖé êÖÜàå
+		LD HL,TXT_VMODE			; Ø•Á†‚•¨ ‚•™„È®© ¢®§•Æ ‡•¶®¨
 	RST8 _PRINT_MESSAGE
 		RET
 
-;èÖêÖÇéÑ "A" Ç ÑÖëüíàóäì à Ç íÖäëí
+; Ø•‡•¢Æ§ "A" ¢ §•·Ô‚®Á™„ ® ¢ ‚•™·‚
 A2TXT		PUSH HL
 		LD L,A
 		LD H,0
@@ -655,10 +645,10 @@ A2TXT		PUSH HL
 		SBC HL,DE
 		JR NC,$-3
 		ADD HL,DE
-		ADD A,"0"
+		ADD A,'0'
 		LD D,A
 		LD A,L
-		ADD A,"0"
+		ADD A,'0'
 		POP HL
 		LD (HL),D
 		INC HL
@@ -667,17 +657,17 @@ A2TXT		PUSH HL
 		RET
 
 BYTE2TXT	LD L,A
-		LD H,"0"
+		LD H,'0'
 		RRCA
 		RRCA
 		RRCA
 		RRCA
-		AND 0X0F
+		AND 0x0F
 		ADD A,H
 		LD (BC),A
 		INC BC
 		LD A,L
-		AND 0X0F
+		AND 0x0F
 		ADD A,H
 		LD (BC),A
 		INC BC
@@ -685,16 +675,16 @@ BYTE2TXT	LD L,A
 
 TXTMODE_ON
 	PEC_ON M_SHADOW_BF
-		LD BC,0XFF77
-		LD A,0XA6
+		LD BC,0xFF77
+		LD A,0xA6
 		CALL SET_C_A
 	PEC_OFF M_SHADOW_BF
 		RET
 
 TXTMODE_OFF
 	PEC_ON M_SHADOW_BF
-		LD BC,0XFF77
-		LD A,0XA3
+		LD BC,0xFF77
+		LD A,0xA3
 		CALL SET_C_A
 	PEC_OFF M_SHADOW_BF
 		RET
@@ -715,18 +705,17 @@ CHECK_SCREENSAVER
 		OR E
 		RET NZ
 		CALL START_SONGLN
-
 RESET_SCREENSAVER
 		LD DE,SCRSAV.START
-		LD H,0
+		LD H,CMOS.SECOND
 		CALL READCMOS
 		LD (DE),A
 		INC DE
-		LD H,2
+		LD H,CMOS.MINUTE
 		CALL READCMOS
 		LD (DE),A
 		INC DE
-		LD H,4
+		LD H,CMOS.HOUR
 		CALL READCMOS
 		LD (DE),A
 		INC DE

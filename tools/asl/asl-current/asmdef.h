@@ -18,6 +18,7 @@
 #include "dynstr.h"
 #include "intformat.h"
 #include "strcomp.h"
+#include "striter.h"
 #include "lstmacroexp.h"
 #include "cpulist.h"
 #include "tempresult.h"
@@ -97,6 +98,7 @@ extern char SrcSuffix[],IncSuffix[],PrgSuffix[],LstSuffix[],
 #define FlagTrueName     "TRUE"	      /* Flagkonstanten */
 #define FlagFalseName    "FALSE"
 #define PiName           "CONSTPI"    /* Zahl Pi */
+#define FloatMaxName     "FLOATMAX"   /* largest floating point number */
 #define DateName         "DATE"       /* Datum & Zeit */
 #define TimeName         "TIME"
 #define VerName          "VERSION"    /* speichert Versionsnummer */
@@ -141,8 +143,6 @@ typedef void (*DissectBitProc)(
 char *pDest, size_t DestSize, LargeWord Inp
 #endif
 );
-
-typedef Boolean (*tQualifyQuoteFnc)(const char *pStart, const char *pQuotePos);
 
 typedef Word WordField[6];          /* fuer Zahlenumwandlung */
 typedef struct _TTransTable
@@ -246,7 +246,9 @@ extern Boolean MakeCrossList;
 extern Boolean MakeSectionList;
 extern Boolean MakeIncludeList;
 extern Boolean DefRelaxedMode;
+extern as_dynstr_t def_int_syntax;
 extern Word ListMask;
+extern Boolean list_macro_handles;
 extern ShortInt ExtendErrors;
 extern Integer EnumSegment;
 extern LongInt EnumIncrement, EnumCurrentValue;
@@ -308,7 +310,7 @@ extern void (*SwitchFrom)(void);
 extern void (*InternSymbol)(char *Asc, TempResult *Erg);
 extern DissectBitProc DissectBit;
 extern DissectRegProc DissectReg;
-extern tQualifyQuoteFnc QualifyQuote;
+extern as_qualify_quote_fnc_t QualifyQuote;
 
 extern StringPtr IncludeList;
 extern Integer IncDepth, NextIncDepth, MaxIncDepth;

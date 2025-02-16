@@ -1,23 +1,23 @@
 
-;LAST UPDATE: 30.06.2019 savelij
+; LAST UPDATE: 16.02.2025 savelij
 
-;АДРЕС ЦИКЛА ОБЩЕНИЯ СО СПЕКОМ
-COMINT_		EQU 0X026E
+; адрес цикла общения со спеком
+COMINT_		EQU 0x026E
 
-;АДРЕС УСТАНОВЩИКА ДРАЙВЕРА НА NeoGS
-SETUPSD		EQU 0X5B00
+; адрес установщика драйвера на NeoGS
+SETUPSD		EQU 0x5B00
 
-;ДРАЙВЕР SD-CARD ДЛЯ NGS
+; драйвер SD-CARD для NGS
 
-;ВХОДНЫЕ ПАРАМЕТРЫ ОБЩИЕ:
-;HL-АДРЕС ЗАГРУЗКИ В ПАМЯТЬ
-;BCDE-32-Х БИТНЫЙ НОМЕР СЕКТОРА
-;A-КОЛИЧЕСТВО БЛОКОВ (БЛОК=512 БАЙТ)
-;ТОЛЬКО ДЛЯ МНОГОБЛОЧНОЙ ЗАПИСИ/ЧТЕНИИ
+; входные параметры общие:
+; HL-адрес загрузки в память
+; BCDE-32-х битный номер сектора
+; A-количество блоков (блок=512 байт)
+; только для многоблочной записи/чтении
 
-;ОШИБКИ ВЫДАВАЕМЫЕ НА ВЫХОДЕ:
-;A=0-ИНИЦИАЛИЗАЦИЯ ПРОШЛА УСПЕШНО
-;A=1-КАРТА НЕ НАЙДЕНА ИЛИ НЕ ОТВЕТИЛА
+; ошибки выдаваемые на выходе:
+; A=0-инициализация прошла успешно
+; A=1-карта не найдена или не ответила
 
 COMSDG		EX AF,AF'
 		LD A,IYL
@@ -58,12 +58,12 @@ RET4SDG		PUSH AF
 RET4SDG1	POP AF
 		RET
 
-NGSSDT		DW GSDINIT	;ИНИТ SD КАРТЫ
-		DW GSDCMP	;ПРОВЕРКА НАЛИЧИЯ SD КАРТЫ
-		DW SDRDMUL	;ЧИТАТЬ "A" СЕКТОРОВ
-		DW SDWRMUL	;ПИСАТЬ "A" СЕКТОРОВ
+NGSSDT		DW GSDINIT	; инит SD карты
+		DW GSDCMP	; проверка наличия SD карты
+		DW SDRDMUL	; читать 'A' секторов
+		DW SDWRMUL	; писать 'A' секторов
 
-;ЗАПИСЬ "A" СЕКТОРОВ
+; запись 'A' секторов
 SDWRMUL		EX AF,AF'
 		LD A,_DEV_WRITE
 		CALL COMM2SD
@@ -74,7 +74,7 @@ SDWRMUL		EX AF,AF'
 SDWRSN1		EX AF,AF'
 		OUT (GSCOM),A
 		CALL WC_
-		LD DE,0X0200
+		LD DE,0x0200
 SDWRSN2		OUTI
 		CALL WD_
 		DEC DE
@@ -86,14 +86,14 @@ SDWRSN2		OUTI
 		JR NZ,SDWRSN1
 		CALL WN_
 		IN A,(GSDAT)
-		CP 0X99				;КАРТА ПОТЕРЯЛАСЬ ПО ВРЕМЯ ЧТЕНИЯ/ЗАПИСИ
+		CP 0x99				; карта потерялась по время чтения/записи
 		JP Z,SD_CARD_LOST
 		POP BC
 		POP DE
 		XOR A
 		RET
 
-;ЧТЕНИЕ "A" СЕКТОРОВ
+; чтение 'A' секторов
 SDRDMUL		EX AF,AF'
 		LD A,_DEV_READ
 		CALL COMM2SD
@@ -107,13 +107,12 @@ SDRDMUL		EX AF,AF'
 		AND A
 		JR NZ,SDRDSN5
 SDRDSN3		
-;		LD A,(R_7FFD)
-		READ_7FFD
-		AND 0X10
+	READ_7FFD
+		AND 0x10
 		LD BC,(B0_CPU2)
 		JR Z,SDRDSN4
 		LD BC,(B1_CPU2)
-SDRDSN4		LD A,0X37
+SDRDSN4		LD A,0x37
 		OR B
 		LD B,A
 		LD A,C
@@ -123,56 +122,56 @@ SDRDSN5		LD A,D
 		LD BC,GSDAT
 SDRDSN1		EX AF,AF'
 		OUT (GSCOM),A
-		IN A,(GSCOM)
+.L1		IN A,(GSCOM)
 		RRA
-		JR C,$-3
-		LD DE,0X0200			;ПРОДОЛЖАЕМ ЕСЛИ ВСЕ В ПОРЯДКЕ
-SDRDSN2		IN A,(GSCOM)
+		JR C,.L1
+		LD DE,0x0200			; продолжаем если все в порядке
+.L2		IN A,(GSCOM)
 		RLA
-		JR NC,$-3
+		JR NC,.L2
 		INI
 		DEC DE
 		LD A,D
 		OR E
-		JR NZ,SDRDSN2
+		JR NZ,.L2
 		EX AF,AF'
 		DEC A
 		JR NZ,SDRDSN1
-		IN A,(GSCOM)
+.L3		IN A,(GSCOM)
 		RLA
-		JR NC,$-3
+		JR NC,.L3
 		IN A,(GSDAT)
-		CP 0X99				;КАРТА ПОТЕРЯЛАСЬ ПО ВРЕМЯ ЧТЕНИЯ/ЗАПИСИ
+		CP 0x99				; карта потерялась по время чтения/записи
 		JP Z,SD_CARD_LOST
-		LD BC,WIN_P6
+		LD BC,WIN_P2
 		XOR A
 		OUT (C),A
 		POP BC
 		POP DE
 		RET
 
-;ПРОВЕРКА НАЛИЧИЯ КАРТОЧКИ
-GSDCMP		LD H,CMOS_BYTE_01
-		ROMCALL READCMOS,ROM_RST82
+; проверка наличия карточки
+GSDCMP		LD H,CMOS.BYTE_01
+	ROMCALL READCMOS,ROM_RST82
 		LD A,L
-		AND M_ACCESSSDG			;ПРОВЕРКА РАЗРЕШЕНИЯ ДОСТУПА К SD КАРТЕ NEOGS
-		JR Z,SD_NO			;ВЫХОД ЕСЛИ ДОСТУП К КАРТОЧКЕ ЗАПРЕЩЕН
-		LD A,(FLAGS_DRV)
+		AND CMOS_EC.M_SD_NGS_ONOFF	; проверка разрешения доступа к SD карте NEOGS
+		JR Z,SD_NO			; выход если доступ к карточке запрещен
+		LD A,(DEVMAN_VARS.FLAGS_DRV)
 		AND B_INST_SDG
-		JR Z,SD_NO			;ВЫХОД ЕСЛИ ДРАЙВЕР НЕ УСТАНОВЛЕН
+		JR Z,SD_NO			; выход если драйвер не установлен
 		XOR A
 		OUT (GSDAT),A
-		LD A,0X1D
+		LD A,0x1D
 		OUT (GSCOM),A
-		IN A,(GSCOM)
+.L1		IN A,(GSCOM)
 		RRA
-		JR C,$-3
+		JR C,.L1
 		IN A,(GSDAT)
 		LD D,A
-		AND 0X0F
+		AND 0x0F
 		LD E,A
 		LD A,D
-		AND 0XF0
+		AND 0xF0
 		RRCA
 		RRCA
 		RRCA
@@ -182,14 +181,14 @@ GSDCMP		LD H,CMOS_BYTE_01
 		JR NZ,GSDINIT1
 		CALL INSTSDD
 
-;ИНИЦИАЛИЗАЦИЯ КАРТОЧКИ
+; инициализация карточки
 GSDINIT		XOR A
 GSDINIT1	CALL COMM2SD
 		CALL WN_
 GSDINIT2	IN A,(GSDAT)
-GSDINIT3	CP 0X99				;КАРТА ПОТЕРЯЛАСЬ ПО ВРЕМЯ ЧТЕНИЯ/ЗАПИСИ
+GSDINIT3	CP 0x99				; карта потерялась по время чтения/записи
 		JP Z,SD_CARD_LOST
-		CP 0X77
+		CP 0x77
 		JR NZ,SD_NO
 		XOR A
 		RET
@@ -197,50 +196,50 @@ GSDINIT3	CP 0X99				;КАРТА ПОТЕРЯЛАСЬ ПО ВРЕМЯ ЧТЕНИЯ/ЗАПИСИ
 SD_NO		LD A,1
 		RET
 
-;ПЕРЕДАТЧИК КОМАНД/ПАРАМЕТРОВ В ДРАЙВЕР НА NeoGS
-COMM2SD		OUT (GSDAT),A		;УШЛА КОМАНДА ДРАЙВЕРУ
-		LD A,0X1E
+; передатчик команд/параметров в драйвер на NeoGS
+COMM2SD		OUT (GSDAT),A		; ушла команда драйверу
+		LD A,0x1E
 		OUT (GSCOM),A
-		CALL WC_		;УШЛА КОМАНДА ПРОШИВКЕ
+		CALL WC_		; ушла команда прошивке
 		LD A,B
 		OUT (GSDAT),A
-		CALL WD_		;УШЛИ БИТЫ 31-24 ПАРАМЕТРОВ
+		CALL WD_		; ушли биты 31-24 параметров
 		LD A,C
 		OUT (GSDAT),A
-		CALL WD_		;УШЛИ БИТЫ 23-16 ПАРАМЕТРОВ
+		CALL WD_		; ушли биты 23-16 параметров
 		LD A,D
 		OUT (GSDAT),A
-		CALL WD_		;УШЛИ БИТЫ 15-8 ПАРАМЕТРОВ
+		CALL WD_		; ушли биты 15-8 параметров
 		LD A,E
 		OUT (GSDAT),A
-		CALL WD_		;УШЛИ БИТЫ 7-0 ПАРАМЕТРОВ
+		CALL WD_		; ушли биты 7-0 параметров
 		EX AF,AF'
 		OUT (GSDAT),A
 		EX AF,AF'
 		DUPL 9,0
-		RET			;УШЛО КОЛ-ВО СЕКТОРОВ
+		RET			; ушло кол-во секторов
 
-;ОЖИДАНИЕ КОГДА NeoGS БАЙТ ЗАБЕРЕТ
+; ожидание когда NeoGS байт заберет
 WD_		IN A,(GSCOM)
 		RLA
-		JR C,$-3
+		JR C,WD_
 		RET
 
-;ОЖИДАНИЕ КОГДА NeoGS ДАСТ БАЙТ
+; ожидание когда NeoGS даст байт
 WN_		IN A,(GSCOM)
 		RLA
-		JR NC,$-3
+		JR NC,WN_
 		RET
 
-;ОЖИДАНИЕ КОГДА NeoGS КОМАНДУ ЗАБЕРЕТ
+; ожидание когда NeoGS команду заберет
 WC_		IN A,(GSCOM)
 		RRA
-		JR C,$-3
+		JR C,WC_
 		RET
 
-;УСТАНОВЩИК ДРАЙВЕРА НА NeoGS
-INSTSDD		LD A,0X80
-		OUT (GSCTR),A			;ПОЛНЫЙ СБРОС NEOGS
+; установщик драйвера на NeoGS
+INSTSDD		LD A,0x80
+		OUT (GSCTR),A			; полный сброс NEOGS
 		EI
 		HALT
 		EI
@@ -248,9 +247,9 @@ INSTSDD		LD A,0X80
 		EI
 		HALT
 		DI
-		LD A,0XF3
+		LD A,0xF3
 		OUT (GSCOM),A
-		LD B,0X30
+		LD B,0x30
 ISDD1		EI
 		HALT
 		DI
@@ -261,10 +260,10 @@ ISDD1		EI
 		JR C,ISDD1
 		LD BC,GSDAT
 		IN A,(C)
-		LD DE,0X0300
+		LD DE,0x0300
 		LD HL,SETUPSD
 		OUT (C),E
-		LD A,0X14
+		LD A,0x14
 		OUT (GSCOM),A
 		CALL WC_
 		OUT (C),D
@@ -282,7 +281,7 @@ ISDD3		OUTI
 		JR NZ,ISDD3
 		LD HL,SETUPSD
 		OUT (C),L
-		LD A,0X13
+		LD A,0x13
 		OUT (GSCOM),A
 		CALL WC_
 		OUT (C),H
@@ -295,33 +294,33 @@ ISDD3		OUTI
 		IN A,(GSDAT)
 		DEC B
 		JP Z,SD_NO
-		CP 0X77
+		CP 0x77
 		JP NZ,SD_NO
 		XOR A
 		RET
 
-UKLAD1	;ОТКУДА КОД НА НГС ЗАКИДЫВАТЬ
+UKLAD1	; откуда код на нгс закидывать
 
 		PHASE SETUPSD
 
-;САМ УСТАНОВЩИК ДРАЙВЕРА ДЛЯ NeoGS
+; сам установщик драйвера для NeoGS
 		DI
-		LD A,0X9C
-		OUT (SCTRL),A		;КОНФИГУРАТОР NeoGS
+		LD A,0x9C
+		OUT (SCTRL),A		; конфигуратор NeoGS
 		CALL AVTODET
 		AND A
-		LD A,0X77		;0X77-NeoGS НАЙДЕН
-		JR Z,$+4
-		LD A,0XCC		;0XCC-НАЙДЕН OLDGS
-		OUT (ZXDATWR),A
+		LD A,0x77		; 0x77-NeoGS найден
+		JR Z,.L1
+		LD A,0xCC		; 0xCC-найден OLDGS
+.L1		OUT (ZXDATWR),A
 		OUT (CLRCBIT),A
 		JP NZ,COMINT_
 		DI
 		IN A,(GSCFG0)
 		RES B_RAMRO,A
 		OUT (GSCFG0),A
-		LD HL,0X1D00
-		LD (0X0300+(0X1E*2)),HL
+		LD HL,0x1D00
+		LD (0x0300+(0x1E*2)),HL
 		LD DE,UKLAD2
 		LD BC,GSDDRVE-GSDDRV
 		EX DE,HL
@@ -331,12 +330,12 @@ UKLAD1	;ОТКУДА КОД НА НГС ЗАКИДЫВАТЬ
 		OUT (GSCFG0),A
 		JP COMINT_
 
-;ПРОВЕРКА ЧТО ЭТО NeoGS И ВКЛЮЧЕНИЕ ЧАСТОТЫ 24MHz
+; проверка что это NeoGS и включение частоты 24MHz
 AVTODET		IN A,(GSCFG0)
-		AND 0XCF
-		OUT (GSCFG0),A		;ОБРАТНАЯ ЗАПИСЬ В ПОРТ СО СБРОШЕННЫМИ
-					;БИТАМИ 5-4 ВКЛЮЧАЕТ ЧАСТОТУ ПРОЦЕССОРА
-					;РАВНЫМ 24 МГц
+		AND 0xCF
+		OUT (GSCFG0),A		; обратная запись в порт со сброшенными
+					; битами 5-4 включает частоту процессора
+					; равным 24 МГц
 		LD D,A
 		IN A,(GSCFG0)
 		CP D
@@ -345,20 +344,20 @@ AVTODET		IN A,(GSCFG0)
 		DEC A
 		RET
 
-UKLAD2	;ОТКУДА КОД ПЕРЕКИДЫВАТЬ
+UKLAD2	; откуда код перекидывать
 
 		DEPHASE
 
-		PHASE 0X1D00
+		PHASE 0x1D00
 
-;ОБЩАЯ ТОЧКА ВХОДА ДЛЯ РАБОТЫ С SD КАРТОЙ
+; общая точка входа для работы с SD картой
 GSDDRV		DI
-		IN A,(ZXDATRD)		;ПРИЕМ КОМАНДЫ ДРАЙВЕРА
-		OUT (CLRCBIT),A		;СБРОС COMANDBIT
+		IN A,(ZXDATRD)		; прием команды драйвера
+		OUT (CLRCBIT),A		; сброс COMANDBIT
 		LD HL,COMINT_
 		PUSH HL
 		PUSH IY
-		LD IYH,0X77
+		LD IYH,0x77
 		ADD A,A
 		LD E,A
 		LD D,0
@@ -369,26 +368,26 @@ GSDDRV		DI
 		LD D,(HL)
 		EX DE,HL
 		CALL WDY
-		IN A,(ZXDATRD)		;ПРИЕМ БИТОВ 31-24 ПАРАМЕТРА
+		IN A,(ZXDATRD)		; прием битов 31-24 параметра
 		LD B,A
 		CALL WDY
-		IN A,(ZXDATRD)		;ПРИЕМ БИТОВ 23-16 ПАРАМЕТРА
+		IN A,(ZXDATRD)		; прием битов 23-16 параметра
 		LD C,A
 		CALL WDY
-		IN A,(ZXDATRD)		;ПРИЕМ БИТОВ 15-8 ПАРАМЕТРА
+		IN A,(ZXDATRD)		; прием битов 15-8 параметра
 		LD D,A
 		CALL WDY
-		IN A,(ZXDATRD)		;ПРИЕМ БИТОВ 7-0 ПАРАМЕТРА
+		IN A,(ZXDATRD)		; прием битов 7-0 параметра
 		LD E,A
 		CALL WDY
-		IN A,(ZXDATRD)		;ПРИЕМ КОЛ-ВО СЕКТОРОВ
+		IN A,(ZXDATRD)		; прием кол-во секторов
 		JP (HL)
 
-TABLSDG		DW SDINITG		;0 ПАРАМЕТРОВ НЕ ТРЕБУЕТ, НА ВЫХОДЕ A
-					;СМОТРИ ВЫШЕ ПЕРВЫЕ 2 ЗНАЧЕНИЯ
-		DW SDCMPG		;1 ПРОВЕРКА НАЛИЧИЯ SD КАРТЫ
-		DW RDMULG		;2 ЧИТАТЬ "A" СЕКТОРОВ
-		DW WRMULG		;3 ПИСАТЬ "A" СЕКТОРОВ
+TABLSDG		DW SDINITG		; 0 параметров не требует, на выходе 'A'
+					; смотри выше первые 2 значения
+		DW SDCMPG		; 1 проверка наличия SD карты
+		DW RDMULG		; 2 читать 'A' секторов
+		DW WRMULG		; 3 писать 'A' секторов
 
 SDCMPG		LD A,CMD_58
 		LD BC,SD_RSTR
@@ -403,18 +402,18 @@ SDCMPG		LD A,CMD_58
 		IN H,(C)
 		INC A
 		JP NZ,OK_WORK
-		LD IYH,0X88			;КАРТА НЕ ПРОШЛА ПРОВЕРКУ НА НАЛИЧИЕ
+		LD IYH,0x88			; карта не прошла проверку на наличие
 		JP OK_WORK
 
-ZAW003G		LD IYH,0XEE			;КАРТА НЕОБНАРУЖЕНА
+ZAW003G		LD IYH,0xEE			; карта необнаружена
 		JP OK_WORK
 
 SDINITG		CALL CSHIGHG
 		LD BC,SD_SEND
-		LD DE,0X20FF
-		OUT (C),E
+		LD DE,0x20FF
+.L1		OUT (C),E
 		DEC D
-		JR NZ,$-3
+		JR NZ,.L1
 		LD BC,SD_RSTR
 		XOR A
 		EX AF,AF'
@@ -440,7 +439,7 @@ ZAW001G		LD HL,CMD00G
 		LD HL,0
 		BIT 2,A
 		JR NZ,ZAW006G
-		LD H,0X40
+		LD H,0x40
 ZAW006G		LD A,CMD_55
 		CALL OUT_COG
 		CALL INOOUTG
@@ -455,7 +454,7 @@ ZAW006G		LD A,CMD_55
 		OUT (C),L
 		NOP
 		OUT (C),L
-		LD A,0XFF
+		LD A,0xFF
 		OUT (C),A
 		CALL INOOUTG
 		AND A
@@ -473,20 +472,20 @@ ZAW005G		LD HL,CMD16G
 		JP OK_WORK
 
 CSHIGHG		PUSH AF
-		LD A,M_SDNCS+M_SNCLR	;0X81
+		LD A,M_SDNCS+M_SNCLR	; 0x81
 		OUT (SCTRL),A
 		POP AF
 		RET
 
 CSLOWG		PUSH AF
-		LD A,M_SDNCS		;1
+		LD A,M_SDNCS		; 1
 		OUT (SCTRL),A
 		POP AF
 		RET
 
 OUTCOMG		CALL CSLOWG
 		PUSH BC
-		LD BC,0X0600+SD_SEND
+		LD BC,0x0600+SD_SEND
 		OTIR
 		POP BC
 		RET
@@ -526,7 +525,7 @@ SECM20G		PUSH HL
 		IN H,(C)
 		INC A
 		JR NZ,SECN20G1
-		LD IYH,0X99			;КАРТА ПОТЕРЯЛАСЬ
+		LD IYH,0x99			; карта потерялась
 SECN20G1	DEC A
 		BIT 6,A
 		POP HL
@@ -550,7 +549,7 @@ SECN20G		POP AF
 		OUT (C),D
 		NOP
 		OUT (C),E
-		LD A,0XFF
+		LD A,0xFF
 		OUT (C),A
 		POP BC
 		POP DE
@@ -558,7 +557,7 @@ SECN20G		POP AF
 		RET
 
 INOOUTG		PUSH DE
-		LD DE,0X80FF
+		LD DE,0x80FF
 INWAITG		IN A,(SD_RSTR)
 		CP E
 		JR NZ,INEXITG
@@ -567,18 +566,18 @@ INWAITG		IN A,(SD_RSTR)
 INEXITG		POP DE
 		RET
 
-CMD00G		DB 0X40,0X00,0X00,0X00,0X00,0X95	;GO_IDLE_STATE
-CMD08G		DB 0X48,0X00,0X00,0X01,0XAA,0X87	;SEND_IF_COND
-CMD16G		DB 0X50,0X00,0X00,0X02,0X00,0XFF	;SET_BLOCKEN
+CMD00G		DB 0x40,0x00,0x00,0x00,0x00,0x95	; GO_IDLE_STATE
+CMD08G		DB 0x48,0x00,0x00,0x01,0xAA,0x87	; SEND_IF_COND
+CMD16G		DB 0x50,0x00,0x00,0x02,0x00,0xFF	; SET_BLOCKEN
 
-;ПЕРЕДАЧА ОДНОГО СЕКТОРА В SD КАРТУ
+; передача одного сектора в SD карту
 WRSECTG		LD BC,SD_SEND
 		OUT (SD_SEND),A
-		IN A,(ZXSTAT)
+.L1		IN A,(ZXSTAT)
 		RRA
-		JR NC,$-3
+		JR NC,.L1
 		OUT (CLRCBIT),A
-		LD HL,0X0200
+		LD HL,0x0200
 WRSECTG1	CALL WDY
 		IN A,(ZXDATRD)
 		DEC HL
@@ -586,19 +585,19 @@ WRSECTG1	CALL WDY
 		LD A,H
 		OR L
 		JR NZ,WRSECTG1
-		LD A,0XFF
+		LD A,0xFF
 		OUT (C),A
 		NOP
 		OUT (C),A
 		RET
 
-;ПЕРЕДАЧА ОДНОГО СЕКТОРА НА СПЕК
+; передача одного сектора на спек
 RDSECTG		IN A,(ZXSTAT)
 		RRA
-		JR NC,$-3
+		JR NC,RDSECTG
 		OUT (CLRCBIT),A
 		LD BC,SD_RSTR
-		LD HL,0X0200
+		LD HL,0x0200
 RDSECTG1	IN A,(C)
 		DEC HL
 		OUT (ZXDATWR),A
@@ -611,19 +610,19 @@ RDSECTG1	IN A,(C)
 		IN A,(C)
 		RET
 
-;ЗАПИСЬ "A" СЕКТОРОВ
+; запись 'A' секторов
 WRMULG		EX AF,AF'
 		LD A,CMD_25
 		CALL SECM20G
 		LD A,IYH
-		CP 0X99
+		CP 0x99
 		JR Z,ERR_WR_LOST
 WRMULG3		CALL INOOUTG
 		INC A
 		JR NZ,WRMULG3
 		EX AF,AF'
 WRMULG1		EX AF,AF'
-		LD A,0XFC
+		LD A,0xFC
 		CALL WRSECTG
 WRMULG2		CALL INOOUTG
 		INC A
@@ -632,20 +631,20 @@ WRMULG2		CALL INOOUTG
 		DEC A
 		JR NZ,WRMULG1
 		LD C,SD_SEND
-		LD A,0XFD
+		LD A,0xFD
 		OUT (C),A
-		CALL INOOUTG
+.L1		CALL INOOUTG
 		INC A
-		JR NZ,$-4
+		JR NZ,.L1
 		JR OK_WORK
 
 ERR_WR_LOST	LD BC,SD_SEND
 		OUT (SD_SEND),A
-		IN A,(ZXSTAT)
+.L1		IN A,(ZXSTAT)
 		RRA
-		JR NC,$-3
+		JR NC,.L1
 		OUT (CLRCBIT),A
-		LD HL,0X0200
+		LD HL,0x0200
 ERRWRLOST1	CALL WDY
 		IN A,(ZXDATRD)
 		DEC HL
@@ -656,10 +655,10 @@ ERRWRLOST1	CALL WDY
 
 ERR_RD_LOST	IN A,(ZXSTAT)
 		RRA
-		JR NC,$-3
+		JR NC,ERR_RD_LOST
 		OUT (CLRCBIT),A
 		LD BC,SD_RSTR
-		LD HL,0X0200
+		LD HL,0x0200
 ERRRDLOST1	XOR A
 		OUT (ZXDATWR),A
 		CALL WDN
@@ -669,18 +668,18 @@ ERRRDLOST1	XOR A
 		JR NZ,ERRRDLOST1
 		JP OK_WORK
 
-;ЗАГРУЗКА "A" СЕКТОРОВ
+; загрузка 'A' секторов
 RDMULG		EX AF,AF'
 		LD A,CMD_18
 		CALL SECM20G
 		LD A,IYH
-		CP 0X99
+		CP 0x99
 		JR Z,ERR_RD_LOST
 		EX AF,AF'
 RDMULG1		EX AF,AF'
-		CALL INOOUTG
-		CP 0XFE
-		JR NZ,$-5
+.L1		CALL INOOUTG
+		CP 0xFE
+		JR NZ,.L1
 RDMULG5		CALL RDSECTG
 		EX AF,AF'
 		DEC A
@@ -690,23 +689,20 @@ RDMULG5		CALL RDSECTG
 RDMULG3		CALL INOOUTG
 		INC A
 		JR NZ,RDMULG3
-
 OK_WORK		CALL CSHIGHG
 		LD A,IYH
 		POP IY
-
 OUTSTAT		OUT (ZXDATWR),A
-
-;ОЖИДАНИЕ КОГДА СПЕК ЗАБЕРЕТ БАЙТ ДАННЫХ
+; ожидание когда спек заберет байт данных
 WDN		IN A,(ZXSTAT)
 		RLA
-		JR C,$-3
+		JR C,WDN
 		RET
 
-;ОЖИДАНИЕ КОГДА СПЕК ДАСТ БАЙТ ДАННЫХ
+; ожидание когда спек даст байт данных
 WDY		IN A,(ZXSTAT)
 		RLA
-		JR NC,$-3
+		JR NC,WDY
 		RET
 GSDDRVE
 		DEPHASE

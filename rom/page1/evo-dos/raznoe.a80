@@ -1,5 +1,5 @@
 
-;LAST UPDATE: 05.09.2017 savelij
+; LAST UPDATE: 13.02.2025 savelij
 
 		TITLE "raznoe.a80"
 
@@ -72,7 +72,7 @@ EMU_LDIR_RHL	CALL EMU_LDIR
 		POP HL
 		RET
 
-PRINT_VIRTDRV	LD H,VIRT_REAL_DRIVE
+PRINT_VIRTDRV	LD H,CMOS.VIRT_REAL_DRIVE
 		CALL READCMOS		;—’…ˆ… ŽŒ…€ ‚ˆ’“€‹œŽƒŽ „ˆ‘Š€
 		AND 3			;€Œ “†› ’Ž‹œŠŽ 2 Œ‹€„˜ˆ• ˆ’€
 		ADD A,"A"		;…Ž€‡Ž‚€‹ˆ ‚ ’…Š‘’
@@ -94,7 +94,7 @@ PRINT2ZERO	LD A,(HL)
 	IF EMU
 ADD_TXT_VERS	LD HL,TEXT4VIRTDRV	;’…Š‘’ Ž ‚ˆ’“€‹œ›‰ „ˆ‘ŠŽ‚Ž„
 		RST 0X18		;…—€’œ € Š€…
-		LD H,VIRT_REAL_DRIVE
+		LD H,CMOS.VIRT_REAL_DRIVE
 		CALL READCMOS		;—’…ˆ… ŽŒ…€ ‚ˆ’“€‹œŽƒŽ „ˆ‘Š€
 		AND 3			;€Œ “†› ’Ž‹œŠŽ 2 Œ‹€„˜ˆ• ˆ’€
 		ADD A,"A"		;…Ž€‡Ž‚€‹ˆ ‚ ’…Š‘’

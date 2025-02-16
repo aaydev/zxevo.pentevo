@@ -20,6 +20,7 @@
 #include "asmpars.h"
 #include "asmitree.h"
 #include "intformat.h"
+#include "codepseudo.h"
 #include "intpseudo.h"
 #include "codevars.h"
 #include "errmsg.h"
@@ -180,7 +181,14 @@ static void DecodeAdrRel(const tStrComp *pArg, Word Mask, Boolean AddrRel)
       tSymbolFlags Flags;
 
       StrCompSplitRef(&Left, &Right, &Arg, p);
-      HVal = EvalStrIntExpressionWithFlags(&Left, Int16, &OK, &Flags);
+      if (Left.str.p_str[0])
+        HVal = EvalStrIntExpressionWithFlags(&Left, Int16, &OK, &Flags);
+      else
+      {
+        HVal = 0;
+        OK = True;
+        Flags = eSymbolFlag_None;
+      }
       if (OK)
       {
         *p = '(';
@@ -1219,6 +1227,9 @@ static void InitBit(const char *NName, Word NCode)
 static void InitFields(void)
 {
   InstTable = CreateInstTable(203);
+
+  add_null_pseudo(InstTable);
+
   AddInstTable(InstTable, "MOV", 0, DecodeMOV);
   AddInstTable(InstTable, "MOVW", 0, DecodeMOVW);
   AddInstTable(InstTable, "CMP", 0, DecodeCMP);
@@ -1261,6 +1272,8 @@ static void InitFields(void)
 
   InitBit("CMPBIT",  5); InitBit("JBIT0" ,  0x0107); InitBit("JBIT1" ,  0x0106);
   InitBit("SBIT0" ,  3); InitBit("SBIT1" ,  4);
+
+  AddIntelPseudo(InstTable, eIntPseudoFlag_BigEndian);
 }
 
 static void DeinitFields(void)
@@ -1272,19 +1285,7 @@ static void DeinitFields(void)
 
 static void MakeCode_370(void)
 {
-  CodeLen = 0;
-  DontPrint = False;
   OpSize = 0;
-
-  /* zu ignorierendes */
-
-  if (Memo(""))
-    return;
-
-  /* Pseudoanweisungen */
-
-  if (DecodeIntelPseudo(True))
-    return;
 
   if (!LookupInstTable(InstTable, OpPart.str.p_str))
     WrStrErrorPos(ErrNum_UnknownInstruction, &OpPart);

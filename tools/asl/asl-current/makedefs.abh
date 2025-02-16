@@ -3,11 +3,16 @@ include $(TARG_OBJDIR)intpseudo.dep
 include $(TARG_OBJDIR)motpseudo.dep
 include $(TARG_OBJDIR)tipseudo.dep
 include $(TARG_OBJDIR)natpseudo.dep
+include $(TARG_OBJDIR)decpseudo.dep
 include $(TARG_OBJDIR)fourpseudo.dep
 include $(TARG_OBJDIR)ibmfloat.dep
 include $(TARG_OBJDIR)ieeefloat.dep
 include $(TARG_OBJDIR)decfloat.dep
 include $(TARG_OBJDIR)aplfloat.dep
+include $(TARG_OBJDIR)necfloat.dep
+include $(TARG_OBJDIR)tifloat.dep
+include $(TARG_OBJDIR)milfloat.dep
+include $(TARG_OBJDIR)as_float.dep
 include $(TARG_OBJDIR)codevars.dep
 include $(TARG_OBJDIR)codenone.dep
 include $(TARG_OBJDIR)code68k.dep
@@ -94,6 +99,7 @@ include $(TARG_OBJDIR)code78k4.dep
 include $(TARG_OBJDIR)code7720.dep
 include $(TARG_OBJDIR)code77230.dep
 include $(TARG_OBJDIR)codev60.dep
+include $(TARG_OBJDIR)codeuc43.dep
 include $(TARG_OBJDIR)codeimp16.dep
 include $(TARG_OBJDIR)codescmp.dep
 include $(TARG_OBJDIR)code807x.dep
@@ -161,7 +167,9 @@ include $(TARG_OBJDIR)errmsg.dep
 include $(TARG_OBJDIR)trees.dep
 include $(TARG_OBJDIR)nonzstring.dep
 include $(TARG_OBJDIR)dynstr.dep
+include $(TARG_OBJDIR)dynstr_nls.dep
 include $(TARG_OBJDIR)cmdarg.dep
+include $(TARG_OBJDIR)msg_level.dep
 include $(TARG_OBJDIR)ioerrs.dep
 include $(TARG_OBJDIR)headids.dep
 include $(TARG_OBJDIR)das.dep
@@ -176,6 +184,7 @@ include $(TARG_OBJDIR)nls.dep
 include $(TARG_OBJDIR)nlmessages.dep
 include $(TARG_OBJDIR)chardefs.dep
 include $(TARG_OBJDIR)strutil.dep
+include $(TARG_OBJDIR)striter.dep
 include $(TARG_OBJDIR)stdhandl.dep
 include $(TARG_OBJDIR)stringlists.dep
 include $(TARG_OBJDIR)strcomp.dep
@@ -205,6 +214,6 @@ include $(OBJDIR)h_bpemu.dep
 include $(OBJDIR)h_be_le.dep
 include $(OBJDIR)h_stringlists.dep
 include $(OBJDIR)ushyph.dep
-include $(OBJDIR)ushyph.dep
+include $(OBJDIR)grhyph.dep
 include $(OBJDIR)umlaut.dep
 include $(OBJDIR)unumlaut.dep

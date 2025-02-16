@@ -1,9 +1,9 @@
 
-;LAST UPDATE: 31.07.2017 savelij
+; LAST UPDATE: 16.02.2025 savelij
 
-TAPE_EMUL	LD H,CMOS_BYTE_00
+TAPE_EMUL	LD H,CMOS.BYTE_00
 		CALL READCMOS
-		AND M_EMUL_TAPE
+		AND CMOS_ED.M_EMUL_TAPE
 		JR NZ,EMULOADTAP
 		LD A,(RREG_A)
 		LD (RREG_C),A
@@ -13,73 +13,73 @@ TAPE_EMUL	LD H,CMOS_BYTE_00
 		LD (RREG_F),HL
 		RET
 
-EMULOADTAP	LD A,(CPU6+2)			;НОМЕР СТРАНИЦЫ ГДЕ НАЧИНАЕТСЯ СЛЕДУЮЩИЙ БЛОК
+EMULOADTAP	LD A,(CPU2+2)			; номер страницы где начинается следующий блок
 		LD IYL,A
 		ADD A,RAM_TAPE
-		LD BC,WIN_P5
-		OUT (C),A			;РЕАЛЬНАЯ СТРАНИЦА ОТКУДА БРАТЬ
-		LD HL,(CPU6)			;СМЕЩЕНИЕ В СТРАНИЦЕ
-		LD DE,(RREG_IXL)		;АДРЕС КУДА ЛОЖИТЬ
+		LD BC,WIN_P1
+		OUT (C),A			; реальная страница откуда брать
+		LD HL,(CPU2)			; смещение в странице
+		LD DE,(RREG_IXL)		; адрес куда ложить
 		LD A,D
 		EXX
-		LD BC,WIN_P6
-		CP 0X80
-		LD A,0XFA			;ДЛЯ ДИАПАЗОНА АДРЕСОВ ЗАГРУЗКИ 4000-7FFF
+		LD BC,WIN_P2
+		CP 0x80
+		LD A,0xFA			; для диапазона адресов загрузки 4000-7FFF
 		JR C,ELT01
-		LD A,0XFD			;ДЛЯ ДИАПАЗОНА АДРЕСО ЗАГРУЗКИ 8000 И ВЫШЕ
+		LD A,0xFD			; для диапазона адресов загрузки 8000 и выше
 ELT01		OUT (C),A
-		LD IYH,A			;НОМЕР СТРАНИЦЫ В КОТОРУЮ ПЕРЕНОСИМ
+		LD IYH,A			; номер страницы в которую переносим
 		EXX
-		LD A,0X40			;ДЛЯ ДИАПАЗОНА АДРЕСОВ 4000-7FFF ГРУЗИМ НА 4000 ВЫШЕ
+		LD A,0x40			; для диапазона адресов 4000-7FFF грузим на 4000 выше
 		JR C,ELT02
-		LD A,0				;ДЛЯ ДИАПАЗОНА АДРЕСОВ 8000 И ВЫШЕ АДРЕС ЗАГРУЗКИ НЕ МЕНЯЕМ
+		LD A,0				; для диапазона адресов 8000 и выше адрес загрузки не меняем
 ELT02		ADD A,D
-		LD D,A				;РЕАЛЬНЫЙ АДРЕС УКЛАДКИ
+		LD D,A				; реальный адрес укладки
 		SET 6,H
 		LD C,(HL)
 		INC HL
-		LD B,(HL)			;ВЗЯЛИ РАЗМЕР БЛОКА ДЛЯ ЗАГРУЗКИ
+		LD B,(HL)			; взяли размер блока для загрузки
 		INC HL
-		INC HL				;ПРОПУСКАЕМ ФЛАГОВЫЙ БАЙТ
+		INC HL				; пропускаем флаговый байт
 		DEC BC
-		DEC BC				;ГРУЗИТЬ НА 2 БАЙТА МЕНЬШЕ (МИНУС ФЛАГОВЫЙ БАЙТ И CRC)
+		DEC BC				; грузить на 2 байта меньше (минус флаговый байт и CRC)
 ELT07		LDI
 		JP PO,ELT05
 		LD A,D
-		CP 0XC0
+		CP 0xC0
 		JR C,ELT06
 		LD A,IYH
-		CP 0XFA
+		CP 0xFA
 		JR NZ,ELT06
-		LD A,0XFD
+		LD A,0xFD
 		LD IYH,A
 		EXX
-		LD B,HIGH (WIN_P6)
+		LD B,HIGH (WIN_P2)
 		OUT (C),A
 		EXX
-		LD D,0X80
+		LD D,0x80
 ELT06		LD A,H
-		CP 0X80
+		CP 0x80
 		JR C,ELT07
 		INC IYL
 		LD A,IYL
 		ADD A,RAM_TAPE
 		EXX
-		LD B,HIGH (WIN_P5)
+		LD B,HIGH (WIN_P1)
 		OUT (C),A
 		EXX
-		LD H,0X40
+		LD H,0x40
 		JR ELT07
 		
-ELT05		INC HL				;ПРОПУСК КОНТРОЛЬНОЙ СУММЫ БЛОКА
+ELT05		INC HL				; пропуск контрольной суммы блока
 		RES 6,H
-		EVOPORT WIN_P5,0XFA		;ВЕРНУЛИ СТРАНИЦУ В 1 ОКНЕ ПРОЕЦИРОВАНИЯ
-		LD B,HIGH (WIN_P6)
+	EVOPORT WIN_P1,0xFA			; вернули страницу в 1 окне проецирования
+		LD B,HIGH (WIN_P2)
 		XOR A
-		OUT (C),A			;ВКЛЮЧИЛИ ПОСЛЕДНЮЮ СТРАНИЦУ
-		LD (CPU6),HL			;ВЕРНУЛИ СМЕЩЕНИЕ В СТРАНИЦЕ ДЛЯ ЗАГРУЗКИ
+		OUT (C),A			; включили последнюю страницу
+		LD (CPU2),HL			; вернули смещение в странице для загрузки
 		LD A,IYL
-		LD (CPU6+2),A			;ВЕРНУЛИ В ПЕРЕМЕННУЮ НОМЕР ТЕКУЩЕЙ СТРАНИЦЫ ЗАГРУЗКИ
+		LD (CPU2+2),A			; вернули в переменную номер текущей страницы загрузки
 		LD HL,(RREG_IXL)
 		LD DE,(RREG_E)
 		ADD HL,DE
@@ -92,7 +92,7 @@ ELT05		INC HL				;ПРОПУСК КОНТРОЛЬНОЙ СУММЫ БЛОКА
 		RET
 
 TAPE_INIT	XOR A
-		LD HL,CPU6
+		LD HL,CPU2
 		LD (HL),A
 		INC L
 		LD (HL),A

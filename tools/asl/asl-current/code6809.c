@@ -23,6 +23,7 @@
 #include "asmitree.h"
 #include "codepseudo.h"
 #include "motpseudo.h"
+#include "intpseudo.h"
 #include "codevars.h"
 #include "errmsg.h"
 #include "cmdarg.h"
@@ -446,7 +447,12 @@ static adr_mode_t DecodeAdr(int ArgStartIdx, int ArgEndIdx,
     /* Displacement auswerten */
 
     Offset = ChkZero(pStartArg->str.p_str, &ZeroMode);
-    if (ZeroMode > 1)
+    if (!pStartArg->str.p_str[0])
+    {
+      AdrInt = 0;
+      OK = True;
+    }
+    else if (ZeroMode > 1)
     {
       tSymbolFlags Flags;
 
@@ -532,7 +538,13 @@ static adr_mode_t DecodeAdr(int ArgStartIdx, int ArgEndIdx,
     /* Displacement auswerten */
 
     Offset = ChkZero(pStartArg->str.p_str, &ZeroMode);
-    AdrInt = EvalStrIntExpressionOffs(pStartArg, Offset, Int16, &OK);
+    if (pStartArg->str.p_str[0])
+      AdrInt = EvalStrIntExpressionOffs(pStartArg, Offset, Int16, &OK);
+    else
+    {
+      AdrInt = 0;
+      OK = True;
+    }
 
     /* Displacement 0 ? */
 
@@ -1289,6 +1301,8 @@ static void InitFields(void)
   InstTable = CreateInstTable(307);
   SetDynamicInstTable(InstTable);
 
+  add_null_pseudo(InstTable);
+
   AddInstTable(InstTable, "SWI", 0, DecodeSWI);
   AddInstTable(InstTable, "LDQ", 0, DecodeLDQ);
   AddInstTable(InstTable, "TFR", 0x1f, DecodeTFR_TFM);
@@ -1381,7 +1395,7 @@ static void InitFields(void)
   AddALU("SUBD", 0x0083, eSymbolSize16Bit, True , CPU6809);
   AddALU("SBCD", 0x1082, eSymbolSize16Bit, True , CPU6309);
   AddALU("MULD", 0x118f, eSymbolSize16Bit, True , CPU6309);
-  AddALU("DIVD", 0x118d, eSymbolSize16Bit, True , CPU6309);
+  AddALU("DIVD", 0x118d, eSymbolSize8Bit , True , CPU6309);
   AddALU("ANDD", 0x1084, eSymbolSize16Bit, True , CPU6309);
   AddALU("ORD" , 0x108a, eSymbolSize16Bit, True , CPU6309);
   AddALU("EORD", 0x1088, eSymbolSize16Bit, True , CPU6309);
@@ -1479,7 +1493,10 @@ static void InitFields(void)
   AddInstTable(InstTable, "LDBT" , InstrZ++, DecodeBit);
   AddInstTable(InstTable, "STBT" , InstrZ++, DecodeBit);
 
-  init_moto8_pseudo(InstTable, e_moto_8_be | e_moto_8_db | e_moto_8_dw);
+  add_moto8_pseudo(InstTable, e_moto_pseudo_flags_be);
+  AddMoto16Pseudo(InstTable, e_moto_pseudo_flags_be);
+  AddInstTable(InstTable, "DB", eIntPseudoFlag_BigEndian | eIntPseudoFlag_AllowInt | eIntPseudoFlag_AllowString | eIntPseudoFlag_MotoRep, DecodeIntelDB);
+  AddInstTable(InstTable, "DW", eIntPseudoFlag_BigEndian | eIntPseudoFlag_AllowInt | eIntPseudoFlag_AllowString | eIntPseudoFlag_MotoRep, DecodeIntelDW);
 }
 
 static void DeinitFields(void)
@@ -1511,21 +1528,8 @@ static Boolean DecodeAttrPart_6809(void)
 
 static void MakeCode_6809(void)
 {
-  tSymbolSize OpSize;
-
-  CodeLen = 0;
-  DontPrint = False;
-  OpSize = (AttrPartOpSize[0] != eSymbolSizeUnknown) ? AttrPartOpSize[0] : eSymbolSize8Bit;
-
-  /* zu ignorierendes */
-
-  if (Memo(""))
-    return;
-
-  /* Pseudoanweisungen */
-
-  if (DecodeMoto16Pseudo(OpSize, True))
-    return;
+  if (AttrPartOpSize[0] == eSymbolSizeUnknown)
+    AttrPartOpSize[0] = eSymbolSize8Bit;
 
   if (!LookupInstTable(InstTable, OpPart.str.p_str))
     WrStrErrorPos(ErrNum_UnknownInstruction, &OpPart);

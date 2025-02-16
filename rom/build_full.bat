@@ -1,6 +1,8 @@
 
 @echo off
 
+cls
+
 set BUILDFULL=TRUE
 
 call setpath.bat

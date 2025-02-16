@@ -1,5 +1,5 @@
 
-; LAST UPDATE: 15.02.2023 savelij
+; LAST UPDATE: 11.11.2024 savelij
 
 ; ((out&0ffff)==37f7)&&((val&0ff)==1)
 ; ((out&0ffff)==77f7)&&((val&0ff)==1)
@@ -21,7 +21,7 @@ OLD_AF		EQU STACK-WORD
 
 ; команда выхода и переход на обработчик
 JP_EMU		MACRO ADDRESS
-		DUPL ADDRESS-$,0
+	DUPL ADDRESS-$,0
 		OUT (EXIT_PORT),A
 		JP ADR_ADDRESS
 		ENDM
@@ -43,16 +43,16 @@ ADR_ADDRESS	EQU $
 		ENDM
 
 		ORG 0
-		DUPL 0x0038 - $,0
+	DUPL 0x0038 - $,0
 		EI
 		RET
 
-		DUPL 0x006F - $,0
+	DUPL 0x006F - $,0
 		JP (HL)
 
 	JP_EMU 0x02BE				; OUT	   (0xFF), A
 
-		DUPL 0x0801 - $,0
+	DUPL 0x0801 - $,0
 ;таблица адресов перехвата и вызыватора обработчиков
 TABLE_VIRT
 	LABEL_GEN 0x02BE			; OUT	   (0xFF), A
@@ -189,7 +189,7 @@ TABLE_VIRT
 	EMU_JUMP 0x2B25				; IN A,(0x5F)
 		JP IN_5F
 
-		DUPL 0x09FF - $,0
+	DUPL 0x09FF - $,0
 		DW 0xFFFF
 
 	EMU_JUMP 0x2C07				;IN A,(0x5F)
@@ -383,10 +383,10 @@ UPDATE_AF	LD A,(OLD_AF + 1)
 		RET
 
 ; стек и обработчики
-		DUPL STACK - $,0
+	DUPL STACK - $,0
 		DW INT_BREAK
 
-		DUPL STACK + 0x41 - $,0
+	DUPL STACK + 0x41 - $,0
 INT_BREAK	PUSH AF
 		PUSH HL
 		PUSH DE
@@ -481,7 +481,7 @@ OLD_SP		EQU $-2
 		JP 0
 ADR_EXIT	EQU $-2		
 
-		DUPL STACK + 0x101 - $,0
+	DUPL STACK + 0x101 - $,0
 ; вход в обработчик
 WORKER		LD (NUM_ADR),A
 		LD (OLD_SP),SP
@@ -577,8 +577,7 @@ WRRDSECM1	LD A,(PORT_5F + 0x4000)		; взяли номер сектора
 
 	DEPHASE
 
-RET_MNT_RW
-		LD HL,-0x4000
+RET_MNT_RW	LD HL,-0x4000
 		ADD HL,SP
 		LD SP,HL
 		CALL WRITE_CPU12
@@ -605,13 +604,13 @@ DSKINFO		DB 0				; + 0xE1 - номер первого свободного сектора
 SECFREE		DW 2544				; + 0xE5 - количество свободных секторов
 		DB 0x10				; + 0xE7 - идентификационный код TRDOS
 		DW 0				; + 0xE8 - 2 байта 0
-		DUPL 9," "			; + 0xEA - 9 байт 0x20
+	DUPL 9," "				; + 0xEA - 9 байт 0x20
 		DB 0				; + 0xF3 - 1 байт 0
 		DB 0				; + 0xF4 - количество удаленных файлов
 		DB "RAMDISKO"			; + 0xF5 - имя дискеты
 DSK_END
 
-		DUPL LOW (-$),0
+	DUPL LOW (-$),0
 MNT_SECTOR
 
 ; адреса перехвата
@@ -632,12 +631,12 @@ MNT_SECTOR
 
 ; первая команда в обработчике MAGIC для возврата в пагу FE
 ;	JP_EMU 0x2A71				; OUT	   (0xFF), A
-		DUPL 0x2A71 - $,0
+	DUPL 0x2A71 - $,0
 		OUT (EXIT_PORT),A
 		JP INT_RET			; возвращение из обработчика INT
 
 ;	JP_EMU 0x2A77				; IN	A, (0x1F)
-		DUPL 0x2A77 - $,0
+	DUPL 0x2A77 - $,0
 		OUT (EXIT_PORT),A
 		JP RET_MNT_RW			; возвращение после вызова RST 8
 
@@ -651,20 +650,20 @@ MNT_SECTOR
 	JP_EMU 0x2F0C				; OUT	   (0xFF), A
 	JP_EMU 0x2F1D				; OUT	   (0x5F), A
 
-		DUPL 0x2F24 - $,0		; для адреса 0x2F4D
+	DUPL 0x2F24 - $,0			; для адреса 0x2F4D
 		JP ADR_0x2F4D
 
 	JP_EMU 0x2F28				; OUT	   (0x1F), A
 	JP_EMU 0x2F2F				; IN	A, (0x1F)
 	JP_EMU 0x2F3C				; OUT	   (0xFF), A
 
-		DUPL 0x2F4D - $,0		; OUT	   (0xFF), A
+	DUPL 0x2F4D - $,0			; OUT	   (0xFF), A
 		OUT (EXIT_PORT),A
 		DB 0x18				; JR 0x2F24
 
 	JP_EMU 0x2F50				; OUT	   (0x7F), A
 
-		DUPL 0x2F57 - $,0		; OUT	   (0x1F), A
+	DUPL 0x2F57 - $,0			; OUT	   (0x1F), A
 		OUT (EXIT_PORT),A
 		JR JUMP_0x2F57
 
@@ -678,7 +677,7 @@ JUMP_0x2F57	JP ADR_0x2F57
 	JP_EMU 0x2FB1				; OUT	   (0xFF), A
 	JP_EMU 0x2FC3				; OUT	   (0x1F), A
 
-		DUPL 0x32A2 - $,0
+	DUPL 0x32A2 - $,0
 ; обработчики чтения/записи портов
 ; запись "A" в порт 0x1F
 OUT_1F		LD A,(OLD_AF + 1)
@@ -878,7 +877,7 @@ IN_1F		LD A,(WR_1F)
 		CP 0xC0
 		JR C,.L8			; 80-BF команды чтения/записи
 		CP 0xD0
-		JR Z,.L7			; D0-DF команды принудительного прерывания
+		JR Z,.L1			; D0-DF команды принудительного прерывания
 		XOR A
 		JR .L2
 
@@ -889,9 +888,6 @@ IN_1F		LD A,(WR_1F)
 		JR C,.L2
 		LD A,%00010000			; при уходе за 80 дорожку выдача ошибки "массив не найден"
 		JR .L2
-
-.L7             LD A,0x80
-                JR .L2
 
 .L5		LD A,(PORT_3F)
 		AND A
@@ -1109,7 +1105,7 @@ FIND_SECTOR	LD BC,WIN_A1
 		LD A,(BC)
 		LD E,A				; взяли размер сектора
 		INC B
-		LD A,D
+;		LD A,D
 		AND A
 		SCF
 		RET Z				; ошибка, сектор не найден
@@ -1495,7 +1491,7 @@ READCMOS	PUSH BC
 
 	JP_EMU 0x3C30				; IN	A, (0x1F)
 
-		DUPL 0x3D2F - $,0
+	DUPL 0x3D2F - $,0
 		NOP
 		RET
 
@@ -1509,11 +1505,11 @@ READCMOS	PUSH BC
 	JP_EMU 0x3E3A				; IN	A, (0x1F)
 	JP_EMU 0x3E44				; OUT	   (0x7F), A
 
-		DUPL 0x3E49 - $,0
+	DUPL 0x3E49 - $,0
 		JP ADR_0x3E4C			; для адреса 0x3E4C
 
 ;		JP_EMU 0x3E4C			; OUT	   (0x7F), A
-		DUPL 0x3E4C - $,0
+	DUPL 0x3E4C - $,0
 		OUT (EXIT_PORT),A
 		JR 0x3E49
 
@@ -1528,7 +1524,7 @@ READCMOS	PUSH BC
 	JP_EMU 0x3ECE				; IN	A, (0xFF)
 	JP_EMU 0x3EDF				; OUT	   (0x1F), A
 
-		DUPL 0x3EF3 - $,0		; IN	H, (C)
+	DUPL 0x3EF3 - $,0			; IN	H, (C)
 		OUT (EXIT_PORT),A
 		JR JUMP_0x3EF3
 
@@ -1546,7 +1542,7 @@ JUMP_0x3EF3	JP ADR_0x3EF3
 		JP_EMU 0x3F25			; OUT	   (0x1F), A
 		JP_EMU 0x3F33			; IN	A, (0x1F)
 
-		DUPL 0x3F40 - $,0		; для адреса 0x3EF3
+	DUPL 0x3F40 - $,0			; для адреса 0x3EF3
 		JP ADR_0x3EF3
 
 	JP_EMU 0x3F4D				; OUT	   (0x1F), A
@@ -1557,7 +1553,7 @@ JUMP_0x3EF3	JP ADR_0x3EF3
 
 	JP_EMU 0x3FBC				; IN	A, (0xFF)	;запись сектора
 
-		DUPL 0x3FC7 - $,0
+	DUPL 0x3FC7 - $,0
 JUMP_0x3FF0	JP ADR_0x3FF0
 
 	JP_EMU 0x3FCA				; IN	A, (0xFF)	;запись сектора
@@ -1571,18 +1567,18 @@ JUMP_0x3FF3	JP ADR_0x3FF3
 	JP_EMU 0x3FE5				; IN	A, (0xFF)	;чтение сектора
 
 ;	JP_EMU 0x3FEC				; INI			;чтение сектора
-		DUPL 0x3FEC - $,0
+	DUPL 0x3FEC - $,0
 		OUT (EXIT_PORT),A
 		JR JUMP_0x3FEC
 
-;		DUPL 0x3FF0 - $,0		; OUT	   (C), A
+;	DUPL 0x3FF0 - $,0			; OUT	   (C), A
 		OUT (EXIT_PORT),A
 		DB 0x18				; JR 0x3FC7
 
-;		DUPL 0x3FF5 - $,0		; IN	A, (C)
+;	DUPL 0x3FF5 - $,0			; IN	A, (C)
 		OUT (EXIT_PORT),A
 		JP JUMP_0x3FF3
 
-		DUPL 0x3FF8 - $,0
+	DUPL 0x3FF8 - $,0
 		DB "EVOSFE"
 		DW DATA_VERS

@@ -1,8 +1,8 @@
 
-;LAST UPDATE: 30.06.2019 savelij
+; LAST UPDATE: 13.02.2025 savelij
 
-;НА ВХОДЕ: H-АДРЕС ЯЧЕЙКИ
-;	   L-ПРОЧИТАННОЕ ЗНАЧЕНИЕ
+; на входе: H-адрес ячейки
+;	    L-прочитанное значение
 READCMOS	DI
 		PUSH BC
 		LD BC,CMOSD_SET_ADR
@@ -11,8 +11,8 @@ READCMOS	DI
 		IN L,(C)
 		JR OFF_CMOS
 
-;НА ВХОДЕ: H-АДРЕС ЯЧЕЙКИ
-;	   L-ЧТО ТУДА ЗАПИСАТЬ
+; на входе: H-адрес ячейки
+;	    L-что туда записать
 WRITECMOS	DI
 		PUSH BC
 		LD BC,CMOSD_SET_ADR
@@ -24,7 +24,8 @@ OFF_CMOS	POP BC
 		AND A
 		RET
 
-CMOS_RW		ROMCALL P5_READ_BYTE,ROM_RST83
+CMOS_RW
+	ROMCALL P5_READ_BYTE,ROM_RST83
 		LD A,(NEXTBYTERST8)
 		ADD A,A
 		ADD A,LOW (CMOSRW_TAB)
@@ -38,17 +39,17 @@ CMOS_RW		ROMCALL P5_READ_BYTE,ROM_RST83
 		LD L,A
 		JP (HL)
 
-CMOSRW_TAB	DW INIT_CMOS			;ПРОВЕРКА CRC CMOS И ИНИЦИАЛИЗАЦИЯ ПРИ ОШИБКЕ
-		DW EREAD_CMOS			;ЧТЕНИЕ ЯЧЕЙКИ CMOS
-		DW EWRITE_CMOS			;ЗАПИСЬ ЯЧЕЙКИ CMOS С ПЕРЕСЧЕТОМ CRC
-		DW CLEAR_CMOS			;ПРИНУДИТЕЛЬНЫЙ СБРОС ЗНАЧЕНИЙ CMOS
+CMOSRW_TAB	DW INIT_CMOS			; проверка CRC CMOS и инициализация при ошибке
+		DW EREAD_CMOS			; чтение ячейки CMOS
+		DW EWRITE_CMOS			; запись ячейки CMOS с пересчетом CRC
+		DW CLEAR_CMOS			; принудительный сброс значений CMOS
 
-;ЧТЕНИЕ ЯЧЕЕК ЗАЩИЩАЕМЫХ CRC16 И ПОДСЧЕТ CRC
-;НА ВЫХОДЕ: HL=CRC16 БЛОКА
+; чтение ячеек защищаемых CRC16 и подсчет CRC
+; на выходе: HL=CRC16 блока
 READCMOS2BUF	PUSH DE
 		LD DE,CMOS4CRC16
 		PUSH DE
-		LD H,CMOS_BYTE_00
+		LD H,CMOS.BYTE_00
 		LD B,ECMOS_DEFAULT-CMOS_DEFAULT
 RDCMOS2BUF1	CALL READCMOS
 		LD (DE),A
@@ -57,32 +58,32 @@ RDCMOS2BUF1	CALL READCMOS
 		DJNZ RDCMOS2BUF1
 		POP HL
 		PUSH HL
-		POP IX				;IX=АДРЕС ГДЕ БАЙТЫ ДЛЯ СЧЕТА CRC
+		POP IX				; IX=адрес где байты для счета CRC
 		EX DE,HL
 		AND A
-		SBC HL,DE			;HL=КОЛИЧЕСТВО ЯЧЕЕК ДЛЯ СЧЕТА
-		ROMCALL CRC16_FAST,ROM_RST81
+		SBC HL,DE			; HL=количество ячеек для счета
+	ROMCALL CRC16_FAST,ROM_RST81
 		POP DE
 		RET
 
-;ВНЕШНИЙ ВЫЗОВ ЧТЕНИЯ CMOS
-EREAD_CMOS	LD HL,(RREG_L)			;H=АДРЕС ЯЧЕЙКИ КМОС ОТКУДА ЧИТАТЬ
+; внешний вызов чтения CMOS
+EREAD_CMOS	LD HL,(RREG_L)			; H=адрес ячейки кмос откуда читать
 		CALL READCMOS
-		LD (RREG_L),HL			;ВЕРНУЛИ ПРОЧИТАННОЕ В РЕГИСТР L
+		LD (RREG_L),HL			; вернули прочитанное в регистр L
 		PUSH AF
 		POP HL
-		LD (RREG_F),HL			;ВЕРНУЛИ ПРОЧИТАННОЕ В РЕГИСТР A ВМЕСТЕ С ФЛАГАМИ
+		LD (RREG_F),HL			; вернули прочитанное в регистр A вместе с флагами
 		RET
 
-;ВНЕШНИЙ ВЫЗОВ ЗАПИСИ В CMOS С ПЕРЕСЧЕТОМ CRC
+; внешний вызов записи в CMOS с пересчетом CRC
 EWRITE_CMOS	LD HL,(RREG_L)
-;ВНУТРЕННИЙ ВЫЗОВ ЗАПИСИ В CMOS С ПЕРЕСЧЕТОМ CRC
+; внутренний вызов записи в CMOS с пересчетом CRC
 IWRITECMOS	PUSH IX
 		PUSH DE
 		CALL WRITECMOS
 		CALL READCMOS2BUF
 		EX DE,HL
-		LD H,CRCCMOSHIGH
+		LD H,CMOS.CRCHIGH
 		LD L,D
 		CALL WRITECMOS
 		DEC H
@@ -92,43 +93,43 @@ IWRITECMOS	PUSH IX
 		POP IX
 		RET
 
-INIT_CMOS	CALL READCMOS2BUF		;БУФЕР ДЛЯ ЧТЕНИЯ ЯЧЕЕК ИЗ CMOS
-		EX DE,HL			;CRC СПРЯТАЛИ В DE
-		LD H,CRCCMOSHIGH
-		CALL READCMOS			;ПРОЧИТАЛИ СТАРШИЙ БАЙТ CRC
+INIT_CMOS	CALL READCMOS2BUF		; буфер для чтения ячеек из CMOS
+		EX DE,HL			; CRC спрятали в DE
+		LD H,CMOS.CRCHIGH
+		CALL READCMOS			; прочитали старший байт CRC
 		LD C,L
-		LD H,CRCCMOSLOW
-		CALL READCMOS			;ПРОЧИТАЛИ МЛАДШИЙ БАЙТ CRC
+		LD H,CMOS.CRCLOW
+		CALL READCMOS			; прочитали младший байт CRC
 		LD H,C
 		AND A
-		SBC HL,DE			;СРАВНИЛИ
-		RET Z				;ЕСЛИ СОВПАЛО, ТО ВЫХОД
-CLEAR_CMOS	LD HL,CMOS_DEFAULT		;ОТКУДА БРАТЬ ДЕФОЛТНЫЕ ЗНАЧЕНИЯ
-		LD DE,CMOS4CRC16		;КУДА ПОЛОЖИТЬ
+		SBC HL,DE			; сравнили
+		RET Z				; если совпало, то выход
+CLEAR_CMOS	LD HL,CMOS_DEFAULT		; откуда брать дефолтные значения
+		LD DE,CMOS4CRC16		; куда положить
 		PUSH DE
 		LD BC,ECMOS_DEFAULT-CMOS_DEFAULT
-		LDIR				;ПЕРЕНЕСЛИ В БУФЕР ДЕФОЛТНЫЕ ЗНАЧЕНИЯ
+		LDIR				; перенесли в буфер дефолтные значения
 		POP DE
 		PUSH DE
-		LD H,CMOS_BYTE_00
+		LD H,CMOS.BYTE_00
 		LD B,ECMOS_DEFAULT-CMOS_DEFAULT
 INITCMOS3	LD A,(DE)
 		INC DE
 		LD L,A
 		CALL WRITECMOS
 		DEC H
-		DJNZ INITCMOS3			;ПИШЕМ ЯЧЕЙКИ В CMOS
+		DJNZ INITCMOS3			; пишем ячейки в CMOS
 		POP HL
 		PUSH HL
 		POP IX
 		EX DE,HL
 		AND A
 		SBC HL,DE
-		ROMCALL CRC16_FAST,ROM_RST81
+	ROMCALL CRC16_FAST,ROM_RST81
 		EX DE,HL
-		LD H,CRCCMOSHIGH
+		LD H,CMOS.CRCHIGH
 		LD L,D
-		CALL WRITECMOS			;ЗАПИСАЛИ СТАРШИЙ БАЙТ ПОСЧИТАННОГО CRC
+		CALL WRITECMOS			; записали старший байт посчитанного CRC
 		DEC H
 		LD L,E
-		JP WRITECMOS			;ЗАПИСАЛИ МЛАДШИЙ БАЙТ ПОСЧИТАННОГО CRC
+		JP WRITECMOS			; записали младший байт посчитанного CRC

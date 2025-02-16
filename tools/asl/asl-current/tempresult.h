@@ -69,7 +69,7 @@ struct sTempResult
   union
   {
     LargeInt Int;
-    Double Float;
+    as_float_t Float;
     as_nonz_dynstr_t str;
     tRegDescr RegDescr;
   } Contents;
@@ -77,14 +77,16 @@ struct sTempResult
 typedef struct sTempResult TempResult;
 
 extern void as_tempres_ini(TempResult *p_res);
+extern TempResult *as_tempres_dyn_ini(void);
 
 extern void as_tempres_free(TempResult *p_res);
+extern void as_tempres_dyn_free(TempResult *p_res);
 
 extern void as_tempres_set_none(TempResult *p_res);
 
 extern void as_tempres_set_int(TempResult *p_res, LargeInt value);
 
-extern void as_tempres_set_float(TempResult *p_res, Double value);
+extern void as_tempres_set_float(TempResult *p_res, as_float_t value);
 
 extern void as_tempres_set_str(TempResult *p_res, const as_nonz_dynstr_t *p_value);
 
@@ -102,6 +104,6 @@ extern int as_tempres_cmp(const TempResult *p_res1, const TempResult *p_res2);
 
 extern int TempResultToFloat(TempResult *pResult);
 
-extern int as_tempres_append_dynstr(struct as_dynstr *p_dest, const TempResult *pResult);
+extern int as_tempres_append_dynstr(struct as_dynstr *p_dest, const TempResult *pResult, int int_radix);
 
 #endif /* _TEMPRESULT_H */

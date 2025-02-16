@@ -1,5 +1,5 @@
 
-; LAST UPDATE: 01.11.2023 savelij
+; LAST UPDATE: 06.02.2025 savelij
 
 ; 26.04.2019 поправлено описание структуры
 ; 07.07.2021 перед вызовом LD_FILE в реги BCDE загружается номер кластера откуда читать
@@ -77,7 +77,7 @@ RUNSNA	;4ab4
 	ldir		;копируем заголовок
 	RUNSNA_LP_M 2,0	;загрузим 2 страницу и ещё чуть
 	RUNSNA_LP_M 0,9 ;загрузим 0 страницу и ещё чуть
-	ld a,(FILE_SRC+30)
+	ld a,(FATVAR.FILE_SRC+30)
 	or a
 	jr z,RUNSNA_ENDLOAD	;если файл больше 64к, то снап 128к !!!!нада проверить
 	ld hl,0xc000	;сохраняем заголовок
@@ -163,11 +163,11 @@ RUNSNA_LP5
 RUNSNA_L1P
 	xor a
 	out (PEVO_CONF),a
-		LD DE,(AFILCLS)
-		LD BC,(AFILCLS + 2)
+		LD DE,(FATVAR.AFILCLS)
+		LD BC,(FATVAR.AFILCLS + 2)
 	call LOAD_FILE
-		LD (AFILCLS),DE
-		LD (AFILCLS + 2),BC
+		LD (FATVAR.AFILCLS),DE
+		LD (FATVAR.AFILCLS + 2),BC
 	ld a,1
 	out (PEVO_CONF),a
 	ret

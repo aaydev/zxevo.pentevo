@@ -169,7 +169,7 @@ static void SetCPUCore(const tCPUDef *pCPUDef, const tStrComp *pCPUArgs)
   DissectBit = Default_DissectBit;
   DissectReg = NULL;
   QualifyQuote = NULL;
-  pPotMonadicOperator = NULL;
+  target_operators = no_operators;
   SetIsOccupiedFnc =
   SaveIsOccupiedFnc =
   RestoreIsOccupiedFnc = NULL;
@@ -593,6 +593,7 @@ static void CodeSHARED(Word Index)
   tStrComp *pArg;
   String s, c;
   TempResult t;
+  as_symbol_entry_flags_t symbol_flags;
 
   UNUSED(Index);
   as_tempres_ini(&t);
@@ -607,7 +608,7 @@ static void CodeSHARED(Word Index)
   else
    forallargs (pArg, True)
    {
-     LookupSymbol(pArg, &t, False, TempAll);
+     LookupSymbol(pArg, &t, False, TempAll, e_eval_flag_none, &symbol_flags);
 
      switch (t.Typ)
      {
@@ -662,7 +663,7 @@ static void CodeSHARED(Word Index)
          fprintf(ShareFile, "#define %s %s%s\n", pArg->str.p_str, s, c);
          break;
        case 3:
-         strmaxprep(s, IsSymbolChangeable(pArg) ? "set " : "equ ", STRINGSIZE);
+         strmaxprep(s, (symbol_flags & e_symbol_entry_flag_changeable) ? "set " : "equ ", STRINGSIZE);
          fprintf(ShareFile, "%s %s%s\n", pArg->str.p_str, s, c);
          break;
      }
@@ -681,7 +682,7 @@ static void CodeEXPORT(Word Index)
 
   forallargs (pArg, True)
   {
-    LookupSymbol(pArg, &t, True, TempInt);
+    LookupSymbol(pArg, &t, True, TempInt, e_eval_flag_none, NULL);
     if (TempNone == t.Typ)
       continue;
     if (t.Relocs == NULL)
@@ -790,7 +791,7 @@ static void CodeString(Word Index)
 static void CodePHASE(Word Index)
 {
   Boolean OK;
-  LongInt HVal;
+  LongWord HVal;
   UNUSED(Index);
 
   if (!ChkArgCnt(1, 1));
@@ -1038,32 +1039,39 @@ static void CodeCODEPAGE(Word Index)
 
 static void CodeFUNCTION(Word Index)
 {
-  Boolean OK;
-  int z;
   UNUSED(Index);
 
-  if (ChkArgCnt(2, ArgCntMax))
+  if (ChkArgCnt(1, ArgCntMax))
   {
-    OK = True;
-    z = 1;
-    do
-    {
-      OK = (OK && ChkMacSymbName(ArgStr[z].str.p_str));
-      if (!OK)
-        WrStrErrorPos(ErrNum_InvSymName, &ArgStr[z]);
-      z++;
-    }
-    while ((z < ArgCnt) && (OK));
-    if (OK)
-    {
-      as_dynstr_t FName;
+    Boolean OK;
+    int z, z2;
+    StringList arg_list;
 
-      as_dynstr_ini_c_str(&FName, ArgStr[ArgCnt].str.p_str);
-      for (z = 1; z < ArgCnt; z++)
-        CompressLine(ArgStr[z].str.p_str, z, &FName, CaseSensitive);
-      EnterFunction(&LabPart, FName.p_str, ArgCnt - 1);
-      as_dynstr_free(&FName);
+    InitStringList(&arg_list);
+    for (z = 1, OK = True; (z < ArgCnt) && OK; z++)
+    {
+      if (!ChkMacSymbName(ArgStr[z].str.p_str))
+      {
+        WrStrErrorPos(ErrNum_InvSymName, &ArgStr[z]);
+        OK = False;
+        break;
+      }
+      for (z2 = 1; z2 < z; z2++)
+      {
+        OK = CaseSensitive 
+           ? !!strcmp(ArgStr[z].str.p_str, ArgStr[z2].str.p_str)
+           : !!as_strcasecmp(ArgStr[z].str.p_str, ArgStr[z2].str.p_str);
+        if (!OK)
+        {
+          WrStrErrorPos(ErrNum_DupFuncArgName, &ArgStr[z]);
+          break;
+        }
+      }
+      AddStringListLast(&arg_list, ArgStr[z].str.p_str);
     }
+    if (OK)
+      EnterFunction(&LabPart, ArgStr[ArgCnt].str.p_str, ArgCnt - 1, &arg_list);
+    ClearStringList(&arg_list);
   }
 }
 
@@ -1190,10 +1198,13 @@ static void CodeMACEXP(Word Index)
         Mod = eLstMacroExpRest; Set = True;
       }
       else
-        OK = False;
-      if (!OK)
+      {
+        Mod = eLstMacroExpNone; Set = False;
+      }
+      if (Mod == eLstMacroExpNone)
       {
         WrStrErrorPos(ErrNum_TooManyMacExpMod, pArg);
+        OK = False;
         break;
       }
       else if (!AddLstMacroExpMod(&LstMacroExpMod, Set, Mod))
@@ -1606,6 +1617,7 @@ static void CodeLISTING(Word Index)
 void INCLUDE_SearchCore(tStrComp *pDest, const tStrComp *pArg, Boolean SearchPath)
 {
   size_t l = strlen(pArg->str.p_str), offs = 0;
+  int this_pass;
 
   if (pArg->str.p_str[0] == '"')
   {
@@ -1620,15 +1632,30 @@ void INCLUDE_SearchCore(tStrComp *pDest, const tStrComp *pArg, Boolean SearchPat
   }
   StrCompCopySub(pDest, pArg, offs, l);
 
-  AddSuffix(pDest->str.p_str, IncSuffix);
+  /* To keep existing functionality, first search for the file name
+     possibly expanded by a suffix.  If it was extened, and not found
+     with this extension, try the plain name in a second search: */
 
-  if (SearchPath)
+  this_pass = AddSuffix(pDest->str.p_str, IncSuffix) ? 0 : 1;
+
+  for (; this_pass < 2; this_pass++)
   {
-    String FoundFileName;
+    if (SearchPath)
+    {
+      String FoundFileName;
 
-    if (FSearch(FoundFileName, sizeof(FoundFileName), pDest->str.p_str, CurrFileName, SearchPath ? IncludeList : ""))
-      ChkStrIO(ErrNum_OpeningFile, pArg);
-    strmaxcpy(pDest->str.p_str, FExpand(FoundFileName), STRINGSIZE - 1);
+      if (FSearch(FoundFileName, sizeof(FoundFileName), pDest->str.p_str, CurrFileName, SearchPath ? IncludeList : ""))
+      {
+        if (this_pass)
+          ChkStrIO(ErrNum_OpeningFile, pArg);
+        else
+          StrCompCopySub(pDest, pArg, offs, l);
+      }
+      else
+        strmaxcpy(pDest->str.p_str, FExpand(FoundFileName), STRINGSIZE - 1);
+    }
+    else
+      return;
   }
 }
 
@@ -2172,7 +2199,7 @@ static void CodeRELAXED(Word Index)
  * \brief  process INTSYNTAX statement
  * ------------------------------------------------------------------------ */
 
-static void CodeINTSYNTAX(Word Index)
+void CodeINTSYNTAX(Word Index)
 {
   UNUSED(Index);
 

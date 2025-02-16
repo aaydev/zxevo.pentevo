@@ -25,6 +25,7 @@
 #include "errmsg.h"
 #include "intpseudo.h"
 #include "motpseudo.h"
+#include "decpseudo.h"
 #include "onoff_common.h"
 #include "cpu2phys.h"
 #include "decfloat.h"
@@ -525,11 +526,11 @@ static Boolean decode_adr(tStrComp *p_arg, adr_vals_t *p_result, Word pc_value, 
       }
       case eSymbolSizeFloat32Bit:
       {
-        Double f_val = EvalStrFloatExpressionWithResult(&imm_arg, Float64, &eval_result);
+        as_float_t f_val = EvalStrFloatExpressionWithResult(&imm_arg, &eval_result);
         if (eval_result.OK)
         {
-          int ret = Double_2_dec4(f_val, p_result->vals);
-          eval_result.OK = check_dec_fp_dispose_result(ret, &imm_arg);
+          int ret = as_float_2_dec_f(f_val, p_result->vals);
+          eval_result.OK = asmerr_check_fp_dispose_result(ret, &imm_arg);
         }
         if (eval_result.OK)
           p_result->count = 4;
@@ -537,11 +538,11 @@ static Boolean decode_adr(tStrComp *p_arg, adr_vals_t *p_result, Word pc_value, 
       }  
       case eSymbolSizeFloat64Bit:
       {
-        Double f_val = EvalStrFloatExpressionWithResult(&imm_arg, Float64, &eval_result);
+        as_float_t f_val = EvalStrFloatExpressionWithResult(&imm_arg, &eval_result);
         if (eval_result.OK)
         {
-          int ret = Double_2_dec8(f_val, p_result->vals);
-          eval_result.OK = check_dec_fp_dispose_result(ret, &imm_arg);
+          int ret = as_float_2_dec_d(f_val, p_result->vals);
+          eval_result.OK = asmerr_check_fp_dispose_result(ret, &imm_arg);
         }
         if (eval_result.OK)
           p_result->count = 8;
@@ -599,8 +600,17 @@ static Boolean decode_adr(tStrComp *p_arg, adr_vals_t *p_result, Word pc_value, 
 
     if (!decode_reg_or_const(&reg_arg, &p_result->mode))
       return False;
-    if (!*disp_arg.str.p_str && !deferred)
-      p_result->mode |= 010;
+    if (!*disp_arg.str.p_str)
+    {
+      if (deferred)
+      {
+        p_result->vals[0] = 0;
+        p_result->mode |= 070;
+        p_result->count = 2;
+      }
+      else
+        p_result->mode |= 010;
+    }
     else
     {
       p_result->vals[0] = EvalStrIntExpressionWithResult(&disp_arg, Int16, &eval_result);
@@ -1569,70 +1579,76 @@ static void decode_format11(Word code)
     append_word(code | ((src_adr_vals.mode & 15) << 4) | (dest_adr_vals.mode& 15));
 }
 
-
 /*!------------------------------------------------------------------------
- * \fn     decode_pseudo(void)
- * \brief  handle pseudo instructions
- * \return True if handled
+ * \fn     decode_reg_instr(Word index)
+ * \brief  handle REG instruction
  * ------------------------------------------------------------------------ */
 
-static Boolean decode_pseudo(void)
+static void decode_reg_instr(Word index)
 {
-  if (Memo("REG"))
+  UNUSED(index);
+
+  if (LabPart.str.p_str[0])
+    CodeREG(0);
+  else if (ChkArgCnt(1, 1))
   {
-    if (LabPart.str.p_str[0])
-      CodeREG(0);
-    else if (ChkArgCnt(1, 1))
-    {
-      Boolean IsON;
+    Boolean IsON;
 
-      if (CheckONOFFArg(&ArgStr[1], &IsON))
-        SetFlag(&default_regsyms, default_regsyms_name, IsON);
-    }
-    return True;
+    if (CheckONOFFArg(&ArgStr[1], &IsON))
+      SetFlag(&default_regsyms, default_regsyms_name, IsON);
   }
+}
 
-  if (Memo("BYTE"))
+/*!------------------------------------------------------------------------
+ * \fn     decode_prwins(Word index)
+ * \brief  handle PRWINS instruction
+ * ------------------------------------------------------------------------ */
+
+static void decode_prwins(Word index)
+{
+  UNUSED(index);
+  cpu_2_phys_area_dump(SegCode, stdout);
+}
+
+/*!------------------------------------------------------------------------
+ * \fn     add_pseudo(PInstTable p_inst_table)
+ * \brief  add pseudo instructions to hash table
+ * \param  p_inst_table table to augment
+ * ------------------------------------------------------------------------ */
+
+static void add_pseudo(PInstTable p_inst_table)
+{
+  AddInstTable(p_inst_table, "REG", 0, decode_reg_instr);
+
+  /* TODO: RAD50 */
+
+  AddInstTable(p_inst_table, "BYTE"  , eIntPseudoFlag_LittleEndian | eIntPseudoFlag_DECFormat | eIntPseudoFlag_AllowInt, DecodeIntelDB);
+  AddInstTable(p_inst_table, "WORD"  , eIntPseudoFlag_LittleEndian | eIntPseudoFlag_AllowInt | eIntPseudoFlag_DECFormat, DecodeIntelDW);
+  AddInstTable(p_inst_table, "ASCII" , eIntPseudoFlag_LittleEndian | eIntPseudoFlag_AllowString | eIntPseudoFlag_DECFormat, DecodeIntelDB);
+  AddInstTable(p_inst_table, "ASCIZ" , eIntPseudoFlag_LittleEndian | eIntPseudoFlag_AllowString | eIntPseudoFlag_DECFormat | eIntPseudoFlag_ASCIZ, DecodeIntelDB);
+  AddInstTable(p_inst_table, "PACKED", 0, decode_dec_packed);
+  AddInstTable(p_inst_table, "FLT2", eIntPseudoFlag_LittleEndian | eIntPseudoFlag_AllowFloat | eIntPseudoFlag_DECFormat, DecodeIntelDD);
+  AddInstTable(p_inst_table, "FLT4", eIntPseudoFlag_LittleEndian | eIntPseudoFlag_AllowFloat | eIntPseudoFlag_DECFormat, DecodeIntelDQ);
+
+  AddInstTable(p_inst_table, "PRWINS", 0, decode_prwins);
+}
+
+/*!------------------------------------------------------------------------
+ * \fn     check_alignment(Word index)
+ * \brief  assure program counter is even for machine instructions
+ * ------------------------------------------------------------------------ */
+
+static void check_alignment(Word index)
+{
+  UNUSED(index);
+
+  if (Odd(EProgCounter()))
   {
-    DecodeIntelDB(eIntPseudoFlag_DECFormat | eIntPseudoFlag_AllowString);
-    return True;
+    if (DoPadding)
+      InsertPadding(1, False);
+    else
+      WrError(ErrNum_AddrNotAligned);
   }
-
-  if (Memo("WORD"))
-  {
-    DecodeIntelDW(eIntPseudoFlag_AllowInt | eIntPseudoFlag_AllowString | eIntPseudoFlag_DECFormat);
-    return True;
-  }
-
-  if (is_wd16())
-  {
-    if (Memo("FLT3"))
-    {
-      DecodeIntelDM(eIntPseudoFlag_AllowFloat | eIntPseudoFlag_DECFormat);
-      return True;
-    }
-  }
-  {
-    if (Memo("FLT2"))
-    {
-      DecodeIntelDD(eIntPseudoFlag_AllowFloat | eIntPseudoFlag_DECFormat);
-      return True;
-    }
-
-    if (Memo("FLT4"))
-    {
-      DecodeIntelDQ(eIntPseudoFlag_AllowFloat | eIntPseudoFlag_DECFormat);
-      return True;
-    }
-  }
-
-  if (Memo("PRWINS"))
-  {
-    cpu_2_phys_area_dump(SegCode, stdout);
-    return True;
-  }
-
-  return False;
 }
 
 /*--------------------------------------------------------------------------*/
@@ -1754,8 +1770,12 @@ static void add_cis(const char *p_name, Word code, InstProc inline_proc)
 
 static void init_fields_pdp11(void)
 {
-  InstTable = CreateInstTable(201);
+  InstTable = CreateInstTable(302);
   SetDynamicInstTable(InstTable);
+
+  add_null_pseudo(InstTable);
+
+  inst_table_set_prefix_proc(InstTable, check_alignment, 0);
 
   AddInstTable(InstTable, "BPT",   000003, decode_fixed);
   AddInstTable(InstTable, "CCC",   000257, decode_fixed);
@@ -1794,11 +1814,11 @@ static void init_fields_pdp11(void)
   AddInstTable(InstTable, "TSTSET", 0007200, decode_tstset);
   AddInstTable(InstTable, "WRTLCK", 0007300, decode_wrtlck);
   AddInstTable(InstTable, "CSM"   , 0007000 | CODE_FLAG_16BIT | CODE_FLAG_GEN_IMM, decode_csm);
-  AddInstTable(InstTable, "MFPD"  , 0006500 | CODE_FLAG_16BIT | CODE_FLAG_GEN_IMM, decode_mfp_mtp);
-  AddInstTable(InstTable, "MFPI"  , 0106500 | CODE_FLAG_16BIT | CODE_FLAG_GEN_IMM, decode_mfp_mtp);
+  AddInstTable(InstTable, "MFPD"  , 0106500 | CODE_FLAG_16BIT | CODE_FLAG_GEN_IMM, decode_mfp_mtp);
+  AddInstTable(InstTable, "MFPI"  , 0006500 | CODE_FLAG_16BIT | CODE_FLAG_GEN_IMM, decode_mfp_mtp);
   AddInstTable(InstTable, "MFPS"  , 0106700 , decode_mfps_mtps);
-  AddInstTable(InstTable, "MTPD"  , 0006600 | CODE_FLAG_16BIT, decode_mfp_mtp);
-  AddInstTable(InstTable, "MTPI"  , 0106600 | CODE_FLAG_16BIT, decode_mfp_mtp);
+  AddInstTable(InstTable, "MTPD"  , 0106600 | CODE_FLAG_16BIT, decode_mfp_mtp);
+  AddInstTable(InstTable, "MTPI"  , 0006600 | CODE_FLAG_16BIT, decode_mfp_mtp);
   AddInstTable(InstTable, "MTPS"  , 0106400 | CODE_FLAG_GEN_IMM, decode_mfps_mtps);
 
   AddInstTable(InstTable, "FADD"  , 0075000, decode_fis);
@@ -1822,6 +1842,8 @@ static void init_fields_pdp11(void)
   AddInstTable(InstTable, "LDEXP", 0176400 | CODE_FLAG_GEN_IMM | CODE_FLAG_16BIT, decode_fp11_f1_f3);
   AddInstTable(InstTable, "STEXP", 0175000 | CODE_FLAG_ARGSWAP | CODE_FLAG_16BIT, decode_fp11_f1_f3);
   add_fp11("LD"  , 0172400 | CODE_FLAG_GEN_IMM, decode_fp11_f1_f3);
+  AddInstTable(InstTable, "STCFD", 0176000 | CODE_FLAG_ARGSWAP | CODE_FLAG_F64BIT, decode_fp11_f1_f3);
+  AddInstTable(InstTable, "STCDF", 0176000 | CODE_FLAG_ARGSWAP, decode_fp11_f1_f3);
   add_fp11("ST"  , 0174000 | CODE_FLAG_ARGSWAP, decode_fp11_f1_f3);
   add_fp11("MOD" , 0171400 | CODE_FLAG_GEN_IMM, decode_fp11_f1_f3);
   add_fp11("MUL" , 0171000 | CODE_FLAG_GEN_IMM, decode_fp11_f1_f3);
@@ -1899,6 +1921,9 @@ static void init_fields_pdp11(void)
   add_cis("SPANC", 0076043, decode_cis_2);
   add_cis("SUBN" , 0076051, decode_cis_3);
   add_cis("SUBP" , 0076071, decode_cis_3);
+
+  inst_table_set_prefix_proc(InstTable, NULL, 0);
+  add_pseudo(InstTable);
 }
 
 /*!------------------------------------------------------------------------
@@ -1915,6 +1940,10 @@ static void init_fields_wd16(void)
 {
   InstTable = CreateInstTable(201);
   SetDynamicInstTable(InstTable);
+
+  add_null_pseudo(InstTable);
+
+  inst_table_set_prefix_proc(InstTable, check_alignment, 0);
 
   AddInstTable(InstTable, "NOP"  , NOPCode, decode_fixed);
   AddInstTable(InstTable, "RESET", 0x0001 , decode_fixed);
@@ -2019,6 +2048,10 @@ static void init_fields_wd16(void)
   AddInstTable(InstTable, "FCMP", 0xf400, decode_format11);
 
   init_branches();
+
+  inst_table_set_prefix_proc(InstTable, NULL, 0);
+  add_pseudo(InstTable);
+  AddInstTable(InstTable, "FLT3", eIntPseudoFlag_LittleEndian | eIntPseudoFlag_AllowFloat | eIntPseudoFlag_DECFormat, DecodeIntelDM);
 }
 
 /*!------------------------------------------------------------------------
@@ -2061,27 +2094,7 @@ static void intern_symbol_pdp11(char *p_arg, TempResult *p_result)
 
 static void make_code_pdp11(void)
 {
-  CodeLen = 0; DontPrint = False;
   op_size = eSymbolSizeUnknown;
-
-  /* to be ignored */
-
-  if (Memo("")) return;
-
-  /* Pseudo Instructions */
-
-  if (decode_pseudo())
-    return;
-
-  /* machine instructions may not begin on odd addresses */
-
-  if (Odd(EProgCounter()))
-  {
-    if (DoPadding)
-      InsertPadding(1, False);
-    else
-      WrError(ErrNum_AddrNotAligned);
-  }
 
   if (!LookupInstTable(InstTable, OpPart.str.p_str))
     WrStrErrorPos(ErrNum_UnknownInstruction, &OpPart);
@@ -2246,7 +2259,7 @@ static void switch_to_pdp11(void *p_user)
 #define cpu_flags_f11 (e_cpu_flag_sob_sxt | e_cpu_flag_mark | e_cpu_flag_rtt | e_cpu_flag_xor | e_cpu_flag_mfpt | e_cpu_flag_eis | e_cpu_flag_mfp_mtp | e_cpu_flag_mfps_mtps)
 
 #define opt_cpu_flags_t11 0
-#define cpu_flags_t11 (e_cpu_flag_sob_sxt | e_cpu_flag_rtt | e_cpu_flag_mfps_mtps)
+#define cpu_flags_t11 (e_cpu_flag_sob_sxt | e_cpu_flag_xor | e_cpu_flag_rtt | e_cpu_flag_mfps_mtps | e_cpu_flag_mfpt)
 
 #define opt_cpu_flags_j11 0
 #define cpu_flags_j11 (e_cpu_flag_eis | e_cpu_flag_fp11 | e_cpu_flag_sob_sxt | e_cpu_flag_xor | e_cpu_flag_rtt | e_cpu_flag_mark | e_cpu_flag_mfpt | e_cpu_flag_mfp_mtp | e_cpu_flag_mfps_mtps | e_cpu_flag_spl | e_cpu_flag_csm | e_cpu_flag_wrtlck | e_cpu_flag_tstset)

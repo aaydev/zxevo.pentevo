@@ -1,17 +1,17 @@
 
-;LAST UPDATE: 01.12.2014 savelij
+; LAST UPDATE: 06.02.2025 savelij
 
-;ВХОДНЫЕ ПАРАМЕТРЫ ОБЩИЕ:
-;HL-АДРЕС ЗАГРУЗКИ В ПАМЯТЬ
-;BCDE-32-Х БИТНЫЙ НОМЕР СЕКТОРА
-;A-КОЛИЧЕСТВО БЛОКОВ (БЛОК=512 БАЙТ)
-;ТОЛЬКО ДЛЯ МНОГОБЛОЧНОЙ ЗАПИСИ/ЧТЕНИИ
+; входные параметры общие:
+; HL-адрес загрузки в память
+; BCDE-32-х битный номер сектора
+; A-количество блоков (блок=512 байт)
+; только для многоблочной записи/чтении
 
-;ОШИБКИ ВЫДАВАЕМЫЕ НА ВЫХОДЕ:
-;A=0-ИНИЦИАЛИЗАЦИЯ ПРОШЛА УСПЕШНО
-;A=1-КАРТА НЕ НАЙДЕНА ИЛИ НЕ ОТВЕТИЛА
+; ошибки выдаваемые на выходе:
+; A=0-инициализация прошла успешно
+; A=1-карта не найдена или не ответила
 
-;ОБЩАЯ ТОЧКА ВХОДА ДЛЯ РАБОТЫ С SD
+;общая точка входа для работы с SD
 COMSDZ		EX AF,AF'
 		LD A,IYL
 		AND A
@@ -32,7 +32,7 @@ COMSDZ1		ADD A,A
 		ADC A,H
 		SUB L
 		LD H,A
-		PEC_OFF M_SHADOW_BF
+	PEC_OFF M_SHADOW_BF
 		LD A,(HL)
 		INC HL
 		LD H,(HL)
@@ -49,19 +49,20 @@ RET4SDZ		PUSH AF
 		EX (SP),HL
 		LD (RREG_F),HL
 		EX (SP),HL
-RET4SD1		PEC_ON M_SHADOW_BF
+RET4SD1
+	PEC_ON M_SHADOW_BF
 		POP AF
 		RET
 
-TABLSDZ		DW SD_INIT			;0 ПАРАМЕТРОВ НЕ ТРЕБУЕТ, НА ВЫХОДЕ A
-						;СМОТРИ ВЫШЕ ПЕРВЫЕ 2 ЗНАЧЕНИЯ
-		DW SD_CMP			;1 ПРОВЕРКА НАЛИЧИЯ SD КАРТЫ
-		DW RDMULTI			;2 ЧТЕНИЕ СЕКТОРОВ, КОЛ-ВО В "A"
-		DW WRMULTI			;3 ЗАПИСЬ СЕКТОРОВ
+TABLSDZ		DW SD_INIT			; 0 параметров не требует, на выходе 'A'
+						; смотри выше первые 2 значения
+		DW SD_CMP			; 1 проверка наличия SD карты
+		DW RDMULTI			; 2 чтение секторов, кол-во в 'A'
+		DW WRMULTI			; 3 запись секторов, кол-во в 'A'
 
 SD_INIT		CALL CS_HIGH
 		LD BC,P_DATA
-		LD DE,0X10FF
+		LD DE,0x10FF
 		OUT (C),E
 		DEC D
 		JR NZ,$-3
@@ -89,7 +90,7 @@ ZAW001		LD HL,CMD00
 		LD HL,0
 		BIT 2,A
 		JR NZ,ZAW006
-		LD H,0X40
+		LD H,0x40
 ZAW006		LD A,CMD_55
 		CALL OUT_COM
 		CALL IN_OOUT
@@ -105,7 +106,7 @@ ZAW006		LD A,CMD_55
 		OUT (C),L
 		NOP
 		OUT (C),L
-		LD A,0XFF
+		LD A,0xFF
 		OUT (C),A
 		CALL IN_OOUT
 		AND A
@@ -145,7 +146,7 @@ CS__LOW		PUSH AF
 
 OUTCOM		CALL CS__LOW
 		PUSH BC
-		LD BC,0X0600+P_DATA
+		LD BC,0x0600+P_DATA
 		OTIR
 		POP BC
 		RET
@@ -225,7 +226,7 @@ SECN200		POP AF
 		OUT (C),D
 		NOP
 		OUT (C),E
-		LD A,0XFF
+		LD A,0xFF
 		OUT (C),A
 		POP BC
 		POP DE
@@ -233,7 +234,7 @@ SECN200		POP AF
 		RET
 
 IN_OOUT		PUSH DE
-		LD DE,0X30FF
+		LD DE,0x30FF
 IN_WAIT		IN A,(P_DATA)
 		CP E
 		JR NZ,IN_EXIT
@@ -242,9 +243,9 @@ IN_NEXT		DEC D
 IN_EXIT		POP DE
 		RET
 
-CMD00		DB 0X40,0X00,0X00,0X00,0X00,0X95		;GO_IDLE_STATE
-CMD08		DB 0X48,0X00,0X00,0X01,0XAA,0X87		;SEND_IF_COND
-CMD16		DB 0X50,0X00,0X00,0X02,0X00,0XFF		;SET_BLOCKEN
+CMD00		DB 0x40,0x00,0x00,0x00,0x00,0x95		;GO_IDLE_STATE
+CMD08		DB 0x48,0x00,0x00,0x01,0xAA,0x87		;SEND_IF_COND
+CMD16		DB 0x50,0x00,0x00,0x02,0x00,0xFF		;SET_BLOCKEN
 
 RD_SECT		PUSH BC
 		LD A,IYL
@@ -253,19 +254,19 @@ RD_SECT		PUSH BC
 		AND A
 		JR NZ,RD_SECT2
 RD_SECT3	
-;		LD A,(R_7FFD)
-		READ_7FFD
+	READ_7FFD
 		LD BC,(B0_CPU2)
 		JR Z,RD_SECT1
 		LD BC,(B1_CPU2)
-RD_SECT1	PEC_ON M_SHADOW_BF
+RD_SECT1
+	PEC_ON M_SHADOW_BF
 		LD A,B
-		OR 0X37
+		OR 0x37
 		LD B,A
 		LD A,C
 		LD C,LOW (WIN_A0)
 		OUT (C),A
-		PEC_OFF M_SHADOW_BF
+	PEC_OFF M_SHADOW_BF
 RD_SECT2	LD BC,P_DATA
 		INIR
 		NOP
@@ -274,11 +275,11 @@ RD_SECT2	LD BC,P_DATA
 		IN A,(C)
 		NOP
 		IN A,(C)
-		PEC_ON M_SHADOW_BF
-		LD BC,WIN_P6
+	PEC_ON M_SHADOW_BF
+		LD BC,WIN_P2
 		XOR A
 		OUT (C),A
-		PEC_OFF M_SHADOW_BF
+	PEC_OFF M_SHADOW_BF
 		POP BC
 		RET
 
@@ -288,7 +289,7 @@ WR_SECT		PUSH BC
 		OTIR
 		NOP
 		OTIR
-		LD A,0XFF
+		LD A,0xFF
 		OUT (C),A
 		NOP
 		OUT (C),A
@@ -301,7 +302,7 @@ RDMULTI		EX AF,AF'
 		EX AF,AF'
 RDMULT1		EX AF,AF'
 		CALL IN_OOUT
-		CP 0XFE
+		CP 0xFE
 		JR NZ,$-5
 		CALL RD_SECT
 		EX AF,AF'
@@ -322,7 +323,7 @@ WRMULTI		EX AF,AF'
 		JR NZ,$-4
 		EX AF,AF'
 WRMULT1		EX AF,AF'
-		LD A,0XFC
+		LD A,0xFC
 		CALL WR_SECT
 		CALL IN_OOUT
 		INC A
@@ -331,7 +332,7 @@ WRMULT1		EX AF,AF'
 		DEC A
 		JR NZ,WRMULT1
 		LD C,P_DATA
-		LD A,0XFD
+		LD A,0xFD
 		OUT (C),A
 		CALL IN_OOUT
 		INC A

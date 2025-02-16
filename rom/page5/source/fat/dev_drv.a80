@@ -1,22 +1,12 @@
 
-;LAST UPDATE: 23.05.2021 savelij
+; LAST UPDATE: 16.02.2025 savelij
 
 MASTER		EQU 0
-SLAVE		EQU 0X80
+SLAVE		EQU 0x80
 
-;DRV_A		EQU 0			;DRIVE A
-;DRV_B		EQU 1			;DRIVE B
-;DRV_C		EQU 2			;DRIVE C
-;DRV_D		EQU 3			;DRIVE D
-;SDZ		EQU 4			;SD КАРТА НА ZC
-;SDG		EQU 5			;SD КАРТА НА NEOGS
-;HDDN		EQU 6			;HDD NEMO
-;HDDS		EQU 7			;HDD SMUC
-;HDDV		EQU 8			;HDD DIVIDE
-
-EXTERNAL	EQU 0			;ВНЕШНИЙ ВЫЗОВ
-INTERNAL	EQU 1			;ВНУТРЕННИЙ ВЫЗОВ
-INT4EXT		EQU 3			;ВНУТРЕННИЙ ВЫЗОВ ДЛЯ ВЫЗВАВШЕЙ ПРОГИ
+EXTERNAL	EQU 0			; внешний вызов
+INTERNAL	EQU 1			; внутренний вызов
+INT4EXT		EQU 3			; внутренний вызов для вызвавшей проги
 
 B_SDZ		EQU %00000001
 B_SDG		EQU %00000010
@@ -24,7 +14,9 @@ B_HDD		EQU %00000100
 B_NEW_SD	EQU %01000000
 B_INST_SDG	EQU %10000000
 
-;ВЫЗОВ ВЫБРАННОГО ДРАЙВЕРА
+CRC_SIZE	EQU 0xE0
+
+; вызов выбранного драйвера
 TO_DRV		PUSH HL
 		LD L,A
 		LD A,IYL
@@ -37,16 +29,16 @@ TO_DRV		PUSH HL
 		LD BC,(RREG_C)
 		LD HL,(RREG_L)
 		EX (SP),HL
-TO_DRV1		LD HL,(GO_DEV)
+TO_DRV1		LD HL,(DEVMAN_VARS.GO_DEV)
 		EX (SP),HL
 		RET
 
-;ВНЕШНИЙ ВЫЗОВ МЕНЕДЖЕРА УСТРОЙСТВ
+; внешний вызов менеджера устройств
 COM_DEV		EX AF,AF'
 		CALL P5_READ_BYTE
 		LD A,(NEXTBYTERST8)
 		PUSH IY
-		LD IYL,EXTERNAL			;ВНЕШНИЙ ВЫЗОВ
+		LD IYL,EXTERNAL			; внешний вызов
 NEXT_ICOM_DEV	PUSH IX
 		PUSH HL
 		LD HL,EXITDEV
@@ -70,74 +62,66 @@ EXITDEV		POP IX
 		POP IY
 		RET
 
-;ВНУТРЕННИЙ ВЫЗОВ МЕНЕДЖЕРА УСТРОЙСТВ
+; внутренний вызов менеджера устройств
 ICOM_DEV	EX AF,AF'
 		EX (SP),HL
 		LD A,(HL)
 		INC HL
 		EX (SP),HL
 		PUSH IY
-		LD IYL,INTERNAL			;ВНУТРЕННИЙ ВЫЗОВ
+		LD IYL,INTERNAL			; внутренний вызов
 		JR NEXT_ICOM_DEV
 
-TABLDEV		DW DEVFIND			;00 ПОИСК УСТРОЙСТВ
-		DW SET_VOL			;01 ВЫБОР РАЗДЕЛА
-		DW KOL_VOL			;02 ЗАПРОС НАЙДЕНОГО
-		DW GET_FNDVOLUME		;03 ПОЛУЧИТЬ ТАБЛИЦУ НАЙДЕННЫХ РАЗДЕЛОВ
-		DW TO_DRV			;04 ВЫЗОВ ДРАЙВЕРА ВЫБРАННОГО УСТРОЙСТВА
-		DW SET_DEVICE			;05 УСТАНОВКА БИТОВ УСТРОЙСТВА И LBA РЕЖИМА
-		DW CONTROL_SD			;06 КОНТРОЛЬ НАЛИЧИЯ SD КАРТ
-		DW COMHDDNEX			;07 ПРЯМОЙ ВЫЗОВ ДРАЙВЕРА HDD NEMO (ВРЕМЕННАЯ ФУНКЦИЯ)
-		DW FREINIT_VOL			;08 ПОЛНАЯ ПЕРЕИНИЦИАЛИЗАЦИЯ РАЗДЕЛА
-		DW SET_SECTOR_NUM		;09 УСТАНОВКА НОМЕРА СЕКТОРА ДЛЯ ЧТЕНИЯ/ЗАПИСИ
+TABLDEV		DW DEVFIND			; 00 поиск устройств
+		DW SET_VOL			; 01 выбор раздела
+		DW KOL_VOL			; 02 запрос найденого
+		DW GET_FNDVOLUME		; 03 получить таблицу найденных разделов
+		DW TO_DRV			; 04 вызов драйвера выбранного устройства
+		DW SET_DEVICE			; 05 установка битов устройства и LBA режима
+		DW CONTROL_SD			; 06 контроль наличия SD карт
+		DW COMHDDNEX			; 07 прямой вызов драйвера HDD NEMO
+		DW FREINIT_VOL			; 08 полная переинициализация раздела
+		DW SET_SECTOR_NUM		; 09 установка номера сектора для чтения/записи
 
-;ФОРМАТ ТАБЛИЦЫ НАЙДЕННЫХ РАЗДЕЛОВ
-;+0(1)-0-DRIVE A
-;      1-DRIVE B
-;      2-DRIVE C
-;      3-DRIVE D
-;      4-SD КАРТА ZC
-;      5-SD КАРТА NEOGS
-;      6-HDD NEMO
-;      7-HDD SMUC
-;      8-HDD DIVIDE
-;+1(1)-ДЛЯ SD-ТУПО 0
-;      ИНАЧЕ HDD/CD 0-MASTER, 1-SLAVE
-;+2(1)-ТИП РАЗДЕЛА, В ТАБЛИЦЕ ТОЛЬКО
-;РАЗДЕЛЫ:
-;00=01-FAT12
-;01=04,06,0E-FAT16
-;02=0B,0C-FAT32
-;+3(4)-СТАРТОВЫЙ СЕКТОР РАЗДЕЛА
-;+7(1)-РЕЗЕРВ
+; ФОРМАТ ТАБЛИЦЫ НАЙДЕННЫХ РАЗДЕЛОВ
+; +0(1)-нумерацию смотреть в сорце nums_devices.a80
+; +1(1)-для SD-всегда 0
+;       иначе HDD/CD 0-MASTER, 1-SLAVE
+; +2(1)-тип раздела, в таблице только
+; разделы:
+; 00=01-FAT12
+; 01=04,06,0E-FAT16
+; 02=0B,0C-FAT32
+; +3(4)-стартовый сектор раздела
+; +7(1)-резерв
 
-;ТОЧКА ВХОДА ДЛЯ ПОИСКА РАЗДЕЛОВ
-;HL-АДРЕС КУДА ПОКЛАСТЬ ТАБЛИЦУ РАЗДЕЛОВ
-;НА ВЫХОДЕ:
-;A-КОЛ-ВО РАЗДЕЛОВ
-DEVFIND		LD A,(FLAGS_DRV)
+; точка входа для поиска разделов
+; HL-адрес куда покласть таблицу разделов
+; на выходе:
+; A-кол-во разделов
+DEVFIND		LD A,(DEVMAN_VARS.FLAGS_DRV)
 		AND B_NEW_SD
 		JR NZ,.L1
-		LD HL,0XFE
-		LD IX,BUF_TABLVOL
-		ROMCALL CRC16_FAST,ROM_RST81
-		LD BC,(BUF_TABLVOL+0XFE)
+		LD HL,CRC_SIZE
+		LD IX,BUF_VOLUMES
+	ROMCALL CRC16_FAST,ROM_RST81
+		LD BC,(BUF_VOLUMES + 0xFE)
 		AND A
 		SBC HL,BC
 		JP Z,KOL_VOL
-.L1		LD HL,FLAGS_DRV
-		LD A,B_NEW_SD!0XFF
+.L1		LD HL,DEVMAN_VARS.FLAGS_DRV
+		LD A,B_NEW_SD!0xFF
 		AND (HL)
 		LD (HL),A
 		PUSH IY
 		XOR A
-		LD (KOLDVOL),A
-		LD HL,BUF_TABLVOL
-		LD DE,BUF_TABLVOL+1
-		LD BC,0XEF
+		LD (DEVMAN_VARS.KOLDVOL),A
+		LD HL,BUF_VOLUMES
+		LD DE,BUF_VOLUMES+1
+		LD BC,0xEF
 		LD (HL),B
 		LDIR
-		LD IX,DEVICES
+		LD IX,DEVMAN_VARS.DEVICES
 		LD IYL,INTERNAL
 		LD A,(HDDTIMEOUT)
 .L2		EI
@@ -148,41 +132,41 @@ DEVFIND		LD A,(FLAGS_DRV)
 		JR NZ,.L2
 		INC A
 		LD (HDDTIMEOUT),A
-;NEMO
+; NEMO
 
+; ===== test =====
 	IFNDEF TESTEMUFDD
-; test
-		LD HL,BUF_512			;АДРЕС БУФЕРА ДЛЯ ЗАГРУЗКИ СЕКТОРА (512 БАЙТ)
+		LD HL,BUF_512			; адрес буфера для загрузки сектора (512 байт)
 		CALL COMHDDN
-		DB _DEV_INIT			;ИНИЦИАЛИЗАЦИЯ УСТРОЙСТВА С ОПРЕДЕЛЕНИЕМ ЧТО ПОДКЛЮЧЕНО
+		DB _DEV_INIT			; инициализация устройства с определением что подключено
 		LD A,H
 		AND A
 		JR NZ,.L3
 		LD (IX+0),_HDD_NEMO_MASTER+MASTER
 		INC IX
-; test
 	ENDIF
+; ===== test =====
 
 .L3	
-;SD ON NEOGS
-		LD H,CMOS_BYTE_01
-		ROMCALL READCMOS,ROM_RST82
+; SD ON NEOGS
+		LD H,CMOS.BYTE_01
+	ROMCALL READCMOS,ROM_RST82
 		LD A,L
-		AND M_ACCESSSDG			;ПРОВЕРКА РАЗРЕШЕНИЯ ДОСТУПА К SD КАРТЕ NEOGS
-		JR Z,.L4			;ЕСЛИ ЗАПРЕЩЕН, ТО НЕ ВЫЗЫВАЕМ
-		CALL INSTSDD			;УCТАНОВКА ДРАЙВЕРА SD КАРТЫ НА NEOGS
+		AND CMOS_EC.M_SD_NGS_ONOFF	; проверка разрешения доступа к SD карте NEOGS
+		JR Z,.L4			; если запрещен, то не вызываем
+		CALL INSTSDD			; уcтановка драйвера SD карты на NEOGS
 		AND A
-		JR NZ,.L4			;НЕ ИНИЦИАЛИЗИРОВАТЬ ЕСЛИ NEOGS НЕ НАЙДЕН
-		LD HL,FLAGS_DRV
-		SET 7,(HL)			;ДРАЙВЕР УСТАНОВИЛСЯ
+		JR NZ,.L4			; не инициализировать если NEOGS не найден
+		LD HL,DEVMAN_VARS.FLAGS_DRV
+		SET 7,(HL)			; драйвер установился
 		CALL COMSDG
-		DB _DEV_INIT			;ИНИЦИАЛИЗАЦИЯ SD КАРТЫ НА NEOGS
+		DB _DEV_INIT			; инициализация SD карты на NEOGS
 		AND A
 		JR NZ,.L4
 		LD (IX+0),_SD_SDG
 		INC IX
 .L4
-;USB FLASH
+; USB FLASH
 	IF USB_ENABLE
 		CALL COMUSBF
 		DB _DEV_INIT
@@ -192,17 +176,17 @@ DEVFIND		LD A,(FLAGS_DRV)
 		INC IX
 	ENDIF
 .L8
-;SD ON Z-CONTROLLER
+; SD ON Z-CONTROLLER
 		CALL COMSDZ
-		DB _DEV_INIT			;ИНИЦИАЛИЗАЦИЯ SD КАРТЫ
+		DB _DEV_INIT			; инициализация SD карты
 		AND A
 		JR NZ,.L5
 		LD (IX+0),_SD_SDZ
 		INC IX
-.L5		LD (IX+0),0XFF			;ДАЛЕЕ НЕТ НАЙДЕННЫХ УСТРОЙСТВ
+.L5		LD (IX+0),0xFF			; далее нет найденных устройств
 		CALL FIND_SD
-		LD HL,DEVICES
-		LD IX,BUF_TABLVOL
+		LD HL,DEVMAN_VARS.DEVICES
+		LD IX,BUF_VOLUMES
 		LD A,(HL)
 		INC A
 		JR Z,.L7
@@ -211,22 +195,22 @@ DEVFIND		LD A,(FLAGS_DRV)
 		LD A,(HL)
 		INC A
 		JR NZ,.L6
-.L7		CALL SETVOLD			;ВЫЧИСЛЕНИЕ КОЛИЧЕСТВА НАЙДЕННЫХ РАЗДЕЛОВ НА ВСЕХ УСТРОЙСТВАХ
+.L7		CALL SETVOLD			; вычисление количества найденных разделов на всех устройствах
 		POP IY
 		SCF
-		JP Z,KOLVOL1			;ПЕРЕХОД ЕСЛИ НИЧЕГО НЕ НАЙДЕНО
+		JP Z,KOLVOL1			; переход если ничего не найдено
 		DEC A
-		LD (SETDVOL),A
-;====ИНИЦИАЛИЗАЦИЯ ПЕРЕМЕННЫХ ВСЕХ НАЙДЕННЫХ РАЗДЕЛОВ====
-INIT_VOLS	LD IX,BUF_TABLVOL
-		LD A,(SETDVOL)
-		PUSH AF				;СОХРАНИЛИ ТЕКУЩИЙ ВЫБРАННЫЙ РАЗДЕЛ
-		LD A,(KOLDVOL)
+		LD (DEVMAN_VARS.SETDVOL),A
+; ====инициализация переменных всех найденных разделов====
+INIT_VOLS	LD IX,BUF_VOLUMES
+		LD A,(DEVMAN_VARS.SETDVOL)
+		PUSH AF				; сохранили текущий выбранный раздел
+		LD A,(DEVMAN_VARS.KOLDVOL)
 		LD E,A
 		LD D,0
 IV_SETDRV2	PUSH AF
 		LD A,D
-		LD (SETDVOL),A
+		LD (DEVMAN_VARS.SETDVOL),A
 		LD A,(IX+0)
 		CP _SD_SDZ
 		LD HL,COMSDZ
@@ -238,9 +222,9 @@ IV_SETDRV2	PUSH AF
 		LD HL,COMSDG
 		JR Z,IV_SETDRV1
 		LD HL,COMHDDN
-IV_SETDRV1	LD (GO_DEV),HL			;УСТАНОВИЛИ АДРЕС ТЕКУЩЕГО ВЫЗЫВАЕМОГО ДРАЙВЕРА
+IV_SETDRV1	LD (DEVMAN_VARS.GO_DEV),HL	; установили адрес текущего вызываемого драйвера
 		LD A,(IX+2)
-		LD HL,BUF_TABLVOL
+		LD HL,BUF_VOLUMES
 		PUSH DE
 		CALL ICOM_FAT
 		DB _INIT_FATVARS
@@ -248,33 +232,33 @@ IV_SETDRV1	LD (GO_DEV),HL			;УСТАНОВИЛИ АДРЕС ТЕКУЩЕГО ВЫЗЫВАЕМОГО ДРАЙВЕРА
 		CALL SAVE_FNDVOL
 		POP AF
 		POP DE
-		CALL C,DEL_VOL			;РАЗДЕЛ НЕИЗВЕСТЕН ИЛИ НЕ ОТФОРМАТИРОВАН, УДАЛЯЕМ ОПИСАТЕЛЬ
+		CALL C,DEL_VOL			; раздел неизвестен или не отформатирован, удаляем описатель
 		INC D
 		LD BC,8
 		ADD IX,BC
 		POP AF
 		DEC A
 		JR NZ,IV_SETDRV2
-;====ИНИЦИАЛИЗАЦИЯ ПЕРЕМЕННЫХ ВСЕХ НАЙДЕННЫХ РАЗДЕЛОВ====
+; ====инициализация переменных всех найденных разделов====
 		POP AF
-		CALL SET_VOL1			;ВОССТАНОВЛЕНИЕ ТЕКУЩЕГО ВЫБРАННОГО РАЗДЕЛА
-		LD A,(KOLDVOL)
+		CALL SET_VOL1			; восстановление текущего выбранного раздела
+		LD A,(DEVMAN_VARS.KOLDVOL)
 		DEC A
-		CALL C,SET_VOL1			;ЕСЛИ ВЫБРАН НЕ СУЩЕСТВУЮЩИЙ РАЗДЕЛ, ТО ПРИНУДИТЕЛЬНО ВЫБИРАЕМ ПОСЛЕДНИЙ НАЙДЕННЫЙ
+		CALL C,SET_VOL1			; если выбран не существующий раздел, то принудительно выбираем последний найденный
 		CALL ICOM_FAT
 		DB _INIT_TEKDIR
-		LD HL,0XFE
-		LD IX,BUF_TABLVOL
-		ROMCALL CRC16_FAST,ROM_RST81
-		LD (CRC_DRVS),HL
+		LD HL,CRC_SIZE
+		LD IX,BUF_VOLUMES
+	ROMCALL CRC16_FAST,ROM_RST81
+		LD (BUF_VOLUMES + 0xFE),HL
 KOL_VOL		LD A,IYL
 		AND A
 		JR NZ,IKOL_VOL
-		LD HL,(ADRTEKV)			;АДРЕС ТЕКУЩЕГО ВЫБРАННОГО РАЗДЕЛА
+		LD HL,(DEVMAN_VARS.ADRTEKV)	; адрес текущего выбранного раздела
 		INC HL
 		INC HL
-		LD A,(HL)			;ТИП РАЗДЕЛА
-		LD HL,(KOLDVOL)			;D-НОМЕР ВЫБРАННОГО РАЗДЕЛА, E-КОЛИЧЕСТВО НАЙДЕННЫХ РАЗДЕЛОВ
+		LD A,(HL)			; тип раздела
+		LD HL,(DEVMAN_VARS.KOLDVOL)	; D-номер выбранного раздела, E-количество найденных разделов
 		LD (RREG_E),HL
 		AND A
 KOLVOL1		PUSH AF
@@ -282,7 +266,7 @@ KOLVOL1		PUSH AF
 		LD (RREG_F),HL
 		RET
 
-;УДАЛЕНИЕ РАЗДЕЛА ИЗ ТАБЛИЦЫ
+; удаление раздела из таблицы
 DEL_VOL		PUSH DE
 		PUSH IX
 		POP HL
@@ -297,7 +281,7 @@ DEL_VOL		PUSH DE
 		LDIR
 		LD BC,-8
 		ADD IX,BC
-		LD HL,KOLDVOL
+		LD HL,DEVMAN_VARS.KOLDVOL
 		DEC (HL)
 		POP DE
 		DEC D
@@ -305,8 +289,8 @@ DEL_VOL		PUSH DE
 
 FINDVOL		PUSH HL
 		LD A,(HL)
-		LD (TEK_TYPE),A
-		AND 0X7F
+		LD (DEVMAN_VARS.TEK_TYPE),A
+		AND 0x7F
 		CP _HDD_NEMO_MASTER
 		LD HL,COMHDDN
 		JR Z,FINDVOL1
@@ -314,12 +298,12 @@ FINDVOL		PUSH HL
 		LD HL,COMSDG
 		JR Z,FINDVOL1
 		LD HL,COMSDZ
-FINDVOL1	LD (GO_DEV),HL			;ВЫСТАВИЛИ АДРЕС ВЫЗОВА НУЖНОГО ДРАЙВЕРА
+FINDVOL1	LD (DEVMAN_VARS.GO_DEV),HL	; выставили адрес вызова нужного драйвера
 		LD DE,0
 		LD B,D
-		LD C,D				;ЧИТАТЬ СЕКТОР 0
-		LD A,1				;1 СЕКТОР
-		LD HL,BUF_512			;АДРЕС БУФЕРА ЧТЕНИЯ
+		LD C,D				; читать сектор 0
+		LD A,1				; 1 сектор
+		LD HL,BUF_512			; адрес буфера чтения
 		PUSH HL
 		LD IYL,INTERNAL
 		CALL TO_DRV
@@ -328,35 +312,35 @@ FINDVOL1	LD (GO_DEV),HL			;ВЫСТАВИЛИ АДРЕС ВЫЗОВА НУЖНОГО ДРАЙВЕРА
 		LD D,(HL)
 		DEC HL
 		LD E,(HL)
-		LD HL,0XAA55
+		LD HL,0xAA55
 		AND A
 		SBC HL,DE
 		POP IY
-		LD (ADRTEKV),IX
+		LD (DEVMAN_VARS.ADRTEKV),IX
 		CALL Z,READ_MBR
 		POP HL
 		RET
 
-;ЗАПРОС НАЙДЕНОГО И ТЕКУЩЕГО ВЫБРАННОГО УСТРОЙСТВА
-IKOL_VOL	LD HL,(ADRTEKV)			;АДРЕС ТЕКУЩЕГО ВЫБРАННОГО РАЗДЕЛА
+; запрос найденого и текущего выбранного устройства
+IKOL_VOL	LD HL,(DEVMAN_VARS.ADRTEKV)	; адрес текущего выбранного раздела
 		INC HL
 		INC HL
-		LD A,(HL)			;ТИП РАЗДЕЛА
-		LD DE,(KOLDVOL)			;D-НОМЕР ВЫБРАННОГО РАЗДЕЛА, E-КОЛИЧЕСТВО НАЙДЕННЫХ РАЗДЕЛОВ
-		LD HL,BUF_TABLVOL		;АДРЕС НАЧАЛА ТАБЛИЦЫ НАЙДЕННЫХ РАЗДЕЛОВ
+		LD A,(HL)			; тип раздела
+		LD DE,(DEVMAN_VARS.KOLDVOL)	; D-номер выбранного раздела, E-количество найденных разделов
+		LD HL,BUF_VOLUMES		; адрес начала таблицы найденных разделов
 		AND A
 		RET
 
-;ВЫЧИСЛЕНИЕ КОЛИЧЕСТВА НАЙДЕННЫХ РАЗДЕЛОВ НА ВСЕХ УСТРОЙСТВАХ
+; вычисление количества найденных разделов на всех устройствах
 SETVOLD		LD A,IXL
 		RRCA
 		RRCA
 		RRCA
-		AND 0X1F
-		LD (KOLDVOL),A
+		AND 0x1F
+		LD (DEVMAN_VARS.KOLDVOL),A
 		RET
 
-;ВЫБОР РАЗДЕЛА И ИНИТ ЕГО ПЕРЕМЕННЫХ
+; выбор раздела и инит его переменных
 FREINIT_VOL	LD L,A
 		LD A,IYL
 		AND A
@@ -367,7 +351,7 @@ FREINITVOL1	LD IYL,INTERNAL
 		CALL INIT_FATVARS
 		JP INIRTSC
 
-;ВЫБОР РАЗДЕЛА
+; выбор раздела
 SET_VOL		LD L,A
 		LD A,IYL
 		AND A
@@ -379,22 +363,22 @@ SET_VOL		LD L,A
 SET_VOL1	PUSH AF
 		CALL SAVE_FNDVOL
 		POP AF
-SET_VOL_MNT	LD HL,KOLDVOL
+SET_VOL_MNT	LD HL,DEVMAN_VARS.KOLDVOL
 		CP (HL)
 		CCF
 		RET C
-		LD (SETDVOL),A
+		LD (DEVMAN_VARS.SETDVOL),A
 		LD L,A
 		LD H,0
 		ADD HL,HL
 		ADD HL,HL
 		ADD HL,HL
-		LD DE,BUF_TABLVOL
+		LD DE,BUF_VOLUMES
 		ADD HL,DE
-		LD (ADRTEKV),HL
+		LD (DEVMAN_VARS.ADRTEKV),HL
 		LD A,(HL)
 ;		CP 4
-;		LD HL,DISKETA		;ЕЩЕ НЕ ОСИЛИЛ
+;		LD HL,DISKETA		; все еще отсутствует
 ;		JR C,SET_DRV
 		CP _SL_USBF
 		LD HL,COMUSBF
@@ -406,47 +390,49 @@ SET_VOL_MNT	LD HL,KOLDVOL
 		LD HL,COMSDG
 		JR Z,SET_DRV
 		LD HL,COMHDDN
-SET_DRV		LD (GO_DEV),HL
+SET_DRV		LD (DEVMAN_VARS.GO_DEV),HL
 		CALL LOAD_FNDVOL
-		LD HL,0XFE
+.L1		LD HL,CRC_SIZE
 		PUSH IX
-		LD IX,BUF_TABLVOL
-		ROMCALL CRC16_FAST,ROM_RST81
+		LD IX,BUF_VOLUMES
+	ROMCALL CRC16_FAST,ROM_RST81
 		POP IX
-		LD (CRC_DRVS),HL
+		LD (BUF_VOLUMES + 0xFE),HL
 		XOR A
 		RET
 
-SAVE_FNDVOL	PUSH IX
-		LD HL,0XFE
-		LD IX,ERORDRV
-		ROMCALL CRC16_FAST,ROM_RST81
-		POP IX
-		LD (CRC_VOL),HL			;ВЫЧИСЛЕНИЕ CRC РАЗДЕЛА ПЕРЕД СОХРАНЕНИЕМ
-		EVOPORT WIN_P5,RAM_FATVARS
-		LD A,(SETDVOL)
-		ADD A,HIGH (CPU5+BUF_ALLVOL)+4
+SAVE_FNDVOL
+;		PUSH IX
+;		LD HL,CRC_SIZE
+;		LD IX,FATVAR.ERORDRV
+;	ROMCALL CRC16_FAST,ROM_RST81
+;		POP IX
+;		LD (BUF_VOLUMES + 0xFE),HL	; вычисление CRC раздела перед сохранением
+	EVOPORT WIN_P1,RAM_FATVARS
+		LD A,(DEVMAN_VARS.SETDVOL)
+		ADD A,HIGH (CPU1+BUF_ALLVOL)+4
 		LD D,A
 		LD E,0
-		LD HL,BUF_TEKVOL
-		LD BC,0X100
+		LD HL,BUF_CURRFATVAR
+		LD BC,0x100
 		LDIR
 		RET
 
-LOAD_FNDVOL	EVOPORT WIN_P5,RAM_FATVARS
-		LD A,(SETDVOL)
-		ADD A,HIGH (CPU5+BUF_ALLVOL)+4
+LOAD_FNDVOL
+	EVOPORT WIN_P1,RAM_FATVARS
+		LD A,(DEVMAN_VARS.SETDVOL)
+		ADD A,HIGH (CPU1+BUF_ALLVOL)+4
 		LD H,A
 		LD L,0
-		LD DE,BUF_TEKVOL
-		LD BC,0X100
+		LD DE,BUF_CURRFATVAR
+		LD BC,0x100
 		LDIR
 ;		PUSH IX
-;		LD HL,0XFE
-;		LD IX,ERORDRV
-;		ROMCALL CRC16_FAST,P_ADDON1
+;		LD HL,CRC_SIZE
+;		LD IX,BUF_VOLUMES
+;	ROMCALL CRC16_FAST,P_ADDON1
 ;		POP IX
-;		LD DE,(CRC_VOL)
+;		LD DE,(BUF_VOLUMES + 0xFE)
 ;		AND A
 ;		SBC HL,DE
 ;		JP NZ,REDEVFIND
@@ -454,13 +440,13 @@ LOAD_FNDVOL	EVOPORT WIN_P5,RAM_FATVARS
 		DB _INIT_TEKDIR
 		RET
 
-CMP_SDCARD	LD A,(SETDVOL)
+CMP_SDCARD	LD A,(DEVMAN_VARS.SETDVOL)
 		CP _SD_SDG
 		JR NZ,CMPSDCARD1
-		LD H,CMOS_BYTE_01
-		ROMCALL READCMOS,ROM_RST82
+		LD H,CMOS.BYTE_01
+	ROMCALL READCMOS,ROM_RST82
 		LD A,L
-		AND M_ACCESSSDG			;ПРОВЕРКА РАЗРЕШЕНИЯ ДОСТУПА К SD КАРТЕ NEOGS
+		AND CMOS_EC.M_SD_NGS_ONOFF	; проверка разрешения доступа к SD карте NEOGS
 		RET Z
 CMPSDCARD1	PUSH IY
 		LD IYL,INTERNAL
@@ -470,66 +456,67 @@ CMPSDCARD1	PUSH IY
 		INC A
 		RET
 
-READ_MBR	LD DE,0X01BE			;СМЕЩЕНИЕ В 0 СЕКТОРЕ УСТРОЙСТВА ДО ТАБЛИЦЫ MBR
+READ_MBR	LD DE,0x01BE			; смещение в 0 секторе устройства до таблицы MBR
 		PUSH IY
-		ADD IY,DE			;УСТАНОВИЛИ УКАЗАТЕЛЬ НА НАЧАЛО ОПИСАТЕЛЕЙ РАЗДЕЛОВ
-		LD BC,0X0400			;РАЗДЕЛОВ МАКСИМУМ 4 И ОБНУЛИЛИ СЧЕТЧИК РАЗДЕЛОВ С FAT
-RDMBR0		LD A,(IY)			;ПЕРВЫЙ БАЙТ 16 БАЙТНОГО ОПИСАТЕЛЯ
-		AND A				;ДОЛЖЕН БЫТЬ РАВЕН 0
-		JR Z,RDMBR1
-		CP 0X80				;ИЛИ 0X80 (ПРИЗНАК ЗАГРУЗОЧНОГО РАЗДЕЛА)
-		JR NZ,RDMBR2
-RDMBR1		LD A,(IY+4)			;БАЙТ ТИПА РАЗДЕЛА
-		CALL CP_RAZD			;ПРОВЕРКА ТИПА РАЗДЕЛА
-		JR NZ,RDMBR2			;ЕСЛИ НЕ FAT ТО ПРОВЕРЯЕМ СЛЕДУЮЩУЮ 16 БАЙТНУЮ ЗАПИСЬ
+		ADD IY,DE			; установили указатель на начало описателей разделов
+		LD BC,0x0400			; разделов максимум 4 и обнулили счетчик разделов с FAT
+.L1		LD A,(IY)			; первый байт 16 байтного описателя
+		AND A				; должен быть равен 0
+		JR Z,.L2
+		CP 0x80				; или 0x80 (признак загрузочного раздела)
+		JR NZ,.L3
+.L2		LD A,(IY+4)			; байт типа раздела
+		CALL CP_RAZD			; проверка типа раздела
+		JR NZ,.L3			; если не FAT то проверяем следующую 16 байтную запись
 		INC C
-RDMBR2		LD DE,0X10
+.L3		LD DE,0x10
 		ADD IY,DE
-		DJNZ RDMBR0			;ПРОВЕРЯЕМ СЛЕДУЮЩУЮ 16 БАЙТНУЮ ЗАПИСЬ В MBR
+		DJNZ .L1			; проверяем следующую 16 байтную запись в MBR
 		LD A,C
 		AND A
 		POP HL
 		JP NZ,SCANMBR
 		PUSH HL
 		POP IY
-		LD C,(IY+0X0D)
+		LD C,(IY+0x0D)
 		XOR A
 		LD E,A
 		LD B,8
-		RR C
+.L4		RR C
 		ADC A,0
-		DJNZ $-4
+		DJNZ .L4
 		DEC A
-		JR NZ,$+3
+		JR NZ,.L5
 		INC E
-		LD A,(IY+0X0E)
-		OR (IY+0X0F)
-		JR Z,$+3
+.L5		LD A,(IY+0x0E)
+		OR (IY+0x0F)
+		JR Z,.L10
 		INC E
-;		LD A,(IY+0X13)
-;		OR (IY+0X14)
-;		JR Z,$+3
+.L10
+;		LD A,(IY+0x13)
+;		OR (IY+0x14)
+;		JR Z,.L6
 ;		INC E
-;		LD A,(IY+0X20)
-;		OR (IY+0X21)
-;		OR (IY+0X22)
-;		OR (IY+0X22)
-;		JR Z,$+3
+;.L6		LD A,(IY+0x20)
+;		OR (IY+0x21)
+;		OR (IY+0x22)
+;		OR (IY+0x22)
+;		JR Z,.L7
 ;		INC E
-		LD A,(IY+0X15)
-		AND 0XF0
-		CP 0XF0
-		JR NZ,$+3
+.L7		LD A,(IY+0x15)
+		AND 0xF0
+		CP 0xF0
+		JR NZ,.L8
 		INC E
-		LD A,E
+.L8		LD A,E
 		CP 3;4
 		RET NZ
-		LD A,(TEK_TYPE)
+		LD A,(DEVMAN_VARS.TEK_TYPE)
 		BIT 7,A
 		LD B,0
-		JR Z,$+3
+		JR Z,.L9
 		INC B
-		AND 0X7F
+.L9		AND 0x7F
 		LD C,A
 		PUSH IX
 		POP HL
@@ -538,7 +525,7 @@ RDMBR2		LD DE,0X10
 		INC HL
 		LD (HL),B
 		INC HL
-		LD (HL),0XFF
+		LD (HL),0xFF
 		INC HL
 		LD (HL),A
 		INC HL
@@ -555,19 +542,19 @@ INIT_VOL	PUSH IY
 		LD IYL,INTERNAL
 		CALL SETVOLD
 		DEC A
-		LD (SETDVOL),A
+		LD (DEVMAN_VARS.SETDVOL),A
 		LD L,A
 		LD H,0
 		ADD HL,HL
 		ADD HL,HL
 		ADD HL,HL
-		LD DE,BUF_TABLVOL
+		LD DE,BUF_VOLUMES
 		ADD HL,DE
-		LD (ADRTEKV),HL
+		LD (DEVMAN_VARS.ADRTEKV),HL
 		LD A,(HL)
-		AND 0X7F
+		AND 0x7F
 ;		CP 4
-;		LD HL,DISKETA		;ЕЩЕ НЕ ОСИЛИЛ
+;		LD HL,DISKETA		; все еще отсутствует
 ;		JR C,DSET_DRV
 		CP _SL_USBF
 		LD HL,COMUSBF
@@ -579,7 +566,7 @@ INIT_VOL	PUSH IY
 		LD HL,COMSDG
 		JR Z,DSET_DRV
 		LD HL,COMHDDN
-DSET_DRV	LD (GO_DEV),HL
+DSET_DRV	LD (DEVMAN_VARS.GO_DEV),HL
 		CALL IKOL_VOL
 		CALL ICOM_FAT
 		DB _INIT_FATVARS
@@ -587,40 +574,40 @@ DSET_DRV	LD (GO_DEV),HL
 		POP IY
 		RET
 
-;НА ВХОДЕ:
-;A-BIT 7-0/1-MASTER/SLAVE
-;BITS 6-0-ТИП НОСИТЕЛЯ
-SCANMBR		LD DE,0X01BE
+; на входе:
+; A-BIT 7-0/1-MASTER/SLAVE
+; биты 6-0-тип носителя
+SCANMBR		LD DE,0x01BE
 		ADD HL,DE
 		EXX
-		LD A,(TEK_TYPE)
+		LD A,(DEVMAN_VARS.TEK_TYPE)
 		BIT 7,A
 		LD B,0
-		JR Z,$+3
+		JR Z,.L4
 		INC B
-		AND 0X7F
+.L4		AND 0x7F
 		LD C,A
 		EXX
 		LD A,4
-SCNMBR0		PUSH AF
+.L1		PUSH AF
 		LD A,(HL)
 		LD C,4
 		ADD HL,BC
-		LD C,0X0C
+		LD C,0x0C
 		AND A
-		JR Z,SCNMBR1
-		CP 0X80
-		JR NZ,SCNMBR2
-SCNMBR1		LD A,(HL)
+		JR Z,.L2
+		CP 0x80
+		JR NZ,.L3
+.L2		LD A,(HL)
 		AND A
-		JR Z,SCNMBR2
+		JR Z,.L3
 		CALL CP_RAZD
-		JR NZ,SCNMBR2
-SCNMBR3		EXX
+		JR NZ,.L3
+		EXX
 		LD (IX+0),C
 		LD (IX+1),B
 		EXX
-		LD (IX+2),E			;УСТАНОВКА ТИПА FAT
+		LD (IX+2),E			; установка типа FAT
 		PUSH IX
 		POP DE
 		INC DE
@@ -632,54 +619,54 @@ SCNMBR3		EXX
 		LDI
 		LDI
 		LDI
-		LD (IX+7),0			;РЕЗЕРВНЫЙ БАЙТ
-SCNMBR4		LD C,8
+		LD (IX+7),0			; резервный байт
+		LD C,8
 		ADD IX,BC
 		LD C,4
-SCNMBR2		ADD HL,BC
+.L3		ADD HL,BC
 		POP AF
 		DEC A
-		JR NZ,SCNMBR0
+		JR NZ,.L1
 		RET
 
 SET_DEVICE	PUSH AF
 		PUSH HL
 		LD A,B
-		AND 0X0F
+		AND 0x0F
 		LD B,A
-		LD HL,(ADRTEKV)
+		LD HL,(DEVMAN_VARS.ADRTEKV)
 		INC HL
 		LD A,(HL)
-		AND 1				;MASTER ИЛИ SLAVE?
+		AND 1				;MASTER или SLAVE?
 		RLCA
 		RLCA
 		RLCA
 		RLCA
-		OR 0XE0				;ВСЕГДА LBA РЕЖИМ
+		OR 0xE0				; всегда LBA режим
 		OR B
-		LD B,A				;УСТАНОВИЛИ ВЫБРАННОЕ УСТРОЙСТВО MASTER ИЛИ SLAVE
+		LD B,A				; установили выбранное устройство MASTER или SLAVE
 		POP HL
 		POP AF
 		RET
 
-;ПРОВЕРКА ТИПА РАЗДЕЛА
-CP_RAZD		LD E,1				;FAT16
+; проверка типа раздела
+CP_RAZD		LD E,1				; FAT16
 		CP 4
 		RET Z
 		CP 6
 		RET Z
-		CP 0X0E
+		CP 0x0E
 		RET Z
-		LD E,2				;FAT32
-		CP 0X0B
+		LD E,2				; FAT32
+		CP 0x0B
 		RET Z
-		CP 0X0C
+		CP 0x0C
 		RET Z
-		LD E,0				;FAT12
+		LD E,0				; FAT12
 		CP 1
 		RET
 
-;ВРЕМЕННАЯ ФУНКЦИЯ ВЫЗОВА ДРАЙВЕРА HDD NEMO
+; функция вызова драйвера HDD NEMO
 COMHDDNEX	CALL P5_READ_BYTE
 		LD A,(RREG_AA)
 		EX AF,AF'
@@ -694,13 +681,13 @@ COMHDDNEX	CALL P5_READ_BYTE
 		LD (RREG_C),BC
 		RET
 
-;КОПИРОВАНИЕ ТАБЛИЦЫ НАЙДЕННЫХ РАЗДЕЛОВ ВО ВНЕШНЮЮ ПРОГРАММУ
-GET_FNDVOLUME	LD BC,0X100			;ПЕРЕНОС 256 БАЙТ
-		LD DE,(RREG_L)			;АДРЕС КУДА ПЕРЕНОСИТЬ
-		LD HL,BUF_TABLVOL-CPU6
+; копирование таблицы найденных разделов во внешнюю программу
+GET_FNDVOLUME	LD BC,0x100			; перенос 256 байт
+		LD DE,(RREG_L)			; адрес куда переносить
+		LD HL,BUF_VOLUMES & 0x3FFF;BUF_TABLVOL-CPU2
 		JP LDIR_BYTES
 
-CONTROL_SD	LD A,(FLAGS_DRV)
+CONTROL_SD	LD A,(DEVMAN_VARS.FLAGS_DRV)
 		PUSH AF
 		CALL FIND_SD
 		LD C,A
@@ -715,9 +702,9 @@ CONTROL_SD	LD A,(FLAGS_DRV)
 FIND_SD		PUSH IY
 		LD IYL,INTERNAL
 		LD E,0
-		LD A,(FLAGS_DRV)
+		LD A,(DEVMAN_VARS.FLAGS_DRV)
 		AND B_INST_SDG
-		JR Z,CRTLSD1			;ЕСЛИ ДРАЙВЕР НЕ УСТАНОВЛЕН
+		JR Z,CRTLSD1			; если драйвер не установлен
 		PUSH HL
 		PUSH DE
 		CALL COMSDG
@@ -725,11 +712,11 @@ FIND_SD		PUSH IY
 		POP DE
 		POP HL
 		AND A
-		SET 1,E				;ЕСТЬ SD КАРТА NEOGS
+		SET 1,E				; есть SD карта NEOGS
 		JR Z,CRTLSD1
-		RES 1,E				;КАРТЫ НЕТ
+		RES 1,E				; карты нет
 		EX DE,HL
-		LD HL,FLAGS_DRV
+		LD HL,DEVMAN_VARS.FLAGS_DRV
 		RES 7,(HL)
 		EX DE,HL
 CRTLSD1		PUSH HL
@@ -737,18 +724,18 @@ CRTLSD1		PUSH HL
 		DB _DEV_STATUS
 		POP HL
 		AND A
-		SET 0,E				;ЕСТЬ SD КАРТЫ ZC
+		SET 0,E				; есть SD карты ZC
 		JR Z,CRTLSD2
-		RES 0,E				;КАРТЫ НЕТ
+		RES 0,E				; карты нет
 CRTLSD2		POP IY
-		LD HL,FLAGS_DRV
-		LD A,0XFC
+		LD HL,DEVMAN_VARS.FLAGS_DRV
+		LD A,%11111100
 		AND (HL)
 		OR E
 		LD (HL),A
 		RET
 
-; HLBCDE - НОМЕР СЕКТОРА
+; HLBCDE - номер сектора
 SET_SECTOR_NUM
 		LD HL,(RREG_L)
 		LD (NUMSEC_LBA48+4),HL

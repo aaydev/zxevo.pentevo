@@ -5,8 +5,6 @@ set path=d:\yad\svn\pentevo\tools\asl\bin;d:\yad\svn\pentevo\tools\mhmt;d:\yad\s
 set includes=d:\yad\svn\pentevo\rom\
 if not exist tmp md tmp
 
-cls
-
 asl -U -L -x -olist tmp\micro_boot_fat.lst -g noice -i %includes% -D DRV_VAR=0x4000 micro_boot_fat.a80 || goto error
 p2bin micro_boot_fat.p ..\micro_boot_fat_ers.rom -r $-$ -k
 

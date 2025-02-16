@@ -18,15 +18,13 @@
 
 struct sInstTable;
 
+extern Boolean decode_ti_qxx(void);
+
 extern Boolean DecodeTIPseudo(void);
 
 extern Boolean IsTIDef(void);
 
-extern Boolean ExtToTIC34xShort(Double Inp, Word *Erg);
-
-extern Boolean ExtToTIC34xSingle(Double Inp, LongWord *Erg);
-
-extern Boolean ExtToTIC34xExt(Double Inp, LongWord *ErgL, LongWord *ErgH);
+extern void add_ti_pseudo(struct sInstTable *p_inst_table);
 
 extern void AddTI34xPseudo(struct sInstTable *pInstTable);
 

@@ -20,6 +20,7 @@
 #include "asmitree.h"
 #include "codepseudo.h"
 #include "motpseudo.h"
+#include "intpseudo.h"
 #include "codevars.h"
 #include "errmsg.h"
 
@@ -372,6 +373,9 @@ static void AddALU(const char *NName, LongInt NCode)
 static void InitFields(void)
 {
   InstTable = CreateInstTable(203);
+
+  add_null_pseudo(InstTable);
+
   AddInstTable(InstTable, "JMP", 0x90, DecodeJSR_JMP);
   AddInstTable(InstTable, "JSR", 0x80, DecodeJSR_JMP);
   AddInstTable(InstTable, "LDA", 0, DecodeLDA_STA);
@@ -420,7 +424,9 @@ static void InitFields(void)
   AddALU("CMP", 0x04);
   AddALU("AND", 0x05);
 
-  init_moto8_pseudo(InstTable, e_moto_8_be | e_moto_8_db | e_moto_8_dw | e_moto_8_ds);
+  add_moto8_pseudo(InstTable, e_moto_pseudo_flags_be | e_moto_pseudo_flags_ds);
+  AddInstTable(InstTable, "DB", eIntPseudoFlag_BigEndian | eIntPseudoFlag_AllowInt | eIntPseudoFlag_AllowString | eIntPseudoFlag_MotoRep, DecodeIntelDB);
+  AddInstTable(InstTable, "DW", eIntPseudoFlag_BigEndian | eIntPseudoFlag_AllowInt | eIntPseudoFlag_AllowString | eIntPseudoFlag_MotoRep, DecodeIntelDW);
 }
 
 static void DeinitFields(void)
@@ -434,14 +440,6 @@ static void DeinitFields(void)
 
 static void MakeCode_6804(void)
 {
-  CodeLen = 0;
-  DontPrint = False;
-
-  /* zu ignorierendes */
-
-  if (Memo(""))
-    return;
-
   if (!LookupInstTable(InstTable, OpPart.str.p_str))
     WrStrErrorPos(ErrNum_UnknownInstruction, &OpPart);
 }

@@ -20,6 +20,7 @@
 #include "asmitree.h"
 #include "codepseudo.h"
 #include "motpseudo.h"
+#include "intpseudo.h"
 #include "codevars.h"
 #include "errmsg.h"
 
@@ -1005,6 +1006,8 @@ static void InitFields(void)
 
   InstTable = CreateInstTable(237);
   SetDynamicInstTable(InstTable);
+
+  add_null_pseudo(InstTable);
 
   AddInstTable(InstTable, "SEB", 0x0b, DecodeSEB_CLB);
   AddInstTable(InstTable, "CLB", 0x1b, DecodeSEB_CLB);
@@ -2372,7 +2375,9 @@ static void InitFields(void)
           (MomCPU == CPUHUC6280) ? 0x44 : 0x00,
           (MomCPU == CPU65CE02) ? 0x63 : 0x00);
 
-  init_moto8_pseudo(InstTable, e_moto_8_le | e_moto_8_db | e_moto_8_dw | e_moto_8_ds | e_moto_8_ddb | e_moto_8_dcm);
+  add_moto8_pseudo(InstTable, e_moto_pseudo_flags_le | e_moto_pseudo_flags_ds | e_moto_pseudo_flags_ddb | e_moto_pseudo_flags_dcm);
+  AddInstTable(InstTable, "DB", eIntPseudoFlag_LittleEndian | eIntPseudoFlag_AllowInt | eIntPseudoFlag_AllowString | eIntPseudoFlag_MotoRep, DecodeIntelDB);
+  AddInstTable(InstTable, "DW", eIntPseudoFlag_LittleEndian | eIntPseudoFlag_AllowInt | eIntPseudoFlag_AllowString | eIntPseudoFlag_MotoRep, DecodeIntelDW);
 }
 
 static void DeinitFields(void)
@@ -2388,16 +2393,8 @@ static void DeinitFields(void)
 
 static void MakeCode_65(void)
 {
-  CodeLen = 0;
-  DontPrint = False;
-
   This_CLI_SEI_Flag = (Memo("CLI") || Memo("SEI"));
-  This_ADC_SBC_Flag = (Memo("ADC") || Memo("SBC"));
-
-  /* zu ignorierendes */
-
-  if (Memo(""))
-    return;
+  This_ADC_SBC_Flag = (Memo("ADC ") || Memo("SBC"));
 
   /* Pseudoanweisungen */
 

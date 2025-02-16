@@ -1,35 +1,47 @@
 
-;LAST UPDATE: 12.11.2018 savelij
+; LAST UPDATE: 11.02.2025 savelij
 
-SUPPORT_EXT	DB "TRDSCLFDITAPSPG$C FNTBMPROM",0
+SUPPORT_EXT	DB "TRD"
+		DB "SCL"
+		DB "FDI"
+		DB "TAP"
+		DB "SPG"
+		DB "$C "
+		DB "FNT"
+		DB "BMP"
+		DB "ROM"
+		DB 0
 
-;[СОРТИРОВКА СПИСКА НАЙДЕННЫХ ДИРЕКТОРИЙ/ФАЙЛОВ]
+SYMS4SORT	DB ".!#$%&'()-0123456789@ABCDEFGHIJKLMNOPQRSTUVWXYZ^_`{}~",0x7F
+		DB "АБВГДЕЖЗИЙКЛМНОПРСТУФХЦЧШЩЪЫЬЭЮЯЁ",0
+
+; сортировка списка найденных директорий/файлов
 SORT_FINDFILES	LD HL,(KOL_FOUNDED)
 		LD A,H
 		OR L
-		RET Z				;ВЫХОД ЕСЛИ НИЧЕГО НЕ НАЙДЕНО
+		RET Z				; выход если ничего не найдено
 		DEC HL
 		LD A,H
 		OR L
-		RET Z				;ВЫХОД ЕСЛИ ДИРЕКТОРИЯ/ФАЙЛ ТОЛЬКО 1
-		EVOPORT WIN_P3,RAM_TEMP2
-		LD HL,CPU3+0X1000		;АДРЕС ПЕРВЫХ СИМВОЛОВ
-		LD DE,0X1000
+		RET Z				; выход если директория/файл только 1
+	EVOPORT WIN_P3,RAM_SORTFILES
+		LD HL,CPU3+0x1000		; адрес первых символов
+		LD DE,0x1000
 		LD BC,SYMS4SORT
 		EXX
-		LD HL,CPU3+0X2000		;АДРЕС КУДА СКЛАДИРОВАТЬ СОРТИРОВАННОЕ
-		LD BC,(KOLFIND)
+		LD HL,CPU3+0x2000		; адрес куда складировать сортированное
+		LD BC,(FATVAR.KOLFIND)
 		EXX
-;ПЕРВЫЙ ПРОХОД ДЛЯ ДИРЕКТОРИЙ
+; первый проход для директорий
 SORTIR03	LD A,(HL)
-		AND 0X10
+		AND M_DIR_Directory
 		JR Z,SORTIR01
 		INC HL
 		LD A,(BC)
 		CP (HL)
 		DEC HL
 		JR NZ,SORTIR01
-		SBC HL,DE			;ПЕРЕХОД К НОМЕРАМ
+		SBC HL,DE			; переход к номерам
 		LD A,(HL)
 		INC HL
 		EXX
@@ -45,11 +57,11 @@ SORTIR03	LD A,(HL)
 		LD A,B
 		OR C
 		EXX
-		JR Z,SORTIR05			;ЕСЛИ КОНЧИЛОСЬ ТО ТОЖЕ САМОЕ ДЛЯ ФАЙЛОВ
-		ADD HL,DE			;ВОЗВРАТ К ФЛАГАМ И ИМЕНАМ
+		JR Z,SORTIR05			; если кончилось то тоже самое для файлов
+		ADD HL,DE			; возврат к флагам и именам
 		JR SORTIR03
 
-;НЕ ДИРЕКТОРИЯ, СЛЕДУЮЩАЯ ПАРА
+; не директория, следующая пара
 SORTIR01	INC HL
 		INC HL
 		EXX
@@ -59,18 +71,18 @@ SORTIR01	INC HL
 		EXX
 		JR NZ,SORTIR03
 SORTIR05	EXX
-		LD BC,(KOLFIND)
+		LD BC,(FATVAR.KOLFIND)
 		EXX
-		LD HL,CPU3+0X1000
+		LD HL,CPU3+0x1000
 		INC BC
 		LD A,(BC)
 		AND A
 		JR NZ,SORTIR03
 		LD BC,SYMS4SORT
-		LD HL,CPU3+0X1000
-;ВТОРОЙ ПРОХОД ДЛЯ ФАЙЛОВ
+		LD HL,CPU3+0x1000
+; второй проход для файлов
 SORTIR02	LD A,(HL)
-		AND 0X10
+		AND M_DIR_Directory
 		JR NZ,SORTIR04
 		INC HL
 		LD A,(BC)
@@ -106,15 +118,15 @@ SORTIR04	INC HL
 		EXX
 		JR NZ,SORTIR02
 SORTIR07	EXX
-		LD BC,(KOLFIND)
+		LD BC,(FATVAR.KOLFIND)
 		EXX
-		LD HL,CPU3+0X1000
+		LD HL,CPU3+0x1000
 		INC BC
 		LD A,(BC)
 		AND A
 		JR NZ,SORTIR02
-		LD HL,CPU3+0X2000
+		LD HL,CPU3+0x2000
 		LD DE,CPU3
-		LD BC,0X1000
+		LD BC,0x1000
 		LDIR
 		RET

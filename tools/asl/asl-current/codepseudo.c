@@ -99,7 +99,7 @@ typedef struct
    i.e. we continue to search after a finding.
  */
 
-static Boolean disp_base_split_cb(const char *p_pos, as_quoted_iterator_cb_data_t *p_cb_data)
+static int disp_base_split_cb(const char *p_pos, as_quoted_iterator_cb_data_t *p_cb_data)
 {
   disp_base_split_cb_data_t *p_data = (disp_base_split_cb_data_t*)p_cb_data;
   int pos = p_pos - p_cb_data->p_str;
@@ -126,7 +126,7 @@ static Boolean disp_base_split_cb(const char *p_pos, as_quoted_iterator_cb_data_
     p_data->last_nonspace_pos = pos;
     p_data->last_nonspace = *p_pos;
   }
-  return True;
+  return 0;
 }
 
 int FindDispBaseSplitWithQualifier(const char *pArg, int *pArgLen, tDispBaseSplitQualifier Qualifier, const char *pBracks)
@@ -138,6 +138,8 @@ int FindDispBaseSplitWithQualifier(const char *pArg, int *pArgLen, tDispBaseSpli
   if (!*pArgLen || (pArg[*pArgLen - 1] != pBracks[1]))
     return -1;
 
+  data.data.callback_before = False;
+  data.data.qualify_quote = QualifyQuote;
   data.nest = 0;
   data.split_pos = -1;
   data.last_nonspace_pos = -1;
@@ -296,3 +298,19 @@ int NAME(const struct as_nonz_dynstr *p_str, int bytes_per_dword, Boolean big_en
 
 declare_string_2_xasm_code(string_2_dasm_code, LongWord, DAsmCode)
 declare_string_2_xasm_code(string_2_wasm_code, Word, WAsmCode)
+
+/*!------------------------------------------------------------------------
+ * \fn     add_null_pseudo(struct sInstTable *p_inst_table)
+ * \brief  add handle to ignore empty instruction
+ * \param  p_inst_table table to augment
+ * ------------------------------------------------------------------------ */
+
+void decode_null(Word code)
+{
+  UNUSED(code);
+}
+
+void add_null_pseudo(struct sInstTable *p_inst_table)
+{
+  AddInstTable(p_inst_table, "", 0, decode_null);
+}

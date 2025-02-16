@@ -315,7 +315,13 @@ static Boolean DecodeMem(tStrComp *pArg, Word *pResult)
     StrCompShorten(&Arg, 4);
     KillPostBlanksStrComp(&Arg);
     DispIndirect = IsIndirect(Arg.str.p_str);
-    Disp = EvalStrIntExpression(&Arg, (R == 2) ? SInt8 : UInt8, &OK);
+    if (Arg.str.p_str[0])
+      Disp = EvalStrIntExpression(&Arg, (R == 2) ? SInt8 : UInt8, &OK);
+    else
+    {
+      Disp = 0;
+      OK = True;
+    }
     if (!OK)
       return False;
     if (R == 2)
@@ -1097,11 +1103,17 @@ static void DecodeDC(Word Code)
         }
         case TempFloat:
         {
+          int ret;
+
           IncMaxCodeLen(2);
-          if (Double2IBMFloat(&WAsmCode[CodeLen], t.Contents.Float, False))
+          ret = as_float_2_ibm_float(&WAsmCode[CodeLen], t.Contents.Float, False);
+          if (ret >= 0)
             CodeLen += 2;
           else
+          {
+            asmerr_check_fp_dispose_result(ret, pArg);
             OK = False;
+          }
           HalfFilledWord = False;
           break;
         }
@@ -1148,6 +1160,8 @@ static void AddFixed(const char *pName, Word Code, CPUVar MinCPU)
 static void InitFields(void)
 {
   InstTable = CreateInstTable(201);
+
+  add_null_pseudo(InstTable);
 
   InstrZ = 0;
   AddFixed("H"   , 0x2000 , CPUMN1610);
@@ -1311,12 +1325,6 @@ static Boolean DecodeAttrPart_MN1610_Alt(void)
 static void MakeCode_MN1610_Alt(void)
 {
   OpSize = (AttrPartOpSize[0] != eSymbolSizeUnknown) ? AttrPartOpSize[0] : eSymbolSize16Bit;
-
-  /* Ignore empty instruction */
-
-  if (Memo("")) return;
-
-  /* Pseudo Instructions */
 
   if (!LookupInstTable(InstTable, OpPart.str.p_str))
     WrStrErrorPos(ErrNum_UnknownInstruction, &OpPart);

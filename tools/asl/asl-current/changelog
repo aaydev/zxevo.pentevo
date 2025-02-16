@@ -1,3 +1,145 @@
+2025-01-01 [1.42 Bld 282]
+
+- Addition    : new command line switch '-radix' to set
+                default number system
+- Addition    : implement built-in JS instruction macro
+                for SC/MP
+- Addition    : new command line switch '-intsyntax' to
+                change default syntax for integer constants
+
+2024-11-20 [1.42 Bld 281]
+
+- Bugfix      : DB/DW on 68xx are big endian again
+
+2024-11-15 [1.42 Bld 280]
+
+- Addition    : DB and DW on 65xx and 68xx targets allow
+                both Intel and Motorola style duplication
+                of values.
+- Addition    : Allow the {EXPAND}, {NOEXPAND}, {EXPIF},
+                {NOEXPIF}, {EXPMACRO}, {NOEXPMACRO},
+                {EXPREST}, and {NOEXPREST} directives
+                also for IRP, IRPC, REPT, and WHILE,
+
+2024-11-09 [1.42 Bld 279]
+
+- Bugfix      : Add missing error message about invalid
+                symbol name in some situations.
+- Change      : Differentiate negative/positive floating
+                point constant overflow.
+- Change      : Detect overflow on integer constants,
+                and try to treat them as float instead.
+- Bugfix      : LONG instruction did not test for 32 bit
+                value range.
+
+2024-10-20 [1.42 Bld 278]
+
+- Bugfix      : correct encoding of PDP-11 instructions
+                M(F|T)P(D|I)
+- Change      : uCOM-43: Issue warning when decision about
+                CZP's argument type is unclear
+- Change      : Introduce short circuit evaluation for
+                logical AND and OR.
+- Bugfix      : regard different arguments for LDS/LDD on
+                TMS99110 and TI990.
+
+2024-09-29 [1.42 Bld 277]
+
+- Change      : IFDEF, IFNDEF, and DEFINED() also accept an
+                expression as argument, not only a simple
+                symbol name.  They return true if the
+                expression does not contain any symbols
+                that are undefined up to now.
+- Bugfix      : Add missing PDP-11 instructions STCFD and STCDF.
+- Bugfix      : 68K: Assume default operand size of 8 bits also
+                for FScc and PScc, not only for Scc.
+- Bugfix      : 68K: Allow PC-relative addressing for FRESTORE
+                and PRESTORE.
+
+2024-09-15 [1.42 Bld 276]
+
+- Bugfix      : Regard infinities for DC.{SDP}, DD, and DQ
+- Bugfix      : ...as a consequence, do not allow 'INF' for
+                user-defined symbols
+- Bugfix      : ifdef ..., if defined(...), and ifused ...
+                did not check for valid symbol names
+- Bugfix      : correct entry address printout for PLIST
+
+2024-09-01 [1.42 Bld 275]
+
+- Addition    : P2BIN warns if checksum overwrites data from
+                source file(s)
+- Bugfix      : uCOM-43: correct behaviour of JCP on last
+                address in 64 byte page.
+
+2024-08-25 [1.42 Bld 274]
+
+- Addition    : pre-define variable FLOATMAX
+- Addition    : use 80 bit extended float on host platforms
+                supporting it
+
+2024-08-05 [1.42 Bld 273]
+
+- Addition    : support NEC uCOM 43/44/45
+
+2024-07-24 [1.42 Bld 272]
+
+- Change      : If the file name given as argument to INCLUDE
+                or BINCLUDE does not contain an extension, the
+                name extended by .INC and the plain name is
+                searched for (in this order).
+- Bugfix      : The message "Additional pass not started..."
+                is now also added to the summary written
+                to the console.
+- Change      : Allow MFPT and XOR on T-11 (architecture
+                handbook seems to be wrong on this)
+- Change      : The DT pseudo instruction stores integer
+                arguments in packed BCD format, instead
+                of converting integers to floats
+- Addition    : support Zilog eZ80
+
+2024-06-26 [1.42 Bld 271]
+
+- Bugfix      : warn about usage of MOV A,ACC on MCS-51
+- Bugfix      : disallow odd addresses for CALL #IA on Super8
+- Bugfix      : correct operand size of DIVD on 6309
+- Bugfix      : correct FMOVE FPcr<->An handling on 68K
+- Bugfix      : correct FMOVEM handling of dynamic register
+                lists on 68K
+- Addition    : add support for register symbols on x86
+
+2024-06-19 [1.42 Bld 270]
+
+- Bugfix      : allow .byte and .word on PDP-11 again.
+- Addition    : initial VAX support
+
+2024-04-13 [1.42 Bld 269]
+
+- Addition    : Make per-line header in listing configurable
+                via format string
+
+2024-04-03 [1.42 Bld 268]
+
+- Bugfix      : Z80: Do not warn about possible relative jump if
+                relative jumping is not allowed for the given
+                condition.
+- Bugfix      : Z80: Do not warn about possible relative jump if
+                the target address's value is questionable.  This
+                applies e.g. to forward references in the first
+                pass.
+
+2024-03-30 [1.42 Bld 267]
+
+- Addition    : Add new Z80 pseudo instruction 'J' that assembles
+                as JR or JP, depending on branch distance.
+- Bugfix      : Correct PHASE when handling addresses beyond 2 GByte.
+- Addition    : Add a command-line switch '-wrelative' to enable
+                warnings about possible relative jump.
+- Change      : Rework the indiredt address expression parser for
+                the following targets: 80C16x, uCOM78, 8086,
+                TLCS-870(C), TLCS-90(0(0)), XA, Z80, Z8000.
+                Behaviour *should* be the same as before.
+
 2024-03-25 [1.42 Bld 266]
 
 - Bugfix      : Add missing error message about invalid length

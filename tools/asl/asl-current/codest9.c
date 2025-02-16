@@ -119,11 +119,22 @@ static Boolean DecodeReg(char *Asc_O, Byte *Erg, Byte *Size)
   return True;
 }
 
+static LargeInt eval_outer_disp(const tStrComp *p_arg, IntType type, Boolean *p_ok)
+{
+  if (p_arg->str.p_str[0])
+    return EvalStrIntExpression(p_arg, type, p_ok);
+  else
+  {
+    *p_ok = True;
+    return 0;
+  }
+}
+
 static void DecodeAdr(tStrComp *pArg, LongWord Mask)
 {
   Word AdrWord;
   int level;
-  Byte flg,Size;
+  Byte flg, Size;
   Boolean OK, IsIndirect;
   tEvalResult EvalResult;
   char *p;
@@ -260,7 +271,7 @@ static void DecodeAdr(tStrComp *pArg, LongWord Mask)
     {
       if (Size == 0)   /* d(r) */
       {
-        AdrVals[0] = EvalStrIntExpression(pArg, Int8, &OK);
+        AdrVals[0] = eval_outer_disp(pArg, Int8, &OK);
         if (OK)
         {
           if ((Mask & MModIWReg) && (AdrVals[0] == 0)) AdrMode = ModIWReg;
@@ -286,7 +297,7 @@ static void DecodeAdr(tStrComp *pArg, LongWord Mask)
         }
         else
         {             /* d(rr) */
-          AdrWord = EvalStrIntExpression(pArg, Int16, &OK);
+          AdrWord = eval_outer_disp(pArg, Int16, &OK);
           if ((AdrWord == 0) && (Mask & (MModIRReg | MModIWRReg)))
           {
             if (Mask & MModIWRReg) AdrMode = ModIWRReg;
@@ -334,7 +345,7 @@ static void DecodeAdr(tStrComp *pArg, LongWord Mask)
       else if (AdrWord < 0xff)
       {
         AdrVals[0] = Lo(AdrWord);
-        AdrWord = EvalStrIntExpression(pArg, Int8, &OK);
+        AdrWord = eval_outer_disp(pArg, Int8, &OK);
         if (AdrWord != 0) WrError(ErrNum_OverRange);
         else
         {
@@ -345,7 +356,7 @@ static void DecodeAdr(tStrComp *pArg, LongWord Mask)
       else
       {
         AdrVals[0] = Lo(AdrWord);
-        AdrWord = EvalStrIntExpression(pArg, Int16, &OK);
+        AdrWord = eval_outer_disp(pArg, Int16, &OK);
         if ((AdrWord == 0) && (Mask & MModIRReg))
         {
           AdrCnt = 1; AdrMode = ModIRReg;
@@ -1536,7 +1547,7 @@ static void DecodeJP_CALL(Word Code)
     {
       case ModIRReg:
         BAsmCode[0] = Hi(Code);
-        BAsmCode[1] = AdrVals[0] + Ord(Memo("CALL"));
+        BAsmCode[1] = AdrVals[0] | ((Code >> 1) & 1);
         CodeLen = 2;
         break;
       case ModAbs:
@@ -1852,6 +1863,8 @@ static void InitFields(void)
 {
   InstTable = CreateInstTable(201);
 
+  add_null_pseudo(InstTable);
+
   AddInstTable(InstTable, "LD", 0, DecodeLD);
   AddInstTable(InstTable, "LDW", 1, DecodeLD);
   AddInstTable(InstTable, "PEA", 0x01, DecodePEA_PEAU);
@@ -1923,6 +1936,8 @@ static void InitFields(void)
 
   AddLoad("LDPP", 0x00); AddLoad("LDDP", 0x10);
   AddLoad("LDPD", 0x01); AddLoad("LDDD", 0x11);
+
+  AddIntelPseudo(InstTable, eIntPseudoFlag_BigEndian);
 }
 
 static void DeinitFields(void)
@@ -1935,16 +1950,8 @@ static void DeinitFields(void)
 
 static void MakeCode_ST9(void)
 {
-  CodeLen = 0; DontPrint = False; OpSize = 0;
+  OpSize = 0;
   AbsSeg = (DPAssume == 1) ? SegData : SegCode;
-
-  /* zu ignorierendes */
-
-  if (Memo("")) return;
-
-  /* Pseudoanweisungen */
-
-  if (DecodeIntelPseudo(True)) return;
 
   if (!LookupInstTable(InstTable, OpPart.str.p_str))
     WrStrErrorPos(ErrNum_UnknownInstruction, &OpPart);

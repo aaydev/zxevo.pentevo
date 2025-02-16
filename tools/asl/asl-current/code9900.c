@@ -940,26 +940,28 @@ static void DecodeWORD(Word Code)
 
 static void DecodeFLOAT(Word DestLen)
 {
-  int z;
-  Boolean OK;
-  double FVal;
-
   if (ChkArgCnt(1, ArgCntMax))
   {
-    z = 1;
+    int z, ret;
+    Boolean OK;
+    as_float_t FVal;
+
     OK = True;
-    do
+    for (z = 1; (z <= ArgCnt) && OK; z++)
     {
-      FVal = EvalStrFloatExpression(&ArgStr[z], Float64, &OK);
-      if (OK)
+      FVal = EvalStrFloatExpression(&ArgStr[z], &OK);
+      if (!OK)
+        break;
+      SetMaxCodeLen(CodeLen + DestLen);
+      ret = as_float_2_ibm_float(&WAsmCode[CodeLen >> 1], FVal, DestLen == 8);
+      if (ret < 0)
       {
-        SetMaxCodeLen(CodeLen + DestLen);
-        if (Double2IBMFloat(&WAsmCode[CodeLen >> 1], FVal, DestLen == 8))
-          CodeLen += DestLen;
+        asmerr_check_fp_dispose_result(ret, &ArgStr[z]);
+        OK = False;
+        break;
       }
-      z++;
+      CodeLen += DestLen;
     }
-    while ((z <= ArgCnt) && (OK));
     if (!OK)
       CodeLen = 0;
   }
@@ -1001,6 +1003,24 @@ static void DecodeCKPT(Word Code)
     else
       if (DecodeReg(&ArgStr[1], &NewDefCkpt))
         DefCkpt = NewDefCkpt;
+  }
+}
+
+/*!------------------------------------------------------------------------
+ * \fn     make_pc_even(Word index)
+ * \brief  assure machine instruction ends up on even address
+ * ------------------------------------------------------------------------ */
+
+static void make_pc_even(Word index)
+{
+  UNUSED(index);
+
+  if (Odd(EProgCounter()))
+  {
+    if (DoPadding)
+      InsertPadding(1, False);
+    else
+      WrError(ErrNum_AddrNotAligned);
   }
 }
 
@@ -1129,6 +1149,11 @@ static void AddType20(const char *NName, Word NCode, Word Flags)
 static void InitFields(void)
 {
   InstTable = CreateInstTable(203);
+
+  add_null_pseudo(InstTable);
+
+  inst_table_set_prefix_proc(InstTable, make_pc_even, 0);
+
   AddInstTable(InstTable, "LDCR", 0x3000, DecodeLDCR_STCR);
   AddInstTable(InstTable, "STCR", 0x3400, DecodeLDCR_STCR);
   AddInstTable(InstTable, "LMF", 0, DecodeLMF);
@@ -1162,8 +1187,11 @@ static void InitFields(void)
   AddSing("DEC" , 0x0600, eCoreAll);
   AddSing("DECT", 0x0640, eCoreAll);
   AddSing("X"   , 0x0480, eCoreAll);
-  AddSing("LDS" , 0x0780, eCoreFlagSupMode | eCore990_10 | eCore990_12 | eCore99110);
-  AddSing("LDD" , 0x07c0, eCoreFlagSupMode | eCore990_10 | eCore990_12 | eCore99110);
+  if (!(pCurrCPUProps->CoreFlags & eCore99110))
+  {
+    AddSing("LDS" , 0x0780, eCoreFlagSupMode | eCore990_10 | eCore990_12);
+    AddSing("LDD" , 0x07c0, eCoreFlagSupMode | eCore990_10 | eCore990_12);
+  }
   AddSing("DCA" , 0x2c00, eCore9940);
   AddSing("DCS" , 0x2c40, eCore9940);
   AddSing("BIND", 0x0140, eCore990_12 | eCore99105 | eCore99110);
@@ -1255,6 +1283,11 @@ static void InitFields(void)
   AddFixed("CDE" , 0x0c05, eCore990_12);
   AddFixed("CED" , 0x0c07, eCore990_12);
   AddFixed("XIT" , 0x0c0e, eCore990_12);
+  if (pCurrCPUProps->CoreFlags & eCore99110)
+  {
+    AddFixed("LDS" , 0x0780, eCoreFlagSupMode | eCore99110);
+    AddFixed("LDD" , 0x07c0, eCoreFlagSupMode | eCore99110);
+  }
 
   InstrZ = 0;
   AddType12("SNEB", 0x0e10, eCore990_12);
@@ -1289,6 +1322,12 @@ static void InitFields(void)
   AddInstTable(InstTable, "EP" , 0x03f0, DecodeEP);
 
   AddInstTable(InstTable, "LIIM", 0x2c80, DecodeLIIM);
+
+  /* may be aligned arbitrarily */
+
+  inst_table_set_prefix_proc(InstTable, NULL, 0);
+  AddInstTable(InstTable, "BYTE", 0, DecodeBYTE);
+  AddInstTable(InstTable, "BSS", 0, DecodeBSS);
 }
 
 static void DeinitFields(void)
@@ -1311,36 +1350,7 @@ static void DeinitFields(void)
 
 static void MakeCode_9900(void)
 {
-  CodeLen = 0;
-  DontPrint = False;
   IsWord = False;
-
-  /* to be ignored */
-
-  if (Memo("")) return;
-
-  /* may be aligned arbitrarily */
-
-  if (Memo("BYTE"))
-  {
-    DecodeBYTE(0);
-    return;
-  }
-  if (Memo("BSS"))
-  {
-    DecodeBSS(0);
-    return;
-  }
-
-  /* For all other (pseudo) instructions, optionally pad to even */
-
-  if (Odd(EProgCounter()))
-  {
-    if (DoPadding)
-      InsertPadding(1, False);
-    else
-      WrError(ErrNum_AddrNotAligned);
-  }
 
   if (!LookupInstTable(InstTable, OpPart.str.p_str))
     WrStrErrorPos(ErrNum_UnknownInstruction, &OpPart);

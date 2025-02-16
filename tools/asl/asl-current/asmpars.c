@@ -32,14 +32,21 @@
 #include "operator.h"
 #include "function.h"
 #include "intformat.h"
-#include "ieeefloat.h"
+#include "as_float.h"
 #include "chartrans.h"
 #include "dynstr_nls.h"
+#include "cmdarg.h"
 
 #include "asmpars.h"
 
 #define LEAVE  goto func_exit
 #define LEAVE2 goto func_exit2
+
+/* Allow this for the moment: */
+
+#define NULLSTRING_EVAL_RESULT True
+
+#define TREAT_LARGEINT_FLOAT 1
 
 /* Mask, Min & Max are computed at initialization */
 
@@ -57,6 +64,7 @@ tIntTypeDef IntTypeDefs[IntTypeCnt] =
   { 0xc005, 0, 0, 0 }, /* Int5 */
   { 0x8006, 0, 0, 0 }, /* SInt6 */
   { 0x0006, 0, 0, 0 }, /* UInt6 */
+  { 0xc006, 0, 0, 0 }, /* Int6 */
   { 0x8007, 0, 0, 0 }, /* SInt7 */
   { 0x0007, 0, 0, 0 }, /* UInt7 */
   { 0x8008, 0, 0, 0 }, /* SInt8 */
@@ -103,6 +111,15 @@ tIntTypeDef IntTypeDefs[IntTypeCnt] =
 #endif
 };
 
+typedef enum
+{
+  e_lookup_error_none,
+  e_lookup_error_expand,
+  e_lookup_error_getsymsection,
+  e_lookup_error_namecheck,
+  e_lookup_error_notfound
+} lookup_symbol_error_t;
+
 typedef struct
 {
   Boolean Back;
@@ -122,13 +139,21 @@ LongInt LocHandleCnt;          /* mom. verwendeter lokaler Handle            */
 typedef struct sSymbolEntry
 {
   TTree Tree;
-  Boolean Defined, Used, Changeable, changed;
+  Byte flags;
   TempResult SymWert;
   LargeInt unchanged_value;
   PCrossRef RefList;
   Byte FileNum;
   LongInt LineNum;
 } TSymbolEntry, *PSymbolEntry;
+
+#define set_symbol_entry_flag(dest, flag, value) \
+do { \
+ (dest)->flags = (value) ? ((dest)->flags | e_symbol_entry_flag_##flag) : ((dest)->flags & ~e_symbol_entry_flag_##flag); \
+} while (0)
+
+#define get_symbol_entry_flag(src, flag) \
+ (!!((src)->flags & e_symbol_entry_flag_##flag))
 
 typedef struct sSymbolStackEntry
 {
@@ -189,10 +214,13 @@ static PSymbolStack FirstStack;
 static PCToken MomSection;
 static char *LastGlobSymbol;
 static PFunction FirstFunction;	        /* Liste definierter Funktionen */
+static const char inf_name[] = "INF";
+static Boolean inf_reserved;
+static int def_radix_base;
 
 void InitPass_AsmPars(void)
 {
-  RadixBase = 10;
+  RadixBase = def_radix_base;
   OutRadixBase = 16;
 }
 
@@ -266,33 +294,6 @@ Boolean ChkRangeByType(LargeInt value, IntType type, const struct sStrComp *p_co
 Boolean ChkRangeWarnByType(LargeInt value, IntType type, const struct sStrComp *p_comp)
 {
   return range_not_checkable(type) || ChkRangeWarnPos(value, IntTypeDefs[(int)type].Min, IntTypeDefs[(int)type].Max, p_comp);
-}
-
-Boolean FloatRangeCheck(Double Wert, FloatType Typ)
-{
-  /* NaN/Infinity is representable in all formats */
-
-  int numclass = as_fpclassify(Wert);
-  if ((numclass == AS_FP_NAN) || (numclass == AS_FP_INFINITE))
-    return True;
-
-  switch (Typ)
-  {
-    case Float16:
-      return (fabs(Wert) <= 65504.0);
-    case Float32:
-      return (fabs(Wert) <= 3.4e38);
-    case Float64:
-      return (fabs(Wert) <= 1.7e308);
-/**     case FloatCo: return fabs(Wert) <= 9.22e18; */
-    case Float80:
-      return True;
-    case FloatDec:
-      return True;
-    default:
-      return False;
-  }
-/**   if (Typ == FloatDec) && (fabs(Wert) > 1e1000) WrError(ErrNum_BigDecFloat);**/
 }
 
 Boolean SingleBit(LargeInt Inp, LargeInt *Erg)
@@ -895,19 +896,22 @@ static Boolean GetSymSection(tStrComp *p_name, LongInt *p_ret, const tStrComp *p
  * Result:      integer value
  *****************************************************************************/
 
-static LargeInt ConstIntVal(const char *pExpr, IntType Typ, Boolean *pResult)
+static LargeInt ConstIntVal(const char *pExpr, IntType Typ, Boolean *pResult, int *p_outof_range)
 {
   LargeInt Wert;
   Boolean NegFlag = False;
+  LargeWord acc, acc_max, mul_max;
   int Digit;
   tIntCheckCtx Ctx;
   const tIntFormatList *pIntFormat;
+
+  *p_outof_range = 0;
 
   /* empty string is interpreted as 0 */
 
   if (!*pExpr)
   {
-    *pResult = True;
+    *pResult = NULLSTRING_EVAL_RESULT;
     return 0;
   }
 
@@ -915,10 +919,12 @@ static LargeInt ConstIntVal(const char *pExpr, IntType Typ, Boolean *pResult)
 
   /* sign: */
 
+  acc_max = (LargeWord)-1;
   switch (*pExpr)
   {
     case '-':
       NegFlag = True;
+      acc_max = (acc_max >> 1) + 1;
       /* else fall-through */
     case '+':
       pExpr++;
@@ -936,10 +942,11 @@ static LargeInt ConstIntVal(const char *pExpr, IntType Typ, Boolean *pResult)
     }
   if (Ctx.Base <= 0)
     return -1;
+  mul_max = acc_max / Ctx.Base;
 
   /* we may have decremented Ctx.ExprLen, so do not run until string end */
 
-  Wert = 0;
+  acc = 0;
   while (Ctx.ExprLen > 0)
   {
     if (256 == Ctx.Base)
@@ -955,12 +962,24 @@ static LargeInt ConstIntVal(const char *pExpr, IntType Typ, Boolean *pResult)
       Digit = DigitVal(as_toupper(*Ctx.pExpr), Ctx.Base);
     if (Digit == -1)
       return -1;
-    Wert = Wert * Ctx.Base + Digit;
+    if (acc > mul_max)
+    {
+      *pResult = True;
+      *p_outof_range = NegFlag ? -1 : 1;
+      return NegFlag ? -acc_max : acc_max;
+    }
+    acc = acc * Ctx.Base;
+    if (acc_max - acc < (unsigned)Digit)
+    {
+      *pResult = True;
+      *p_outof_range = NegFlag ? -1 : 1;
+      return NegFlag ? -acc_max : acc_max;
+    }
+    acc = acc + Digit;
     Ctx.pExpr++; Ctx.ExprLen--;
   }
 
-  if (NegFlag)
-    Wert = -Wert;
+  Wert = NegFlag ? -acc : acc;
 
   /* post-processing, range check */
 
@@ -986,38 +1005,44 @@ static LargeInt ConstIntVal(const char *pExpr, IntType Typ, Boolean *pResult)
  * Result:      value
  *****************************************************************************/
 
-static Double ConstFloatVal(const char *pExpr, FloatType Typ, Boolean *pResult)
+static as_float_t ConstFloatVal(const char *pExpr, Boolean *pResult, int *p_outof_range)
 {
-  Double Erg;
+  as_float_t Erg;
   char *pEnd;
-
-  UNUSED(Typ);
 
   if (*pExpr)
   {
     /* Some strtod() implementations interpret hex constants starting with '0x'.  We
        don't want this here.  Either 0x for hex constants is allowed, then it should
        have been parsed before by ConstIntVal(), or not, then we don't want the constant
-       be stored as float. */
+       be stored as float either. */
 
     if ((strlen(pExpr) >= 2)
      && (pExpr[0] == '0')
      && (toupper(pExpr[1]) == 'X'))
     {
       Erg = 0;
+      *p_outof_range = 0;
       *pResult = False;
     }
 
     else
     {
-      Erg = strtod(pExpr, &pEnd);
+      Erg = as_strtof(pExpr, &pEnd);
       *pResult = (*pEnd == '\0');
+      if ((Erg == AS_HUGE_VAL) && (errno == ERANGE) && *pResult)
+        *p_outof_range = 1;
+      else if ((Erg == -AS_HUGE_VAL) && (errno == ERANGE) && *pResult)
+        *p_outof_range = -1;
+      else
+        *p_outof_range = 0;
     }
   }
   else
   {
     Erg = 0.0;
-    *pResult = True;
+    *p_outof_range = False;
+    *pResult = NULLSTRING_EVAL_RESULT;
   }
   return Erg;
 }
@@ -1140,6 +1165,8 @@ static void ConstStringVal(const tStrComp *pExpr, TempResult *pDest, Boolean *pR
           break;
         default:
           *pResult = True;
+          pStr = NULL;
+          TLen = 0;
           OK = False;
       }
       if (OK)
@@ -1187,13 +1214,13 @@ typedef enum { e_expand_chk_none, e_expand_chk_upto, e_expand_chk_empty_upto } e
 
 static PSymbolEntry ExpandAndFindNode(
 #ifdef __PROTOS__
-const struct sStrComp *pComp, TempType SearchType, Boolean SearchLocal, expand_chk_t chk, Boolean *p_error_on_find
+const struct sStrComp *pComp, TempType SearchType, Boolean SearchLocal, expand_chk_t chk, lookup_symbol_error_t *p_lookup_error
 #endif
 );
 
 /*!------------------------------------------------------------------------
  * \fn     EvalResultClear(tEvalResult *pResult)
- * \brief  reset all elements of EvalResult
+ * \brief  reset all elements of EvalResult to 'none'
  * ------------------------------------------------------------------------ */
 
 void EvalResultClear(tEvalResult *pResult)
@@ -1202,6 +1229,97 @@ void EvalResultClear(tEvalResult *pResult)
   pResult->Flags = eSymbolFlag_None;
   pResult->AddrSpaceMask = 0;
   pResult->DataSize = eSymbolSizeUnknown;
+}
+
+/*!------------------------------------------------------------------------
+ * \fn     as_eval_cb_data_ini(struct as_eval_cb_data *p_data, as_eval_cb_t cb)
+ * \brief  initialize evaluation data callback
+ * \param  p_data callback data
+ * \param  cb callback function
+ * ------------------------------------------------------------------------ */
+
+void as_eval_cb_data_ini(struct as_eval_cb_data *p_data, as_eval_cb_t cb)
+{
+  p_data->callback = cb;
+  p_data->p_stack = NULL;
+  p_data->p_other_arg = NULL;
+  p_data->p_operators = no_operators;
+}
+
+/*!------------------------------------------------------------------------
+ * \fn     as_dump_eval_cb_data_stack(const as_eval_cb_data_stack_t *p_stack)
+ * \brief  dump eval callback data operator stack
+ * \param  p_stack stack to dump
+ * ------------------------------------------------------------------------ */
+
+void as_dump_eval_cb_data_stack(const as_eval_cb_data_stack_t *p_stack)
+{
+  while (True)
+  {
+    static const char type_names[][4] = { "op", "fnc" };
+    printf(" <- ");
+    if (!p_stack)
+      break;
+    printf("[%s '%s'(#%d)]",
+           ((size_t)p_stack->type < as_array_size(type_names)) ? type_names[p_stack->type] : "???",
+           p_stack->p_ident, p_stack->arg_index);
+    p_stack = p_stack->p_next;
+  }
+  printf("\n");
+}
+
+/*!------------------------------------------------------------------------
+ * \fn     as_eval_cb_data_stack_depth(const as_eval_cb_data_stack_t *p_stack)
+ * \brief  retrieve depth of formula stack
+ * \param  p_stack stack to analyze
+ * \return depth
+ * ------------------------------------------------------------------------ */
+
+unsigned as_eval_cb_data_stack_depth(const as_eval_cb_data_stack_t *p_stack)
+{
+  unsigned ret = 0;
+  for (; p_stack; p_stack = p_stack->p_next)
+    ret++;
+  return ret;
+}
+
+/*!------------------------------------------------------------------------
+ * \fn     as_eval_cb_data_stack_plain_add(const as_eval_cb_data_stack_t *p_stack)
+ * \brief  check whether argument at given position in formula stack is plain add @ outermost level
+ * \param  p_stack stack to analyze
+ * \return True if plain add
+ * ------------------------------------------------------------------------ */
+
+Boolean as_eval_cb_data_stack_plain_add(const as_eval_cb_data_stack_t *p_stack)
+{
+  Boolean negate = False;
+
+  for (; p_stack; p_stack = p_stack->p_next)
+    if (p_stack->type != e_operator)
+      return False;
+    else if (!as_strcasecmp(p_stack->p_ident, "+"));
+    else if (!as_strcasecmp(p_stack->p_ident, "-"))
+    {
+      if (p_stack->arg_index)
+        negate = !negate;
+    }
+    else
+      return False;
+
+  return !negate;
+}
+
+/*!------------------------------------------------------------------------
+ * \fn     as_eval_cb_data_stackelem_mul(const as_eval_cb_data_stack_t *p_stack)
+ * \brief  check whether operator at given position in formula stack is product
+ * \param  p_stack stack element to analyze
+ * \return True if plain add
+ * ------------------------------------------------------------------------ */
+
+extern Boolean as_eval_cb_data_stackelem_mul(const as_eval_cb_data_stack_t *p_stack)
+{
+  return (p_stack->type == e_operator)
+       && !as_strcasecmp(p_stack->p_ident, "*");
 }
 
 /*****************************************************************************
@@ -1290,28 +1408,174 @@ static Byte TryConvert(Byte TypeMask, TempType ActType, int OpIndex)
   return 255;
 }
 
-void EvalStrExpression(const tStrComp *pExpr, TempResult *pErg)
+typedef struct operator_search_cb_data
 {
-  const Operator *pOp;
-  const Operator *FOps[OPERATOR_MAXCNT];
-  LongInt FOpCnt = 0;
+  as_quoted_iterator_cb_data_t data;
+  sint l_klamm, r_klamm, w_klamm;
+  ptrdiff_t op_pos;
+  const as_operator_t *p_best_op;
+  const char *p_after_last_op_start;
+  const as_operator_t *found_ops[OPERATOR_MAXCNT];
+  size_t found_op_cnt;
+} operator_search_cb_data_t;
 
+static Boolean is_non_space_upto(const char *p_from, const char *p_to)
+{
+  for (; p_from < p_to; p_from++)
+    if (!as_isspace(*p_from))
+      return True;
+  return False;
+}
+
+static Boolean is_non_space(const char *p_from)
+{
+  for (; *p_from; p_from++)
+    if (!as_isspace(*p_from))
+      return True;
+  return False;
+}
+
+static int operator_search_cb(const char *p_pos, as_quoted_iterator_cb_data_t *p_cb_data)
+{
+  operator_search_cb_data_t *p_data = (operator_search_cb_data_t*)p_cb_data;
+  int extra_skip = 0;
+
+  switch (*p_pos)
+  {
+    case '(':
+      p_data->l_klamm++;
+      break;
+    case ')':
+      p_data->r_klamm++;
+      break;
+    case '{':
+      p_data->w_klamm++;
+      break;
+    case '}':
+      p_data->w_klamm--;
+      break;
+    default:
+      if ((p_data->l_klamm == p_data->r_klamm) && !p_data->w_klamm)
+      {
+        const as_operator_t *p_pos_best_op = NULL;
+        Boolean pos_best_op_argcnt_match = False;
+        size_t zop;
+
+        /* Operators with same 'match quality' override earlier ones.
+           This way, target- or expression-specific operators get higher priority
+           over built-in ones: */
+
+        for (zop = 0; zop < p_data->found_op_cnt; zop++)
+        {
+          const as_operator_t *p_this_op = p_data->found_ops[zop];
+          Boolean this_op_argcnt_match;
+
+          /* Possible at all:
+             (a) operator string itself must match */
+
+          if (strncmp(p_pos, p_this_op->Id, p_this_op->IdLen))
+            continue;
+
+          /* (b) non-blank content right to op */
+
+          if (!is_non_space(p_pos + p_this_op->IdLen))
+            continue;
+
+          /* (c) non-blank content left to binary op,
+                 blank content right to unary op */
+
+          this_op_argcnt_match = (p_this_op->op_type != e_op_monadic) == is_non_space_upto(p_data->p_after_last_op_start, p_pos);
+          if (!this_op_argcnt_match)
+            continue;
+
+          /* Better match? */
+
+          if (!p_pos_best_op
+           || (p_this_op->IdLen > p_pos_best_op->IdLen)
+           || ((p_this_op->IdLen == p_pos_best_op->IdLen) && (this_op_argcnt_match > pos_best_op_argcnt_match)))
+          {
+            p_pos_best_op = p_this_op;
+            pos_best_op_argcnt_match = this_op_argcnt_match;
+          }
+        }
+
+        if (p_pos_best_op)
+        {
+          /* NOTE: Due to the way we split up an expression in sub-operands, it is important to find the last
+             operator if several on the same level are of same prio.  For instance, A/B*C must be treated as
+             (A/B)*C and not A/(B*C): */
+
+          if (!p_data->p_best_op
+           || (p_pos_best_op->Priority >= p_data->p_best_op->Priority))
+          {
+            p_data->p_best_op = p_pos_best_op;
+            p_data->op_pos = p_pos - p_cb_data->p_str;
+          }
+          extra_skip = p_pos_best_op->IdLen - 1;
+          p_data->p_after_last_op_start = p_pos + p_pos_best_op->IdLen;
+        }
+      }
+  }
+  return extra_skip;
+}
+
+static void test_found_op(operator_search_cb_data_t *p_data, const as_operator_t *p_op, const char *p_str)
+{
+  const char *p_op_pos = (p_op->IdLen == 1) ? (strchr(p_str, *p_op->Id)) : (strstr(p_str, p_op->Id));
+
+  if (p_op_pos)
+    p_data->found_ops[p_data->found_op_cnt++] = p_op;
+}
+
+typedef struct
+{
+  as_eval_cb_data_t cb_data;
+  PFunction p_function;
+  TempResult **p_arg_vals;
+} function_eval_cb_data_t;
+
+DECLARE_AS_EVAL_CB(function_eval_cb)
+{
+  function_eval_cb_data_t *p_function_eval_cb_data = (function_eval_cb_data_t*)p_data;
+  int z;
+  const char *p_arg_name;
+  StringRecPtr p_run;
+
+  for (z = 0, p_arg_name = GetStringListFirst(p_function_eval_cb_data->p_function->p_arg_list, &p_run);
+       z < p_function_eval_cb_data->p_function->ArguCnt;
+       z++, p_arg_name = GetStringListNext(&p_run))
+  {
+    Boolean match = CaseSensitive
+                  ? !strcmp(p_arg->str.p_str, p_arg_name)
+                  : !as_strcasecmp(p_arg->str.p_str, p_arg_name);
+    if (match)
+    {
+      as_tempres_copy(p_res, p_function_eval_cb_data->p_arg_vals[z]);
+      return e_eval_ok;
+    }
+  }
+  return e_eval_none;
+}
+
+void EvalStrExpressionWithCallback(const tStrComp *pExpr, TempResult *pErg, as_eval_flags_t eval_flags, as_eval_cb_data_t *p_callback_data)
+{
   Boolean OK;
+  int int_outof_range, float_outof_range;
   tStrComp InArgs[3];
   TempResult InVals[3];
   int z1, cnt;
   char Save = '\0';
-  sint LKlamm, RKlamm, WKlamm, zop;
-  sint OpMax, OpPos = -1;
-  Boolean InSgl, InDbl, NextEscaped, ThisEscaped;
+  operator_search_cb_data_t operator_search_data;
+  const as_operator_t *p_run_op;
+  char *p_arg_split_pos;
   PFunction ValFunc;
   tStrComp CopyComp, STempComp;
-  char *KlPos, *zp, *pOpPos;
   const tFunction *pFunction;
   PRelocEntry TReloc;
   tSymbolFlags PromotedFlags;
   unsigned PromotedAddrSpaceMask;
   tSymbolSize PromotedDataSize;
+  as_eval_cb_data_stack_t cb_data_stack;
 
   ChkStack();
 
@@ -1319,6 +1583,7 @@ void EvalStrExpression(const tStrComp *pExpr, TempResult *pErg)
     as_tempres_ini(&InVals[z1]);
   StrCompAlloc(&CopyComp, STRINGSIZE);
   StrCompAlloc(&STempComp, STRINGSIZE);
+  cb_data_stack.p_next = p_callback_data->p_stack;
 
   if (MakeDebug)
     fprintf(Debug, "Parse '%s'\n", pExpr->str.p_str);
@@ -1353,19 +1618,38 @@ void EvalStrExpression(const tStrComp *pExpr, TempResult *pErg)
 
   /* Konstanten ? */
 
-  pErg->Contents.Int = ConstIntVal(CopyComp.str.p_str, (IntType) (IntTypeCnt - 1), &OK);
+  pErg->Contents.Int = ConstIntVal(CopyComp.str.p_str, (IntType) (IntTypeCnt - 1), &OK, &int_outof_range);
   if (OK)
   {
-    pErg->Typ = TempInt;
-    pErg->Relocs = NULL;
-    LEAVE;
+    if (int_outof_range)
+    {
+#if !TREAT_LARGEINT_FLOAT
+      WrStrErrorPos((int_outof_range > 0) ? ErrNum_OverRange : ErrNum_UnderRange, &CopyComp);
+      LEAVE;
+#endif
+    }
+    else
+    {
+      pErg->Typ = TempInt;
+      pErg->Relocs = NULL;
+      LEAVE;
+    }
   }
 
-  pErg->Contents.Float = ConstFloatVal(CopyComp.str.p_str, Float80, &OK);
+  pErg->Contents.Float = ConstFloatVal(CopyComp.str.p_str, &OK, &float_outof_range);
   if (OK)
   {
-    pErg->Typ = TempFloat;
-    pErg->Relocs = NULL;
+    if (float_outof_range)
+      WrStrErrorPos((float_outof_range > 0) ? ErrNum_OverRange : ErrNum_UnderRange, &CopyComp);
+    else
+    {
+#if TREAT_LARGEINT_FLOAT
+      if (int_outof_range)
+        WrStrErrorPos(ErrNum_LargeIntAsFloat, &CopyComp);
+#endif
+      pErg->Typ = TempFloat;
+      pErg->Relocs = NULL;
+    }
     LEAVE;
   }
 
@@ -1376,9 +1660,23 @@ void EvalStrExpression(const tStrComp *pExpr, TempResult *pErg)
     LEAVE;
   }
 
-  /* durch Codegenerator gegebene Konstanten ? */
+  /* Constands given by the target's generator code?  Note
+     the per-call given callback has higher prio then the 'global'
+     one.  This way, we do not need extra code to hand
+     register symbols to the callback:  */
 
   pErg->Relocs = NULL;
+  if (p_callback_data && p_callback_data->callback)
+    switch (p_callback_data->callback(p_callback_data, &CopyComp, pErg))
+    {
+      case e_eval_none:
+        break;
+      case e_eval_fail:
+        as_tempres_set_none(pErg);
+        /* FALL-THRU */
+      case e_eval_ok:
+        LEAVE;
+    }
   InternSymbol(CopyComp.str.p_str, pErg);
   if (pErg->Typ != TempNone)
   {
@@ -1387,89 +1685,29 @@ void EvalStrExpression(const tStrComp *pExpr, TempResult *pErg)
 
   /* find out which operators *might* occur in expression */
 
-  OpMax = 0;
-  LKlamm = 0;
-  RKlamm = 0;
-  WKlamm = 0;
-  InSgl =
-  InDbl =
-  ThisEscaped =
-  NextEscaped = False;
-  for (pOp = Operators + 1; pOp->Id; pOp++)
-  {
-    pOpPos = (pOp->IdLen == 1) ? (strchr(CopyComp.str.p_str, *pOp->Id)) : (strstr(CopyComp.str.p_str, pOp->Id));
-    if (pOpPos)
-      FOps[FOpCnt++] = pOp;
-  }
+  operator_search_data.data.callback_before = False;
+  operator_search_data.data.qualify_quote = QualifyQuote;
+  operator_search_data.p_best_op = NULL;
+  operator_search_data.p_after_last_op_start = CopyComp.str.p_str;
+  operator_search_data.op_pos = -1;
+  operator_search_data.l_klamm = 0;
+  operator_search_data.r_klamm = 0;
+  operator_search_data.w_klamm = 0;
+  operator_search_data.found_op_cnt = 0;
+  for (p_run_op = operators; p_run_op->Id; p_run_op++)
+    test_found_op(&operator_search_data, p_run_op, CopyComp.str.p_str);
+  for (p_run_op = target_operators; p_run_op->Id; p_run_op++)
+    test_found_op(&operator_search_data, p_run_op, CopyComp.str.p_str);
+  for (p_run_op = p_callback_data->p_operators; p_run_op->Id; p_run_op++)
+    test_found_op(&operator_search_data, p_run_op, CopyComp.str.p_str);
 
-  /* nach Operator hoechster Rangstufe ausserhalb Klammern suchen */
+  /* search for highest-prio operator outside parentheses */
 
-  for (zp = CopyComp.str.p_str; *zp; zp++, ThisEscaped = NextEscaped)
-  {
-    NextEscaped = False;
-    switch (*zp)
-    {
-      case '(':
-        if (!(InSgl || InDbl))
-          LKlamm++;
-        break;
-      case ')':
-        if (!(InSgl || InDbl))
-          RKlamm++;
-        break;
-      case '{':
-        if (!(InSgl || InDbl))
-          WKlamm++;
-        break;
-      case '}':
-        if (!(InSgl || InDbl))
-          WKlamm--;
-        break;
-      case '"':
-        if (!InSgl && !ThisEscaped)
-          InDbl = !InDbl;
-        break;
-      case '\'':
-        if (!InDbl && !ThisEscaped)
-        {
-          if (InSgl || !QualifyQuote || QualifyQuote(CopyComp.str.p_str, zp))
-            InSgl = !InSgl;
-        }
-        break;
-      case '\\':
-        if ((InDbl || InSgl) && !ThisEscaped)
-          NextEscaped = True;
-        break;
-      default:
-        if ((LKlamm == RKlamm) && (WKlamm == 0) && (!InSgl) && (!InDbl))
-        {
-          Boolean OpFnd = False;
-          sint OpLen = 0, LocOpMax = 0;
-
-          for (zop = 0; zop < FOpCnt; zop++)
-          {
-            pOp = FOps[zop];
-            if ((!strncmp(zp, pOp->Id, pOp->IdLen)) && (pOp->IdLen >= OpLen))
-            {
-              OpFnd = True;
-              OpLen = pOp->IdLen;
-              LocOpMax = pOp - Operators;
-              if (Operators[LocOpMax].Priority >= Operators[OpMax].Priority)
-              {
-                OpMax = LocOpMax;
-                OpPos = zp - CopyComp.str.p_str;
-              }
-            }
-          }
-          if (OpFnd)
-            zp += Operators[LocOpMax].IdLen - 1;
-        }
-    }
-  }
+  as_iterate_str_quoted(CopyComp.str.p_str, operator_search_cb, &operator_search_data.data);
 
   /* Klammerfehler ? */
 
-  if (LKlamm != RKlamm)
+  if (operator_search_data.l_klamm != operator_search_data.r_klamm)
   {
     WrStrErrorPos(ErrNum_BrackErr, &CopyComp);
     LEAVE;
@@ -1477,46 +1715,67 @@ void EvalStrExpression(const tStrComp *pExpr, TempResult *pErg)
 
   /* Operator gefunden ? */
 
-  if (OpMax)
+
+  if (operator_search_data.p_best_op)
   {
     int ThisArgCnt, CompLen, z, z2;
-    Byte ThisOpMatch, BestOpMatch, BestOpMatchIdx, SumCombinations, TypeMask;
-
-    pOp = Operators + OpMax;
-
-    /* Minuszeichen sowohl mit einem als auch 2 Operanden */
-
-    if (!strcmp(pOp->Id, "-"))
-    {
-      if (!OpPos)
-        pOp = &MinusMonadicOperator;
-    }
-
-    else if (!strcmp(pOp->Id, "^"))
-    {
-      if (!OpPos && pPotMonadicOperator)
-        pOp = pPotMonadicOperator;
-    }
+    const int op_arg_cnt = (operator_search_data.p_best_op->op_type == e_op_monadic) ? 1 : 2,
+              first_op_index = 2 - op_arg_cnt;
+    Byte ThisOpMatch, BestOpMatch, SumCombinations, TypeMask;
+    tLineComp op_line_pos;
+    Boolean lhs_evaluated = False;
 
     /* Operandenzahl pruefen */
 
     CompLen = strlen(CopyComp.str.p_str);
+    op_line_pos.StartCol = CopyComp.Pos.StartCol + operator_search_data.op_pos;
+    op_line_pos.Len = operator_search_data.p_best_op->IdLen;
     if (CompLen <= 1)
       ThisArgCnt = 0;
-    else if (!OpPos || (OpPos == (int)strlen(CopyComp.str.p_str) - 1))
+    else if (!operator_search_data.op_pos || (operator_search_data.op_pos == (ptrdiff_t)strlen(CopyComp.str.p_str) - 1))
       ThisArgCnt = 1;
     else
       ThisArgCnt = 2;
-    if (!ChkArgCntExtPos(ThisArgCnt, pOp->Dyadic ? 2 : 1, pOp->Dyadic ? 2 : 1, &CopyComp.Pos))
+    if (!ChkArgCntExtPos(ThisArgCnt, op_arg_cnt, op_arg_cnt, &op_line_pos))
       LEAVE;
 
-    /* Teilausdruecke rekursiv auswerten */
+    /* Teilausdruecke rekursiv auswerten: */
 
-    Save = StrCompSplitRef(&InArgs[0], &InArgs[1], &CopyComp, CopyComp.str.p_str + OpPos);
-    StrCompIncRefLeft(&InArgs[1], strlen(pOp->Id) - 1);
-    EvalStrExpression(&InArgs[1], &InVals[1]);
-    if (pOp->Dyadic)
-      EvalStrExpression(&InArgs[0], &InVals[0]);
+    Save = StrCompSplitRef(&InArgs[0], &InArgs[1], &CopyComp, CopyComp.str.p_str + operator_search_data.op_pos);
+    StrCompIncRefLeft(&InArgs[1], strlen(operator_search_data.p_best_op->Id) - 1);
+    cb_data_stack.type = e_operator;
+    cb_data_stack.p_ident = operator_search_data.p_best_op->Id;
+    p_callback_data->p_stack = &cb_data_stack;
+
+    /* If short circuit evaluation is defined for the operator, evaluate
+       lhs first and exit if success: */
+
+    if (operator_search_data.p_best_op->op_type == e_op_dyadic_short)
+    {
+      cb_data_stack.arg_index = 0;
+      EvalStrExpressionWithCallback(&InArgs[0], &InVals[0], eval_flags, p_callback_data);
+      lhs_evaluated = True;
+      if ((InVals[0].Typ == TempInt) && operator_search_data.p_best_op->pFunc(pErg, &InVals[0], NULL))
+      {
+        CopyComp.str.p_str[operator_search_data.op_pos] = Save;
+        LEAVE;
+      }
+    }
+
+    /* OK, no short circuit.  But avoid evaluating lhs once again: */
+    
+    cb_data_stack.arg_index = 1;
+    EvalStrExpressionWithCallback(&InArgs[1], &InVals[1], eval_flags, p_callback_data);
+    if (op_arg_cnt == 2)
+    {
+      if (!lhs_evaluated)
+      {
+        cb_data_stack.arg_index = 0;
+        p_callback_data->p_other_arg = &InVals[1];
+        EvalStrExpressionWithCallback(&InArgs[0], &InVals[0], eval_flags, p_callback_data);
+        p_callback_data->p_other_arg = NULL;
+      }
+    }
     else if (InVals[1].Typ == TempFloat)
       as_tempres_set_float(&InVals[0], 0.0);
     else
@@ -1524,7 +1783,7 @@ void EvalStrExpression(const tStrComp *pExpr, TempResult *pErg)
       as_tempres_set_int(&InVals[0], 0);
       InVals[0].Relocs = NULL;
     }
-    CopyComp.str.p_str[OpPos] = Save;
+    CopyComp.str.p_str[operator_search_data.op_pos] = Save;
 
     /* Abbruch, falls dabei Fehler */
 
@@ -1533,7 +1792,7 @@ void EvalStrExpression(const tStrComp *pExpr, TempResult *pErg)
 
     /* relokatible Symbole nur fuer + und - erlaubt */
 
-    if ((OpMax != 12) && (OpMax != 13) && (InVals[0].Relocs || InVals[1].Relocs))
+    if (strcmp(operator_search_data.p_best_op->Id, "+") && strcmp(operator_search_data.p_best_op->Id, "-") && (InVals[0].Relocs || InVals[1].Relocs))
     {
       WrStrErrorPos(ErrNum_NoRelocs, &CopyComp);
       LEAVE;
@@ -1541,22 +1800,19 @@ void EvalStrExpression(const tStrComp *pExpr, TempResult *pErg)
 
     /* see whether data types match operator's restrictions: */
 
-    BestOpMatch = 255; BestOpMatchIdx = OPERATOR_MAXCOMB;
+    BestOpMatch = 255;
     SumCombinations = 0;
     for (z = 0; z < OPERATOR_MAXCOMB; z++)
     {
-      if (!pOp->TypeCombinations[z])
+      if (!operator_search_data.p_best_op->TypeCombinations[z])
         break;
-      SumCombinations |= pOp->TypeCombinations[z];
+      SumCombinations |= operator_search_data.p_best_op->TypeCombinations[z];
 
       ThisOpMatch = 0;
-      for (z2 = pOp->Dyadic ? 0 : 1; z2 < 2; z2++)
-        ThisOpMatch |= TryConvert(GetOpTypeMask(pOp->TypeCombinations[z], z2), InVals[z2].Typ, z2);
+      for (z2 = first_op_index; z2 < 2; z2++)
+        ThisOpMatch |= TryConvert(GetOpTypeMask(operator_search_data.p_best_op->TypeCombinations[z], z2), InVals[z2].Typ, z2);
       if (ThisOpMatch < BestOpMatch)
-      {
         BestOpMatch = ThisOpMatch;
-        BestOpMatchIdx = z;
-      }
       if (!BestOpMatch)
         break;
     }
@@ -1565,7 +1821,7 @@ void EvalStrExpression(const tStrComp *pExpr, TempResult *pErg)
 
     if (BestOpMatch >= 255)
     {
-      for (z2 = pOp->Dyadic ? 0 : 1; z2 < 2; z2++)
+      for (z2 = first_op_index; z2 < 2; z2++)
       {
         TypeMask = GetOpTypeMask(SumCombinations, z2);
         if (!(TypeMask & InVals[z2].Typ))
@@ -1576,7 +1832,7 @@ void EvalStrExpression(const tStrComp *pExpr, TempResult *pErg)
 
     /* necessary conversions: */
 
-    for (z2 = pOp->Dyadic ? 0 : 1; z2 < 2; z2++)
+    for (z2 = first_op_index; z2 < 2; z2++)
     {
       TypeMask = (BestOpMatch >> (z2 * 4)) & 15;
       if (TypeMask & 2)  /* String -> Int */
@@ -1587,24 +1843,24 @@ void EvalStrExpression(const tStrComp *pExpr, TempResult *pErg)
 
     /* actual operation */
 
-    (void)BestOpMatchIdx;
-    pOp->pFunc(pErg, &InVals[0], &InVals[1]);
+    operator_search_data.p_best_op->pFunc(pErg, &InVals[0], &InVals[1]);
     LEAVE;
   } /* if (OpMax) */
 
   /* kein Operator gefunden: Klammerausdruck ? */
 
-  if (LKlamm != 0)
+  if (operator_search_data.l_klamm != 0)
   {
     tStrComp FName, FArg, Remainder;
+    char *p_opening_pos;
 
     /* erste Klammer suchen, Funktionsnamen abtrennen */
 
-    KlPos = strchr(CopyComp.str.p_str, '(');
+    p_opening_pos = strchr(CopyComp.str.p_str, '(');
 
     /* Funktionsnamen abschneiden */
 
-    StrCompSplitRef(&FName, &FArg, &CopyComp, KlPos);
+    StrCompSplitRef(&FName, &FArg, &CopyComp, p_opening_pos);
     StrCompShorten(&FArg, 1);
     KillPostBlanksStrComp(&FName);
 
@@ -1612,7 +1868,8 @@ void EvalStrExpression(const tStrComp *pExpr, TempResult *pErg)
 
     if (*FName.str.p_str == '\0')
     {
-      EvalStrExpression(&FArg, pErg);
+      /* No need to establish another callback data stack level in this case: */
+      EvalStrExpressionWithCallback(&FArg, pErg, eval_flags, p_callback_data);
       LEAVE;
     }
 
@@ -1621,16 +1878,22 @@ void EvalStrExpression(const tStrComp *pExpr, TempResult *pErg)
     ValFunc = FindFunction(FName.str.p_str);
     if (ValFunc)
     {
-      as_dynstr_t CompArgStr;
-      tStrComp CompArg;
-      as_dynstr_t stemp;
+      tStrComp func_def_arg;
+      function_eval_cb_data_t fnc_cb_data;
+
+      as_eval_cb_data_ini(&fnc_cb_data.cb_data, function_eval_cb);
+      fnc_cb_data.p_function = ValFunc;
+      fnc_cb_data.p_arg_vals = (TempResult**)calloc(ValFunc->ArguCnt, sizeof(*fnc_cb_data.p_arg_vals));
 
       PromotedFlags = eSymbolFlag_None;
       PromotedAddrSpaceMask = 0;
       PromotedDataSize = eSymbolSizeUnknown;
-      as_dynstr_ini_c_str(&CompArgStr, ValFunc->Definition);
-      as_dynstr_ini(&stemp, STRINGSIZE);
-      for (z1 = 1; z1 <= ValFunc->ArguCnt; z1++)
+      cb_data_stack.type = e_function;
+      cb_data_stack.p_ident = FName.str.p_str;
+      p_callback_data->p_stack = &cb_data_stack;
+      for (z1 = 0, cb_data_stack.arg_index = 0;
+           z1 < ValFunc->ArguCnt;
+           z1++, cb_data_stack.arg_index++)
       {
         if (!*FArg.str.p_str)
         {
@@ -1638,45 +1901,50 @@ void EvalStrExpression(const tStrComp *pExpr, TempResult *pErg)
           LEAVE2;
         }
 
-        KlPos = QuotPos(FArg.str.p_str, ',');
-        if (KlPos)
-          StrCompSplitRef(&FArg, &Remainder, &FArg, KlPos);
+        p_arg_split_pos = QuotPos(FArg.str.p_str, ',');
+        if (p_arg_split_pos)
+          StrCompSplitRef(&FArg, &Remainder, &FArg, p_arg_split_pos);
 
-        EvalStrExpression(&FArg, &InVals[0]);
-        if (InVals[0].Relocs)
+        fnc_cb_data.p_arg_vals[z1]
+         = (z1 < (int)as_array_size(InVals))
+         ? &InVals[z1]
+         : as_tempres_dyn_ini();
+
+        EvalStrExpressionWithCallback(&FArg, fnc_cb_data.p_arg_vals[z1], eval_flags, p_callback_data);
+        if (fnc_cb_data.p_arg_vals[z1]->Relocs)
         {
           WrStrErrorPos(ErrNum_NoRelocs, &FArg);
-          FreeRelocs(&InVals[0].Relocs);
+          FreeRelocs(&fnc_cb_data.p_arg_vals[z1]->Relocs);
           LEAVE2;
         }
-        PromotedFlags |= InVals[0].Flags & eSymbolFlags_Promotable;
-        PromotedAddrSpaceMask |= InVals[0].AddrSpaceMask;
-        if (PromotedDataSize == eSymbolSizeUnknown) PromotedDataSize = InVals[0].DataSize;
+        PromotedFlags |= fnc_cb_data.p_arg_vals[z1]->Flags & eSymbolFlags_Promotable;
+        PromotedAddrSpaceMask |= fnc_cb_data.p_arg_vals[z1]->AddrSpaceMask;
+        if (PromotedDataSize == eSymbolSizeUnknown)
+          PromotedDataSize = fnc_cb_data.p_arg_vals[z1]->DataSize;
 
-        if (KlPos)
+        if (p_arg_split_pos)
           FArg = Remainder;
         else
           StrCompReset(&FArg);
-
-        as_sdprintf(&stemp, "(");
-        if (as_tempres_append_dynstr(&stemp, &InVals[0]))
-          LEAVE2;
-        as_sdprcatf(&stemp, ")");
-        ExpandLine(stemp.p_str, z1, &CompArgStr);
       }
       if (*FArg.str.p_str)
       {
         WrError(ErrNum_InvFuncArgCnt);
         LEAVE2;
       }
-      StrCompMkTemp(&CompArg, CompArgStr.p_str, CompArgStr.capacity);
-      EvalStrExpression(&CompArg, pErg);
+      StrCompMkTemp(&func_def_arg, ValFunc->Definition, strlen(ValFunc->Definition));
+      EvalStrExpressionWithCallback(&func_def_arg, pErg, eval_flags, &fnc_cb_data.cb_data);
       pErg->Flags |= PromotedFlags;
       pErg->AddrSpaceMask |= PromotedAddrSpaceMask;
       if (pErg->DataSize == eSymbolSizeUnknown) pErg->DataSize = PromotedDataSize;
 func_exit2:
-      as_dynstr_free(&stemp);
-      as_dynstr_free(&CompArgStr);
+      for (z1 = 0; z1 < ValFunc->ArguCnt; z1++)
+      {
+        if (z1 >= (int)as_array_size(InVals))
+          as_tempres_free(fnc_cb_data.p_arg_vals[z1]);
+        fnc_cb_data.p_arg_vals[z1] = NULL;
+      }
+      free(fnc_cb_data.p_arg_vals);
       LEAVE;
     }
 
@@ -1718,16 +1986,20 @@ func_exit2:
     PromotedFlags = eSymbolFlag_None;
     PromotedAddrSpaceMask = 0;
     PromotedDataSize = eSymbolSizeUnknown;
+    cb_data_stack.type = e_function;
+    cb_data_stack.p_ident = FName.str.p_str;
+    cb_data_stack.arg_index = 0;
+    p_callback_data->p_stack = &cb_data_stack;
     do
     {
-      zp = QuotPos(FArg.str.p_str, ',');
-      if (zp)
-        StrCompSplitRef(&InArgs[cnt], &Remainder, &FArg, zp);
+      p_arg_split_pos = QuotPos(FArg.str.p_str, ',');
+      if (p_arg_split_pos)
+        StrCompSplitRef(&InArgs[cnt], &Remainder, &FArg, p_arg_split_pos);
       else
         InArgs[cnt] = FArg;
       if (cnt < 3)
       {
-        EvalStrExpression(&InArgs[cnt], &InVals[cnt]);
+        EvalStrExpressionWithCallback(&InArgs[cnt], &InVals[cnt], eval_flags, p_callback_data);
         if (InVals[cnt].Typ == TempNone)
           LEAVE;
         TReloc = InVals[cnt].Relocs;
@@ -1743,14 +2015,15 @@ func_exit2:
         FreeRelocs(&TReloc);
         LEAVE;
       }
-      if (zp)
+      if (p_arg_split_pos)
         FArg = Remainder;
       PromotedFlags |= InVals[cnt].Flags & eSymbolFlags_Promotable;
       PromotedAddrSpaceMask |= InVals[cnt].AddrSpaceMask;
       if (PromotedDataSize == eSymbolSizeUnknown) PromotedDataSize = InVals[0].DataSize;
       cnt++;
+      cb_data_stack.arg_index++;
     }
-    while (zp);
+    while (p_arg_split_pos);
 
     /* search function */
 
@@ -1833,9 +2106,11 @@ func_exit2:
 
   /* plain symbol */
 
-  LookupSymbol(&CopyComp, pErg, True, TempAll);
+  LookupSymbol(&CopyComp, pErg, True, TempAll, eval_flags, NULL);
 
 func_exit:
+
+  p_callback_data->p_stack = cb_data_stack.p_next;
 
   StrCompFree(&CopyComp);
   StrCompFree(&STempComp);
@@ -1848,6 +2123,14 @@ func_exit:
   }
 }
 
+void EvalStrExpression(const tStrComp *pExpr, TempResult *pErg)
+{
+  as_eval_cb_data_t cb_data;
+  
+  as_eval_cb_data_ini(&cb_data, NULL);
+  EvalStrExpressionWithCallback(pExpr, pErg, e_eval_flag_none, &cb_data);
+}
+
 void EvalExpression(const char *pExpr, TempResult *pErg)
 {
   tStrComp Expr;
@@ -1856,7 +2139,7 @@ void EvalExpression(const char *pExpr, TempResult *pErg)
   EvalStrExpression(&Expr, pErg);
 }
 
-LargeInt EvalStrIntExpressionWithResult(const tStrComp *pComp, IntType Type, tEvalResult *pResult)
+LargeInt EvalStrIntExprWithResultAndCallback(const tStrComp *pComp, IntType Type, tEvalResult *pResult, as_eval_cb_data_t *p_callback_data)
 {
   TempResult t;
   LargeInt Result = -1;
@@ -1864,7 +2147,7 @@ LargeInt EvalStrIntExpressionWithResult(const tStrComp *pComp, IntType Type, tEv
   as_tempres_ini(&t);
   EvalResultClear(pResult);
 
-  EvalStrExpression(pComp, &t);
+  EvalStrExpressionWithCallback(pComp, &t, e_eval_flag_none, p_callback_data);
   SetRelocs(t.Relocs);
 
   switch (t.Typ)
@@ -1933,6 +2216,14 @@ func_exit:
   return Result;
 }
 
+LargeInt EvalStrIntExpressionWithResult(const tStrComp *pComp, IntType Type, tEvalResult *pResult)
+{
+  as_eval_cb_data_t cb_data;
+
+  as_eval_cb_data_ini(&cb_data, NULL);
+  return EvalStrIntExprWithResultAndCallback(pComp, Type, pResult, &cb_data);
+}
+
 LargeInt EvalStrIntExpressionWithFlags(const tStrComp *pComp, IntType Type, Boolean *pResult, tSymbolFlags *pFlags)
 {
   tEvalResult EvalResult;
@@ -1966,6 +2257,19 @@ LargeInt EvalStrIntExpressionOffsWithResult(const tStrComp *pExpr, int Offset, I
     return EvalStrIntExpressionWithResult(pExpr, Type, pResult);
 }
 
+LargeInt EvalStrIntExprOffsWithResultAndCallback(const tStrComp *pExpr, int Offset, IntType Type, tEvalResult *pResult, as_eval_cb_data_t *p_callback_data)
+{
+  if (Offset)
+  {
+    tStrComp Comp;
+        
+    StrCompRefRight(&Comp, pExpr, Offset);
+    return EvalStrIntExprWithResultAndCallback(&Comp, Type, pResult, p_callback_data);
+  }
+  else
+    return EvalStrIntExprWithResultAndCallback(pExpr, Type, pResult, p_callback_data);
+}
+
 LargeInt EvalStrIntExpressionOffsWithFlags(const tStrComp *pComp, int Offset, IntType Type, Boolean *pResult, tSymbolFlags *pFlags)
 {
   tEvalResult EvalResult;
@@ -1986,10 +2290,10 @@ LargeInt EvalStrIntExpressionOffs(const tStrComp *pComp, int Offset, IntType Typ
   return Result;
 }
 
-Double EvalStrFloatExpressionWithResult(const tStrComp *pExpr, FloatType Type, tEvalResult *pResult)
+as_float_t EvalStrFloatExpressionWithResult(const tStrComp *pExpr, tEvalResult *pResult)
 {
   TempResult t;
-  Double Result = -1;
+  as_float_t Result = -1;
 
   as_tempres_ini(&t);
   EvalResultClear(pResult);
@@ -2014,24 +2318,18 @@ Double EvalStrFloatExpressionWithResult(const tStrComp *pExpr, FloatType Type, t
       Result = t.Contents.Float;
   }
 
-  if (!FloatRangeCheck(Result, Type))
-  {
-    WrStrErrorPos(ErrNum_OverRange, pExpr);
-    LEAVE;
-  }
-
   pResult->OK = True;
 func_exit:
   as_tempres_free(&t);
   return Result;
 }
 
-Double EvalStrFloatExpression(const tStrComp *pExpr, FloatType Type, Boolean *pResult)
+as_float_t EvalStrFloatExpression(const tStrComp *pExpr, Boolean *pResult)
 {
-  Double Ret;
+  as_float_t Ret;
   tEvalResult Result;
 
-  Ret = EvalStrFloatExpressionWithResult(pExpr, Type, &Result);
+  Ret = EvalStrFloatExpressionWithResult(pExpr, &Result);
   *pResult = Result.OK;
   return Ret;
 }
@@ -2087,7 +2385,6 @@ void EvalStrStringExpression(const tStrComp *pExpr, Boolean *pResult, char *pEva
  * \param  pResult retrieved register
  * \param  pEvalResult success flag, symbol size & flags
  * \param  IssueErrors print errors at all?
- * \param  p_error_on_find True if error on symbol resolution and not just not found
  * \return occured error
  * ------------------------------------------------------------------------ */
 
@@ -2101,7 +2398,7 @@ tErrorNum EvalStrRegExpressionWithResult(const struct sStrComp *pExpr, tRegDescr
   if (!pEntry)
     return ErrNum_SymbolUndef;
 
-  pEntry->Used = True;
+  set_symbol_entry_flag(pEntry, used, True);
   pEvalResult->DataSize = pEntry->SymWert.DataSize;
 
   if (pEntry->SymWert.Typ != TempReg)
@@ -2212,9 +2509,9 @@ static Boolean SymbolAdder(PTree *PDest, PTree Neu, void *pData)
 
   if (!PDest)
   {
-    NewEntry->Defined = True;
-    NewEntry->Used = False;
-    NewEntry->Changeable = EnterStruct->MayChange;
+    set_symbol_entry_flag(NewEntry, defined, True);
+    set_symbol_entry_flag(NewEntry, used, False);
+    set_symbol_entry_flag(NewEntry, changeable, EnterStruct->MayChange);
     NewEntry->RefList = NULL;
     if (EnterStruct->DoCross)
     {
@@ -2230,7 +2527,7 @@ static Boolean SymbolAdder(PTree *PDest, PTree Neu, void *pData)
 
   /* tried to redefine a symbol with EQU ? */
 
-  if (((*Node)->Defined) && (!(*Node)->Changeable) && (!EnterStruct->MayChange))
+  if (get_symbol_entry_flag((*Node), defined) && !get_symbol_entry_flag(*Node, changeable) && !EnterStruct->MayChange)
   {
     strmaxcpy(serr, (*Node)->Tree.Name, STRINGSIZE);
     if (EnterStruct->DoCross)
@@ -2244,14 +2541,14 @@ static Boolean SymbolAdder(PTree *PDest, PTree Neu, void *pData)
 
   /* tried to reassign a constant (EQU) a value with SET and vice versa ? */
 
-  else if ( ((*Node)->Defined) && (EnterStruct->MayChange != (*Node)->Changeable) )
+  else if (get_symbol_entry_flag((*Node), defined) && (EnterStruct->MayChange != get_symbol_entry_flag(*Node, changeable)) )
   {
     strmaxcpy(serr, (*Node)->Tree.Name, STRINGSIZE);
     if (EnterStruct->DoCross)
       as_snprcatf(serr, STRINGSIZE, ",%s %s:%ld",
                   getmessage(Num_PrevDefMsg),
                   GetFileName((*Node)->FileNum), (long)((*Node)->LineNum));
-    WrXError((*Node)->Changeable ? ErrNum_VariableRedefinedAsConstant : ErrNum_ConstantRedefinedAsVariable, serr);
+    WrXError(get_symbol_entry_flag(*Node, changeable) ? ErrNum_VariableRedefinedAsConstant : ErrNum_ConstantRedefinedAsVariable, serr);
     FreeSymbolEntry(&NewEntry, TRUE);
     return False;
   }
@@ -2265,7 +2562,7 @@ static Boolean SymbolAdder(PTree *PDest, PTree Neu, void *pData)
 #if 0
       if (NewEntry->SymWert.Typ == TempInt)
         fprintf(stderr, "NewEntry 0x%lx Node 0x%lx Node changed %d\n",
-                NewEntry->SymWert.Contents.Int, (*Node)->SymWert.Contents.Int, (*Node)->changed);
+                NewEntry->SymWert.Contents.Int, (*Node)->SymWert.Contents.Int, get_symbol_entry_flag(*Node, changed));
 #endif
 
       /* If the symbol value was changed after entry (padding of label),
@@ -2277,7 +2574,7 @@ static Boolean SymbolAdder(PTree *PDest, PTree Neu, void *pData)
       else switch (NewEntry->SymWert.Typ)
       {
         case TempInt:
-          value_changed = NewEntry->SymWert.Contents.Int != ((*Node)->changed ? (*Node)->unchanged_value : (*Node)->SymWert.Contents.Int);
+          value_changed = NewEntry->SymWert.Contents.Int != (get_symbol_entry_flag(*Node, changed) ? (*Node)->unchanged_value : (*Node)->SymWert.Contents.Int);
           break;
         default:
           value_changed = !!as_tempres_cmp(&NewEntry->SymWert, &(*Node)->SymWert);
@@ -2314,9 +2611,9 @@ static Boolean SymbolAdder(PTree *PDest, PTree Neu, void *pData)
 
     NewEntry->RefList = (*Node)->RefList;
     (*Node)->RefList = NULL;
-    NewEntry->Defined = True;
-    NewEntry->Used = (*Node)->Used;
-    NewEntry->Changeable = EnterStruct->MayChange;
+    set_symbol_entry_flag(NewEntry, defined, True);
+    set_symbol_entry_flag(NewEntry, used, get_symbol_entry_flag(*Node, used));
+    set_symbol_entry_flag(NewEntry, changeable, EnterStruct->MayChange);
 
     /* since NewEntry will be copied over Node, free the latter's dynamic data: */
 
@@ -2437,10 +2734,10 @@ void PrintSymTree(char *Name)
 
 void ChangeSymbol(PSymbolEntry pEntry, LargeInt Value)
 {
-  if (!pEntry->changed)
+  if (!get_symbol_entry_flag(pEntry, changed))
   {
     pEntry->unchanged_value = (pEntry->SymWert.Typ == TempInt) ? pEntry->SymWert.Contents.Int : 0;
-    pEntry->changed = True;
+    set_symbol_entry_flag(pEntry, changed, True);
   }
   as_tempres_set_int(&pEntry->SymWert, Value);
 }
@@ -2491,11 +2788,29 @@ func_exit:
  * \return * to newly created entry in tree
  * ------------------------------------------------------------------------ */
 
+static Boolean symbol_name_reserved(const char *p_name)
+{
+  if (inf_reserved)
+  {
+    if (*p_name == '-')
+      p_name++;
+    return !as_strcasecmp(p_name, inf_name);
+  }
+  return False;
+}
+
 PSymbolEntry EnterIntSymbolWithFlags(const tStrComp *pName, LargeInt Wert, as_addrspace_t addrspace, Boolean MayChange, tSymbolFlags Flags)
 {
   LongInt DestHandle;
-  PSymbolEntry pNeu = CreateSymbolEntry(pName, &DestHandle, Flags);
+  PSymbolEntry pNeu;
 
+  if (symbol_name_reserved(pName->str.p_str))
+  {
+    WrStrErrorPos(ErrNum_RsvdSymName, pName);
+    return NULL;
+  }
+
+  pNeu = CreateSymbolEntry(pName, &DestHandle, Flags);
   if (!pNeu)
     return NULL;
 
@@ -2595,14 +2910,14 @@ PSymbolEntry EnterRelSymbol(const tStrComp *pName, LargeInt Wert, as_addrspace_t
 }
 
 /*!------------------------------------------------------------------------
- * \fn     EnterFloatSymbol(const tStrComp *pName, Double Wert, Boolean MayChange)
+ * \fn     EnterFloatSymbol(const tStrComp *pName, as_float_t Wert, Boolean MayChange)
  * \brief  enter floating point symbol
  * \param  pName unexpanded name
  * \param  Wert symbol value
  * \param  MayChange variable or constant?
  * ------------------------------------------------------------------------ */
 
-void EnterFloatSymbol(const tStrComp *pName, Double Wert, Boolean MayChange)
+void EnterFloatSymbol(const tStrComp *pName, as_float_t Wert, Boolean MayChange)
 {
   LongInt DestHandle;
   PSymbolEntry pNeu = CreateSymbolEntry(pName, &DestHandle, eSymbolFlag_None);
@@ -2862,69 +3177,70 @@ static PSymbolEntry FindLocNode(const char *p_name, TempType SearchType)
 }
 
 /*!------------------------------------------------------------------------
- * \fn     FindNode(const tStrComp *p_exp_name, TempType SearchType, Boolean SearchLocal, Boolean *p_error_on_find)
+ * \fn     FindNode(const tStrComp *p_exp_name, TempType SearchType, Boolean SearchLocal, lookup_symbol_error_t *p_lookup_error)
  * \brief  find node in global and/or local symbol table
  * \param  p_exp_name name of symbol to search
  * \param  SearchType data type to search for
  * \param  SearchLocal search in local table as well
- * \param  p_error_on_find may return True if NULL due to symbol syntax error
+ * \param  p_lookup_error may return e_lookup_error_getsymsection if NULL due to invalid section spec
  * \return * to node or NULL
  * ------------------------------------------------------------------------ */
 
-static PSymbolEntry FindNode(const tStrComp *p_exp_name, TempType SearchType, Boolean SearchLocal, Boolean *p_error_on_find)
+static PSymbolEntry FindNode(const tStrComp *p_exp_name, TempType SearchType, Boolean SearchLocal, lookup_symbol_error_t *p_lookup_error)
 {
   String name;
   tStrComp name_comp;
   LongInt DestSection = -1;
+  PSymbolEntry p_result = NULL;
 
   StrCompMkTemp(&name_comp, name, sizeof(name));
   StrCompCopy(&name_comp, p_exp_name);
   ChkTmp3(name_comp.str.p_str, e_symbol_source_none);
-  if (p_error_on_find)
-    *p_error_on_find = False;
+  if (p_lookup_error)
+    *p_lookup_error = e_lookup_error_none;
 
   if (!GetSymSection(&name_comp, &DestSection, p_exp_name))
   {
-    if (p_error_on_find)
-      *p_error_on_find = True;
+    if (p_lookup_error)
+      *p_lookup_error = e_lookup_error_getsymsection;
     return NULL;
   }
   if (DestSection != -2)
     SearchLocal = False;
 
   if (SearchLocal && (MomLocHandle != -1))
-  {
-    PSymbolEntry p_result = FindLocNode(name_comp.str.p_str, SearchType);
-    if (p_result)
-      return p_result;
-  }
-  return FindGlobNode(name_comp.str.p_str, SearchType, DestSection);
+    p_result = FindLocNode(name_comp.str.p_str, SearchType);
+  if (!p_result)
+    p_result = FindGlobNode(name_comp.str.p_str, SearchType, DestSection);
+  if (!p_result && p_lookup_error)
+    *p_lookup_error = e_lookup_error_notfound;
+  return p_result;
 }
 
 /*!------------------------------------------------------------------------
- * \fn     ExpandAndFindNode(const struct sStrComp *pComp, TempType SearchType, Boolean SearchLocal, expand_chk_t chk, Boolean *p_error_on_find)
+ * \fn     ExpandAndFindNode(const struct sStrComp *pComp, TempType SearchType, Boolean SearchLocal, expand_chk_t chk, lookup_symbol_error_t *p_lookup_error)
  * \brief  expand, optionally check and find node in global and/or local symbol table
  * \param  pComp name of symbol to expand & search
  * \param  SearchType data type to search for
  * \param  SearchLocal search in local table as well
  * \param  chk preliminary checks to perform
- * \param  p_error_on_find may return True if NULL due to symbol syntax error
+ * \param  p_lookup_error may return != e_lookup_error_none if NULL due to symbol syntax error
  * \return * to node or NULL
  * ------------------------------------------------------------------------ */
 
-PSymbolEntry ExpandAndFindNode(const struct sStrComp *pComp, TempType SearchType, Boolean SearchLocal, expand_chk_t chk, Boolean *p_error_on_find)
+PSymbolEntry ExpandAndFindNode(const struct sStrComp *pComp, TempType SearchType, Boolean SearchLocal, expand_chk_t chk, lookup_symbol_error_t *p_lookup_error)
 {
   String exp_name_buf;
   tStrComp exp_name;
   const tStrComp *p_exp_name;
   const char *pKlPos;
 
-  if (p_error_on_find) *p_error_on_find = False;
+  if (p_lookup_error) *p_lookup_error = e_lookup_error_none;
   StrCompMkTemp(&exp_name, exp_name_buf, sizeof(exp_name_buf));
   p_exp_name = ExpandStrSymbol(&exp_name, pComp, !CaseSensitive);
   if (!p_exp_name)
   {
-    if (p_error_on_find) *p_error_on_find = True;
+    if (p_lookup_error) *p_lookup_error = e_lookup_error_expand;
     return NULL;
   }
 
@@ -2934,10 +3250,13 @@ PSymbolEntry ExpandAndFindNode(const struct sStrComp *pComp, TempType SearchType
 
     pKlPos = strchr(p_exp_name->str.p_str, '[');
     if ((pKlPos == p_exp_name->str.p_str) || (ChkSymbNameUpTo(p_exp_name->str.p_str, pKlPos) != pKlPos))
+    {
+      if (p_lookup_error) *p_lookup_error = e_lookup_error_namecheck;
       return NULL;
+    }
   }
 
-  return FindNode(p_exp_name, SearchType, SearchLocal, p_error_on_find);
+  return FindNode(p_exp_name, SearchType, SearchLocal, p_lookup_error);
 }
 
 /**
@@ -2955,14 +3274,20 @@ void SetSymbolType(const tStrComp *pName, Byte NTyp)
 }
 **/
 
-void LookupSymbol(const struct sStrComp *pComp, TempResult *pValue, Boolean WantRelocs, TempType ReqType)
+void LookupSymbol(const struct sStrComp *pComp, TempResult *pValue, Boolean WantRelocs, TempType ReqType,
+                  as_eval_flags_t eval_flags, as_symbol_entry_flags_t *p_symbol_entry_flags)
 {
-  Boolean error_on_find;
-  PSymbolEntry pEntry = ExpandAndFindNode(pComp, ReqType, True, e_expand_chk_upto, &error_on_find);
+  lookup_symbol_error_t lookup_error;
+  PSymbolEntry pEntry = ExpandAndFindNode(pComp, ReqType, True, e_expand_chk_upto, &lookup_error);
+
+  if (pEntry && !get_symbol_entry_flag(pEntry, defined) && (eval_flags & e_eval_flag_undefined_is_unknown))
+    pEntry = NULL;
 
   if (pEntry)
   {
     as_tempres_copy_value(pValue, &pEntry->SymWert);
+    if (p_symbol_entry_flags)
+      *p_symbol_entry_flags = (as_symbol_entry_flags_t)pEntry->flags;
     if (pValue->Typ != TempNone)
     {
       if (WantRelocs)
@@ -2972,30 +3297,41 @@ void LookupSymbol(const struct sStrComp *pComp, TempResult *pValue, Boolean Want
     pValue->AddrSpaceMask = pEntry->SymWert.AddrSpaceMask;
     if ((pEntry->SymWert.DataSize != eSymbolSizeUnknown) && (pValue->DataSize == eSymbolSizeUnknown))
       pValue->DataSize = pEntry->SymWert.DataSize;
-    if (!pEntry->Defined)
+    if (!get_symbol_entry_flag(pEntry, defined))
     {
       if (Repass)
         pValue->Flags |= eSymbolFlag_Questionable;
       pValue->Flags |= eSymbolFlag_UsesForwards;
     }
-    pEntry->Used = True;
+    set_symbol_entry_flag(pEntry, used, True);
   }
 
-  else if (error_on_find)
-    pValue->Typ = TempNone;
-
-  /* Symbol evtl. im ersten Pass unbekannt */
-
-  else if (PassNo <= MaxSymPass) /* !pEntry */
+  else switch (lookup_error)
   {
-    as_tempres_set_int(pValue, EProgCounter());
-    Repass = True;
-    if ((MsgIfRepass) && (PassNo >= PassNoForMessage))
-      WrStrErrorPos(ErrNum_RepassUnknown, pComp);
-    pValue->Flags |= eSymbolFlag_FirstPassUnknown;
+    case e_lookup_error_namecheck:
+      WrStrErrorPos(ErrNum_InvSymName, pComp);
+      as_tempres_set_none(pValue);
+      break;
+
+    case e_lookup_error_notfound:
+      if ((PassNo <= MaxSymPass) || (eval_flags & e_eval_flag_undefined_is_unknown))
+      {
+        as_tempres_set_int(pValue, EProgCounter());
+        if (!(eval_flags & e_eval_flag_undefined_is_unknown))
+        {
+          Repass = True;
+          if (MsgIfRepass && (PassNo >= PassNoForMessage))
+            WrStrErrorPos(ErrNum_RepassUnknown, pComp);
+        }
+        pValue->Flags |= eSymbolFlag_FirstPassUnknown;
+      }
+      else
+        WrStrErrorPos(ErrNum_SymbolUndef, pComp);
+      break;
+
+    default:
+      as_tempres_set_none(pValue);
   }
-  else
-    WrStrErrorPos(ErrNum_SymbolUndef, pComp);
 }
 
 /*!------------------------------------------------------------------------
@@ -3024,32 +3360,34 @@ void SetSymbolOrStructElemSize(const struct sStrComp *pName, tSymbolSize Size)
 }
 
 /*!------------------------------------------------------------------------
- * \fn     GetSymbolSize(const struct sStrComp *pName)
- * \brief  get symbol's integer size
- * \param  pName unexpanded symbol name
- * \return symbol size or -1 if symbol does not exist
- * ------------------------------------------------------------------------ */
-
-ShortInt GetSymbolSize(const struct sStrComp *pName)
-{
-  Boolean error_on_find;
-  PSymbolEntry pEntry = ExpandAndFindNode(pName, TempInt, True, e_expand_chk_none, &error_on_find);
-
-  return pEntry ? pEntry->SymWert.DataSize : (error_on_find ? -1 : eSymbolSizeUnknown);
-}
-
-/*!------------------------------------------------------------------------
  * \fn     IsSymbolDefined(const struct sStrComp *pName)
- * \brief  check whether symbol nas been used so far
+ * \brief  check whether symbol has been defined so far
  * \param  pName unexpanded symbol name
  * \return true if symbol exists and has been defined so far
  * ------------------------------------------------------------------------ */
 
 Boolean IsSymbolDefined(const struct sStrComp *pName)
 {
-  PSymbolEntry pEntry = ExpandAndFindNode(pName, TempAll, True, e_expand_chk_none, NULL);
+#if 1
+  as_eval_cb_data_t cb_data;
+  TempResult result;
+  Boolean ret;
 
-  return pEntry && pEntry->Defined;
+  as_tempres_ini(&result);
+  as_eval_cb_data_ini(&cb_data, NULL);
+  EvalStrExpressionWithCallback(pName, &result, e_eval_flag_undefined_is_unknown, &cb_data);
+  ret = (result.Typ != TempNone)
+     && (!(result.Flags & eSymbolFlag_FirstPassUnknown));
+  as_tempres_free(&result);
+  return ret;
+#else
+  Boolean error_on_find;
+  PSymbolEntry pEntry = ExpandAndFindNode(pName, TempAll, True, e_expand_chk_upto, &error_on_find);
+  if (error_on_find)
+    WrStrErrorPos(ErrNum_InvSymName, pName);
+
+  return pEntry && get_symbol_entry_flag(pEntry, defined);
+#endif
 }
 
 /*!------------------------------------------------------------------------
@@ -3061,23 +3399,12 @@ Boolean IsSymbolDefined(const struct sStrComp *pName)
 
 Boolean IsSymbolUsed(const struct sStrComp *pName)
 {
-  PSymbolEntry pEntry = ExpandAndFindNode(pName, TempAll, True, e_expand_chk_none, NULL);
+  lookup_symbol_error_t lookup_error;
+  PSymbolEntry pEntry = ExpandAndFindNode(pName, TempAll, True, e_expand_chk_upto, &lookup_error);
+  if (lookup_error == e_lookup_error_namecheck)
+    WrStrErrorPos(ErrNum_InvSymName, pName);
 
-  return pEntry && pEntry->Used;
-}
-
-/*!------------------------------------------------------------------------
- * \fn     IsSymbolChangeable(const struct sStrComp *pName)
- * \brief  check whether symbol's value may be changed or is constant
- * \param  pName unexpanded symbol name
- * \return true if symbol exists and is changeable
- * ------------------------------------------------------------------------ */
-
-Boolean IsSymbolChangeable(const struct sStrComp *pName)
-{
-  PSymbolEntry pEntry = ExpandAndFindNode(pName, TempAll, True, e_expand_chk_none, NULL);
-
-  return pEntry && pEntry->Changeable;
+  return pEntry && get_symbol_entry_flag(pEntry, used);
 }
 
 /*!------------------------------------------------------------------------
@@ -3155,7 +3482,7 @@ static void PrintSymbolList_PNode(PTree Tree, void *pData)
     else
       StrSym(pValue, False, &pContext->s1, ListRadixBase);
 
-    as_sdprintf(&pContext->sh, "%c%s : ", Node->Used ? ' ' : '*', Tree->Name);
+    as_sdprintf(&pContext->sh, "%c%s : ", get_symbol_entry_flag(Node, used) ? ' ' : '*', Tree->Name);
     if (Tree->Attribute != -1)
       as_sdprcatf(&pContext->sh, " [%s]", GetSectionName(Tree->Attribute));
     l1 = (strlen(pContext->s1.p_str) + visible_strlen(pContext->sh.p_str) + 4);
@@ -3163,7 +3490,7 @@ static void PrintSymbolList_PNode(PTree Tree, void *pData)
     as_sdprcatf(&pContext->sh, "%s%s %c | ", Blanks(nBlanks), pContext->s1.p_str, SegShorts[addrspace_from_mask(pValue->AddrSpaceMask)]);
     PrintSymbolList_AddOut(pContext->sh.p_str, pContext);
     pContext->Sum++;
-    if (!Node->Used)
+    if (!get_symbol_entry_flag(Node, used))
       pContext->USum++;
   }
 }
@@ -3276,7 +3603,8 @@ static void PrintDebSymbols_PNode(PTree Tree, void *pData)
     l1 = strlen(DebContext->s.p_str);
     fprintf(DebContext->f, "%s", DebContext->s.p_str); ChkIO(ErrNum_FileWriteError);
   }
-  fprintf(DebContext->f, "%s %-3d %d %d\n", Blanks(25 - l1), Node->SymWert.DataSize, (int)Node->Used, (int)Node->Changeable);
+  fprintf(DebContext->f, "%s %-3d %d %d\n", Blanks(25 - l1), Node->SymWert.DataSize,
+          get_symbol_entry_flag(Node, used), get_symbol_entry_flag(Node, changeable));
   ChkIO(ErrNum_FileWriteError);
 }
 
@@ -3537,7 +3865,7 @@ void ClearStacks(void)
 /*-------------------------------------------------------------------------*/
 /* Funktionsverwaltung */
 
-void EnterFunction(const tStrComp *pComp, char *FDefinition, Byte NewCnt)
+void EnterFunction(const tStrComp *pComp, const char *FDefinition, Byte NewCnt, StringList *p_arg_list)
 {
   PFunction Neu;
   String FName_N;
@@ -3555,6 +3883,7 @@ void EnterFunction(const tStrComp *pComp, char *FDefinition, Byte NewCnt)
   if (!ChkSymbName(pFName))
   {
     WrStrErrorPos(ErrNum_InvSymName, pComp);
+    ClearStringList(p_arg_list);
     return;
   }
 
@@ -3562,6 +3891,7 @@ void EnterFunction(const tStrComp *pComp, char *FDefinition, Byte NewCnt)
   {
     if (PassNo == 1)
       WrStrErrorPos(ErrNum_DoubleDef, pComp);
+    ClearStringList(p_arg_list);
     return;
   }
 
@@ -3570,6 +3900,7 @@ void EnterFunction(const tStrComp *pComp, char *FDefinition, Byte NewCnt)
   Neu->ArguCnt = NewCnt;
   Neu->Name = as_strdup(pFName);
   Neu->Definition = as_strdup(FDefinition);
+  Neu->p_arg_list = *p_arg_list; *p_arg_list = NULL;
   FirstFunction = Neu;
 }
 
@@ -3585,7 +3916,7 @@ PFunction FindFunction(const char *Name)
     Name = Name_N;
   }
 
-  while ((Lauf) && (strcmp(Lauf->Name, Name)))
+  while (Lauf && (strcmp(Lauf->Name, Name)))
     Lauf = Lauf->Next;
   return Lauf;
 }
@@ -3638,6 +3969,7 @@ void ClearFunctionList(void)
     Lauf = FirstFunction->Next;
     free(FirstFunction->Name);
     free(FirstFunction->Definition);
+    ClearStringList(&FirstFunction->p_arg_list);
     free(FirstFunction);
     FirstFunction = Lauf;
   }
@@ -3650,8 +3982,8 @@ static void ResetSymbolDefines_ResetNode(PTree Node, void *pData)
   PSymbolEntry SymbolEntry = (PSymbolEntry) Node;
   UNUSED(pData);
 
-  SymbolEntry->Defined = False;
-  SymbolEntry->Used = False;
+  set_symbol_entry_flag(SymbolEntry, defined, False);
+  set_symbol_entry_flag(SymbolEntry, used, False);
 }
 
 void ResetSymbolDefines(void)
@@ -4085,7 +4417,7 @@ static void PrintRegList_PNode(PTree Tree, void *pData)
     *tmp = '\0';
     if (Tree->Attribute != -1)
       as_snprcatf(tmp, sizeof(tmp), "[%s]", GetSectionName(Tree->Attribute));
-    as_snprcatf(tmp, sizeof(tmp), "%c%s --> %s", Node->Used ? ' ' : '*', Tree->Name, tmp2);
+    as_snprcatf(tmp, sizeof(tmp), "%c%s --> %s", get_symbol_entry_flag(Node, used) ? ' ' : '*', Tree->Name, tmp2);
     if ((int)strlen(tmp) > pContext->cwidth - 3)
     {
       if (*pContext->Zeilenrest.p_str)
@@ -4106,7 +4438,7 @@ static void PrintRegList_PNode(PTree Tree, void *pData)
       }
     }
     pContext->Sum++;
-    if (!Node->Used)
+    if (!get_symbol_entry_flag(Node, used))
       pContext->USum++;
   }
 }
@@ -4239,9 +4571,38 @@ void PrintCodepages(void)
 
 /*--------------------------------------------------------------------------*/
 
+static as_cmd_result_t cmd_radix(Boolean negate, const char *p_arg)
+{
+  if (negate)
+  {
+    def_radix_base = 10;
+    return e_cmd_ok;
+  }
+  else if (!p_arg)
+    return e_cmd_err;
+  else
+  {
+    Boolean ok;
+    int new_def_radix_base = ConstLongInt(p_arg, &ok, 10);
+
+    if (!ok || (new_def_radix_base < 2) || (new_def_radix_base > 36))
+      return e_cmd_err;
+    def_radix_base = new_def_radix_base;
+    return e_cmd_arg;
+  }
+}
+
+static const as_cmd_rec_t asmpars_params[] =
+{
+  { "radix"     , cmd_radix       },
+};
+
 void asmpars_init(void)
 {
   tIntTypeDef *pCurr;
+  char *p_end;
+
+  function_init();
 
   serr = (char*)malloc(sizeof(char) * STRINGSIZE);
   snum = (char*)malloc(sizeof(char) * STRINGSIZE);
@@ -4276,4 +4637,10 @@ void asmpars_init(void)
   }
 
   LastGlobSymbol = (char*)malloc(sizeof(char) * STRINGSIZE);
+
+  (void)strtod(inf_name, &p_end);
+  inf_reserved = !*p_end;
+
+  def_radix_base = 10;
+  as_cmd_register(asmpars_params, as_array_size(asmpars_params));
 }

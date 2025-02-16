@@ -1423,17 +1423,23 @@ static void DecodeDC(Word Index)
 				}
 				break;
 			case TempFloat:
+			{
+				int ret;
+
 				SetMaxCodeLen((CodeLen + 2) * 2);
-				if (Double2IBMFloat(&WAsmCode[CodeLen], t.Contents.Float, False))
+				ret = as_float_2_ibm_float(&WAsmCode[CodeLen], t.Contents.Float, False);
+				if (ret >= 0)
 				{
 					CodeLen += 2;
 				}
 				else
 				{
+					asmerr_check_fp_dispose_result(ret, pArg);
 					OK = False;
 				}
 				LowerByte = False;
 				break;
+			}
 			case TempString:
 				if (MultiCharToInt(&t, 2))
 					goto ToInt;
@@ -1627,6 +1633,8 @@ static void InitFields(void)
 {
 	InstTable = CreateInstTable(128);
 
+  add_null_pseudo(InstTable);
+
 	/* Basic MN1610 Instructions */
 	
 	AddAdr("L",   0xc000);
@@ -1766,6 +1774,10 @@ static void InitFields(void)
 
 	AddInstTable(InstTable, "DC", 0, DecodeDC);
 	AddInstTable(InstTable, "DS", 0, DecodeDS);
+#if 0
+	/* AddIntelPseudo(eIntPseudoFlag_LittleEndian); */
+  AddInstTable(InstTable, "DC", e_moto_8_be, DecodeMotoDC);
+#endif
 	
 	StrCompAlloc(&Inner, STRINGSIZE);
 	StrCompAlloc(&InnerZ, STRINGSIZE);
@@ -1783,13 +1795,9 @@ static void DeinitFields(void)
 
 static void MakeCode_MN1610(void)
 {
-	CodeLen = 0;
-	DontPrint = False;
-
-	if (Memo("")) return;
-
-	/* if (DecodeIntelPseudo(False)) return; */
-	/* if (DecodeMoto16Pseudo(eSymbolSize16Bit, True)) return; */
+#if 0
+	AttrPartOpSize[0] = eSymbolSize16Bit;
+#endif
 	
 	if (!LookupInstTable(InstTable, OpPart.str.p_str))
 		WrStrErrorPos(ErrNum_UnknownInstruction, &OpPart);
