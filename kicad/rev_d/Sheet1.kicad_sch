@@ -55833,14 +55833,12 @@
 				(justify right bottom)
 			)
 		)
-		(property "Value" "RESCHIP"
-			(at 176.53 134.087 0)
+		(property "Value" "51"
+			(at 176.53 139.7 0)
 			(effects
 				(font
 					(size 1.27 1.27)
 				)
-				(justify bottom)
-				(hide yes)
 			)
 		)
 		(property "Footprint" "R-CHIP"
@@ -55868,14 +55866,6 @@
 					(size 1.27 1.27)
 				)
 				(hide yes)
-			)
-		)
-		(property "ALTIUM_VALUE" "51"
-			(at 176.53 139.7 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
 			)
 		)
 		(pin "1"
@@ -55911,14 +55901,12 @@
 				(justify right bottom)
 			)
 		)
-		(property "Value" "RESCHIP"
-			(at 288.29 385.547 0)
+		(property "Value" "75"
+			(at 288.29 391.16 0)
 			(effects
 				(font
 					(size 1.27 1.27)
 				)
-				(justify bottom)
-				(hide yes)
 			)
 		)
 		(property "Footprint" "R-CHIP"
@@ -55946,14 +55934,6 @@
 					(size 1.27 1.27)
 				)
 				(hide yes)
-			)
-		)
-		(property "ALTIUM_VALUE" "75"
-			(at 288.29 391.16 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
 			)
 		)
 		(pin "2"
@@ -55989,14 +55969,12 @@
 				(justify right bottom)
 			)
 		)
-		(property "Value" "RESCHIP"
-			(at 365.227 81.28 90)
+		(property "Value" "10K"
+			(at 370.84 81.28 90)
 			(effects
 				(font
 					(size 1.27 1.27)
 				)
-				(justify bottom)
-				(hide yes)
 			)
 		)
 		(property "Footprint" "R-CHIP"
@@ -56024,14 +56002,6 @@
 					(size 1.27 1.27)
 				)
 				(hide yes)
-			)
-		)
-		(property "ALTIUM_VALUE" "10K"
-			(at 370.84 81.28 90)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
 			)
 		)
 		(pin "2"
@@ -56067,14 +56037,12 @@
 				(justify right bottom)
 			)
 		)
-		(property "Value" "RESCHIP"
-			(at 269.24 325.857 0)
+		(property "Value" "1K"
+			(at 269.24 331.47 0)
 			(effects
 				(font
 					(size 1.27 1.27)
 				)
-				(justify bottom)
-				(hide yes)
 			)
 		)
 		(property "Footprint" "R-CHIP"
@@ -56102,14 +56070,6 @@
 					(size 1.27 1.27)
 				)
 				(hide yes)
-			)
-		)
-		(property "ALTIUM_VALUE" "1K"
-			(at 269.24 331.47 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
 			)
 		)
 		(pin "2"
@@ -56145,14 +56105,12 @@
 				(justify right bottom)
 			)
 		)
-		(property "Value" "RESCHIP"
-			(at 261.62 236.957 0)
+		(property "Value" "100"
+			(at 261.62 242.57 0)
 			(effects
 				(font
 					(size 1.27 1.27)
 				)
-				(justify bottom)
-				(hide yes)
 			)
 		)
 		(property "Footprint" "R-CHIP"
@@ -56180,14 +56138,6 @@
 					(size 1.27 1.27)
 				)
 				(hide yes)
-			)
-		)
-		(property "ALTIUM_VALUE" "100"
-			(at 261.62 242.57 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
 			)
 		)
 		(pin "2"
@@ -56483,14 +56433,13 @@
 				(justify right bottom)
 			)
 		)
-		(property "Value" "CAPCHIP"
-			(at 419.1 185.42 0)
+		(property "Value" "0.1uF"
+			(at 426.974 182.88 0)
 			(effects
 				(font
 					(size 1.27 1.27)
 				)
-				(justify left bottom)
-				(hide yes)
+				(justify left top)
 			)
 		)
 		(property "Footprint" "C-CHIP"
@@ -56518,15 +56467,6 @@
 					(size 1.27 1.27)
 				)
 				(hide yes)
-			)
-		)
-		(property "ALTIUM_VALUE" "0.1uF"
-			(at 426.974 182.88 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(justify left top)
 			)
 		)
 		(pin "2"
@@ -56562,14 +56502,12 @@
 				(justify right bottom)
 			)
 		)
-		(property "Value" "RESCHIP"
-			(at 176.53 131.547 0)
+		(property "Value" "51"
+			(at 176.53 137.16 0)
 			(effects
 				(font
 					(size 1.27 1.27)
 				)
-				(justify bottom)
-				(hide yes)
 			)
 		)
 		(property "Footprint" "R-CHIP"
@@ -56597,14 +56535,6 @@
 					(size 1.27 1.27)
 				)
 				(hide yes)
-			)
-		)
-		(property "ALTIUM_VALUE" "51"
-			(at 176.53 137.16 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
 			)
 		)
 		(pin "1"
@@ -56640,14 +56570,13 @@
 				(justify right bottom)
 			)
 		)
-		(property "Value" "CAPCHIP"
-			(at 281.94 401.32 0)
+		(property "Value" "0.1uF"
+			(at 289.56 401.955 0)
 			(effects
 				(font
 					(size 1.27 1.27)
 				)
-				(justify left bottom)
-				(hide yes)
+				(justify left top)
 			)
 		)
 		(property "Footprint" "C-CHIP"
@@ -56675,15 +56604,6 @@
 					(size 1.27 1.27)
 				)
 				(hide yes)
-			)
-		)
-		(property "ALTIUM_VALUE" "0.1uF"
-			(at 289.56 401.955 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(justify left top)
 			)
 		)
 		(pin "1"
@@ -56719,14 +56639,12 @@
 				(justify right bottom)
 			)
 		)
-		(property "Value" "RESCHIP"
-			(at 412.75 273.787 0)
+		(property "Value" "10K"
+			(at 412.75 279.4 0)
 			(effects
 				(font
 					(size 1.27 1.27)
 				)
-				(justify bottom)
-				(hide yes)
 			)
 		)
 		(property "Footprint" "R-CHIP"
@@ -56754,14 +56672,6 @@
 					(size 1.27 1.27)
 				)
 				(hide yes)
-			)
-		)
-		(property "ALTIUM_VALUE" "10K"
-			(at 412.75 279.4 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
 			)
 		)
 		(pin "1"
@@ -56797,14 +56707,12 @@
 				(justify left bottom)
 			)
 		)
-		(property "Value" "RESCHIP"
-			(at 74.93 136.627 0)
+		(property "Value" "680"
+			(at 74.93 142.24 0)
 			(effects
 				(font
 					(size 1.27 1.27)
 				)
-				(justify bottom)
-				(hide yes)
 			)
 		)
 		(property "Footprint" "R-CHIP"
@@ -56832,14 +56740,6 @@
 					(size 1.27 1.27)
 				)
 				(hide yes)
-			)
-		)
-		(property "ALTIUM_VALUE" "680"
-			(at 74.93 142.24 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
 			)
 		)
 		(pin "2"
@@ -56874,12 +56774,13 @@
 				)
 			)
 		)
-		(property "Value" "NCP1117DT"
-			(at 132.08 360.68 0)
+		(property "Value" "3.3V"
+			(at 132.08 368.3 0)
 			(effects
 				(font
 					(size 1.27 1.27)
 				)
+				(justify bottom)
 			)
 		)
 		(property "Footprint" "DPAK"
@@ -56907,15 +56808,6 @@
 					(size 1.27 1.27)
 				)
 				(hide yes)
-			)
-		)
-		(property "ALTIUM_VALUE" "3.3V"
-			(at 132.08 368.3 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(justify bottom)
 			)
 		)
 		(pin "2"
@@ -56954,14 +56846,13 @@
 				(justify right bottom)
 			)
 		)
-		(property "Value" "ECAPCHIP"
-			(at 383.54 82.55 0)
+		(property "Value" "10uF"
+			(at 391.16 83.185 0)
 			(effects
 				(font
 					(size 1.27 1.27)
 				)
-				(justify left bottom)
-				(hide yes)
+				(justify left top)
 			)
 		)
 		(property "Footprint" "EC-CHIP"
@@ -56989,15 +56880,6 @@
 					(size 1.27 1.27)
 				)
 				(hide yes)
-			)
-		)
-		(property "ALTIUM_VALUE" "10uF"
-			(at 391.16 83.185 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(justify left top)
 			)
 		)
 		(pin "1"
@@ -58222,14 +58104,12 @@
 				(justify left top)
 			)
 		)
-		(property "Value" "RESCHIP"
-			(at 311.683 156.21 90)
+		(property "Value" "10K"
+			(at 306.07 156.21 90)
 			(effects
 				(font
 					(size 1.27 1.27)
 				)
-				(justify top)
-				(hide yes)
 			)
 		)
 		(property "Footprint" "R-CHIP"
@@ -58257,14 +58137,6 @@
 					(size 1.27 1.27)
 				)
 				(hide yes)
-			)
-		)
-		(property "ALTIUM_VALUE" "10K"
-			(at 306.07 156.21 90)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
 			)
 		)
 		(pin "2"
@@ -58300,14 +58172,12 @@
 				(justify right bottom)
 			)
 		)
-		(property "Value" "RESCHIP"
-			(at 181.61 337.287 0)
+		(property "Value" "51"
+			(at 181.61 342.9 0)
 			(effects
 				(font
 					(size 1.27 1.27)
 				)
-				(justify bottom)
-				(hide yes)
 			)
 		)
 		(property "Footprint" "R-CHIP"
@@ -58335,14 +58205,6 @@
 					(size 1.27 1.27)
 				)
 				(hide yes)
-			)
-		)
-		(property "ALTIUM_VALUE" "51"
-			(at 181.61 342.9 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
 			)
 		)
 		(pin "2"
@@ -58660,12 +58522,13 @@
 				)
 			)
 		)
-		(property "Value" "NCP1117DT"
-			(at 132.08 386.08 0)
+		(property "Value" "2.5V"
+			(at 132.08 393.7 0)
 			(effects
 				(font
 					(size 1.27 1.27)
 				)
+				(justify bottom)
 			)
 		)
 		(property "Footprint" "DPAK"
@@ -58693,15 +58556,6 @@
 					(size 1.27 1.27)
 				)
 				(hide yes)
-			)
-		)
-		(property "ALTIUM_VALUE" "2.5V"
-			(at 132.08 393.7 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(justify bottom)
 			)
 		)
 		(pin "3"
@@ -58740,14 +58594,13 @@
 				(justify left top)
 			)
 		)
-		(property "Value" "ECAPCHIP"
-			(at 289.56 353.06 90)
+		(property "Value" "10uF"
+			(at 288.925 360.68 90)
 			(effects
 				(font
 					(size 1.27 1.27)
 				)
-				(justify right top)
-				(hide yes)
+				(justify right bottom)
 			)
 		)
 		(property "Footprint" "EC-CHIP"
@@ -58775,15 +58628,6 @@
 					(size 1.27 1.27)
 				)
 				(hide yes)
-			)
-		)
-		(property "ALTIUM_VALUE" "10uF"
-			(at 288.925 360.68 90)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(justify right bottom)
 			)
 		)
 		(pin "1"
@@ -58819,14 +58663,12 @@
 				(justify right bottom)
 			)
 		)
-		(property "Value" "RESCHIP"
-			(at 410.21 304.267 0)
+		(property "Value" "680"
+			(at 410.21 309.88 0)
 			(effects
 				(font
 					(size 1.27 1.27)
 				)
-				(justify bottom)
-				(hide yes)
 			)
 		)
 		(property "Footprint" "R-CHIP"
@@ -58854,14 +58696,6 @@
 					(size 1.27 1.27)
 				)
 				(hide yes)
-			)
-		)
-		(property "ALTIUM_VALUE" "680"
-			(at 410.21 309.88 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
 			)
 		)
 		(pin "1"
@@ -58897,12 +58731,14 @@
 				(justify top)
 			)
 		)
-		(property "Value" "'06"
-			(at 406.146 193.04 0)
+		(property "Value" "*"
+			(at 391.16 190.5 0)
 			(effects
 				(font
 					(size 1.27 1.27)
 				)
+				(justify left bottom)
+				(hide yes)
 			)
 		)
 		(property "Footprint" "SO14"
@@ -58929,16 +58765,6 @@
 				(font
 					(size 1.27 1.27)
 				)
-				(hide yes)
-			)
-		)
-		(property "ALTIUM_VALUE" "*"
-			(at 391.16 190.5 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(justify left bottom)
 				(hide yes)
 			)
 		)
@@ -59011,14 +58837,12 @@
 				(justify right bottom)
 			)
 		)
-		(property "Value" "RESCHIP"
-			(at 203.937 233.68 90)
+		(property "Value" "10K"
+			(at 209.55 233.68 90)
 			(effects
 				(font
 					(size 1.27 1.27)
 				)
-				(justify bottom)
-				(hide yes)
 			)
 		)
 		(property "Footprint" "R-CHIP"
@@ -59046,14 +58870,6 @@
 					(size 1.27 1.27)
 				)
 				(hide yes)
-			)
-		)
-		(property "ALTIUM_VALUE" "10K"
-			(at 209.55 233.68 90)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
 			)
 		)
 		(pin "2"
@@ -59089,14 +58905,12 @@
 				(justify right bottom)
 			)
 		)
-		(property "Value" "RESCHIP"
-			(at 316.763 394.97 0)
+		(property "Value" "100"
+			(at 311.15 394.97 0)
 			(effects
 				(font
 					(size 1.27 1.27)
 				)
-				(justify bottom)
-				(hide yes)
 			)
 		)
 		(property "Footprint" "R-CHIP"
@@ -59124,14 +58938,6 @@
 					(size 1.27 1.27)
 				)
 				(hide yes)
-			)
-		)
-		(property "ALTIUM_VALUE" "100"
-			(at 311.15 394.97 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
 			)
 		)
 		(pin "2"
@@ -59299,14 +59105,12 @@
 				(justify left top)
 			)
 		)
-		(property "Value" "RESCHIP"
-			(at 218.44 218.973 0)
+		(property "Value" "51"
+			(at 218.44 213.36 0)
 			(effects
 				(font
 					(size 1.27 1.27)
 				)
-				(justify top)
-				(hide yes)
 			)
 		)
 		(property "Footprint" "R-CHIP"
@@ -59334,14 +59138,6 @@
 					(size 1.27 1.27)
 				)
 				(hide yes)
-			)
-		)
-		(property "ALTIUM_VALUE" "51"
-			(at 218.44 213.36 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
 			)
 		)
 		(pin "2"
@@ -59377,14 +59173,12 @@
 				(justify right bottom)
 			)
 		)
-		(property "Value" "RESCHIP"
-			(at 300.99 224.053 90)
+		(property "Value" "1K"
+			(at 300.99 218.44 90)
 			(effects
 				(font
 					(size 1.27 1.27)
 				)
-				(justify bottom)
-				(hide yes)
 			)
 		)
 		(property "Footprint" "R-CHIP"
@@ -59412,14 +59206,6 @@
 					(size 1.27 1.27)
 				)
 				(hide yes)
-			)
-		)
-		(property "ALTIUM_VALUE" "1K"
-			(at 300.99 218.44 90)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
 			)
 		)
 		(pin "2"
@@ -59455,14 +59241,12 @@
 				(justify right bottom)
 			)
 		)
-		(property "Value" "RESCHIP"
-			(at 41.91 116.307 0)
+		(property "Value" "10K"
+			(at 41.91 121.92 0)
 			(effects
 				(font
 					(size 1.27 1.27)
 				)
-				(justify bottom)
-				(hide yes)
 			)
 		)
 		(property "Footprint" "R-CHIP"
@@ -59490,14 +59274,6 @@
 					(size 1.27 1.27)
 				)
 				(hide yes)
-			)
-		)
-		(property "ALTIUM_VALUE" "10K"
-			(at 41.91 121.92 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
 			)
 		)
 		(pin "2"
@@ -59533,14 +59309,13 @@
 				(justify right bottom)
 			)
 		)
-		(property "Value" "CAPCHIP"
-			(at 76.2 383.54 0)
+		(property "Value" "0.1uF"
+			(at 83.566 381.508 0)
 			(effects
 				(font
 					(size 1.27 1.27)
 				)
-				(justify left bottom)
-				(hide yes)
+				(justify left top)
 			)
 		)
 		(property "Footprint" "C-CHIP"
@@ -59568,15 +59343,6 @@
 					(size 1.27 1.27)
 				)
 				(hide yes)
-			)
-		)
-		(property "ALTIUM_VALUE" "0.1uF"
-			(at 83.566 381.508 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(justify left top)
 			)
 		)
 		(pin "1"
@@ -59763,14 +59529,12 @@
 				(justify right bottom)
 			)
 		)
-		(property "Value" "RESCHIP"
-			(at 288.29 388.087 0)
+		(property "Value" "75"
+			(at 288.29 393.7 0)
 			(effects
 				(font
 					(size 1.27 1.27)
 				)
-				(justify bottom)
-				(hide yes)
 			)
 		)
 		(property "Footprint" "R-CHIP"
@@ -59798,14 +59562,6 @@
 					(size 1.27 1.27)
 				)
 				(hide yes)
-			)
-		)
-		(property "ALTIUM_VALUE" "75"
-			(at 288.29 393.7 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
 			)
 		)
 		(pin "1"
@@ -59841,14 +59597,12 @@
 				(justify right bottom)
 			)
 		)
-		(property "Value" "RESCHIP"
-			(at 320.573 394.97 0)
+		(property "Value" "100"
+			(at 314.96 394.97 0)
 			(effects
 				(font
 					(size 1.27 1.27)
 				)
-				(justify bottom)
-				(hide yes)
 			)
 		)
 		(property "Footprint" "R-CHIP"
@@ -59876,14 +59630,6 @@
 					(size 1.27 1.27)
 				)
 				(hide yes)
-			)
-		)
-		(property "ALTIUM_VALUE" "100"
-			(at 314.96 394.97 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
 			)
 		)
 		(pin "1"
@@ -59919,14 +59665,13 @@
 				(justify left top)
 			)
 		)
-		(property "Value" "CAPCHIP"
-			(at 116.84 365.76 90)
+		(property "Value" "0.1uF"
+			(at 116.205 373.38 90)
 			(effects
 				(font
 					(size 1.27 1.27)
 				)
-				(justify right top)
-				(hide yes)
+				(justify right bottom)
 			)
 		)
 		(property "Footprint" "C-CHIP"
@@ -59954,15 +59699,6 @@
 					(size 1.27 1.27)
 				)
 				(hide yes)
-			)
-		)
-		(property "ALTIUM_VALUE" "0.1uF"
-			(at 116.205 373.38 90)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(justify right bottom)
 			)
 		)
 		(pin "2"
@@ -59998,14 +59734,13 @@
 				(justify right bottom)
 			)
 		)
-		(property "Value" "CAPCHIP"
-			(at 320.04 73.66 90)
+		(property "Value" "0.1uF"
+			(at 318.262 66.548 90)
 			(effects
 				(font
 					(size 1.27 1.27)
 				)
-				(justify left bottom)
-				(hide yes)
+				(justify left top)
 			)
 		)
 		(property "Footprint" "C-CHIP"
@@ -60033,15 +59768,6 @@
 					(size 1.27 1.27)
 				)
 				(hide yes)
-			)
-		)
-		(property "ALTIUM_VALUE" "0.1uF"
-			(at 318.262 66.548 90)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(justify left top)
 			)
 		)
 		(pin "1"
@@ -60567,14 +60293,12 @@
 				(justify right bottom)
 			)
 		)
-		(property "Value" "RESCHIP"
-			(at 41.91 126.467 0)
+		(property "Value" "1K"
+			(at 41.91 132.08 0)
 			(effects
 				(font
 					(size 1.27 1.27)
 				)
-				(justify bottom)
-				(hide yes)
 			)
 		)
 		(property "Footprint" "R-CHIP"
@@ -60602,14 +60326,6 @@
 					(size 1.27 1.27)
 				)
 				(hide yes)
-			)
-		)
-		(property "ALTIUM_VALUE" "1K"
-			(at 41.91 132.08 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
 			)
 		)
 		(pin "2"
@@ -60727,14 +60443,12 @@
 				(justify right bottom)
 			)
 		)
-		(property "Value" "RESCHIP"
-			(at 449.047 153.67 90)
+		(property "Value" "1K"
+			(at 454.66 153.67 90)
 			(effects
 				(font
 					(size 1.27 1.27)
 				)
-				(justify bottom)
-				(hide yes)
 			)
 		)
 		(property "Footprint" "R-CHIP"
@@ -60762,14 +60476,6 @@
 					(size 1.27 1.27)
 				)
 				(hide yes)
-			)
-		)
-		(property "ALTIUM_VALUE" "1K"
-			(at 454.66 153.67 90)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
 			)
 		)
 		(pin "2"
@@ -60805,14 +60511,13 @@
 				(justify left top)
 			)
 		)
-		(property "Value" "CAPCHIP"
-			(at 147.32 391.16 90)
+		(property "Value" "0.1uF"
+			(at 146.685 398.78 90)
 			(effects
 				(font
 					(size 1.27 1.27)
 				)
-				(justify right top)
-				(hide yes)
+				(justify right bottom)
 			)
 		)
 		(property "Footprint" "C-CHIP"
@@ -60840,15 +60545,6 @@
 					(size 1.27 1.27)
 				)
 				(hide yes)
-			)
-		)
-		(property "ALTIUM_VALUE" "0.1uF"
-			(at 146.685 398.78 90)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(justify right bottom)
 			)
 		)
 		(pin "2"
@@ -60884,14 +60580,12 @@
 				(justify right bottom)
 			)
 		)
-		(property "Value" "RESCHIP"
-			(at 41.91 62.967 0)
+		(property "Value" "680"
+			(at 41.91 68.58 0)
 			(effects
 				(font
 					(size 1.27 1.27)
 				)
-				(justify bottom)
-				(hide yes)
 			)
 		)
 		(property "Footprint" "R-CHIP"
@@ -60919,14 +60613,6 @@
 					(size 1.27 1.27)
 				)
 				(hide yes)
-			)
-		)
-		(property "ALTIUM_VALUE" "680"
-			(at 41.91 68.58 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
 			)
 		)
 		(pin "2"
@@ -60962,14 +60648,12 @@
 				(justify right bottom)
 			)
 		)
-		(property "Value" "RESCHIP"
-			(at 214.097 233.68 90)
+		(property "Value" "10K"
+			(at 219.71 233.68 90)
 			(effects
 				(font
 					(size 1.27 1.27)
 				)
-				(justify bottom)
-				(hide yes)
 			)
 		)
 		(property "Footprint" "R-CHIP"
@@ -60997,14 +60681,6 @@
 					(size 1.27 1.27)
 				)
 				(hide yes)
-			)
-		)
-		(property "ALTIUM_VALUE" "10K"
-			(at 219.71 233.68 90)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
 			)
 		)
 		(pin "2"
@@ -61040,14 +60716,12 @@
 				(justify right bottom)
 			)
 		)
-		(property "Value" "RESCHIP"
-			(at 176.53 141.707 0)
+		(property "Value" "51"
+			(at 176.53 147.32 0)
 			(effects
 				(font
 					(size 1.27 1.27)
 				)
-				(justify bottom)
-				(hide yes)
 			)
 		)
 		(property "Footprint" "R-CHIP"
@@ -61075,14 +60749,6 @@
 					(size 1.27 1.27)
 				)
 				(hide yes)
-			)
-		)
-		(property "ALTIUM_VALUE" "51"
-			(at 176.53 147.32 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
 			)
 		)
 		(pin "2"
@@ -61118,14 +60784,13 @@
 				(justify right bottom)
 			)
 		)
-		(property "Value" "CAPCHIP"
-			(at 280.67 245.11 0)
+		(property "Value" "0.1uF"
+			(at 288.29 245.745 0)
 			(effects
 				(font
 					(size 1.27 1.27)
 				)
-				(justify left bottom)
-				(hide yes)
+				(justify left top)
 			)
 		)
 		(property "Footprint" "C-CHIP"
@@ -61153,15 +60818,6 @@
 					(size 1.27 1.27)
 				)
 				(hide yes)
-			)
-		)
-		(property "ALTIUM_VALUE" "0.1uF"
-			(at 288.29 245.745 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(justify left top)
 			)
 		)
 		(pin "2"
@@ -61197,14 +60853,12 @@
 				(justify left top)
 			)
 		)
-		(property "Value" "RESCHIP"
-			(at 437.413 86.36 90)
+		(property "Value" "10K"
+			(at 431.8 86.36 90)
 			(effects
 				(font
 					(size 1.27 1.27)
 				)
-				(justify top)
-				(hide yes)
 			)
 		)
 		(property "Footprint" "R-CHIP"
@@ -61232,14 +60886,6 @@
 					(size 1.27 1.27)
 				)
 				(hide yes)
-			)
-		)
-		(property "ALTIUM_VALUE" "10K"
-			(at 431.8 86.36 90)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
 			)
 		)
 		(pin "1"
@@ -61275,14 +60921,13 @@
 				(justify right bottom)
 			)
 		)
-		(property "Value" "CAPCHIP"
-			(at 223.52 175.26 0)
+		(property "Value" "0.1uF"
+			(at 230.886 172.72 0)
 			(effects
 				(font
 					(size 1.27 1.27)
 				)
-				(justify left bottom)
-				(hide yes)
+				(justify left top)
 			)
 		)
 		(property "Footprint" "C-CHIP"
@@ -61310,15 +60955,6 @@
 					(size 1.27 1.27)
 				)
 				(hide yes)
-			)
-		)
-		(property "ALTIUM_VALUE" "0.1uF"
-			(at 230.886 172.72 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(justify left top)
 			)
 		)
 		(pin "1"
@@ -61354,14 +60990,12 @@
 				(justify right bottom)
 			)
 		)
-		(property "Value" "RESCHIP"
-			(at 41.91 57.887 0)
+		(property "Value" "680"
+			(at 41.91 63.5 0)
 			(effects
 				(font
 					(size 1.27 1.27)
 				)
-				(justify bottom)
-				(hide yes)
 			)
 		)
 		(property "Footprint" "R-CHIP"
@@ -61389,14 +61023,6 @@
 					(size 1.27 1.27)
 				)
 				(hide yes)
-			)
-		)
-		(property "ALTIUM_VALUE" "680"
-			(at 41.91 63.5 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
 			)
 		)
 		(pin "1"
@@ -61512,14 +61138,12 @@
 				(justify right bottom)
 			)
 		)
-		(property "Value" "RESCHIP"
-			(at 41.91 121.387 0)
+		(property "Value" "10K"
+			(at 41.91 127 0)
 			(effects
 				(font
 					(size 1.27 1.27)
 				)
-				(justify bottom)
-				(hide yes)
 			)
 		)
 		(property "Footprint" "R-CHIP"
@@ -61547,14 +61171,6 @@
 					(size 1.27 1.27)
 				)
 				(hide yes)
-			)
-		)
-		(property "ALTIUM_VALUE" "10K"
-			(at 41.91 127 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
 			)
 		)
 		(pin "2"
@@ -61590,14 +61206,12 @@
 				(justify right bottom)
 			)
 		)
-		(property "Value" "RESCHIP"
-			(at 209.017 233.68 90)
+		(property "Value" "10K"
+			(at 214.63 233.68 90)
 			(effects
 				(font
 					(size 1.27 1.27)
 				)
-				(justify bottom)
-				(hide yes)
 			)
 		)
 		(property "Footprint" "R-CHIP"
@@ -61625,14 +61239,6 @@
 					(size 1.27 1.27)
 				)
 				(hide yes)
-			)
-		)
-		(property "ALTIUM_VALUE" "10K"
-			(at 214.63 233.68 90)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
 			)
 		)
 		(pin "1"
@@ -61765,14 +61371,13 @@
 				(justify right bottom)
 			)
 		)
-		(property "Value" "ECAPCHIPB"
-			(at 41.91 389.89 0)
+		(property "Value" "100uF"
+			(at 49.53 390.525 0)
 			(effects
 				(font
 					(size 1.27 1.27)
 				)
-				(justify left bottom)
-				(hide yes)
+				(justify left top)
 			)
 		)
 		(property "Footprint" "EC-CHIPB"
@@ -61800,15 +61405,6 @@
 					(size 1.27 1.27)
 				)
 				(hide yes)
-			)
-		)
-		(property "ALTIUM_VALUE" "100uF"
-			(at 49.53 390.525 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(justify left top)
 			)
 		)
 		(pin "1"
@@ -61966,14 +61562,12 @@
 				(justify right bottom)
 			)
 		)
-		(property "Value" "RESCHIP"
-			(at 41.91 60.427 0)
+		(property "Value" "680"
+			(at 41.91 66.04 0)
 			(effects
 				(font
 					(size 1.27 1.27)
 				)
-				(justify bottom)
-				(hide yes)
 			)
 		)
 		(property "Footprint" "R-CHIP"
@@ -62001,14 +61595,6 @@
 					(size 1.27 1.27)
 				)
 				(hide yes)
-			)
-		)
-		(property "ALTIUM_VALUE" "680"
-			(at 41.91 66.04 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
 			)
 		)
 		(pin "1"
@@ -62044,14 +61630,12 @@
 				(justify right bottom)
 			)
 		)
-		(property "Value" "RESCHIP"
-			(at 288.29 380.467 0)
+		(property "Value" "680"
+			(at 288.29 386.08 0)
 			(effects
 				(font
 					(size 1.27 1.27)
 				)
-				(justify bottom)
-				(hide yes)
 			)
 		)
 		(property "Footprint" "R-CHIP"
@@ -62079,14 +61663,6 @@
 					(size 1.27 1.27)
 				)
 				(hide yes)
-			)
-		)
-		(property "ALTIUM_VALUE" "680"
-			(at 288.29 386.08 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
 			)
 		)
 		(pin "2"
@@ -62122,14 +61698,13 @@
 				(justify right bottom)
 			)
 		)
-		(property "Value" "CAPCHIP"
-			(at 35.56 142.24 0)
+		(property "Value" "0.1uF"
+			(at 34.544 142.24 0)
 			(effects
 				(font
 					(size 1.27 1.27)
 				)
-				(justify left bottom)
-				(hide yes)
+				(justify left top)
 			)
 		)
 		(property "Footprint" "C-CHIP"
@@ -62157,15 +61732,6 @@
 					(size 1.27 1.27)
 				)
 				(hide yes)
-			)
-		)
-		(property "ALTIUM_VALUE" "0.1uF"
-			(at 34.544 142.24 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(justify left top)
 			)
 		)
 		(pin "2"
@@ -62317,14 +61883,13 @@
 				(justify right bottom)
 			)
 		)
-		(property "Value" "CAPCHIP"
-			(at 321.31 157.48 0)
+		(property "Value" "0.1uF"
+			(at 328.93 158.115 0)
 			(effects
 				(font
 					(size 1.27 1.27)
 				)
-				(justify left bottom)
-				(hide yes)
+				(justify left top)
 			)
 		)
 		(property "Footprint" "C-CHIP"
@@ -62352,15 +61917,6 @@
 					(size 1.27 1.27)
 				)
 				(hide yes)
-			)
-		)
-		(property "ALTIUM_VALUE" "0.1uF"
-			(at 328.93 158.115 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(justify left top)
 			)
 		)
 		(pin "1"
@@ -62396,14 +61952,12 @@
 				(justify right bottom)
 			)
 		)
-		(property "Value" "RESCHIP"
-			(at 410.21 289.027 0)
+		(property "Value" "680"
+			(at 410.21 294.64 0)
 			(effects
 				(font
 					(size 1.27 1.27)
 				)
-				(justify bottom)
-				(hide yes)
 			)
 		)
 		(property "Footprint" "R-CHIP"
@@ -62431,14 +61985,6 @@
 					(size 1.27 1.27)
 				)
 				(hide yes)
-			)
-		)
-		(property "ALTIUM_VALUE" "680"
-			(at 410.21 294.64 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
 			)
 		)
 		(pin "2"
@@ -62474,14 +62020,12 @@
 				(justify right bottom)
 			)
 		)
-		(property "Value" "RESCHIP"
-			(at 261.62 252.197 0)
+		(property "Value" "100"
+			(at 261.62 257.81 0)
 			(effects
 				(font
 					(size 1.27 1.27)
 				)
-				(justify bottom)
-				(hide yes)
 			)
 		)
 		(property "Footprint" "R-CHIP"
@@ -62509,14 +62053,6 @@
 					(size 1.27 1.27)
 				)
 				(hide yes)
-			)
-		)
-		(property "ALTIUM_VALUE" "100"
-			(at 261.62 257.81 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
 			)
 		)
 		(pin "2"
@@ -62552,14 +62088,13 @@
 				(justify right bottom)
 			)
 		)
-		(property "Value" "CAPCHIP"
-			(at 41.91 383.54 0)
+		(property "Value" "0.1uF"
+			(at 49.022 381.254 0)
 			(effects
 				(font
 					(size 1.27 1.27)
 				)
-				(justify left bottom)
-				(hide yes)
+				(justify left top)
 			)
 		)
 		(property "Footprint" "C-CHIP"
@@ -62587,15 +62122,6 @@
 					(size 1.27 1.27)
 				)
 				(hide yes)
-			)
-		)
-		(property "ALTIUM_VALUE" "0.1uF"
-			(at 49.022 381.254 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(justify left top)
 			)
 		)
 		(pin "2"
@@ -62631,14 +62157,13 @@
 				(justify right bottom)
 			)
 		)
-		(property "Value" "CAPCHIP"
-			(at 106.68 156.21 90)
+		(property "Value" "0.1uF"
+			(at 107.315 148.59 90)
 			(effects
 				(font
 					(size 1.27 1.27)
 				)
-				(justify left bottom)
-				(hide yes)
+				(justify left top)
 			)
 		)
 		(property "Footprint" "C-CHIP"
@@ -62666,15 +62191,6 @@
 					(size 1.27 1.27)
 				)
 				(hide yes)
-			)
-		)
-		(property "ALTIUM_VALUE" "0.1uF"
-			(at 107.315 148.59 90)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(justify left top)
 			)
 		)
 		(pin "1"
@@ -62710,14 +62226,13 @@
 				(justify left top)
 			)
 		)
-		(property "Value" "CAPCHIP"
-			(at 165.1 391.16 90)
+		(property "Value" "0.1uF"
+			(at 164.465 398.78 90)
 			(effects
 				(font
 					(size 1.27 1.27)
 				)
-				(justify right top)
-				(hide yes)
+				(justify right bottom)
 			)
 		)
 		(property "Footprint" "C-CHIP"
@@ -62745,15 +62260,6 @@
 					(size 1.27 1.27)
 				)
 				(hide yes)
-			)
-		)
-		(property "ALTIUM_VALUE" "0.1uF"
-			(at 164.465 398.78 90)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(justify right bottom)
 			)
 		)
 		(pin "1"
@@ -62986,14 +62492,12 @@
 				(justify right bottom)
 			)
 		)
-		(property "Value" "RESCHIP"
-			(at 288.29 377.927 0)
+		(property "Value" "390"
+			(at 288.29 383.54 0)
 			(effects
 				(font
 					(size 1.27 1.27)
 				)
-				(justify bottom)
-				(hide yes)
 			)
 		)
 		(property "Footprint" "R-CHIP"
@@ -63021,14 +62525,6 @@
 					(size 1.27 1.27)
 				)
 				(hide yes)
-			)
-		)
-		(property "ALTIUM_VALUE" "390"
-			(at 288.29 383.54 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
 			)
 		)
 		(pin "2"
@@ -63064,14 +62560,13 @@
 				(justify right bottom)
 			)
 		)
-		(property "Value" "CAPCHIP"
-			(at 313.69 149.86 0)
+		(property "Value" "0.1uF"
+			(at 321.31 150.495 0)
 			(effects
 				(font
 					(size 1.27 1.27)
 				)
-				(justify left bottom)
-				(hide yes)
+				(justify left top)
 			)
 		)
 		(property "Footprint" "C-CHIP"
@@ -63099,15 +62594,6 @@
 					(size 1.27 1.27)
 				)
 				(hide yes)
-			)
-		)
-		(property "ALTIUM_VALUE" "0.1uF"
-			(at 321.31 150.495 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(justify left top)
 			)
 		)
 		(pin "1"
@@ -63259,14 +62745,12 @@
 				(justify left top)
 			)
 		)
-		(property "Value" "RESCHIP"
-			(at 74.93 201.193 0)
+		(property "Value" "680"
+			(at 74.93 195.58 0)
 			(effects
 				(font
 					(size 1.27 1.27)
 				)
-				(justify top)
-				(hide yes)
 			)
 		)
 		(property "Footprint" "R-CHIP"
@@ -63294,14 +62778,6 @@
 					(size 1.27 1.27)
 				)
 				(hide yes)
-			)
-		)
-		(property "ALTIUM_VALUE" "680"
-			(at 74.93 195.58 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
 			)
 		)
 		(pin "1"
@@ -63337,14 +62813,12 @@
 				(justify left top)
 			)
 		)
-		(property "Value" "RESCHIP"
-			(at 218.44 215.163 0)
+		(property "Value" "51"
+			(at 218.44 209.55 0)
 			(effects
 				(font
 					(size 1.27 1.27)
 				)
-				(justify top)
-				(hide yes)
 			)
 		)
 		(property "Footprint" "R-CHIP"
@@ -63372,14 +62846,6 @@
 					(size 1.27 1.27)
 				)
 				(hide yes)
-			)
-		)
-		(property "ALTIUM_VALUE" "51"
-			(at 218.44 209.55 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
 			)
 		)
 		(pin "2"
@@ -63726,14 +63192,13 @@
 				(justify right bottom)
 			)
 		)
-		(property "Value" "CAPCHIP"
-			(at 58.42 396.24 0)
+		(property "Value" "0.1uF"
+			(at 66.04 394.208 0)
 			(effects
 				(font
 					(size 1.27 1.27)
 				)
-				(justify left bottom)
-				(hide yes)
+				(justify left top)
 			)
 		)
 		(property "Footprint" "C-CHIP"
@@ -63761,15 +63226,6 @@
 					(size 1.27 1.27)
 				)
 				(hide yes)
-			)
-		)
-		(property "ALTIUM_VALUE" "0.1uF"
-			(at 66.04 394.208 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(justify left top)
 			)
 		)
 		(pin "2"
@@ -63997,14 +63453,13 @@
 				(justify left top)
 			)
 		)
-		(property "Value" "CAPCHIP"
-			(at 116.84 391.16 90)
+		(property "Value" "0.1uF"
+			(at 116.205 398.78 90)
 			(effects
 				(font
 					(size 1.27 1.27)
 				)
-				(justify right top)
-				(hide yes)
+				(justify right bottom)
 			)
 		)
 		(property "Footprint" "C-CHIP"
@@ -64032,15 +63487,6 @@
 					(size 1.27 1.27)
 				)
 				(hide yes)
-			)
-		)
-		(property "ALTIUM_VALUE" "0.1uF"
-			(at 116.205 398.78 90)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(justify right bottom)
 			)
 		)
 		(pin "1"
@@ -64076,14 +63522,12 @@
 				(justify right bottom)
 			)
 		)
-		(property "Value" "RESCHIP"
-			(at 454.127 153.67 90)
+		(property "Value" "1K"
+			(at 459.74 153.67 90)
 			(effects
 				(font
 					(size 1.27 1.27)
 				)
-				(justify bottom)
-				(hide yes)
 			)
 		)
 		(property "Footprint" "R-CHIP"
@@ -64111,14 +63555,6 @@
 					(size 1.27 1.27)
 				)
 				(hide yes)
-			)
-		)
-		(property "ALTIUM_VALUE" "1K"
-			(at 459.74 153.67 90)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
 			)
 		)
 		(pin "1"
@@ -64154,14 +63590,13 @@
 				(justify left top)
 			)
 		)
-		(property "Value" "CAPCHIP"
-			(at 187.96 391.16 90)
+		(property "Value" "0.1uF"
+			(at 187.325 398.78 90)
 			(effects
 				(font
 					(size 1.27 1.27)
 				)
-				(justify right top)
-				(hide yes)
+				(justify right bottom)
 			)
 		)
 		(property "Footprint" "C-CHIP"
@@ -64189,15 +63624,6 @@
 					(size 1.27 1.27)
 				)
 				(hide yes)
-			)
-		)
-		(property "ALTIUM_VALUE" "0.1uF"
-			(at 187.325 398.78 90)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(justify right bottom)
 			)
 		)
 		(pin "2"
@@ -64322,14 +63748,12 @@
 				(justify right bottom)
 			)
 		)
-		(property "Value" "RESCHIP"
-			(at 206.477 233.68 90)
+		(property "Value" "10K"
+			(at 212.09 233.68 90)
 			(effects
 				(font
 					(size 1.27 1.27)
 				)
-				(justify bottom)
-				(hide yes)
 			)
 		)
 		(property "Footprint" "R-CHIP"
@@ -64357,14 +63781,6 @@
 					(size 1.27 1.27)
 				)
 				(hide yes)
-			)
-		)
-		(property "ALTIUM_VALUE" "10K"
-			(at 212.09 233.68 90)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
 			)
 		)
 		(pin "2"
@@ -64400,14 +63816,13 @@
 				(justify bottom)
 			)
 		)
-		(property "Value" "L-CHIP"
-			(at 372.847 81.28 90)
+		(property "Value" "1uH"
+			(at 379.73 81.28 90)
 			(effects
 				(font
 					(size 1.27 1.27)
 				)
-				(justify bottom)
-				(hide yes)
+				(justify top)
 			)
 		)
 		(property "Footprint" "L-CHIP"
@@ -64435,15 +63850,6 @@
 					(size 1.27 1.27)
 				)
 				(hide yes)
-			)
-		)
-		(property "ALTIUM_VALUE" "1uH"
-			(at 379.73 81.28 90)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(justify top)
 			)
 		)
 		(pin "2"
@@ -64610,14 +64016,12 @@
 				(justify left top)
 			)
 		)
-		(property "Value" "RESCHIP"
-			(at 356.133 156.21 90)
+		(property "Value" "10K"
+			(at 350.52 156.21 90)
 			(effects
 				(font
 					(size 1.27 1.27)
 				)
-				(justify top)
-				(hide yes)
 			)
 		)
 		(property "Footprint" "R-CHIP"
@@ -64645,14 +64049,6 @@
 					(size 1.27 1.27)
 				)
 				(hide yes)
-			)
-		)
-		(property "ALTIUM_VALUE" "10K"
-			(at 350.52 156.21 90)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
 			)
 		)
 		(pin "1"
@@ -64804,14 +64200,12 @@
 				(justify right bottom)
 			)
 		)
-		(property "Value" "RESCHIP"
-			(at 176.53 187.427 0)
+		(property "Value" "51"
+			(at 176.53 193.04 0)
 			(effects
 				(font
 					(size 1.27 1.27)
 				)
-				(justify bottom)
-				(hide yes)
 			)
 		)
 		(property "Footprint" "R-CHIP"
@@ -64839,14 +64233,6 @@
 					(size 1.27 1.27)
 				)
 				(hide yes)
-			)
-		)
-		(property "ALTIUM_VALUE" "51"
-			(at 176.53 193.04 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
 			)
 		)
 		(pin "2"
@@ -64882,14 +64268,13 @@
 				(justify right bottom)
 			)
 		)
-		(property "Value" "CAPCHIP"
-			(at 196.85 267.97 0)
+		(property "Value" "0.1uF"
+			(at 204.47 265.684 0)
 			(effects
 				(font
 					(size 1.27 1.27)
 				)
-				(justify left bottom)
-				(hide yes)
+				(justify left top)
 			)
 		)
 		(property "Footprint" "C-CHIP"
@@ -64917,15 +64302,6 @@
 					(size 1.27 1.27)
 				)
 				(hide yes)
-			)
-		)
-		(property "ALTIUM_VALUE" "0.1uF"
-			(at 204.47 265.684 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(justify left top)
 			)
 		)
 		(pin "2"
@@ -64961,14 +64337,12 @@
 				(justify right bottom)
 			)
 		)
-		(property "Value" "RESCHIP"
-			(at 324.383 394.97 0)
+		(property "Value" "100"
+			(at 318.77 394.97 0)
 			(effects
 				(font
 					(size 1.27 1.27)
 				)
-				(justify bottom)
-				(hide yes)
 			)
 		)
 		(property "Footprint" "R-CHIP"
@@ -64996,14 +64370,6 @@
 					(size 1.27 1.27)
 				)
 				(hide yes)
-			)
-		)
-		(property "ALTIUM_VALUE" "100"
-			(at 318.77 394.97 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
 			)
 		)
 		(pin "1"
@@ -65039,14 +64405,12 @@
 				(justify right bottom)
 			)
 		)
-		(property "Value" "RESCHIP"
-			(at 252.73 336.017 0)
+		(property "Value" "10K"
+			(at 252.73 341.63 0)
 			(effects
 				(font
 					(size 1.27 1.27)
 				)
-				(justify bottom)
-				(hide yes)
 			)
 		)
 		(property "Footprint" "R-CHIP"
@@ -65074,14 +64438,6 @@
 					(size 1.27 1.27)
 				)
 				(hide yes)
-			)
-		)
-		(property "ALTIUM_VALUE" "10K"
-			(at 252.73 341.63 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
 			)
 		)
 		(pin "1"
@@ -65233,14 +64589,13 @@
 				(justify right bottom)
 			)
 		)
-		(property "Value" "ECAPCHIPB"
-			(at 76.2 389.89 0)
+		(property "Value" "100uF"
+			(at 83.82 390.525 0)
 			(effects
 				(font
 					(size 1.27 1.27)
 				)
-				(justify left bottom)
-				(hide yes)
+				(justify left top)
 			)
 		)
 		(property "Footprint" "EC-CHIPB"
@@ -65268,15 +64623,6 @@
 					(size 1.27 1.27)
 				)
 				(hide yes)
-			)
-		)
-		(property "ALTIUM_VALUE" "100uF"
-			(at 83.82 390.525 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(justify left top)
 			)
 		)
 		(pin "3"
@@ -65318,14 +64664,13 @@
 				(justify right bottom)
 			)
 		)
-		(property "Value" "CAPCHIP"
-			(at 167.64 76.2 90)
+		(property "Value" "0.1uF"
+			(at 165.354 68.58 90)
 			(effects
 				(font
 					(size 1.27 1.27)
 				)
-				(justify left bottom)
-				(hide yes)
+				(justify left top)
 			)
 		)
 		(property "Footprint" "C-CHIP"
@@ -65353,15 +64698,6 @@
 					(size 1.27 1.27)
 				)
 				(hide yes)
-			)
-		)
-		(property "ALTIUM_VALUE" "0.1uF"
-			(at 165.354 68.58 90)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(justify left top)
 			)
 		)
 		(pin "2"
@@ -65397,14 +64733,13 @@
 				(justify left top)
 			)
 		)
-		(property "Value" "CAPCHIP"
-			(at 172.72 365.76 90)
+		(property "Value" "0.1uF"
+			(at 172.085 373.38 90)
 			(effects
 				(font
 					(size 1.27 1.27)
 				)
-				(justify right top)
-				(hide yes)
+				(justify right bottom)
 			)
 		)
 		(property "Footprint" "C-CHIP"
@@ -65432,15 +64767,6 @@
 					(size 1.27 1.27)
 				)
 				(hide yes)
-			)
-		)
-		(property "ALTIUM_VALUE" "0.1uF"
-			(at 172.085 373.38 90)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(justify right bottom)
 			)
 		)
 		(pin "2"
@@ -65476,14 +64802,12 @@
 				(justify right bottom)
 			)
 		)
-		(property "Value" "RESCHIP"
-			(at 360.147 81.28 90)
+		(property "Value" "10K"
+			(at 365.76 81.28 90)
 			(effects
 				(font
 					(size 1.27 1.27)
 				)
-				(justify bottom)
-				(hide yes)
 			)
 		)
 		(property "Footprint" "R-CHIP"
@@ -65511,14 +64835,6 @@
 					(size 1.27 1.27)
 				)
 				(hide yes)
-			)
-		)
-		(property "ALTIUM_VALUE" "10K"
-			(at 365.76 81.28 90)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
 			)
 		)
 		(pin "2"
@@ -66138,14 +65454,13 @@
 				(justify right bottom)
 			)
 		)
-		(property "Value" "CAPCHIP"
-			(at 312.42 73.66 90)
+		(property "Value" "0.1uF"
+			(at 310.642 66.548 90)
 			(effects
 				(font
 					(size 1.27 1.27)
 				)
-				(justify left bottom)
-				(hide yes)
+				(justify left top)
 			)
 		)
 		(property "Footprint" "C-CHIP"
@@ -66173,15 +65488,6 @@
 					(size 1.27 1.27)
 				)
 				(hide yes)
-			)
-		)
-		(property "ALTIUM_VALUE" "0.1uF"
-			(at 310.642 66.548 90)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(justify left top)
 			)
 		)
 		(pin "2"
@@ -66217,14 +65523,12 @@
 				(justify left bottom)
 			)
 		)
-		(property "Value" "RESCHIP"
-			(at 168.91 261.087 0)
+		(property "Value" "51"
+			(at 168.91 266.7 0)
 			(effects
 				(font
 					(size 1.27 1.27)
 				)
-				(justify bottom)
-				(hide yes)
 			)
 		)
 		(property "Footprint" "R-CHIP"
@@ -66252,14 +65556,6 @@
 					(size 1.27 1.27)
 				)
 				(hide yes)
-			)
-		)
-		(property "ALTIUM_VALUE" "51"
-			(at 168.91 266.7 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
 			)
 		)
 		(pin "2"
@@ -66295,14 +65591,12 @@
 				(justify right bottom)
 			)
 		)
-		(property "Value" "RESCHIP"
-			(at 170.917 278.13 90)
+		(property "Value" "1K"
+			(at 176.53 278.13 90)
 			(effects
 				(font
 					(size 1.27 1.27)
 				)
-				(justify bottom)
-				(hide yes)
 			)
 		)
 		(property "Footprint" "R-CHIP"
@@ -66330,14 +65624,6 @@
 					(size 1.27 1.27)
 				)
 				(hide yes)
-			)
-		)
-		(property "ALTIUM_VALUE" "1K"
-			(at 176.53 278.13 90)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
 			)
 		)
 		(pin "1"
@@ -66373,14 +65659,13 @@
 				(justify right bottom)
 			)
 		)
-		(property "Value" "CAPCHIP"
-			(at 99.06 156.21 90)
+		(property "Value" "0.1uF"
+			(at 96.774 148.336 90)
 			(effects
 				(font
 					(size 1.27 1.27)
 				)
-				(justify left bottom)
-				(hide yes)
+				(justify left top)
 			)
 		)
 		(property "Footprint" "C-CHIP"
@@ -66408,15 +65693,6 @@
 					(size 1.27 1.27)
 				)
 				(hide yes)
-			)
-		)
-		(property "ALTIUM_VALUE" "0.1uF"
-			(at 96.774 148.336 90)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(justify left top)
 			)
 		)
 		(pin "1"
@@ -66452,14 +65728,12 @@
 				(justify left top)
 			)
 		)
-		(property "Value" "RESCHIP"
-			(at 340.36 376.453 0)
+		(property "Value" "75"
+			(at 340.36 370.84 0)
 			(effects
 				(font
 					(size 1.27 1.27)
 				)
-				(justify top)
-				(hide yes)
 			)
 		)
 		(property "Footprint" "R-CHIP"
@@ -66487,14 +65761,6 @@
 					(size 1.27 1.27)
 				)
 				(hide yes)
-			)
-		)
-		(property "ALTIUM_VALUE" "75"
-			(at 340.36 370.84 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
 			)
 		)
 		(pin "2"
@@ -66648,14 +65914,12 @@
 				(justify left top)
 			)
 		)
-		(property "Value" "RESCHIP"
-			(at 74.93 203.733 0)
+		(property "Value" "680"
+			(at 74.93 198.12 0)
 			(effects
 				(font
 					(size 1.27 1.27)
 				)
-				(justify top)
-				(hide yes)
 			)
 		)
 		(property "Footprint" "R-CHIP"
@@ -66683,14 +65947,6 @@
 					(size 1.27 1.27)
 				)
 				(hide yes)
-			)
-		)
-		(property "ALTIUM_VALUE" "680"
-			(at 74.93 198.12 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
 			)
 		)
 		(pin "1"
@@ -66726,14 +65982,12 @@
 				(justify right bottom)
 			)
 		)
-		(property "Value" "RESCHIP"
-			(at 456.667 153.67 90)
+		(property "Value" "1K"
+			(at 462.28 153.67 90)
 			(effects
 				(font
 					(size 1.27 1.27)
 				)
-				(justify bottom)
-				(hide yes)
 			)
 		)
 		(property "Footprint" "R-CHIP"
@@ -66761,14 +66015,6 @@
 					(size 1.27 1.27)
 				)
 				(hide yes)
-			)
-		)
-		(property "ALTIUM_VALUE" "1K"
-			(at 462.28 153.67 90)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
 			)
 		)
 		(pin "1"
@@ -66804,14 +66050,13 @@
 				(justify right bottom)
 			)
 		)
-		(property "Value" "CAPCHIP"
-			(at 280.67 237.49 0)
+		(property "Value" "0.1uF"
+			(at 288.544 235.458 0)
 			(effects
 				(font
 					(size 1.27 1.27)
 				)
-				(justify left bottom)
-				(hide yes)
+				(justify left top)
 			)
 		)
 		(property "Footprint" "C-CHIP"
@@ -66839,15 +66084,6 @@
 					(size 1.27 1.27)
 				)
 				(hide yes)
-			)
-		)
-		(property "ALTIUM_VALUE" "0.1uF"
-			(at 288.544 235.458 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(justify left top)
 			)
 		)
 		(pin "2"
@@ -66883,14 +66119,12 @@
 				(justify right bottom)
 			)
 		)
-		(property "Value" "RESCHIP"
-			(at 288.29 375.387 0)
+		(property "Value" "680"
+			(at 288.29 381 0)
 			(effects
 				(font
 					(size 1.27 1.27)
 				)
-				(justify bottom)
-				(hide yes)
 			)
 		)
 		(property "Footprint" "R-CHIP"
@@ -66918,14 +66152,6 @@
 					(size 1.27 1.27)
 				)
 				(hide yes)
-			)
-		)
-		(property "ALTIUM_VALUE" "680"
-			(at 288.29 381 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
 			)
 		)
 		(pin "2"
@@ -67076,14 +66302,13 @@
 				(justify right bottom)
 			)
 		)
-		(property "Value" "CAPCHIP"
-			(at 271.78 73.66 90)
+		(property "Value" "0.1uF"
+			(at 270.002 66.548 90)
 			(effects
 				(font
 					(size 1.27 1.27)
 				)
-				(justify left bottom)
-				(hide yes)
+				(justify left top)
 			)
 		)
 		(property "Footprint" "C-CHIP"
@@ -67111,15 +66336,6 @@
 					(size 1.27 1.27)
 				)
 				(hide yes)
-			)
-		)
-		(property "ALTIUM_VALUE" "0.1uF"
-			(at 270.002 66.548 90)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(justify left top)
 			)
 		)
 		(pin "1"
@@ -67155,14 +66371,13 @@
 				(justify left top)
 			)
 		)
-		(property "Value" "ECAPCHIP"
-			(at 154.94 391.16 90)
+		(property "Value" "10uF"
+			(at 154.305 398.78 90)
 			(effects
 				(font
 					(size 1.27 1.27)
 				)
-				(justify right top)
-				(hide yes)
+				(justify right bottom)
 			)
 		)
 		(property "Footprint" "EC-CHIP"
@@ -67190,15 +66405,6 @@
 					(size 1.27 1.27)
 				)
 				(hide yes)
-			)
-		)
-		(property "ALTIUM_VALUE" "10uF"
-			(at 154.305 398.78 90)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(justify right bottom)
 			)
 		)
 		(pin "2"
@@ -67350,14 +66556,13 @@
 				(justify left top)
 			)
 		)
-		(property "Value" "CAPCHIP"
-			(at 271.78 353.06 90)
+		(property "Value" "0.1uF"
+			(at 271.145 360.68 90)
 			(effects
 				(font
 					(size 1.27 1.27)
 				)
-				(justify right top)
-				(hide yes)
+				(justify right bottom)
 			)
 		)
 		(property "Footprint" "C-CHIP"
@@ -67385,15 +66590,6 @@
 					(size 1.27 1.27)
 				)
 				(hide yes)
-			)
-		)
-		(property "ALTIUM_VALUE" "0.1uF"
-			(at 271.145 360.68 90)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(justify right bottom)
 			)
 		)
 		(pin "1"
@@ -67429,14 +66625,13 @@
 				(justify bottom)
 			)
 		)
-		(property "Value" "CDR64B"
-			(at 280.67 347.447 0)
+		(property "Value" "27uH"
+			(at 280.67 354.33 0)
 			(effects
 				(font
 					(size 1.27 1.27)
 				)
-				(justify bottom)
-				(hide yes)
+				(justify top)
 			)
 		)
 		(property "Footprint" "CDR64B"
@@ -67464,15 +66659,6 @@
 					(size 1.27 1.27)
 				)
 				(hide yes)
-			)
-		)
-		(property "ALTIUM_VALUE" "27uH"
-			(at 280.67 354.33 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(justify top)
 			)
 		)
 		(pin "2"
@@ -67508,14 +66694,12 @@
 				(justify right bottom)
 			)
 		)
-		(property "Value" "RESCHIP"
-			(at 303.53 328.397 0)
+		(property "Value" "390"
+			(at 303.53 334.01 0)
 			(effects
 				(font
 					(size 1.27 1.27)
 				)
-				(justify bottom)
-				(hide yes)
 			)
 		)
 		(property "Footprint" "R-CHIP"
@@ -67543,14 +66727,6 @@
 					(size 1.27 1.27)
 				)
 				(hide yes)
-			)
-		)
-		(property "ALTIUM_VALUE" "390"
-			(at 303.53 334.01 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
 			)
 		)
 		(pin "1"
@@ -67586,14 +66762,13 @@
 				(justify left top)
 			)
 		)
-		(property "Value" "CAPCHIP"
-			(at 180.34 365.76 90)
+		(property "Value" "0.1uF"
+			(at 179.705 373.38 90)
 			(effects
 				(font
 					(size 1.27 1.27)
 				)
-				(justify right top)
-				(hide yes)
+				(justify right bottom)
 			)
 		)
 		(property "Footprint" "C-CHIP"
@@ -67621,15 +66796,6 @@
 					(size 1.27 1.27)
 				)
 				(hide yes)
-			)
-		)
-		(property "ALTIUM_VALUE" "0.1uF"
-			(at 179.705 373.38 90)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(justify right bottom)
 			)
 		)
 		(pin "2"
@@ -67665,14 +66831,13 @@
 				(justify right bottom)
 			)
 		)
-		(property "Value" "QUARTZ"
-			(at 266.7 164.567 0)
+		(property "Value" "14Mhz"
+			(at 266.7 160.782 0)
 			(effects
 				(font
 					(size 1.27 1.27)
 				)
 				(justify top)
-				(hide yes)
 			)
 		)
 		(property "Footprint" "CRYSTAL"
@@ -67700,15 +66865,6 @@
 					(size 1.27 1.27)
 				)
 				(hide yes)
-			)
-		)
-		(property "ALTIUM_VALUE" "14Mhz"
-			(at 266.7 160.782 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(justify top)
 			)
 		)
 		(property "DESCRIPTION" "Crystal"
@@ -67754,14 +66910,12 @@
 				(justify right bottom)
 			)
 		)
-		(property "Value" "RESCHIP"
-			(at 118.11 73.127 0)
+		(property "Value" "680"
+			(at 118.11 78.74 0)
 			(effects
 				(font
 					(size 1.27 1.27)
 				)
-				(justify bottom)
-				(hide yes)
 			)
 		)
 		(property "Footprint" "R-CHIP"
@@ -67789,14 +66943,6 @@
 					(size 1.27 1.27)
 				)
 				(hide yes)
-			)
-		)
-		(property "ALTIUM_VALUE" "680"
-			(at 118.11 78.74 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
 			)
 		)
 		(pin "1"
@@ -67964,14 +67110,12 @@
 				(justify left bottom)
 			)
 		)
-		(property "Value" "RESCHIP"
-			(at 207.01 149.327 0)
+		(property "Value" "51"
+			(at 207.01 154.94 0)
 			(effects
 				(font
 					(size 1.27 1.27)
 				)
-				(justify bottom)
-				(hide yes)
 			)
 		)
 		(property "Footprint" "R-CHIP"
@@ -67999,14 +67143,6 @@
 					(size 1.27 1.27)
 				)
 				(hide yes)
-			)
-		)
-		(property "ALTIUM_VALUE" "51"
-			(at 207.01 154.94 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
 			)
 		)
 		(pin "2"
@@ -68042,14 +67178,13 @@
 				(justify right bottom)
 			)
 		)
-		(property "Value" "CAPCHIP"
-			(at 264.16 73.66 90)
+		(property "Value" "0.1uF"
+			(at 262.128 65.786 90)
 			(effects
 				(font
 					(size 1.27 1.27)
 				)
-				(justify left bottom)
-				(hide yes)
+				(justify left top)
 			)
 		)
 		(property "Footprint" "C-CHIP"
@@ -68077,15 +67212,6 @@
 					(size 1.27 1.27)
 				)
 				(hide yes)
-			)
-		)
-		(property "ALTIUM_VALUE" "0.1uF"
-			(at 262.128 65.786 90)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(justify left top)
 			)
 		)
 		(pin "1"
@@ -68235,14 +67361,12 @@
 				(justify right bottom)
 			)
 		)
-		(property "Value" "RESCHIP"
-			(at 151.13 62.967 0)
+		(property "Value" "1K"
+			(at 151.13 68.58 0)
 			(effects
 				(font
 					(size 1.27 1.27)
 				)
-				(justify bottom)
-				(hide yes)
 			)
 		)
 		(property "Footprint" "R-CHIP"
@@ -68270,14 +67394,6 @@
 					(size 1.27 1.27)
 				)
 				(hide yes)
-			)
-		)
-		(property "ALTIUM_VALUE" "1K"
-			(at 151.13 68.58 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
 			)
 		)
 		(pin "2"
@@ -68395,14 +67511,12 @@
 				(justify left top)
 			)
 		)
-		(property "Value" "RESCHIP"
-			(at 439.953 86.36 90)
+		(property "Value" "10K"
+			(at 434.34 86.36 90)
 			(effects
 				(font
 					(size 1.27 1.27)
 				)
-				(justify top)
-				(hide yes)
 			)
 		)
 		(property "Footprint" "R-CHIP"
@@ -68430,14 +67544,6 @@
 					(size 1.27 1.27)
 				)
 				(hide yes)
-			)
-		)
-		(property "ALTIUM_VALUE" "10K"
-			(at 434.34 86.36 90)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
 			)
 		)
 		(pin "1"
@@ -68676,14 +67782,13 @@
 				(justify left top)
 			)
 		)
-		(property "Value" "CAPCHIP"
-			(at 187.96 365.76 90)
+		(property "Value" "0.1uF"
+			(at 187.325 373.38 90)
 			(effects
 				(font
 					(size 1.27 1.27)
 				)
-				(justify right top)
-				(hide yes)
+				(justify right bottom)
 			)
 		)
 		(property "Footprint" "C-CHIP"
@@ -68711,15 +67816,6 @@
 					(size 1.27 1.27)
 				)
 				(hide yes)
-			)
-		)
-		(property "ALTIUM_VALUE" "0.1uF"
-			(at 187.325 373.38 90)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(justify right bottom)
 			)
 		)
 		(pin "2"
@@ -68755,14 +67851,12 @@
 				(justify right bottom)
 			)
 		)
-		(property "Value" "RESCHIP"
-			(at 151.13 70.587 0)
+		(property "Value" "10K"
+			(at 151.13 76.2 0)
 			(effects
 				(font
 					(size 1.27 1.27)
 				)
-				(justify bottom)
-				(hide yes)
 			)
 		)
 		(property "Footprint" "R-CHIP"
@@ -68790,14 +67884,6 @@
 					(size 1.27 1.27)
 				)
 				(hide yes)
-			)
-		)
-		(property "ALTIUM_VALUE" "10K"
-			(at 151.13 76.2 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
 			)
 		)
 		(pin "2"
@@ -68833,14 +67919,12 @@
 				(justify right bottom)
 			)
 		)
-		(property "Value" "RESCHIP"
-			(at 261.62 254.737 0)
+		(property "Value" "100"
+			(at 261.62 260.35 0)
 			(effects
 				(font
 					(size 1.27 1.27)
 				)
-				(justify bottom)
-				(hide yes)
 			)
 		)
 		(property "Footprint" "R-CHIP"
@@ -68868,14 +67952,6 @@
 					(size 1.27 1.27)
 				)
 				(hide yes)
-			)
-		)
-		(property "ALTIUM_VALUE" "100"
-			(at 261.62 260.35 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
 			)
 		)
 		(pin "2"
@@ -68911,14 +67987,12 @@
 				(justify left top)
 			)
 		)
-		(property "Value" "RESCHIP"
-			(at 358.673 156.21 90)
+		(property "Value" "10K"
+			(at 353.06 156.21 90)
 			(effects
 				(font
 					(size 1.27 1.27)
 				)
-				(justify top)
-				(hide yes)
 			)
 		)
 		(property "Footprint" "R-CHIP"
@@ -68946,14 +68020,6 @@
 					(size 1.27 1.27)
 				)
 				(hide yes)
-			)
-		)
-		(property "ALTIUM_VALUE" "10K"
-			(at 353.06 156.21 90)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
 			)
 		)
 		(pin "1"
@@ -69078,14 +68144,13 @@
 				(justify right bottom)
 			)
 		)
-		(property "Value" "CAPCHIP"
-			(at 76.2 401.32 0)
+		(property "Value" "0.1uF"
+			(at 83.566 399.034 0)
 			(effects
 				(font
 					(size 1.27 1.27)
 				)
-				(justify left bottom)
-				(hide yes)
+				(justify left top)
 			)
 		)
 		(property "Footprint" "C-CHIP"
@@ -69113,15 +68178,6 @@
 					(size 1.27 1.27)
 				)
 				(hide yes)
-			)
-		)
-		(property "ALTIUM_VALUE" "0.1uF"
-			(at 83.566 399.034 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(justify left top)
 			)
 		)
 		(pin "2"
@@ -69157,14 +68213,13 @@
 				(justify right bottom)
 			)
 		)
-		(property "Value" "CAPCHIP"
-			(at 294.64 73.66 90)
+		(property "Value" "0.1uF"
+			(at 292.862 66.548 90)
 			(effects
 				(font
 					(size 1.27 1.27)
 				)
-				(justify left bottom)
-				(hide yes)
+				(justify left top)
 			)
 		)
 		(property "Footprint" "C-CHIP"
@@ -69192,15 +68247,6 @@
 					(size 1.27 1.27)
 				)
 				(hide yes)
-			)
-		)
-		(property "ALTIUM_VALUE" "0.1uF"
-			(at 292.862 66.548 90)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(justify left top)
 			)
 		)
 		(pin "2"
@@ -69352,14 +68398,12 @@
 				(justify right bottom)
 			)
 		)
-		(property "Value" "RESCHIP"
-			(at 420.37 151.867 0)
+		(property "Value" "1K"
+			(at 420.37 157.48 0)
 			(effects
 				(font
 					(size 1.27 1.27)
 				)
-				(justify bottom)
-				(hide yes)
 			)
 		)
 		(property "Footprint" "R-CHIP"
@@ -69387,14 +68431,6 @@
 					(size 1.27 1.27)
 				)
 				(hide yes)
-			)
-		)
-		(property "ALTIUM_VALUE" "1K"
-			(at 420.37 157.48 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
 			)
 		)
 		(pin "2"
@@ -69430,14 +68466,12 @@
 				(justify right bottom)
 			)
 		)
-		(property "Value" "RESCHIP"
-			(at 288.29 372.847 0)
+		(property "Value" "390"
+			(at 288.29 378.46 0)
 			(effects
 				(font
 					(size 1.27 1.27)
 				)
-				(justify bottom)
-				(hide yes)
 			)
 		)
 		(property "Footprint" "R-CHIP"
@@ -69465,14 +68499,6 @@
 					(size 1.27 1.27)
 				)
 				(hide yes)
-			)
-		)
-		(property "ALTIUM_VALUE" "390"
-			(at 288.29 378.46 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
 			)
 		)
 		(pin "2"
@@ -69508,14 +68534,13 @@
 				(justify right top)
 			)
 		)
-		(property "Value" "CAPCHIP"
-			(at 274.32 170.18 90)
+		(property "Value" "20pF"
+			(at 273.685 162.56 90)
 			(effects
 				(font
 					(size 1.27 1.27)
 				)
-				(justify left top)
-				(hide yes)
+				(justify left bottom)
 			)
 		)
 		(property "Footprint" "C-CHIP"
@@ -69543,15 +68568,6 @@
 					(size 1.27 1.27)
 				)
 				(hide yes)
-			)
-		)
-		(property "ALTIUM_VALUE" "20pF"
-			(at 273.685 162.56 90)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(justify left bottom)
 			)
 		)
 		(pin "1"
@@ -69587,14 +68603,12 @@
 				(justify right bottom)
 			)
 		)
-		(property "Value" "RESCHIP"
-			(at 410.21 296.647 0)
+		(property "Value" "680"
+			(at 410.21 302.26 0)
 			(effects
 				(font
 					(size 1.27 1.27)
 				)
-				(justify bottom)
-				(hide yes)
 			)
 		)
 		(property "Footprint" "R-CHIP"
@@ -69622,14 +68636,6 @@
 					(size 1.27 1.27)
 				)
 				(hide yes)
-			)
-		)
-		(property "ALTIUM_VALUE" "680"
-			(at 410.21 302.26 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
 			)
 		)
 		(pin "2"
@@ -69665,14 +68671,12 @@
 				(justify left bottom)
 			)
 		)
-		(property "Value" "RESCHIP"
-			(at 427.99 309.347 0)
+		(property "Value" "1K"
+			(at 427.99 314.96 0)
 			(effects
 				(font
 					(size 1.27 1.27)
 				)
-				(justify bottom)
-				(hide yes)
 			)
 		)
 		(property "Footprint" "R-CHIP"
@@ -69700,14 +68704,6 @@
 					(size 1.27 1.27)
 				)
 				(hide yes)
-			)
-		)
-		(property "ALTIUM_VALUE" "1K"
-			(at 427.99 314.96 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
 			)
 		)
 		(pin "1"
@@ -69743,14 +68739,12 @@
 				(justify right bottom)
 			)
 		)
-		(property "Value" "RESCHIP"
-			(at 288.29 367.767 0)
+		(property "Value" "390"
+			(at 288.29 373.38 0)
 			(effects
 				(font
 					(size 1.27 1.27)
 				)
-				(justify bottom)
-				(hide yes)
 			)
 		)
 		(property "Footprint" "R-CHIP"
@@ -69778,14 +68772,6 @@
 					(size 1.27 1.27)
 				)
 				(hide yes)
-			)
-		)
-		(property "ALTIUM_VALUE" "390"
-			(at 288.29 373.38 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
 			)
 		)
 		(pin "1"
@@ -69821,14 +68807,13 @@
 				(justify right bottom)
 			)
 		)
-		(property "Value" "CAPCHIP"
-			(at 302.26 73.66 90)
+		(property "Value" "0.1uF"
+			(at 300.482 66.548 90)
 			(effects
 				(font
 					(size 1.27 1.27)
 				)
-				(justify left bottom)
-				(hide yes)
+				(justify left top)
 			)
 		)
 		(property "Footprint" "C-CHIP"
@@ -69856,15 +68841,6 @@
 					(size 1.27 1.27)
 				)
 				(hide yes)
-			)
-		)
-		(property "ALTIUM_VALUE" "0.1uF"
-			(at 300.482 66.548 90)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(justify left top)
 			)
 		)
 		(pin "2"
@@ -69900,14 +68876,13 @@
 				(justify left top)
 			)
 		)
-		(property "Value" "CAPCHIP"
-			(at 147.32 365.76 90)
+		(property "Value" "0.1uF"
+			(at 146.685 373.38 90)
 			(effects
 				(font
 					(size 1.27 1.27)
 				)
-				(justify right top)
-				(hide yes)
+				(justify right bottom)
 			)
 		)
 		(property "Footprint" "C-CHIP"
@@ -69935,15 +68910,6 @@
 					(size 1.27 1.27)
 				)
 				(hide yes)
-			)
-		)
-		(property "ALTIUM_VALUE" "0.1uF"
-			(at 146.685 373.38 90)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(justify right bottom)
 			)
 		)
 		(pin "2"
@@ -69979,14 +68945,13 @@
 				(justify right bottom)
 			)
 		)
-		(property "Value" "CAPCHIP"
-			(at 269.24 226.06 0)
+		(property "Value" "0.1uF"
+			(at 277.114 223.52 0)
 			(effects
 				(font
 					(size 1.27 1.27)
 				)
-				(justify left bottom)
-				(hide yes)
+				(justify left top)
 			)
 		)
 		(property "Footprint" "C-CHIP"
@@ -70014,15 +68979,6 @@
 					(size 1.27 1.27)
 				)
 				(hide yes)
-			)
-		)
-		(property "ALTIUM_VALUE" "0.1uF"
-			(at 277.114 223.52 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(justify left top)
 			)
 		)
 		(pin "2"
@@ -70058,14 +69014,13 @@
 				(justify right bottom)
 			)
 		)
-		(property "Value" "CAPCHIP"
-			(at 287.02 73.66 90)
+		(property "Value" "0.1uF"
+			(at 285.242 66.548 90)
 			(effects
 				(font
 					(size 1.27 1.27)
 				)
-				(justify left bottom)
-				(hide yes)
+				(justify left top)
 			)
 		)
 		(property "Footprint" "C-CHIP"
@@ -70093,15 +69048,6 @@
 					(size 1.27 1.27)
 				)
 				(hide yes)
-			)
-		)
-		(property "ALTIUM_VALUE" "0.1uF"
-			(at 285.242 66.548 90)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(justify left top)
 			)
 		)
 		(pin "2"
@@ -70137,14 +69083,12 @@
 				(justify right bottom)
 			)
 		)
-		(property "Value" "RESCHIP"
-			(at 118.11 57.887 0)
+		(property "Value" "680"
+			(at 118.11 63.5 0)
 			(effects
 				(font
 					(size 1.27 1.27)
 				)
-				(justify bottom)
-				(hide yes)
 			)
 		)
 		(property "Footprint" "R-CHIP"
@@ -70172,14 +69116,6 @@
 					(size 1.27 1.27)
 				)
 				(hide yes)
-			)
-		)
-		(property "ALTIUM_VALUE" "680"
-			(at 118.11 63.5 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
 			)
 		)
 		(pin "2"
@@ -70215,14 +69151,13 @@
 				(justify left top)
 			)
 		)
-		(property "Value" "CAPCHIP"
-			(at 172.72 391.16 90)
+		(property "Value" "0.1uF"
+			(at 172.085 398.78 90)
 			(effects
 				(font
 					(size 1.27 1.27)
 				)
-				(justify right top)
-				(hide yes)
+				(justify right bottom)
 			)
 		)
 		(property "Footprint" "C-CHIP"
@@ -70250,15 +69185,6 @@
 					(size 1.27 1.27)
 				)
 				(hide yes)
-			)
-		)
-		(property "ALTIUM_VALUE" "0.1uF"
-			(at 172.085 398.78 90)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(justify right bottom)
 			)
 		)
 		(pin "1"
@@ -70383,14 +69309,13 @@
 				(justify left top)
 			)
 		)
-		(property "Value" "ECAPCHIP"
-			(at 109.22 365.76 90)
+		(property "Value" "10uF"
+			(at 108.585 373.38 90)
 			(effects
 				(font
 					(size 1.27 1.27)
 				)
-				(justify right top)
-				(hide yes)
+				(justify right bottom)
 			)
 		)
 		(property "Footprint" "EC-CHIP"
@@ -70418,15 +69343,6 @@
 					(size 1.27 1.27)
 				)
 				(hide yes)
-			)
-		)
-		(property "ALTIUM_VALUE" "10uF"
-			(at 108.585 373.38 90)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(justify right bottom)
 			)
 		)
 		(pin "2"
@@ -70462,14 +69378,12 @@
 				(justify right bottom)
 			)
 		)
-		(property "Value" "RESCHIP"
-			(at 451.587 153.67 90)
+		(property "Value" "1K"
+			(at 457.2 153.67 90)
 			(effects
 				(font
 					(size 1.27 1.27)
 				)
-				(justify bottom)
-				(hide yes)
 			)
 		)
 		(property "Footprint" "R-CHIP"
@@ -70497,14 +69411,6 @@
 					(size 1.27 1.27)
 				)
 				(hide yes)
-			)
-		)
-		(property "ALTIUM_VALUE" "1K"
-			(at 457.2 153.67 90)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
 			)
 		)
 		(pin "1"
@@ -70826,14 +69732,12 @@
 				(justify right bottom)
 			)
 		)
-		(property "Value" "RESCHIP"
-			(at 41.91 118.847 0)
+		(property "Value" "10K"
+			(at 41.91 124.46 0)
 			(effects
 				(font
 					(size 1.27 1.27)
 				)
-				(justify bottom)
-				(hide yes)
 			)
 		)
 		(property "Footprint" "R-CHIP"
@@ -70861,14 +69765,6 @@
 					(size 1.27 1.27)
 				)
 				(hide yes)
-			)
-		)
-		(property "ALTIUM_VALUE" "10K"
-			(at 41.91 124.46 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
 			)
 		)
 		(pin "1"
@@ -70993,14 +69889,12 @@
 				(justify right top)
 			)
 		)
-		(property "Value" "RESCHIP"
-			(at 335.28 361.213 0)
+		(property "Value" "1K"
+			(at 335.28 355.6 0)
 			(effects
 				(font
 					(size 1.27 1.27)
 				)
-				(justify top)
-				(hide yes)
 			)
 		)
 		(property "Footprint" "R-CHIP"
@@ -71028,14 +69922,6 @@
 					(size 1.27 1.27)
 				)
 				(hide yes)
-			)
-		)
-		(property "ALTIUM_VALUE" "1K"
-			(at 335.28 355.6 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
 			)
 		)
 		(pin "2"
@@ -71071,14 +69957,13 @@
 				(justify left top)
 			)
 		)
-		(property "Value" "ECAPCHIP"
-			(at 154.94 365.76 90)
+		(property "Value" "10uF"
+			(at 154.305 373.38 90)
 			(effects
 				(font
 					(size 1.27 1.27)
 				)
-				(justify right top)
-				(hide yes)
+				(justify right bottom)
 			)
 		)
 		(property "Footprint" "EC-CHIP"
@@ -71106,15 +69991,6 @@
 					(size 1.27 1.27)
 				)
 				(hide yes)
-			)
-		)
-		(property "ALTIUM_VALUE" "10uF"
-			(at 154.305 373.38 90)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(justify right bottom)
 			)
 		)
 		(pin "2"
@@ -71150,14 +70026,13 @@
 				(justify left top)
 			)
 		)
-		(property "Value" "CAPCHIP"
-			(at 180.34 391.16 90)
+		(property "Value" "0.1uF"
+			(at 179.705 398.78 90)
 			(effects
 				(font
 					(size 1.27 1.27)
 				)
-				(justify right top)
-				(hide yes)
+				(justify right bottom)
 			)
 		)
 		(property "Footprint" "C-CHIP"
@@ -71185,15 +70060,6 @@
 					(size 1.27 1.27)
 				)
 				(hide yes)
-			)
-		)
-		(property "ALTIUM_VALUE" "0.1uF"
-			(at 179.705 398.78 90)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(justify right bottom)
 			)
 		)
 		(pin "1"
@@ -71621,14 +70487,12 @@
 				(justify right bottom)
 			)
 		)
-		(property "Value" "RESCHIP"
-			(at 211.557 233.68 90)
+		(property "Value" "10K"
+			(at 217.17 233.68 90)
 			(effects
 				(font
 					(size 1.27 1.27)
 				)
-				(justify bottom)
-				(hide yes)
 			)
 		)
 		(property "Footprint" "R-CHIP"
@@ -71656,14 +70520,6 @@
 					(size 1.27 1.27)
 				)
 				(hide yes)
-			)
-		)
-		(property "ALTIUM_VALUE" "10K"
-			(at 217.17 233.68 90)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
 			)
 		)
 		(pin "2"
@@ -71699,14 +70555,12 @@
 				(justify right bottom)
 			)
 		)
-		(property "Value" "RESCHIP"
-			(at 41.91 123.927 0)
+		(property "Value" "10K"
+			(at 41.91 129.54 0)
 			(effects
 				(font
 					(size 1.27 1.27)
 				)
-				(justify bottom)
-				(hide yes)
 			)
 		)
 		(property "Footprint" "R-CHIP"
@@ -71734,14 +70588,6 @@
 					(size 1.27 1.27)
 				)
 				(hide yes)
-			)
-		)
-		(property "ALTIUM_VALUE" "10K"
-			(at 41.91 129.54 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
 			)
 		)
 		(pin "1"
@@ -71863,14 +70709,13 @@
 				(justify left top)
 			)
 		)
-		(property "Value" "CAPCHIP"
-			(at 165.1 365.76 90)
+		(property "Value" "0.1uF"
+			(at 164.465 373.38 90)
 			(effects
 				(font
 					(size 1.27 1.27)
 				)
-				(justify right top)
-				(hide yes)
+				(justify right bottom)
 			)
 		)
 		(property "Footprint" "C-CHIP"
@@ -71898,15 +70743,6 @@
 					(size 1.27 1.27)
 				)
 				(hide yes)
-			)
-		)
-		(property "ALTIUM_VALUE" "0.1uF"
-			(at 164.465 373.38 90)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(justify right bottom)
 			)
 		)
 		(pin "1"
@@ -71942,14 +70778,13 @@
 				(justify left top)
 			)
 		)
-		(property "Value" "ECAPCHIP"
-			(at 109.22 391.16 90)
+		(property "Value" "10uF"
+			(at 108.585 398.78 90)
 			(effects
 				(font
 					(size 1.27 1.27)
 				)
-				(justify right top)
-				(hide yes)
+				(justify right bottom)
 			)
 		)
 		(property "Footprint" "EC-CHIP"
@@ -71977,15 +70812,6 @@
 					(size 1.27 1.27)
 				)
 				(hide yes)
-			)
-		)
-		(property "ALTIUM_VALUE" "10uF"
-			(at 108.585 398.78 90)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(justify right bottom)
 			)
 		)
 		(pin "2"
@@ -72021,14 +70847,13 @@
 				(justify right bottom)
 			)
 		)
-		(property "Value" "CAPCHIP"
-			(at 279.4 73.66 90)
+		(property "Value" "0.1uF"
+			(at 277.368 66.548 90)
 			(effects
 				(font
 					(size 1.27 1.27)
 				)
-				(justify left bottom)
-				(hide yes)
+				(justify left top)
 			)
 		)
 		(property "Footprint" "C-CHIP"
@@ -72056,15 +70881,6 @@
 					(size 1.27 1.27)
 				)
 				(hide yes)
-			)
-		)
-		(property "ALTIUM_VALUE" "0.1uF"
-			(at 277.368 66.548 90)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(justify left top)
 			)
 		)
 		(pin "2"
@@ -72100,14 +70916,13 @@
 				(justify right top)
 			)
 		)
-		(property "Value" "CAPCHIP"
-			(at 259.08 170.18 90)
+		(property "Value" "20pF"
+			(at 258.445 162.56 90)
 			(effects
 				(font
 					(size 1.27 1.27)
 				)
-				(justify left top)
-				(hide yes)
+				(justify left bottom)
 			)
 		)
 		(property "Footprint" "C-CHIP"
@@ -72135,15 +70950,6 @@
 					(size 1.27 1.27)
 				)
 				(hide yes)
-			)
-		)
-		(property "ALTIUM_VALUE" "20pF"
-			(at 258.445 162.56 90)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(justify left bottom)
 			)
 		)
 		(pin "2"
@@ -72294,14 +71100,12 @@
 				(justify right bottom)
 			)
 		)
-		(property "Value" "RESCHIP"
-			(at 288.29 370.307 0)
+		(property "Value" "680"
+			(at 288.29 375.92 0)
 			(effects
 				(font
 					(size 1.27 1.27)
 				)
-				(justify bottom)
-				(hide yes)
 			)
 		)
 		(property "Footprint" "R-CHIP"
@@ -72329,14 +71133,6 @@
 					(size 1.27 1.27)
 				)
 				(hide yes)
-			)
-		)
-		(property "ALTIUM_VALUE" "680"
-			(at 288.29 375.92 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
 			)
 		)
 		(pin "1"
@@ -72372,14 +71168,12 @@
 				(justify left top)
 			)
 		)
-		(property "Value" "RESCHIP"
-			(at 361.213 156.21 90)
+		(property "Value" "10K"
+			(at 355.6 156.21 90)
 			(effects
 				(font
 					(size 1.27 1.27)
 				)
-				(justify top)
-				(hide yes)
 			)
 		)
 		(property "Footprint" "R-CHIP"
@@ -72407,14 +71201,6 @@
 					(size 1.27 1.27)
 				)
 				(hide yes)
-			)
-		)
-		(property "ALTIUM_VALUE" "10K"
-			(at 355.6 156.21 90)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
 			)
 		)
 		(pin "2"
@@ -72450,14 +71236,12 @@
 				(justify right bottom)
 			)
 		)
-		(property "Value" "RESCHIP"
-			(at 362.687 81.28 90)
+		(property "Value" "10K"
+			(at 368.3 81.28 90)
 			(effects
 				(font
 					(size 1.27 1.27)
 				)
-				(justify bottom)
-				(hide yes)
 			)
 		)
 		(property "Footprint" "R-CHIP"
@@ -72485,14 +71269,6 @@
 					(size 1.27 1.27)
 				)
 				(hide yes)
-			)
-		)
-		(property "ALTIUM_VALUE" "10K"
-			(at 368.3 81.28 90)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
 			)
 		)
 		(pin "2"
@@ -72528,14 +71304,12 @@
 				(justify right bottom)
 			)
 		)
-		(property "Value" "RESCHIP"
-			(at 261.62 239.497 0)
+		(property "Value" "100"
+			(at 261.62 245.11 0)
 			(effects
 				(font
 					(size 1.27 1.27)
 				)
-				(justify bottom)
-				(hide yes)
 			)
 		)
 		(property "Footprint" "R-CHIP"
@@ -72563,14 +71337,6 @@
 					(size 1.27 1.27)
 				)
 				(hide yes)
-			)
-		)
-		(property "ALTIUM_VALUE" "100"
-			(at 261.62 245.11 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
 			)
 		)
 		(pin "2"
