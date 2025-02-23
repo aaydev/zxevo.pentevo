@@ -5,8 +5,8 @@
 	(uuid "05cbde3b-0e11-4132-bac0-cca6cf0b9707")
 	(paper "User" 558.8 431.8)
 	(title_block
-		(title "ZX Evoliution")
-		(rev "C")
+		(title "ZX Evolution")
+		(rev "D")
 		(company "NedoPC")
 	)
 	(lib_symbols
@@ -40222,8 +40222,8 @@
 				)
 			)
 		)
-		(property "Value" "78MXX"
-			(at 127 203.2 0)
+		(property "Value" "78M05"
+			(at 127.508 204.216 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -40255,15 +40255,6 @@
 					(size 1.27 1.27)
 				)
 				(hide yes)
-			)
-		)
-		(property "ALTIUM_VALUE" "+5V"
-			(at 127 210.82 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(justify bottom)
 			)
 		)
 		(pin "1"
@@ -48202,12 +48193,11 @@
 			)
 		)
 		(property "Value" "2K2"
-			(at 109.22 340.36 0)
+			(at 115.824 340.36 0)
 			(effects
 				(font
 					(size 1.27 1.27)
 				)
-				(hide yes)
 			)
 		)
 		(property "Footprint" "R-CHIP"
@@ -50494,14 +50484,13 @@
 				(justify bottom)
 			)
 		)
-		(property "Value" "CDR64B"
-			(at 97.79 228.067 0)
+		(property "Value" "27uH"
+			(at 97.536 237.49 0)
 			(effects
 				(font
 					(size 1.27 1.27)
 				)
 				(justify bottom)
-				(hide yes)
 			)
 		)
 		(property "Footprint" "CDR64B"
@@ -50529,15 +50518,6 @@
 					(size 1.27 1.27)
 				)
 				(hide yes)
-			)
-		)
-		(property "ALTIUM_VALUE" "27uH"
-			(at 97.79 235.458 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(justify top)
 			)
 		)
 		(pin "1"

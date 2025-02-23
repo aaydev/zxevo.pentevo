@@ -5,8 +5,8 @@
 	(uuid "c258258c-0772-47ae-9fae-12ade3264660")
 	(paper "User" 558.8 431.8)
 	(title_block
-		(title "ZX Evoliution")
-		(rev "C")
+		(title "ZX Evolution")
+		(rev "D")
 		(company "NedoPC")
 	)
 	(lib_symbols
