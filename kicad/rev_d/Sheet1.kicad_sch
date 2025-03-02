@@ -23842,383 +23842,6 @@
 				)
 			)
 		)
-		(symbol "eva-altium-import:Sheet1_2_BAT54C"
-			(exclude_from_sim no)
-			(in_bom yes)
-			(on_board yes)
-			(property "Reference" ""
-				(at 0 0 0)
-				(effects
-					(font
-						(size 1.27 1.27)
-					)
-				)
-			)
-			(property "Value" ""
-				(at 0 0 0)
-				(effects
-					(font
-						(size 1.27 1.27)
-					)
-				)
-			)
-			(property "Footprint" ""
-				(at 0 0 0)
-				(effects
-					(font
-						(size 1.27 1.27)
-					)
-					(hide yes)
-				)
-			)
-			(property "Datasheet" ""
-				(at 0 0 0)
-				(effects
-					(font
-						(size 1.27 1.27)
-					)
-					(hide yes)
-				)
-			)
-			(property "Description" "BAT54C"
-				(at 0 0 0)
-				(effects
-					(font
-						(size 1.27 1.27)
-					)
-					(hide yes)
-				)
-			)
-			(property "ki_fp_filters" "*SOT-23*"
-				(at 0 0 0)
-				(effects
-					(font
-						(size 1.27 1.27)
-					)
-					(hide yes)
-				)
-			)
-			(symbol "Sheet1_2_BAT54C_1_0"
-				(polyline
-					(pts
-						(xy -5.08 2.54) (xy -5.08 10.16)
-					)
-					(stroke
-						(width 0.254)
-						(type dash)
-					)
-					(fill
-						(type none)
-					)
-				)
-				(polyline
-					(pts
-						(xy -5.08 10.16) (xy 5.08 10.16)
-					)
-					(stroke
-						(width 0.254)
-						(type dash)
-					)
-					(fill
-						(type none)
-					)
-				)
-				(polyline
-					(pts
-						(xy -3.81 6.35) (xy -3.81 6.985)
-					)
-					(stroke
-						(width 0.254)
-						(type solid)
-					)
-					(fill
-						(type none)
-					)
-				)
-				(polyline
-					(pts
-						(xy -3.81 8.89) (xy -2.54 6.35)
-					)
-					(stroke
-						(width 0.254)
-						(type solid)
-					)
-					(fill
-						(type none)
-					)
-				)
-				(polyline
-					(pts
-						(xy -2.54 5.08) (xy -2.54 6.35)
-					)
-					(stroke
-						(width 0.254)
-						(type solid)
-					)
-					(fill
-						(type none)
-					)
-				)
-				(polyline
-					(pts
-						(xy -2.54 6.35) (xy -1.27 8.89)
-					)
-					(stroke
-						(width 0.254)
-						(type solid)
-					)
-					(fill
-						(type none)
-					)
-				)
-				(polyline
-					(pts
-						(xy -2.54 12.7) (xy -2.54 8.89)
-					)
-					(stroke
-						(width 0.254)
-						(type solid)
-					)
-					(fill
-						(type none)
-					)
-				)
-				(polyline
-					(pts
-						(xy -1.27 5.715) (xy -1.27 6.35)
-					)
-					(stroke
-						(width 0.254)
-						(type solid)
-					)
-					(fill
-						(type none)
-					)
-				)
-				(polyline
-					(pts
-						(xy -1.27 6.35) (xy -3.81 6.35)
-					)
-					(stroke
-						(width 0.254)
-						(type solid)
-					)
-					(fill
-						(type none)
-					)
-				)
-				(polyline
-					(pts
-						(xy -1.27 8.89) (xy -3.81 8.89)
-					)
-					(stroke
-						(width 0.254)
-						(type solid)
-					)
-					(fill
-						(type none)
-					)
-				)
-				(polyline
-					(pts
-						(xy 0 0) (xy 0 5.08)
-					)
-					(stroke
-						(width 0.254)
-						(type solid)
-					)
-					(fill
-						(type none)
-					)
-				)
-				(polyline
-					(pts
-						(xy 1.27 6.35) (xy 1.27 6.985)
-					)
-					(stroke
-						(width 0.254)
-						(type solid)
-					)
-					(fill
-						(type none)
-					)
-				)
-				(polyline
-					(pts
-						(xy 1.27 8.89) (xy 2.54 6.35)
-					)
-					(stroke
-						(width 0.254)
-						(type solid)
-					)
-					(fill
-						(type none)
-					)
-				)
-				(polyline
-					(pts
-						(xy 2.54 5.08) (xy -2.54 5.08)
-					)
-					(stroke
-						(width 0.254)
-						(type solid)
-					)
-					(fill
-						(type none)
-					)
-				)
-				(polyline
-					(pts
-						(xy 2.54 6.35) (xy 2.54 5.08)
-					)
-					(stroke
-						(width 0.254)
-						(type solid)
-					)
-					(fill
-						(type none)
-					)
-				)
-				(polyline
-					(pts
-						(xy 2.54 6.35) (xy 3.81 8.89)
-					)
-					(stroke
-						(width 0.254)
-						(type solid)
-					)
-					(fill
-						(type none)
-					)
-				)
-				(polyline
-					(pts
-						(xy 2.54 12.7) (xy 2.54 8.89)
-					)
-					(stroke
-						(width 0.254)
-						(type solid)
-					)
-					(fill
-						(type none)
-					)
-				)
-				(polyline
-					(pts
-						(xy 3.81 5.715) (xy 3.81 6.35)
-					)
-					(stroke
-						(width 0.254)
-						(type solid)
-					)
-					(fill
-						(type none)
-					)
-				)
-				(polyline
-					(pts
-						(xy 3.81 6.35) (xy 1.27 6.35)
-					)
-					(stroke
-						(width 0.254)
-						(type solid)
-					)
-					(fill
-						(type none)
-					)
-				)
-				(polyline
-					(pts
-						(xy 3.81 8.89) (xy 1.27 8.89)
-					)
-					(stroke
-						(width 0.254)
-						(type solid)
-					)
-					(fill
-						(type none)
-					)
-				)
-				(polyline
-					(pts
-						(xy 5.08 2.54) (xy -5.08 2.54)
-					)
-					(stroke
-						(width 0.254)
-						(type dash)
-					)
-					(fill
-						(type none)
-					)
-				)
-				(polyline
-					(pts
-						(xy 5.08 10.16) (xy 5.08 2.54)
-					)
-					(stroke
-						(width 0.254)
-						(type dash)
-					)
-					(fill
-						(type none)
-					)
-				)
-				(pin passive line
-					(at 2.54 12.7 270)
-					(length 2.54)
-					(name "1"
-						(effects
-							(font
-								(size 0 0)
-							)
-						)
-					)
-					(number "1"
-						(effects
-							(font
-								(size 0 0)
-							)
-						)
-					)
-				)
-				(pin passive line
-					(at -2.54 12.7 270)
-					(length 2.54)
-					(name "2"
-						(effects
-							(font
-								(size 0 0)
-							)
-						)
-					)
-					(number "2"
-						(effects
-							(font
-								(size 0 0)
-							)
-						)
-					)
-				)
-				(pin passive line
-					(at 0 0 90)
-					(length 2.54)
-					(name "3"
-						(effects
-							(font
-								(size 0 0)
-							)
-						)
-					)
-					(number "3"
-						(effects
-							(font
-								(size 0 0)
-							)
-						)
-					)
-				)
-			)
-		)
 		(symbol "eva-altium-import:Sheet1_2_RESCHIP"
 			(exclude_from_sim no)
 			(in_bom yes)
@@ -29627,16 +29250,6 @@
 	)
 	(wire
 		(pts
-			(xy 336.55 143.51) (xy 335.28 143.51)
-		)
-		(stroke
-			(width 0)
-			(type default)
-		)
-		(uuid "5c491a49-1dac-42f3-86bc-dfb33e125b70")
-	)
-	(wire
-		(pts
 			(xy 33.02 177.8) (xy 35.56 177.8)
 		)
 		(stroke
@@ -31487,6 +31100,16 @@
 			(type default)
 		)
 		(uuid "8a3b3f4c-5c4d-4c19-a282-bee67668e7ac")
+	)
+	(wire
+		(pts
+			(xy 320.04 157.48) (xy 321.31 157.48)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "8a423cf5-2e0f-41bd-978d-99bc7e0cf8c6")
 	)
 	(wire
 		(pts
@@ -34487,16 +34110,6 @@
 			(type default)
 		)
 		(uuid "d4ad81c6-ee5a-484f-9871-3803bb4ae7bf")
-	)
-	(wire
-		(pts
-			(xy 342.9 143.51) (xy 341.63 143.51)
-		)
-		(stroke
-			(width 0)
-			(type default)
-		)
-		(uuid "d4c1472a-a191-4905-b751-c9e23fb9c0f4")
 	)
 	(wire
 		(pts
@@ -43677,7 +43290,7 @@
 	)
 	(global_label "GND"
 		(shape passive)
-		(at 321.31 157.48 180)
+		(at 320.04 157.48 180)
 		(fields_autoplaced yes)
 		(effects
 			(font
@@ -43687,7 +43300,7 @@
 		)
 		(uuid "587fc787-e924-4772-b20b-6abe05cf5445")
 		(property "Intersheetrefs" "${INTERSHEET_REFS}"
-			(at 315.5656 157.48 0)
+			(at 314.2956 157.48 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -49791,28 +49404,6 @@
 			)
 		)
 	)
-	(global_label "VCC12"
-		(shape passive)
-		(at 342.9 143.51 0)
-		(fields_autoplaced yes)
-		(effects
-			(font
-				(size 1.27 1.27)
-			)
-			(justify left)
-		)
-		(uuid "acc4c720-1b08-4df8-903a-5ff3dfdb0a50")
-		(property "Intersheetrefs" "${INTERSHEET_REFS}"
-			(at 350.8215 143.51 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(justify left)
-				(hide yes)
-			)
-		)
-	)
 	(global_label "~{MOT}"
 		(shape output)
 		(at 421.64 190.5 0)
@@ -53115,28 +52706,6 @@
 	)
 	(global_label "VCC5"
 		(shape passive)
-		(at 335.28 143.51 180)
-		(fields_autoplaced yes)
-		(effects
-			(font
-				(size 1.27 1.27)
-			)
-			(justify right)
-		)
-		(uuid "db5a6ed0-b74f-42b6-8196-c3673363de78")
-		(property "Intersheetrefs" "${INTERSHEET_REFS}"
-			(at 328.568 143.51 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(justify right)
-				(hide yes)
-			)
-		)
-	)
-	(global_label "VCC5"
-		(shape passive)
 		(at 453.39 147.32 180)
 		(fields_autoplaced yes)
 		(effects
@@ -53896,6 +53465,28 @@
 		(uuid "e2e94e2d-4fb4-475a-a659-af59af4fd070")
 		(property "Intersheetrefs" "${INTERSHEET_REFS}"
 			(at 169.0301 248.92 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left)
+				(hide yes)
+			)
+		)
+	)
+	(global_label "VDD_VG"
+		(shape bidirectional)
+		(at 339.09 156.21 90)
+		(fields_autoplaced yes)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify left)
+		)
+		(uuid "e3335331-9676-4e1f-9990-b42342ad78c1")
+		(property "Intersheetrefs" "${INTERSHEET_REFS}"
+			(at 339.09 145.1587 90)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -60379,7 +59970,7 @@
 				(justify left bottom)
 			)
 		)
-		(property "Footprint" "SOT-23"
+		(property "Footprint" "Package_TO_SOT_SMD:SOT-23_Handsoldering"
 			(at 341.63 363.22 0)
 			(effects
 				(font
@@ -67619,88 +67210,6 @@
 			(project ""
 				(path "/ab605654-a730-497b-9e09-9b351f74b935/df95af23-acf0-4751-87c3-fbc71e0508c6"
 					(reference "R54")
-					(unit 1)
-				)
-			)
-		)
-	)
-	(symbol
-		(lib_id "eva-altium-import:Sheet1_2_BAT54C")
-		(at 339.09 156.21 0)
-		(unit 1)
-		(exclude_from_sim no)
-		(in_bom yes)
-		(on_board yes)
-		(dnp no)
-		(uuid "cd8b508f-72f4-477a-8d9f-2c0ef0cf1629")
-		(property "Reference" "VD1"
-			(at 338.836 155.956 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(justify right bottom)
-			)
-		)
-		(property "Value" "BAT54C"
-			(at 346.71 155.956 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(justify right bottom)
-			)
-		)
-		(property "Footprint" "SOT-23"
-			(at 339.09 156.21 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(hide yes)
-			)
-		)
-		(property "Datasheet" ""
-			(at 339.09 156.21 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(hide yes)
-			)
-		)
-		(property "Description" "BAT54C"
-			(at 339.09 156.21 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(hide yes)
-			)
-		)
-		(property "ALTIUM_VALUE" "*"
-			(at 339.09 156.21 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(justify right top)
-				(hide yes)
-			)
-		)
-		(pin "1"
-			(uuid "e6d82045-14cc-4677-aef9-8f010523ca61")
-		)
-		(pin "2"
-			(uuid "ec9b66af-b6d2-4956-a5f7-02fc5ac7e52e")
-		)
-		(pin "3"
-			(uuid "d2e33fed-80b5-43b8-85c4-c84b428a9042")
-		)
-		(instances
-			(project ""
-				(path "/ab605654-a730-497b-9e09-9b351f74b935/df95af23-acf0-4751-87c3-fbc71e0508c6"
-					(reference "VD1")
 					(unit 1)
 				)
 			)

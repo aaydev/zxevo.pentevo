@@ -43096,7 +43096,7 @@
 				(justify right top)
 			)
 		)
-		(property "Footprint" "LL4148"
+		(property "Footprint" "Diode_SMD:D_MiniMELF_Handsoldering"
 			(at 370.84 254 0)
 			(effects
 				(font
@@ -44480,7 +44480,7 @@
 				(justify left bottom)
 			)
 		)
-		(property "Footprint" "SOT-23"
+		(property "Footprint" "Package_TO_SOT_SMD:SOT-23_Handsoldering"
 			(at 246.38 210.82 0)
 			(effects
 				(font
@@ -49833,7 +49833,7 @@
 				(justify left top)
 			)
 		)
-		(property "Footprint" "C-CHIP"
+		(property "Footprint" "Capacitor_SMD:C_0805_2012Metric_Pad1.18x1.45mm_HandSolder"
 			(at 267.97 229.87 0)
 			(effects
 				(font
@@ -50242,7 +50242,7 @@
 				(justify left top)
 			)
 		)
-		(property "Footprint" "LL4148"
+		(property "Footprint" "Diode_SMD:D_MiniMELF_Handsoldering"
 			(at 363.22 248.92 0)
 			(effects
 				(font
@@ -53770,7 +53770,7 @@
 				(justify right bottom)
 			)
 		)
-		(property "Footprint" "SOT-23"
+		(property "Footprint" "Package_TO_SOT_SMD:SOT-23_Handsoldering"
 			(at 515.62 297.18 0)
 			(effects
 				(font
