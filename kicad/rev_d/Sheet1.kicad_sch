@@ -24853,6 +24853,12 @@
 		(uuid "3952bf43-fbd5-46c3-b7f6-b400bcfdc92e")
 	)
 	(junction
+		(at 204.47 201.93)
+		(diameter 0)
+		(color 0 0 0 0)
+		(uuid "39ca8edd-f34b-4bae-9b03-ce81b9ca11da")
+	)
+	(junction
 		(at 434.34 97.79)
 		(diameter 0)
 		(color 0 0 0 0)
@@ -25976,6 +25982,16 @@
 			(type default)
 		)
 		(uuid "076bfb89-2033-48ac-af8d-0b573324dcbe")
+	)
+	(wire
+		(pts
+			(xy 204.47 194.31) (xy 204.47 201.93)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "07ac8e41-f219-4a7a-b4ac-f49e417f1f05")
 	)
 	(wire
 		(pts
@@ -27417,16 +27433,6 @@
 	)
 	(wire
 		(pts
-			(xy 175.26 58.42) (xy 215.9 58.42)
-		)
-		(stroke
-			(width 0)
-			(type default)
-		)
-		(uuid "2822ed6b-73ba-4edc-baaa-fae16613ad7f")
-	)
-	(wire
-		(pts
 			(xy 69.85 243.84) (xy 73.66 243.84)
 		)
 		(stroke
@@ -28695,16 +28701,6 @@
 			(type default)
 		)
 		(uuid "4d11bff1-9f13-434e-a097-91a81a867288")
-	)
-	(wire
-		(pts
-			(xy 215.9 58.42) (xy 215.9 66.04)
-		)
-		(stroke
-			(width 0)
-			(type default)
-		)
-		(uuid "4d431524-b223-4b85-a915-e335ad492d6d")
 	)
 	(wire
 		(pts
@@ -30552,6 +30548,16 @@
 	)
 	(wire
 		(pts
+			(xy 201.93 201.93) (xy 204.47 201.93)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "7f2f885c-c8ce-4320-9ebe-eaa261f6a782")
+	)
+	(wire
+		(pts
 			(xy 33.02 175.26) (xy 35.56 175.26)
 		)
 		(stroke
@@ -31516,16 +31522,6 @@
 	)
 	(wire
 		(pts
-			(xy 175.26 66.04) (xy 175.26 58.42)
-		)
-		(stroke
-			(width 0)
-			(type default)
-		)
-		(uuid "94890229-0047-4b7e-9c2c-f3dae7a9a163")
-	)
-	(wire
-		(pts
 			(xy 375.92 391.16) (xy 367.03 391.16)
 		)
 		(stroke
@@ -31806,6 +31802,16 @@
 			(type default)
 		)
 		(uuid "9c3632c2-6c62-467c-80c5-9dbfd87ef9da")
+	)
+	(wire
+		(pts
+			(xy 224.79 194.31) (xy 227.33 194.31)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "9c397c70-c1fd-4162-acb1-ff8ed2fa7791")
 	)
 	(wire
 		(pts
@@ -41816,7 +41822,7 @@
 	)
 	(global_label "CLKZ_OUT"
 		(shape input)
-		(at 204.47 201.93 180)
+		(at 201.93 201.93 180)
 		(fields_autoplaced yes)
 		(effects
 			(font
@@ -41826,7 +41832,7 @@
 		)
 		(uuid "4496d6b4-7a90-4424-8897-a117ccd77e86")
 		(property "Intersheetrefs" "${INTERSHEET_REFS}"
-			(at 192.111 201.93 0)
+			(at 189.571 201.93 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -42496,6 +42502,28 @@
 			)
 		)
 	)
+	(global_label "ZBUS_CLK"
+		(shape input)
+		(at 73.66 231.14 180)
+		(fields_autoplaced yes)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify right)
+		)
+		(uuid "4c928164-0d46-4603-8e3e-150f8aab0d18")
+		(property "Intersheetrefs" "${INTERSHEET_REFS}"
+			(at 61.1196 231.14 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify right)
+				(hide yes)
+			)
+		)
+	)
 	(global_label "SDDO"
 		(shape input)
 		(at 457.2 97.79 180)
@@ -42795,6 +42823,28 @@
 		(uuid "4f60f10a-7677-4325-842f-03baf21a484e")
 		(property "Intersheetrefs" "${INTERSHEET_REFS}"
 			(at 280.89 306.07 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify right)
+				(hide yes)
+			)
+		)
+	)
+	(global_label "ZBUS_CLK"
+		(shape output)
+		(at 227.33 207.01 270)
+		(fields_autoplaced yes)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify right)
+		)
+		(uuid "501e4e39-b469-480d-8da6-899ca5d240f2")
+		(property "Intersheetrefs" "${INTERSHEET_REFS}"
+			(at 227.33 219.5504 90)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -43394,6 +43444,28 @@
 					(size 1.27 1.27)
 				)
 				(justify left)
+				(hide yes)
+			)
+		)
+	)
+	(global_label "ZBUS_CLK"
+		(shape input)
+		(at 38.1 231.14 180)
+		(fields_autoplaced yes)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify right)
+		)
+		(uuid "594711d9-277a-452a-b47b-873b61e2356d")
+		(property "Intersheetrefs" "${INTERSHEET_REFS}"
+			(at 25.5596 231.14 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify right)
 				(hide yes)
 			)
 		)
@@ -44718,6 +44790,28 @@
 			)
 		)
 	)
+	(global_label "VIDEOVCC"
+		(shape passive)
+		(at 406.4 381 180)
+		(fields_autoplaced yes)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify right)
+		)
+		(uuid "6b1d7c56-1222-4701-b77e-7fbe17ba936e")
+		(property "Intersheetrefs" "${INTERSHEET_REFS}"
+			(at 395.4546 381 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify right)
+				(hide yes)
+			)
+		)
+	)
 	(global_label "TDO_FPGA"
 		(shape output)
 		(at 121.92 99.06 180)
@@ -44978,6 +45072,28 @@
 					(size 1.27 1.27)
 				)
 				(justify left)
+				(hide yes)
+			)
+		)
+	)
+	(global_label "AGND"
+		(shape passive)
+		(at 406.4 383.54 180)
+		(fields_autoplaced yes)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify right)
+		)
+		(uuid "6f2bb3d2-b19f-4c32-81b2-25f34c2803fd")
+		(property "Intersheetrefs" "${INTERSHEET_REFS}"
+			(at 399.567 383.54 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify right)
 				(hide yes)
 			)
 		)
@@ -46456,9 +46572,9 @@
 			)
 		)
 	)
-	(global_label "VIDEOVCC"
+	(global_label "VCC5"
 		(shape passive)
-		(at 406.4 383.54 180)
+		(at 186.69 96.52 180)
 		(fields_autoplaced yes)
 		(effects
 			(font
@@ -46466,9 +46582,9 @@
 			)
 			(justify right)
 		)
-		(uuid "83184a83-77a2-4795-9e9b-7de795062544")
+		(uuid "827e6bd8-c1d8-44db-a1e4-1d8a5f5035c9")
 		(property "Intersheetrefs" "${INTERSHEET_REFS}"
-			(at 395.4546 383.54 0)
+			(at 179.978 96.52 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -52128,28 +52244,6 @@
 					(size 1.27 1.27)
 				)
 				(justify left)
-				(hide yes)
-			)
-		)
-	)
-	(global_label "AGND"
-		(shape passive)
-		(at 406.4 381 180)
-		(fields_autoplaced yes)
-		(effects
-			(font
-				(size 1.27 1.27)
-			)
-			(justify right)
-		)
-		(uuid "d09d7113-a8b1-4d44-a678-939e4823afb6")
-		(property "Intersheetrefs" "${INTERSHEET_REFS}"
-			(at 399.567 381 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(justify right)
 				(hide yes)
 			)
 		)
@@ -57824,6 +57918,121 @@
 		)
 	)
 	(symbol
+		(lib_id "eva-altium-import:Sheet1_0_04")
+		(at 186.69 96.52 0)
+		(unit 6)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(dnp no)
+		(uuid "1802f3ab-f83e-44ec-b629-b9ef793ec382")
+		(property "Reference" "D14"
+			(at 189.992 93.98 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify bottom)
+			)
+		)
+		(property "Value" "04"
+			(at 196.85 99.06 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify top)
+				(hide yes)
+			)
+		)
+		(property "Footprint" "SO14"
+			(at 186.69 96.52 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Datasheet" ""
+			(at 186.69 96.52 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Description" "04"
+			(at 186.69 96.52 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "ALTIUM_VALUE" "74ACT04"
+			(at 198.12 99.568 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify top)
+			)
+		)
+		(pin "6"
+			(uuid "9f2d898e-e7ba-40a8-b53f-864a931da3de")
+		)
+		(pin "13"
+			(uuid "24649532-f754-4865-83ff-33c7303a73e0")
+		)
+		(pin "8"
+			(uuid "ee04ed9b-fe19-46f6-85f1-c201aa853f5f")
+		)
+		(pin "9"
+			(uuid "daf74822-9a0b-4a44-b4d5-cec83dfbe17e")
+		)
+		(pin "2"
+			(uuid "d7cc00d2-6d76-4cdd-94f4-3edf4d15e0f3")
+		)
+		(pin "5"
+			(uuid "66116896-efe1-453d-b13a-6e8a3af7f594")
+		)
+		(pin "4"
+			(uuid "073bd497-c11e-425d-a240-1a8191fae84a")
+		)
+		(pin "3"
+			(uuid "44c2af15-090e-477b-81de-ff4f96a39e40")
+		)
+		(pin "7"
+			(uuid "250f5669-d59f-4c13-809d-92d3aee86e46")
+		)
+		(pin "10"
+			(uuid "d3abb73b-b1e7-406d-afa6-f87f3a6eee33")
+		)
+		(pin "14"
+			(uuid "5bd33ea2-91c4-4b0e-b298-0e2d0a5a8efc")
+		)
+		(pin "1"
+			(uuid "1fdd1f8c-4658-485b-a8e7-ab302c7f9687")
+		)
+		(pin "11"
+			(uuid "126bab12-0648-4304-9662-feb18fa1d370")
+		)
+		(pin "12"
+			(uuid "30f8e250-0d36-47da-acd9-c32654a6e3c5")
+		)
+		(instances
+			(project "eva"
+				(path "/ab605654-a730-497b-9e09-9b351f74b935/df95af23-acf0-4751-87c3-fbc71e0508c6"
+					(reference "D14")
+					(unit 6)
+				)
+			)
+		)
+	)
+	(symbol
 		(lib_id "eva-altium-import:Sheet1_0_mirrored_04")
 		(at 144.78 71.12 0)
 		(unit 3)
@@ -60925,6 +61134,121 @@
 		)
 	)
 	(symbol
+		(lib_id "eva-altium-import:Sheet1_0_04")
+		(at 204.47 194.31 0)
+		(unit 5)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(dnp no)
+		(uuid "423fe2c3-ec2b-4a39-9e99-fd0bcd7d232c")
+		(property "Reference" "D14"
+			(at 207.772 191.77 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify bottom)
+			)
+		)
+		(property "Value" "04"
+			(at 214.63 196.85 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify top)
+				(hide yes)
+			)
+		)
+		(property "Footprint" "SO14"
+			(at 204.47 194.31 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Datasheet" ""
+			(at 204.47 194.31 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Description" "04"
+			(at 204.47 194.31 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "ALTIUM_VALUE" "74ACT04"
+			(at 215.9 197.358 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify top)
+			)
+		)
+		(pin "6"
+			(uuid "9f2d898e-e7ba-40a8-b53f-864a931da3de")
+		)
+		(pin "13"
+			(uuid "24649532-f754-4865-83ff-33c7303a73e0")
+		)
+		(pin "8"
+			(uuid "ee04ed9b-fe19-46f6-85f1-c201aa853f5f")
+		)
+		(pin "9"
+			(uuid "daf74822-9a0b-4a44-b4d5-cec83dfbe17e")
+		)
+		(pin "2"
+			(uuid "d7cc00d2-6d76-4cdd-94f4-3edf4d15e0f3")
+		)
+		(pin "5"
+			(uuid "66116896-efe1-453d-b13a-6e8a3af7f594")
+		)
+		(pin "4"
+			(uuid "073bd497-c11e-425d-a240-1a8191fae84a")
+		)
+		(pin "3"
+			(uuid "44c2af15-090e-477b-81de-ff4f96a39e40")
+		)
+		(pin "7"
+			(uuid "aa9ec712-6952-46de-ac4f-1479c1599e67")
+		)
+		(pin "10"
+			(uuid "09f7048f-e7af-482e-8f91-b56a91364e3e")
+		)
+		(pin "14"
+			(uuid "5ef43fbe-a023-4891-9f64-50918774f546")
+		)
+		(pin "1"
+			(uuid "1fdd1f8c-4658-485b-a8e7-ab302c7f9687")
+		)
+		(pin "11"
+			(uuid "fa9a263b-8113-46bc-affb-79f8e6ab3fa9")
+		)
+		(pin "12"
+			(uuid "30f8e250-0d36-47da-acd9-c32654a6e3c5")
+		)
+		(instances
+			(project "eva"
+				(path "/ab605654-a730-497b-9e09-9b351f74b935/df95af23-acf0-4751-87c3-fbc71e0508c6"
+					(reference "D14")
+					(unit 5)
+				)
+			)
+		)
+	)
+	(symbol
 		(lib_id "eva-altium-import:Sheet1_0_mirrored_ICS501")
 		(at 246.38 154.94 0)
 		(unit 1)
@@ -61413,122 +61737,6 @@
 				(path "/ab605654-a730-497b-9e09-9b351f74b935/df95af23-acf0-4751-87c3-fbc71e0508c6"
 					(reference "C95")
 					(unit 1)
-				)
-			)
-		)
-	)
-	(symbol
-		(lib_id "eva-altium-import:Sheet1_0_04")
-		(at 195.58 66.04 0)
-		(unit 6)
-		(exclude_from_sim no)
-		(in_bom yes)
-		(on_board yes)
-		(dnp no)
-		(uuid "529ce73e-8259-4855-9219-27cb90485ad9")
-		(property "Reference" "D14"
-			(at 205.74 63.5 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(justify bottom)
-			)
-		)
-		(property "Value" "04"
-			(at 195.58 66.04 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(justify left bottom)
-				(hide yes)
-			)
-		)
-		(property "Footprint" "SO14"
-			(at 195.58 66.04 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(hide yes)
-			)
-		)
-		(property "Datasheet" ""
-			(at 195.58 66.04 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(hide yes)
-			)
-		)
-		(property "Description" "04"
-			(at 195.58 66.04 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(hide yes)
-			)
-		)
-		(property "ALTIUM_VALUE" "74ACT04"
-			(at 195.58 66.04 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(justify left bottom)
-				(hide yes)
-			)
-		)
-		(pin "4"
-			(uuid "b1423945-222f-4e83-9d03-846dfb5f18f8")
-		)
-		(pin "3"
-			(uuid "617cd0d1-02bb-4982-9560-a4aaddfafaea")
-		)
-		(pin "8"
-			(uuid "62111053-12b3-4f51-b058-1b6bb6e914e2")
-		)
-		(pin "1"
-			(uuid "3c02cd07-80ad-4077-97c0-aa71df032cd8")
-		)
-		(pin "12"
-			(uuid "32b2c694-bf40-4ad8-ba33-5ceae2c35236")
-		)
-		(pin "2"
-			(uuid "3c0ae45c-863f-486c-8c91-80503319bd78")
-		)
-		(pin "9"
-			(uuid "9df2978d-303d-401c-9ecc-0701ada9bf31")
-		)
-		(pin "7"
-			(uuid "5ce35909-bc95-410b-96b5-fde3a5438b6c")
-		)
-		(pin "10"
-			(uuid "c66f8b99-5dba-468c-b8c6-7422b52e652e")
-		)
-		(pin "6"
-			(uuid "36ca3092-0619-473d-9a0d-c47866138f2b")
-		)
-		(pin "11"
-			(uuid "7ae5387e-f786-49ae-9e4c-326c74f2da9e")
-		)
-		(pin "5"
-			(uuid "9c0ff0f0-264a-439a-8fe6-0d00c2f6e328")
-		)
-		(pin "13"
-			(uuid "f622a925-09a2-4b33-a8d0-ca616056d0a8")
-		)
-		(pin "14"
-			(uuid "b3c363bb-df83-4c24-864a-b91515df9c36")
-		)
-		(instances
-			(project ""
-				(path "/ab605654-a730-497b-9e09-9b351f74b935/df95af23-acf0-4751-87c3-fbc71e0508c6"
-					(reference "D14")
-					(unit 6)
 				)
 			)
 		)
@@ -62974,6 +63182,74 @@
 			(project ""
 				(path "/ab605654-a730-497b-9e09-9b351f74b935/df95af23-acf0-4751-87c3-fbc71e0508c6"
 					(reference "C102")
+					(unit 1)
+				)
+			)
+		)
+	)
+	(symbol
+		(lib_id "eva-altium-import:Sheet1_2_RESCHIP")
+		(at 227.33 194.31 90)
+		(unit 1)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(dnp no)
+		(uuid "8108455d-877c-425f-92f1-b768ddb8b4fc")
+		(property "Reference" "R175"
+			(at 229.108 198.882 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left top)
+			)
+		)
+		(property "Value" "51"
+			(at 227.33 200.66 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Footprint" "R-CHIP"
+			(at 227.33 194.31 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Datasheet" ""
+			(at 227.33 194.31 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Description" "RESCHIP"
+			(at 227.33 194.31 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(pin "2"
+			(uuid "6eb7d6e1-2eac-4d37-9c1f-1e7ed4f8c96e")
+		)
+		(pin "1"
+			(uuid "939a6535-b7f9-492c-9d44-e9f784978296")
+		)
+		(instances
+			(project "eva"
+				(path "/ab605654-a730-497b-9e09-9b351f74b935/df95af23-acf0-4751-87c3-fbc71e0508c6"
+					(reference "R175")
 					(unit 1)
 				)
 			)
@@ -65983,7 +66259,7 @@
 		(dnp no)
 		(uuid "bd7ac71d-8d7f-4efb-bd79-608d32b29106")
 		(property "Reference" "D14"
-			(at 214.63 198.882 0)
+			(at 208.28 199.39 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -66222,122 +66498,6 @@
 				(path "/ab605654-a730-497b-9e09-9b351f74b935/df95af23-acf0-4751-87c3-fbc71e0508c6"
 					(reference "C28")
 					(unit 1)
-				)
-			)
-		)
-	)
-	(symbol
-		(lib_id "eva-altium-import:Sheet1_0_04")
-		(at 175.26 66.04 0)
-		(unit 5)
-		(exclude_from_sim no)
-		(in_bom yes)
-		(on_board yes)
-		(dnp no)
-		(uuid "bfea808f-17d4-4050-8dfa-f0566dbd9d26")
-		(property "Reference" "D14"
-			(at 185.42 63.5 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(justify bottom)
-			)
-		)
-		(property "Value" "04"
-			(at 175.26 66.04 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(justify left bottom)
-				(hide yes)
-			)
-		)
-		(property "Footprint" "SO14"
-			(at 175.26 66.04 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(hide yes)
-			)
-		)
-		(property "Datasheet" ""
-			(at 175.26 66.04 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(hide yes)
-			)
-		)
-		(property "Description" "04"
-			(at 175.26 66.04 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(hide yes)
-			)
-		)
-		(property "ALTIUM_VALUE" "74ACT04"
-			(at 175.26 66.04 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(justify left bottom)
-				(hide yes)
-			)
-		)
-		(pin "11"
-			(uuid "97e3e2d2-948d-4597-90f4-7cb220a4d6c0")
-		)
-		(pin "7"
-			(uuid "fdc28fc7-3c15-48d8-aa78-f083315cc595")
-		)
-		(pin "4"
-			(uuid "43c38cd9-6f47-4160-8cba-9a70e4fd97a1")
-		)
-		(pin "12"
-			(uuid "faa57dae-7ed2-4c59-ab52-978136ae87d4")
-		)
-		(pin "6"
-			(uuid "e83cae4b-525b-4216-8c38-43f90fcf6b6d")
-		)
-		(pin "9"
-			(uuid "0ebe8ffb-5d79-4d4a-ab64-7b5fd7a39c4f")
-		)
-		(pin "5"
-			(uuid "4d1c6d4f-6341-4c00-85e5-51909bc14524")
-		)
-		(pin "14"
-			(uuid "15f589f1-555e-4c05-a5db-dbd01f2f14ee")
-		)
-		(pin "1"
-			(uuid "8b7f6b7d-b1f4-49d0-9cfc-6b224bda1b2e")
-		)
-		(pin "8"
-			(uuid "a4197df9-4efe-4af4-8c2d-729dfc0d63d8")
-		)
-		(pin "10"
-			(uuid "290f47e2-288f-4e72-9e69-3b8917046450")
-		)
-		(pin "2"
-			(uuid "30123733-9f51-4aee-9aa5-c2bec9478f52")
-		)
-		(pin "3"
-			(uuid "bcbf603c-9199-46b4-ae2e-378cc6906127")
-		)
-		(pin "13"
-			(uuid "4e66001b-7a1a-442f-afc3-549eef061e2f")
-		)
-		(instances
-			(project ""
-				(path "/ab605654-a730-497b-9e09-9b351f74b935/df95af23-acf0-4751-87c3-fbc71e0508c6"
-					(reference "D14")
-					(unit 5)
 				)
 			)
 		)
