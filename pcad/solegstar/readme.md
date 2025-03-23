@@ -1,10 +1,12 @@
 # Версии плат ZX Evolution от Олега Solegstar
 
 Версии плат идут в следующем порядке (сперва старые, затем новые):
-- 01_rev_b3 : Revision B3
-- 02_rev_cs : Revision CS
-- 03_rev_cv : Revision CV
-- 04_rev_cs2 : Revision CS2
+- **01_rev_b3** : Revision B3
+- **02_rev_cs** : Revision CS
+- **03_rev_cv** : Revision CV
+- **04_rev_cs2** : Revision CS2
+
+Задние панели для различных версий ZX Evolution в каталоге **backplane_zxevo**.
 
 ## Перечень изменений
 
