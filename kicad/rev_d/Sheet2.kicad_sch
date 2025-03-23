@@ -20481,12 +20481,6 @@
 		(uuid "415fe48a-9287-4512-8406-2b421c24ca45")
 	)
 	(junction
-		(at 499.11 335.28)
-		(diameter 0)
-		(color 0 0 0 0)
-		(uuid "41f301a7-a723-4c18-ba05-c7dcd62cd1f6")
-	)
-	(junction
 		(at 161.29 233.68)
 		(diameter 0)
 		(color 0 0 0 0)
@@ -21063,12 +21057,6 @@
 		(uuid "97032886-4dd8-4308-84e5-7b58efe53020")
 	)
 	(junction
-		(at 441.96 334.01)
-		(diameter 0)
-		(color 0 0 0 0)
-		(uuid "975f7434-8bda-4062-9819-3f2a2804ea72")
-	)
-	(junction
 		(at 325.12 306.07)
 		(diameter 0)
 		(color 0 0 0 0)
@@ -21241,12 +21229,6 @@
 		(diameter 0)
 		(color 0 0 0 0)
 		(uuid "bb3159af-fca3-46e1-a5a9-58ab4e0632d6")
-	)
-	(junction
-		(at 439.42 341.63)
-		(diameter 0)
-		(color 0 0 0 0)
-		(uuid "bb5a353b-ca5c-4413-a587-2a29dcfcb6ea")
 	)
 	(junction
 		(at 492.76 345.44)
@@ -21505,12 +21487,6 @@
 		(diameter 0)
 		(color 0 0 0 0)
 		(uuid "efd31115-584d-419b-8bd4-7f2f08a5069f")
-	)
-	(junction
-		(at 495.3 342.9)
-		(diameter 0)
-		(color 0 0 0 0)
-		(uuid "f01e923f-4bc0-448e-a206-e35150fa1a81")
 	)
 	(junction
 		(at 127 266.7)
@@ -23899,7 +23875,7 @@
 	)
 	(wire
 		(pts
-			(xy 495.3 335.28) (xy 499.11 335.28)
+			(xy 495.3 335.28) (xy 500.38 335.28)
 		)
 		(stroke
 			(width 0)
@@ -24606,16 +24582,6 @@
 	)
 	(wire
 		(pts
-			(xy 438.15 341.63) (xy 439.42 341.63)
-		)
-		(stroke
-			(width 0)
-			(type default)
-		)
-		(uuid "57397ccc-1fca-4aeb-9d63-426d7a90c37b")
-	)
-	(wire
-		(pts
 			(xy 383.54 288.29) (xy 384.81 288.29)
 		)
 		(stroke
@@ -24849,7 +24815,7 @@
 	)
 	(polyline
 		(pts
-			(xy 432.435 365.76) (xy 523.875 365.76)
+			(xy 423.545 365.76) (xy 523.875 365.76)
 		)
 		(stroke
 			(width 0.254)
@@ -26268,16 +26234,6 @@
 	)
 	(wire
 		(pts
-			(xy 499.11 335.28) (xy 500.38 335.28)
-		)
-		(stroke
-			(width 0)
-			(type default)
-		)
-		(uuid "856be7da-1afa-4f28-a4a8-054b250e7bee")
-	)
-	(wire
-		(pts
 			(xy 391.16 213.36) (xy 386.08 213.36)
 		)
 		(stroke
@@ -26958,7 +26914,7 @@
 	)
 	(polyline
 		(pts
-			(xy 432.435 308.61) (xy 432.435 365.76)
+			(xy 423.545 292.1) (xy 423.545 365.76)
 		)
 		(stroke
 			(width 0.254)
@@ -29028,16 +28984,6 @@
 	)
 	(wire
 		(pts
-			(xy 438.15 334.01) (xy 441.96 334.01)
-		)
-		(stroke
-			(width 0)
-			(type default)
-		)
-		(uuid "d5ba4579-9def-4211-b87e-12cbaed5789e")
-	)
-	(wire
-		(pts
 			(xy 346.71 74.93) (xy 346.71 105.41)
 		)
 		(stroke
@@ -29320,16 +29266,6 @@
 			(type default)
 		)
 		(uuid "dd51d782-0f8d-4d6b-900f-dbf3a7948e08")
-	)
-	(wire
-		(pts
-			(xy 495.3 342.9) (xy 499.11 342.9)
-		)
-		(stroke
-			(width 0)
-			(type default)
-		)
-		(uuid "dd6588d8-557c-4da8-a82a-1caa5023ca78")
 	)
 	(wire
 		(pts
@@ -29616,7 +29552,7 @@
 	)
 	(polyline
 		(pts
-			(xy 523.875 365.76) (xy 523.875 308.61)
+			(xy 523.875 366.395) (xy 523.875 292.735)
 		)
 		(stroke
 			(width 0.254)
@@ -30213,7 +30149,7 @@
 	)
 	(polyline
 		(pts
-			(xy 523.875 308.61) (xy 432.435 308.61)
+			(xy 523.875 292.735) (xy 423.545 292.735)
 		)
 		(stroke
 			(width 0.254)
@@ -31141,7 +31077,7 @@
 		)
 		(uuid "8d502a8f-009f-4769-81ca-8d3c5279c686")
 	)
-	(text "Place only VD1 and solder bridge J10 for no switch"
+	(text "Place only VD1 and solder bridge J10 for no switch.\nPlace nothing for MB9987 (no 12v)"
 		(exclude_from_sim no)
 		(at 462.153 362.204 0)
 		(effects
@@ -40373,7 +40309,7 @@
 				(justify left)
 			)
 		)
-		(property "Value" "10K"
+		(property "Value" "8K2"
 			(at 441.96 339.598 90)
 			(effects
 				(font
@@ -40789,75 +40725,6 @@
 			(project ""
 				(path "/ab605654-a730-497b-9e09-9b351f74b935/31d5864f-06ec-4c73-9256-780a6880087d"
 					(reference "R42")
-					(unit 1)
-				)
-			)
-		)
-	)
-	(symbol
-		(lib_id "Device:R")
-		(at 499.11 339.09 0)
-		(unit 1)
-		(exclude_from_sim no)
-		(in_bom yes)
-		(on_board yes)
-		(dnp no)
-		(uuid "30843b1f-f1b6-472f-b42f-55b14e5cb9e7")
-		(property "Reference" "R166"
-			(at 501.65 341.63 90)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(justify left)
-			)
-		)
-		(property "Value" "10K"
-			(at 499.11 340.868 90)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(justify left)
-			)
-		)
-		(property "Footprint" "Resistor_SMD:R_0805_2012Metric_Pad1.20x1.40mm_HandSolder"
-			(at 497.332 339.09 90)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(hide yes)
-			)
-		)
-		(property "Datasheet" "~"
-			(at 499.11 339.09 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(hide yes)
-			)
-		)
-		(property "Description" "Resistor"
-			(at 499.11 339.09 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(hide yes)
-			)
-		)
-		(pin "2"
-			(uuid "99f4c6b2-8460-4cbc-9831-43b78205c48b")
-		)
-		(pin "1"
-			(uuid "86620577-e0c8-4455-9e9a-b3dd0e2ad3c3")
-		)
-		(instances
-			(project "eva"
-				(path "/ab605654-a730-497b-9e09-9b351f74b935/31d5864f-06ec-4c73-9256-780a6880087d"
-					(reference "R166")
 					(unit 1)
 				)
 			)
@@ -44555,75 +44422,6 @@
 			(project ""
 				(path "/ab605654-a730-497b-9e09-9b351f74b935/31d5864f-06ec-4c73-9256-780a6880087d"
 					(reference "R135")
-					(unit 1)
-				)
-			)
-		)
-	)
-	(symbol
-		(lib_id "Device:R")
-		(at 438.15 337.82 0)
-		(unit 1)
-		(exclude_from_sim no)
-		(in_bom yes)
-		(on_board yes)
-		(dnp no)
-		(uuid "53c0a30d-0917-425b-8f2c-0739098d8f0a")
-		(property "Reference" "R156"
-			(at 435.61 340.614 90)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(justify left)
-			)
-		)
-		(property "Value" "47K"
-			(at 438.15 339.598 90)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(justify left)
-			)
-		)
-		(property "Footprint" "Resistor_SMD:R_0805_2012Metric_Pad1.20x1.40mm_HandSolder"
-			(at 436.372 337.82 90)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(hide yes)
-			)
-		)
-		(property "Datasheet" "~"
-			(at 438.15 337.82 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(hide yes)
-			)
-		)
-		(property "Description" "Resistor"
-			(at 438.15 337.82 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(hide yes)
-			)
-		)
-		(pin "2"
-			(uuid "817aab51-67f2-4d73-84bd-f34cc1dbbd4c")
-		)
-		(pin "1"
-			(uuid "a9136745-bf53-4e71-89b5-0a724803e2ab")
-		)
-		(instances
-			(project "eva"
-				(path "/ab605654-a730-497b-9e09-9b351f74b935/31d5864f-06ec-4c73-9256-780a6880087d"
-					(reference "R156")
 					(unit 1)
 				)
 			)
@@ -50725,7 +50523,7 @@
 				(justify left)
 			)
 		)
-		(property "Value" "47K"
+		(property "Value" "8K2"
 			(at 495.3 340.868 90)
 			(effects
 				(font
