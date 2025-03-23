@@ -1,5 +1,5 @@
 
-; LAST UPDATE: 27.02.2025 savelij
+; LAST UPDATE: 23.03.2025 savelij
 
 COM_FAT		EX AF,AF'
 		CALL P5_READ_BYTE
@@ -1382,6 +1382,8 @@ LD_FILE8	EXX
 ; IYL - E - 
 ; IYH - D - смещение в кластере
 READ_FILE	EX AF,AF'
+		LD A,0xFF
+		LD (FATVAR.NumSec2Buf),A
 		LD A,IYL
 		DEC A
 		JR Z,LD_FILE00
