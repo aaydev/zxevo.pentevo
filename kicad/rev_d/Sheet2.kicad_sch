@@ -29749,6 +29749,16 @@
 		)
 		(uuid "9f6b9abb-f14c-4e2a-b36b-e30242a10388")
 	)
+	(text "could be replaced\nwith LP2985-3.3\n(reduced output current)"
+		(exclude_from_sim no)
+		(at 408.686 84.328 0)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+		)
+		(uuid "bb352f68-e92d-4c27-a448-823746a29275")
+	)
 	(text "of"
 		(exclude_from_sim no)
 		(at 516.475 408.225 0)
@@ -44121,7 +44131,7 @@
 				)
 			)
 		)
-		(property "Value" "LP2985-3.3"
+		(property "Value" "TPS7A2033"
 			(at 430.53 86.36 0)
 			(effects
 				(font
