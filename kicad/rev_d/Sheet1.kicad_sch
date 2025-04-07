@@ -27398,7 +27398,7 @@
 	)
 	(wire
 		(pts
-			(xy 381 299.72) (xy 377.19 299.72)
+			(xy 378.46 299.72) (xy 377.19 299.72)
 		)
 		(stroke
 			(width 0)
@@ -30383,16 +30383,6 @@
 	)
 	(wire
 		(pts
-			(xy 381 294.64) (xy 377.19 294.64)
-		)
-		(stroke
-			(width 0)
-			(type default)
-		)
-		(uuid "78a9400a-5868-4a67-95d6-1eb412bc3c93")
-	)
-	(wire
-		(pts
 			(xy 119.38 304.8) (xy 121.92 304.8)
 		)
 		(stroke
@@ -32388,6 +32378,16 @@
 	)
 	(wire
 		(pts
+			(xy 378.46 294.64) (xy 377.19 294.64)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "ac35c02a-671c-45bf-aa89-d2ac470a3ea1")
+	)
+	(wire
+		(pts
 			(xy 457.2 92.71) (xy 462.28 92.71)
 		)
 		(stroke
@@ -33268,7 +33268,7 @@
 	)
 	(wire
 		(pts
-			(xy 381 297.18) (xy 377.19 297.18)
+			(xy 378.46 297.18) (xy 377.19 297.18)
 		)
 		(stroke
 			(width 0)
@@ -38613,9 +38613,9 @@
 			)
 		)
 	)
-	(global_label "CHC"
+	(global_label "AY_CHC"
 		(shape output)
-		(at 381 299.72 0)
+		(at 378.46 299.72 0)
 		(fields_autoplaced yes)
 		(effects
 			(font
@@ -38625,7 +38625,7 @@
 		)
 		(uuid "1b9c75b3-e16f-47f6-bba1-5e43d8671662")
 		(property "Intersheetrefs" "${INTERSHEET_REFS}"
-			(at 387.8557 299.72 0)
+			(at 385.3157 299.72 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -40791,9 +40791,9 @@
 			)
 		)
 	)
-	(global_label "CHA"
+	(global_label "AY_CHA"
 		(shape output)
-		(at 381 294.64 0)
+		(at 378.46 294.64 0)
 		(fields_autoplaced yes)
 		(effects
 			(font
@@ -40803,7 +40803,7 @@
 		)
 		(uuid "3b463db6-16a9-4c18-9d43-2ab7ab786c9b")
 		(property "Intersheetrefs" "${INTERSHEET_REFS}"
-			(at 387.6743 294.64 0)
+			(at 385.1343 294.64 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -42067,9 +42067,9 @@
 			)
 		)
 	)
-	(global_label "CHB"
+	(global_label "AY_CHB"
 		(shape output)
-		(at 381 297.18 0)
+		(at 378.46 297.18 0)
 		(fields_autoplaced yes)
 		(effects
 			(font
@@ -42079,7 +42079,7 @@
 		)
 		(uuid "4a671ea0-3620-4c23-89c3-6d5e9c4dc0fb")
 		(property "Intersheetrefs" "${INTERSHEET_REFS}"
-			(at 387.8557 297.18 0)
+			(at 385.3157 297.18 0)
 			(effects
 				(font
 					(size 1.27 1.27)
