@@ -10,7 +10,7 @@
 		(company "NedoPC")
 	)
 	(lib_symbols
-		(symbol "Diode:LL4148"
+		(symbol "Diode:US1A"
 			(pin_numbers hide)
 			(pin_names hide)
 			(exclude_from_sim no)
@@ -24,7 +24,7 @@
 					)
 				)
 			)
-			(property "Value" "LL4148"
+			(property "Value" "US1A"
 				(at 0 -2.54 0)
 				(effects
 					(font
@@ -32,7 +32,7 @@
 					)
 				)
 			)
-			(property "Footprint" "Diode_SMD:D_MiniMELF"
+			(property "Footprint" "Diode_SMD:D_SMA"
 				(at 0 -4.445 0)
 				(effects
 					(font
@@ -41,7 +41,7 @@
 					(hide yes)
 				)
 			)
-			(property "Datasheet" "http://www.vishay.com/docs/85557/ll4148.pdf"
+			(property "Datasheet" "https://www.diodes.com/assets/Datasheets/ds16008.pdf"
 				(at 0 0 0)
 				(effects
 					(font
@@ -50,7 +50,7 @@
 					(hide yes)
 				)
 			)
-			(property "Description" "100V 0.15A standard switching diode, MiniMELF"
+			(property "Description" "50V, 1A, General Purpose Rectifier Diode, SMA(DO-214AC)"
 				(at 0 0 0)
 				(effects
 					(font
@@ -77,7 +77,7 @@
 					(hide yes)
 				)
 			)
-			(property "ki_keywords" "diode"
+			(property "ki_keywords" "Ultra Fast"
 				(at 0 0 0)
 				(effects
 					(font
@@ -86,7 +86,7 @@
 					(hide yes)
 				)
 			)
-			(property "ki_fp_filters" "D*MiniMELF*"
+			(property "ki_fp_filters" "D*SMA*"
 				(at 0 0 0)
 				(effects
 					(font
@@ -95,7 +95,7 @@
 					(hide yes)
 				)
 			)
-			(symbol "LL4148_0_1"
+			(symbol "US1A_0_1"
 				(polyline
 					(pts
 						(xy -1.27 1.27) (xy -1.27 -1.27)
@@ -133,7 +133,7 @@
 					)
 				)
 			)
-			(symbol "LL4148_1_1"
+			(symbol "US1A_1_1"
 				(pin passive line
 					(at -3.81 0 0)
 					(length 2.54)
@@ -60242,91 +60242,6 @@
 		)
 	)
 	(symbol
-		(lib_id "Diode:LL4148")
-		(at 133.35 387.35 0)
-		(unit 1)
-		(exclude_from_sim no)
-		(in_bom yes)
-		(on_board yes)
-		(dnp no)
-		(uuid "3b2c1a67-b624-44f1-9ddb-112a8f8c98f9")
-		(property "Reference" "VD16"
-			(at 128.524 386.08 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
-		(property "Value" "LL4148"
-			(at 139.192 386.08 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
-		(property "Footprint" "Diode_SMD:D_MiniMELF_Handsoldering"
-			(at 133.35 391.795 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(hide yes)
-			)
-		)
-		(property "Datasheet" "http://www.vishay.com/docs/85557/ll4148.pdf"
-			(at 133.35 387.35 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(hide yes)
-			)
-		)
-		(property "Description" "100V 0.15A standard switching diode, MiniMELF"
-			(at 133.35 387.35 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(hide yes)
-			)
-		)
-		(property "Sim.Device" "D"
-			(at 133.35 387.35 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(hide yes)
-			)
-		)
-		(property "Sim.Pins" "1=K 2=A"
-			(at 133.35 387.35 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(hide yes)
-			)
-		)
-		(pin "2"
-			(uuid "67b3f0b9-021e-40e7-915b-218b112d29bd")
-		)
-		(pin "1"
-			(uuid "73054e86-55a3-4bd3-9d63-caecb496bc95")
-		)
-		(instances
-			(project ""
-				(path "/ab605654-a730-497b-9e09-9b351f74b935/df95af23-acf0-4751-87c3-fbc71e0508c6"
-					(reference "VD16")
-					(unit 1)
-				)
-			)
-		)
-	)
-	(symbol
 		(lib_id "eva-altium-import:Sheet1_0_CAPCHIP")
 		(at 280.67 245.11 0)
 		(unit 1)
@@ -66681,6 +66596,91 @@
 		)
 	)
 	(symbol
+		(lib_id "Diode:US1A")
+		(at 133.35 387.35 0)
+		(unit 1)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(dnp no)
+		(uuid "c2d976df-d5cf-4741-86c5-547d2f4b2b99")
+		(property "Reference" "VD16"
+			(at 138.176 386.08 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Value" "US1A"
+			(at 128.524 386.08 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Footprint" "Diode_SMD:D_SMA"
+			(at 133.35 391.795 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Datasheet" "https://www.diodes.com/assets/Datasheets/ds16008.pdf"
+			(at 133.35 387.35 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Description" "50V, 1A, General Purpose Rectifier Diode, SMA(DO-214AC)"
+			(at 133.35 387.35 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Sim.Device" "D"
+			(at 133.35 387.35 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Sim.Pins" "1=K 2=A"
+			(at 133.35 387.35 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(pin "1"
+			(uuid "fce0a966-9f10-40a6-a4b6-b07f11243bb8")
+		)
+		(pin "2"
+			(uuid "c38b9611-b72c-43ac-8f25-7816de29466f")
+		)
+		(instances
+			(project "eva"
+				(path "/ab605654-a730-497b-9e09-9b351f74b935/df95af23-acf0-4751-87c3-fbc71e0508c6"
+					(reference "VD16")
+					(unit 1)
+				)
+			)
+		)
+	)
+	(symbol
 		(lib_id "eva-altium-import:Sheet1_0_CDR64B")
 		(at 274.32 353.06 0)
 		(unit 1)
@@ -67485,91 +67485,6 @@
 		)
 	)
 	(symbol
-		(lib_id "Diode:LL4148")
-		(at 132.08 360.68 0)
-		(unit 1)
-		(exclude_from_sim no)
-		(in_bom yes)
-		(on_board yes)
-		(dnp no)
-		(uuid "cd17a643-980a-4e0c-b25b-156d330ba92d")
-		(property "Reference" "VD17"
-			(at 127.254 359.41 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
-		(property "Value" "LL4148"
-			(at 137.922 359.41 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
-		(property "Footprint" "Diode_SMD:D_MiniMELF_Handsoldering"
-			(at 132.08 365.125 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(hide yes)
-			)
-		)
-		(property "Datasheet" "http://www.vishay.com/docs/85557/ll4148.pdf"
-			(at 132.08 360.68 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(hide yes)
-			)
-		)
-		(property "Description" "100V 0.15A standard switching diode, MiniMELF"
-			(at 132.08 360.68 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(hide yes)
-			)
-		)
-		(property "Sim.Device" "D"
-			(at 132.08 360.68 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(hide yes)
-			)
-		)
-		(property "Sim.Pins" "1=K 2=A"
-			(at 132.08 360.68 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(hide yes)
-			)
-		)
-		(pin "2"
-			(uuid "5f5a5068-c708-48a2-944c-c3d955afd80d")
-		)
-		(pin "1"
-			(uuid "025cdd38-70d9-4a9b-8fac-0c39de281d1a")
-		)
-		(instances
-			(project "eva"
-				(path "/ab605654-a730-497b-9e09-9b351f74b935/df95af23-acf0-4751-87c3-fbc71e0508c6"
-					(reference "VD17")
-					(unit 1)
-				)
-			)
-		)
-	)
-	(symbol
 		(lib_id "eva-altium-import:Sheet1_0_Z84C0020FEC")
 		(at 30.48 54.61 0)
 		(unit 1)
@@ -68267,6 +68182,91 @@
 			(project ""
 				(path "/ab605654-a730-497b-9e09-9b351f74b935/df95af23-acf0-4751-87c3-fbc71e0508c6"
 					(reference "C50")
+					(unit 1)
+				)
+			)
+		)
+	)
+	(symbol
+		(lib_id "Diode:US1A")
+		(at 132.08 360.68 0)
+		(unit 1)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(dnp no)
+		(uuid "dc6900e6-324e-4005-b056-a7187b3e2479")
+		(property "Reference" "VD17"
+			(at 136.906 359.41 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Value" "US1A"
+			(at 127.254 359.41 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Footprint" "Diode_SMD:D_SMA"
+			(at 132.08 365.125 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Datasheet" "https://www.diodes.com/assets/Datasheets/ds16008.pdf"
+			(at 132.08 360.68 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Description" "50V, 1A, General Purpose Rectifier Diode, SMA(DO-214AC)"
+			(at 132.08 360.68 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Sim.Device" "D"
+			(at 132.08 360.68 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Sim.Pins" "1=K 2=A"
+			(at 132.08 360.68 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(pin "1"
+			(uuid "4aeec8f3-25ef-48ca-9631-fa1838750776")
+		)
+		(pin "2"
+			(uuid "bc84ec80-5fe5-4a72-bb94-bc6ebf60b4c5")
+		)
+		(instances
+			(project "eva"
+				(path "/ab605654-a730-497b-9e09-9b351f74b935/df95af23-acf0-4751-87c3-fbc71e0508c6"
+					(reference "VD17")
 					(unit 1)
 				)
 			)
