@@ -32625,7 +32625,7 @@
 				)
 			)
 		)
-		(property "Value" "US1A"
+		(property "Value" "S1A"
 			(at 141.224 210.82 0)
 			(effects
 				(font
@@ -34333,7 +34333,7 @@
 				)
 			)
 		)
-		(property "Value" "US1A"
+		(property "Value" "S1A"
 			(at 99.314 200.66 0)
 			(effects
 				(font
@@ -36668,7 +36668,7 @@
 				)
 			)
 		)
-		(property "Value" "US1A"
+		(property "Value" "S1A"
 			(at 185.42 223.774 0)
 			(effects
 				(font
@@ -46094,7 +46094,7 @@
 				)
 			)
 		)
-		(property "Value" "US1A"
+		(property "Value" "S1A"
 			(at 156.21 230.632 0)
 			(effects
 				(font
