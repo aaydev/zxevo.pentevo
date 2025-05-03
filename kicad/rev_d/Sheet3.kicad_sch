@@ -11280,7 +11280,7 @@
 				)
 			)
 		)
-		(property "Value" "TLC072"
+		(property "Value" "TLV9162"
 			(at 267.97 83.058 0)
 			(effects
 				(font
@@ -11819,7 +11819,7 @@
 				)
 			)
 		)
-		(property "Value" "TLC072"
+		(property "Value" "TLV9162"
 			(at 267.208 79.502 0)
 			(effects
 				(font
@@ -11904,7 +11904,7 @@
 				)
 			)
 		)
-		(property "Value" "TLC072"
+		(property "Value" "TLV9162"
 			(at 212.09 164.338 0)
 			(effects
 				(font
@@ -12470,7 +12470,7 @@
 				)
 			)
 		)
-		(property "Value" "TLC072"
+		(property "Value" "TLV9162"
 			(at 117.094 62.738 0)
 			(effects
 				(font
@@ -13330,7 +13330,7 @@
 				)
 			)
 		)
-		(property "Value" "TLC072"
+		(property "Value" "TLV9162"
 			(at 117.094 67.31 0)
 			(effects
 				(font
@@ -13417,7 +13417,7 @@
 				(justify left)
 			)
 		)
-		(property "Value" "TLC072"
+		(property "Value" "TLV9162"
 			(at 85.09 135.8899 0)
 			(effects
 				(font
@@ -14346,7 +14346,7 @@
 				(justify left)
 			)
 		)
-		(property "Value" "TLC072"
+		(property "Value" "TLV9162"
 			(at 67.31 135.8899 0)
 			(effects
 				(font
@@ -14850,7 +14850,7 @@
 				(justify left)
 			)
 		)
-		(property "Value" "TLC072"
+		(property "Value" "TLV9162"
 			(at 52.07 135.8899 0)
 			(effects
 				(font
@@ -15280,7 +15280,7 @@
 				)
 			)
 		)
-		(property "Value" "TLC072"
+		(property "Value" "TLV9162"
 			(at 127.254 104.902 0)
 			(effects
 				(font
@@ -16504,7 +16504,7 @@
 				)
 			)
 		)
-		(property "Value" "TLC072"
+		(property "Value" "TLV9162"
 			(at 210.058 211.328 0)
 			(effects
 				(font
@@ -17105,7 +17105,7 @@
 				(justify left)
 			)
 		)
-		(property "Value" "TLC072"
+		(property "Value" "TLV9162"
 			(at 36.83 135.8899 0)
 			(effects
 				(font
@@ -17672,7 +17672,7 @@
 				)
 			)
 		)
-		(property "Value" "TLC072"
+		(property "Value" "TLV9162"
 			(at 105.41 168.91 0)
 			(effects
 				(font
