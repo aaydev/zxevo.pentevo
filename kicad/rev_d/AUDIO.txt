@@ -1,0 +1,69 @@
+--== audio specs and reqs ==--
+
+
+1. have sound from AY/YM and beeper/PWM-covox
+2. have some extra line-ins
+3. independent volume regulation for all of them
+4. line out/headset output also volume regulated
+5. be able to drive 32 Ohm headsets
+6. Use only +12v power supply for audio
+7. line-out also goes to extra video output pins
+
+
+
+
+--== audio decisions ==--
+
+
+(PT2258 related)
+
+1. Use PT2258 to control volume:
+  1 channel for AY/YM
+  1 channel for beeper/pwm-covox
+  1 channel for output volume
+  3 channels for line-ins (same number of line-ins as in rev.C)
+  total 2 ICs
+
+2. max Vp-p for PT2258 is 2v (1v amplitude or 0.7Vrms, see PT2257 datasheet and THD vs amplitude there)
+
+3. Vcc for PT2258 is ≈9v, can't be 12v. So, there's AVCC9 regulated voltage
+
+
+(headamp related)
+
+1. Use TPA6120 to drive line-one/headset: high power AND high quality
+
+2. Use AVCC12 (non regulated, directly from AT/ATX and passively filtered)
+   to get maximum output swing thus power
+
+3. To compensate for inevitable series resistors at the TPA6120 outputs,
+   use opamps.
+
+4. Output resistors should be of high thermal power, preferably MELF
+
+
+(general)
+
+1. Use metal film feedback resistors (bigger than 0805, best if MELF),
+   NP0 capacitors for low pass filters
+
+2. DC blocking/high pass filtering can't be done with polypropylene/etc. caps (too big!),
+   so we have to use electrolytics. Try to have related cutoff freqs as low as possible (<<20Hz)
+   to decrease distortion from them.
+
+
+(low-pass filtering)
+
+distributed 3-rd order butterworth, 30kHz -3dB.
+First stage for AY and for BEEP is 2nd order Q=1, (multiple-feedback),
+Second stage is just 1st-order RC within output amplifier.
+
+Some extra filtering for BEEP at higher freq.
+
+
+(high-pass filtering)
+
+distributed "synchronous" (or not so) 1st-order high-pass filters with electrolytics.
+<<20Hz cutoffs
+
+
