@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 
 
-e12=[1.0, 1.1, 1.2, 1.3, 1.5, 1.6, 1.8, 2.0, 2.2, 2.4, 2.7, 3.0, 3.3, 3.6, 3.9, 4.3, 4.7, 5.1, 5.6, 6.2, 6.8, 7.5, 8.2, 9.1];
+e24=[1.0, 1.1, 1.2, 1.3, 1.5, 1.6, 1.8, 2.0, 2.2, 2.4, 2.7, 3.0, 3.3, 3.6, 3.9, 4.3, 4.7, 5.1, 5.6, 6.2, 6.8, 7.5, 8.2, 9.1];
 
 
 def calc_rdiv(vo=None, vup=None, vdn=None, rup=None, rdn=None):
@@ -91,22 +91,22 @@ def calc_rdiv(vo=None, vup=None, vdn=None, rup=None, rdn=None):
 
 def select_nearest(r):
 
-	global e12;
+	global e24;
 
 
 	exp=1.0;
 
 	# select range
-	if r < min(e12):
-		while r < min(e12):
-			if r < max(e12)/10.0:
+	if r < min(e24):
+		while r < min(e24):
+			if r < max(e24)/10.0:
 				r = r*10.0;
 				exp = exp * 0.1;
 			else:
 				break;
-	elif r > max(e12):
-		while r > max(e12):
-			if r > min(e12)*10.0:
+	elif r > max(e24):
+		while r > max(e24):
+			if r > min(e24)*10.0:
 				r = r/10.0;
 				exp = exp * 10.0;
 			else:
@@ -114,10 +114,10 @@ def select_nearest(r):
 
 
 	# select nearest values
-	e12_a = [0.91]+e12+[10.0];
-	for i in range(len(e12_a)-1):
-		rdn = e12_a[i];
-		rup = e12_a[i+1];
+	e24_a = [0.91]+e24+[10.0];
+	for i in range(len(e24_a)-1):
+		rdn = e24_a[i];
+		rup = e24_a[i+1];
 		if rdn<=r and r<=rup:
 			break;
 
@@ -155,7 +155,7 @@ def r_fix(r,r_e24):
 
 def main():
 	
-	global e12;
+	global e24;
 
 	vref=2.5;
 	vo=6.0;
@@ -164,14 +164,14 @@ def main():
 
 	variants=[]
 
-	for rdn in e12:
+	for rdn in e24:
 		r = calc_rdiv(vo=vo, vdn=vref, rdn=rdn)
 		rup = r['rup']	
 
 		rup_lo = select_lo(rup);
 		rup_hi = select_hi(rup);
 
-		print("rdn_e12={}, rup_exact={}".format(rdn,rup));
+		print("rdn_e24={}, rup_exact={}".format(rdn,rup));
 
 		r=calc_rdiv(vdn=vref,rdn=rdn,rup=rup_hi)
 		vo_hi = r['vo']

@@ -14,6 +14,18 @@
 
 --== audio decisions ==--
 
+(YM2149)
+
+voltage on outputs (loaded as per rev.C)
+2.26v min, 3.40v max => 1.14 Vp-p (max 1.35Vp-p by datasheet)
+
+1.5*1.14 Vp-p (A/C + half B) to 2.0 Vp-p is K=1.17;
+
+
+(AY8910)
+
+Per datasheet, max 2mA current per output, 2 Vp-p @ 1k
+
 
 (PT2258 related)
 
