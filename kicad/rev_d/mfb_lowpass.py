@@ -85,7 +85,9 @@ def calc_mfb_lowpass():
     h_expr = h_solve[0]
     h_result = h_expr[h]
 
-    print(h_result)
+    init_printing()
+    pprint(h_expr)
+    pprint(h_result)
 
     #breakpoint()
 
