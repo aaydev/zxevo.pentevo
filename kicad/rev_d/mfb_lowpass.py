@@ -11,7 +11,7 @@ e6  = [1.0,                1.5,                2.2,                3.3,         
 def calc_mfb_lowpass():
 
     # as in sloa049, fig.7-1
-    r1,r2,r3,c1,c2 = symbols('r1 r2 r3 c1 c2')
+    r1,r2,r3,c1,c2 = symbols('r1 r2 r3 c1 c2', real=True, positive=True)
 
     # v is input voltage, u is output, x is voltage at r1/c2/r2/r3 node
     u,v,x = symbols('u v x')
@@ -22,7 +22,7 @@ def calc_mfb_lowpass():
     ir1,ic2,ir2,ir3 = symbols('ir1,ic2,ir2,ir3')
 
     # angular frequency (omega)
-    w = symbols('w')
+    w = symbols('w', real=True, positive=True)
 
     # make set of equations to calculate H
     #
@@ -61,7 +61,9 @@ def calc_mfb_lowpass():
 
     # now make more substitutions
     #
-    k,wc,q,h = symbols('k wc q h')
+    h = symbols('h')
+    k = symbols('k', real=True, negative=True)
+    q,wc = symbols('q wc', real=True, positive=True)
     #
     # filter gain
     s_eq1 = Eq( k, -r2/r1 )
@@ -70,7 +72,8 @@ def calc_mfb_lowpass():
     s_eq2 = Eq( wc, 1/sqrt(r2*r3*c1*c2) )
     #
     # quality
-    s_eq3 = Eq( q, sqrt(r2*r3*c1*c2)/(r3*c1+r2*c1-r3*c1*k) )
+    s_eq3  = Eq( q, sqrt(r2*r3*c1*c2)/(r3*c1+r2*c1-r3*c1*k) )
+    #s_neq3 = Lt( k, 0 )
     #
     # new H expression
     s_eq4 = Eq( h, h_expr )
@@ -86,7 +89,9 @@ def calc_mfb_lowpass():
     h_result = h_expr[h]
 
     init_printing()
+    print('')
     pprint(h_expr)
+    print('')
     pprint(h_result)
 
     #breakpoint()
