@@ -90,20 +90,47 @@ def calc_mfb_lowpass():
 
     init_printing()
     print('')
-    pprint(h_expr)
+    #pprint(h_expr)
     print('')
-    pprint(h_result)
+    pprint(Eq(h,h_result))
 
-    #breakpoint()
 
+    rc_solve = solve( [s_eq1, s_eq2, s_eq3], [r3,c2], dict=True )
+
+    rc_expr = rc_solve[0]
+
+    print('')
+    pprint(Eq(c2,rc_expr[c2]))
+    print('')
+    pprint(Eq(r3,rc_expr[r3]))
+    print('')
+
+"""
+                  2        
+            k⋅q⋅wc         
+h = ───────────────────────
+         2       2         
+    - q⋅w  + q⋅wc  + ⅈ⋅w⋅wc
+
+           q⋅(k - 1)       
+c₂ = ──────────────────────
+     r₂⋅wc⋅(c₁⋅q⋅r₂⋅wc - 1)
+
+     c₁⋅q⋅r₂⋅wc - 1 
+r₃ = ───────────────
+     c₁⋅q⋅wc⋅(k - 1)
+
+"""
 
 
 
 def main():
 
-	calc_mfb_lowpass()
+    #calc_mfb_lowpass()
 
 
 if __name__=="__main__":
-	main()
+    main()
+
+
 
