@@ -217,6 +217,21 @@ def select_two_nearest(val,val_exp,pvalues_name='e24'):
 
     return [ (vdn,vdn_exp), (vup,vup_exp) ];
 
+def select_one_nearest(val,pvalues_name='e24'):
+
+    lval = select_two_nearest(val,1.0,pvalues_name)
+
+    (vdn,vdn_exp) = lval[0]
+    (vup,vup_exp) = lval[1]
+
+    vdn *= vdn_exp
+    vup *= vup_exp
+
+    if math.fabs( (vdn-val)/val ) <= math.fabs( (vup-val)/val ):
+        return vdn
+    else:
+        return vup
+
 def get_neighbour_value(val,dir='up',pvalues_name='e24'):
     
     pvalues = select_pvalues_list(pvalues_name)
@@ -322,20 +337,42 @@ def select_values_in_range(vrange, vrange_exp, pvalues='e24'):
 
 
 
-def calc_filter( wc_set=2*math.pi*30000, q_set=1.0, k_set=(-1.17), r1_range=[20.0,30.0], r1_exp=1e3, r1_div=3.0, r1_values='e24', c1_range=[47.0,10000.0], c1_exp=1e-12, c1_values='e6'):
+def calc_filter( wc_set=2*math.pi*30000, q_set=1.0, k_set=(-1.17), r1_range=[20.0,30.0], r1_exp=1e3, r1_div=3.0, r_pvalues='e24', c1_range=[47.0,10000.0], c1_exp=1e-12, c_pvalues='e6'):
 
-    c1_values = select_values_in_range( c1_range, c1_exp, pvalues=c1_values )
+    c1_values = select_values_in_range( c1_range, c1_exp, pvalues=c_pvalues )
 
-    r1_values = select_values_in_range( [x for x in r1_range], r1_exp, pvalues=r1_values )
+    r1x3_values = select_values_in_range( [x for x in r1_range], r1_exp, pvalues=r_pvalues )
+    r1_values = [(x/r1_div,y) for (x,y) in r1x3_values]
 
-    print( c1_values )
-    print( r1_values )
+    print( 'c1 values for sweep: {}'.format([x*y for (x,y) in c1_values]) )
+    print( 'r1 values for sweep: {}'.format([x*y for (x,y) in r1_values]) )
 
+    print( '\ncalculating filter for: q={}, k={}, fc={}'.format(q_set,k_set,wc_set/(2*math.pi)) )
 
+    for r1 in [x*y for (x,y) in r1_values]:
+        for c1 in [x*y for (x,y) in c1_values]:
 
+            r2_ideal = (-1) * k_set * r1
 
+            c2_ideal = (q_set * (k_set - 1.0)) / (r2_ideal * wc_set * (c1 * q_set * r2_ideal * wc_set - 1.0))
 
+            r3_ideal = (c1 * q_set * r2_ideal * wc_set - 1.0) / ( (k_set - 1.0) * q_set * wc_set * c1 )
 
+            if r2_ideal<=0.0 or c2_ideal<=0.0 or r3_ideal<=0.0:
+                continue
+
+            print('\ntry c1={}, r1={}:'.format(c1,r1))
+            print(' ideal values: r2={}, r3={}, c2={}'.format(r2_ideal, r3_ideal, c2_ideal))
+
+            r2_real = select_one_nearest(r2_ideal, r_pvalues)
+            c2_real = select_one_nearest(c2_ideal, c_pvalues)
+            r3_real = select_one_nearest(r3_ideal, r_pvalues)
+            print(' read values: r2={}, r3={}, c2={}'.format(r2_real, r3_real, c2_real))
+
+            wc_real = 1.0/math.sqrt(c1*c2_real*r2_real*r3_real)
+            k_real = (-r2_real)/r1
+            q_real = 1.0 / (wc_real * c1 * ((1.0-k_real)*r3_real + r2_real))
+            print(' real parameters: q={}, k={}, fc={}'.format(q_real,k_real,wc_real/(2*math.pi)) )
 
 def main():
 
