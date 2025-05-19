@@ -244,7 +244,7 @@ def get_neighbour_value(val,dir='up',pvalues_name='e24'):
             found_v = v
             found_idx = idx
 
-            print(' found {} {}'.format(found_v,found_idx))
+            #print(' found {} {}'.format(found_v,found_idx))
             break
     
     if found_v is None:
@@ -257,7 +257,7 @@ def get_neighbour_value(val,dir='up',pvalues_name='e24'):
             exp = 10.0
         else:
             tmp = pvalues[1:-1]
-            print('  tmp {}'.format(tmp))
+            #print('  tmp {}'.format(tmp))
             next_v = tmp[found_idx+1]
         
     elif dir=='down':
@@ -294,8 +294,8 @@ def select_values_in_range(vrange, vrange_exp, pvalues='e24'):
     # expand interval by nearest preferred values
     vmin_vals = select_two_nearest(vmin,vrange_exp, pvalues_name=pvalues)
     vmax_vals = select_two_nearest(vmax,vrange_exp, pvalues_name=pvalues)
-    print(vmin,vmax,vrange_exp)
-    print(vmin_vals,vmax_vals)
+    #print(vmin,vmax,vrange_exp)
+    #print(vmin_vals,vmax_vals)
 
 
     # start building values list
@@ -317,16 +317,16 @@ def select_values_in_range(vrange, vrange_exp, pvalues='e24'):
 
     values_range = []
 
-    print('vmaxs: {} {}'.format(vmax_v, vmax_exp))
+    #print('vmaxs: {} {}'.format(vmax_v, vmax_exp))
     while val_exp_le( curr_v, curr_exp, vmax_v, vmax_exp ):
       
-        print('currs: {} {}'.format(curr_v, curr_exp))
+        #print('currs: {} {}'.format(curr_v, curr_exp))
 
         values_range = values_range + [ (curr_v, curr_exp) ]
 
         next_v, exp_update = get_neighbour_value( curr_v, dir='up', pvalues_name=pvalues )
         
-        print('nexts: {} {}\n'.format(next_v, exp_update))
+        #print('nexts: {} {}\n'.format(next_v, exp_update))
 
         curr_v = next_v
         curr_exp *= exp_update
@@ -337,7 +337,7 @@ def select_values_in_range(vrange, vrange_exp, pvalues='e24'):
 
 
 
-def calc_filter( wc_set=2*math.pi*30000, q_set=1.0, k_set=(-1.17), r1_range=[20.0,30.0], r1_exp=1e3, r1_div=3.0, r_pvalues='e24', c1_range=[47.0,10000.0], c1_exp=1e-12, c_pvalues='e6'):
+def calc_filter( wc_set=2*math.pi*30000, q_set=1.0, k_set=(-1.17), r1_range=[20.0,30.0], r1_exp=1e3, r1_div=3.0, r_pvalues='e24', c1_range=[33.0,4700.0], c1_exp=1e-12, c_pvalues='e12'):
 
     c1_values = select_values_in_range( c1_range, c1_exp, pvalues=c_pvalues )
 
@@ -348,6 +348,9 @@ def calc_filter( wc_set=2*math.pi*30000, q_set=1.0, k_set=(-1.17), r1_range=[20.
     print( 'r1 values for sweep: {}'.format([x*y for (x,y) in r1_values]) )
 
     print( '\ncalculating filter for: q={}, k={}, fc={}'.format(q_set,k_set,wc_set/(2*math.pi)) )
+
+
+    f_values=[]
 
     for r1 in [x*y for (x,y) in r1_values]:
         for c1 in [x*y for (x,y) in c1_values]:
@@ -361,18 +364,20 @@ def calc_filter( wc_set=2*math.pi*30000, q_set=1.0, k_set=(-1.17), r1_range=[20.
             if r2_ideal<=0.0 or c2_ideal<=0.0 or r3_ideal<=0.0:
                 continue
 
-            print('\ntry c1={}, r1={}:'.format(c1,r1))
-            print(' ideal values: r2={}, r3={}, c2={}'.format(r2_ideal, r3_ideal, c2_ideal))
+            print('\ntry c1={:1.1e}, r1={:.1f}:'.format(c1,r1))
+            print(' ideal values: r2={:.1f}, r3={:.1f}, c2={:1.4e}'.format(r2_ideal, r3_ideal, c2_ideal))
 
             r2_real = select_one_nearest(r2_ideal, r_pvalues)
             c2_real = select_one_nearest(c2_ideal, c_pvalues)
             r3_real = select_one_nearest(r3_ideal, r_pvalues)
-            print(' read values: r2={}, r3={}, c2={}'.format(r2_real, r3_real, c2_real))
+            print(' nearest values: r2={:.1f}, r3={:.1f}, c2={:1.1e}'.format(r2_real, r3_real, c2_real))
 
             wc_real = 1.0/math.sqrt(c1*c2_real*r2_real*r3_real)
             k_real = (-r2_real)/r1
             q_real = 1.0 / (wc_real * c1 * ((1.0-k_real)*r3_real + r2_real))
-            print(' real parameters: q={}, k={}, fc={}'.format(q_real,k_real,wc_real/(2*math.pi)) )
+            print(' real parameters: q={:.4f}, k={:.4f}, fc={:.1f}'.format(q_real,k_real,wc_real/(2*math.pi)) )
+
+            f_values += [ (r1,r2_real,r3_real, c1, c2_real, wc_real, k_real, q_real) ]
 
 def main():
 
