@@ -379,6 +379,21 @@ def calc_filter( wc_set=2*math.pi*30000, q_set=1.0, k_set=(-1.17), r1_range=[20.
 
             f_values += [ (r1,r2_real,r3_real, c1, c2_real, wc_real, k_real, q_real) ]
 
+
+    
+
+    # sort values by cutoff freq match
+    print('\n\n\n sorted by cutoff freq:')
+    for e in  sorted(f_values, key = lambda tup: abs((tup[5]-wc_set)/wc_set) ):
+        print('  c1={:1.1e}, r1={:.1f}, r2={:.1f}, r3={:.1f}, c2={:1.1e}, q={:.4f}, k={:.4f}, fc={:.1f}'.format(e[3],e[0],e[1],e[2],e[4],e[7],e[6],e[5]/(2*math.pi)) )
+
+    # sort values by q match
+    print('\n\n\n sorted by q:')
+    for e in  sorted(f_values, key = lambda tup: abs((tup[7]-q_set)/q_set) ):
+        print('  c1={:1.1e}, r1={:.1f}, r2={:.1f}, r3={:.1f}, c2={:1.1e}, q={:.4f}, k={:.4f}, fc={:.1f}'.format(e[3],e[0],e[1],e[2],e[4],e[7],e[6],e[5]/(2*math.pi)) )
+
+
+
 def main():
 
     #calc_mfb_lowpass()
