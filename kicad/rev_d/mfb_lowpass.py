@@ -337,12 +337,13 @@ def select_values_in_range(vrange, vrange_exp, pvalues='e24'):
 
 
 
-def calc_filter( wc_set=2*math.pi*30000, q_set=1.0, k_set=(-1.17), r1_range=[20.0,30.0], r1_exp=1e3, r1_div=3.0, r_pvalues='e24', c1_range=[33.0,4700.0], c1_exp=1e-12, c_pvalues='e12'):
+def calc_filter( wc_set=2*math.pi*30000, q_set=1.0, k_set=(-1.17), r1_range=[20.0,30.0], r1_exp=1e3, r1_div=3.0, r1_add=0.0, r_pvalues='e24', c1_range=[33.0,4700.0], c1_exp=1e-12, c_pvalues='e12'):
 
     c1_values = select_values_in_range( c1_range, c1_exp, pvalues=c_pvalues )
 
     r1x3_values = select_values_in_range( [x for x in r1_range], r1_exp, pvalues=r_pvalues )
-    r1_values = [(x/r1_div,y) for (x,y) in r1x3_values]
+    print(r1_range,r1_exp,r1x3_values)
+    r1_values = [(x/r1_div+r1_add/y,y) for (x,y) in r1x3_values]
 
     print( 'c1 values for sweep: {}'.format([x*y for (x,y) in c1_values]) )
     print( 'r1 values for sweep: {}'.format([x*y for (x,y) in r1_values]) )
@@ -398,8 +399,13 @@ def main():
 
     #calc_mfb_lowpass()
 
-    calc_filter()
+    #calc_filter()
 
+    print(" #### AY ####")
+    calc_filter( wc_set=2*math.pi*30000, q_set=1.0, k_set=(-1.17), r1_range=[20.0,30.0], r1_exp=1e3, r1_div=3.0, r_pvalues='e24', c1_range=[33.0,4700.0], c1_exp=1e-12, c_pvalues='e12')
+
+    print(" #### beep ####")
+    calc_filter( wc_set=2*math.pi*30000, q_set=1.0, k_set=(-0.388), r1_range=[8.2,10.0], r1_exp=1e3, r1_div=1.0, r1_add=3e3, r_pvalues='e24', c1_range=[33.0,4700.0], c1_exp=1e-12, c_pvalues='e12')
 
 
 if __name__=="__main__":

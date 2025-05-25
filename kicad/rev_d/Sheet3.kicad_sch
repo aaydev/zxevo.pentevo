@@ -4739,12 +4739,6 @@
 		(uuid "cb813c89-a18b-4d3c-abb4-08b0d80ee579")
 	)
 	(junction
-		(at 97.79 179.07)
-		(diameter 0)
-		(color 0 0 0 0)
-		(uuid "cc085f89-22e4-4ea2-a397-ebfeb40196fb")
-	)
-	(junction
 		(at 198.12 177.8)
 		(diameter 0)
 		(color 0 0 0 0)
@@ -4938,16 +4932,6 @@
 	)
 	(wire
 		(pts
-			(xy 213.36 110.49) (xy 213.36 147.32)
-		)
-		(stroke
-			(width 0)
-			(type default)
-		)
-		(uuid "02b4d2c5-200b-497e-90f7-d1247307d3c4")
-	)
-	(wire
-		(pts
 			(xy 234.95 57.15) (xy 234.95 62.23)
 		)
 		(stroke
@@ -5006,6 +4990,16 @@
 			(type default)
 		)
 		(uuid "0579483e-09b0-49e3-9407-22173d9c6694")
+	)
+	(wire
+		(pts
+			(xy 97.79 186.69) (xy 97.79 179.07)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "05d09438-4eaf-4d54-a26d-47cc128f1164")
 	)
 	(wire
 		(pts
@@ -7788,16 +7782,6 @@
 	)
 	(wire
 		(pts
-			(xy 97.79 179.07) (xy 97.79 186.69)
-		)
-		(stroke
-			(width 0)
-			(type default)
-		)
-		(uuid "cc633a54-4982-4a19-b0c7-0bb9adfd9f96")
-	)
-	(wire
-		(pts
 			(xy 170.18 46.99) (xy 171.45 46.99)
 		)
 		(stroke
@@ -8128,16 +8112,6 @@
 			(type default)
 		)
 		(uuid "e459fd09-d7f7-4baa-b638-c0d85c2c611c")
-	)
-	(wire
-		(pts
-			(xy 210.82 115.57) (xy 210.82 144.78)
-		)
-		(stroke
-			(width 0)
-			(type default)
-		)
-		(uuid "e4930024-9853-4459-858b-5532714d60d9")
 	)
 	(polyline
 		(pts
@@ -8484,9 +8458,9 @@
 		)
 		(uuid "39b52b44-edaf-46ea-9ac3-28b80c74e2f1")
 	)
-	(text "beep: +-0.97 V (+1dB to YM level)"
+	(text "beep: +-0.97 V (+2dB to YM level)"
 		(exclude_from_sim no)
-		(at 116.078 172.466 0)
+		(at 108.458 145.796 0)
 		(effects
 			(font
 				(size 1.27 1.27)
@@ -8613,9 +8587,9 @@
 		)
 		(uuid "25d9d169-9577-4a04-b224-2ef1c7924b01")
 	)
-	(text "YM: +-0.85 V\nAY: +-1.16 V (+3dB to YM level)"
+	(text "YM: +-0.76 V\nAY: +-1.05 V (+2.8dB to YM level)"
 		(exclude_from_sim no)
-		(at 55.88 34.036 0)
+		(at 151.638 85.09 0)
 		(effects
 			(font
 				(size 1.27 1.27)
@@ -10899,7 +10873,7 @@
 	)
 	(symbol
 		(lib_id "eva-altium-import:Sheet2_0_RESCHIP")
-		(at 85.09 179.07 0)
+		(at 85.09 186.69 0)
 		(unit 1)
 		(exclude_from_sim no)
 		(in_bom yes)
@@ -10907,7 +10881,7 @@
 		(dnp no)
 		(uuid "0d5f6bb5-929b-4145-a656-4d9424ec83f6")
 		(property "Reference" "R116"
-			(at 94.234 177.292 0)
+			(at 94.234 184.912 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -10916,7 +10890,7 @@
 			)
 		)
 		(property "Value" "9.1k"
-			(at 91.44 179.07 0)
+			(at 91.44 186.69 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -10924,7 +10898,7 @@
 			)
 		)
 		(property "Footprint" "R-CHIP"
-			(at 85.09 179.07 0)
+			(at 85.09 186.69 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -10933,7 +10907,7 @@
 			)
 		)
 		(property "Datasheet" ""
-			(at 85.09 179.07 0)
+			(at 85.09 186.69 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -10942,7 +10916,7 @@
 			)
 		)
 		(property "Description" "RESCHIP"
-			(at 85.09 179.07 0)
+			(at 85.09 186.69 0)
 			(effects
 				(font
 					(size 1.27 1.27)
