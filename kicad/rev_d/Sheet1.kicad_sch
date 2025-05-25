@@ -55498,7 +55498,6 @@
 	(hierarchical_label "VG+"
 		(shape output)
 		(at 274.32 378.46 0)
-		(fields_autoplaced yes)
 		(effects
 			(font
 				(size 1.27 1.27)
@@ -55510,7 +55509,6 @@
 	(hierarchical_label "VG-"
 		(shape output)
 		(at 274.32 381 0)
-		(fields_autoplaced yes)
 		(effects
 			(font
 				(size 1.27 1.27)
@@ -55522,7 +55520,6 @@
 	(hierarchical_label "VR+"
 		(shape output)
 		(at 274.32 373.38 0)
-		(fields_autoplaced yes)
 		(effects
 			(font
 				(size 1.27 1.27)
@@ -55534,7 +55531,6 @@
 	(hierarchical_label "VR-"
 		(shape output)
 		(at 274.32 375.92 0)
-		(fields_autoplaced yes)
 		(effects
 			(font
 				(size 1.27 1.27)
@@ -55546,7 +55542,6 @@
 	(hierarchical_label "VB-"
 		(shape output)
 		(at 274.32 386.08 0)
-		(fields_autoplaced yes)
 		(effects
 			(font
 				(size 1.27 1.27)
@@ -55558,7 +55553,6 @@
 	(hierarchical_label "VB+"
 		(shape output)
 		(at 274.32 383.54 0)
-		(fields_autoplaced yes)
 		(effects
 			(font
 				(size 1.27 1.27)

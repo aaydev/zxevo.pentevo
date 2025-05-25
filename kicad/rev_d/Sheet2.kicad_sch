@@ -27077,7 +27077,6 @@
 	)
 	(label "CTS_RS232"
 		(at 331.47 312.42 0)
-		(fields_autoplaced yes)
 		(effects
 			(font
 				(size 1.27 1.27)
@@ -27088,7 +27087,6 @@
 	)
 	(label "RXD_RS232"
 		(at 331.47 306.07 0)
-		(fields_autoplaced yes)
 		(effects
 			(font
 				(size 1.27 1.27)
@@ -27099,7 +27097,6 @@
 	)
 	(label "VCC3V3_uSD"
 		(at 441.96 88.9 0)
-		(fields_autoplaced yes)
 		(effects
 			(font
 				(size 1.27 1.27)
@@ -32413,7 +32410,6 @@
 	(hierarchical_label "RXD_DBG"
 		(shape input)
 		(at 279.4 180.34 270)
-		(fields_autoplaced yes)
 		(effects
 			(font
 				(size 1.27 1.27)
@@ -32425,7 +32421,6 @@
 	(hierarchical_label "TXD_DBG"
 		(shape input)
 		(at 257.81 381 270)
-		(fields_autoplaced yes)
 		(effects
 			(font
 				(size 1.27 1.27)
@@ -32437,7 +32432,6 @@
 	(hierarchical_label "TAPE_BIT"
 		(shape input)
 		(at 284.48 180.34 270)
-		(fields_autoplaced yes)
 		(effects
 			(font
 				(size 1.27 1.27)
@@ -32449,7 +32443,6 @@
 	(hierarchical_label "PS2_MOUS_DAT"
 		(shape bidirectional)
 		(at 292.1 180.34 270)
-		(fields_autoplaced yes)
 		(effects
 			(font
 				(size 1.27 1.27)
@@ -32461,7 +32454,6 @@
 	(hierarchical_label "RXD_DBG"
 		(shape output)
 		(at 255.27 381 270)
-		(fields_autoplaced yes)
 		(effects
 			(font
 				(size 1.27 1.27)
@@ -32473,7 +32465,6 @@
 	(hierarchical_label "SDA"
 		(shape bidirectional)
 		(at 276.86 180.34 270)
-		(fields_autoplaced yes)
 		(effects
 			(font
 				(size 1.27 1.27)
@@ -32485,7 +32476,6 @@
 	(hierarchical_label "TXD_DBG"
 		(shape output)
 		(at 281.94 180.34 270)
-		(fields_autoplaced yes)
 		(effects
 			(font
 				(size 1.27 1.27)
@@ -32497,7 +32487,6 @@
 	(hierarchical_label "SCL"
 		(shape output)
 		(at 274.32 180.34 270)
-		(fields_autoplaced yes)
 		(effects
 			(font
 				(size 1.27 1.27)
@@ -32509,7 +32498,6 @@
 	(hierarchical_label "PS2_KEYB_DAT"
 		(shape bidirectional)
 		(at 289.56 180.34 270)
-		(fields_autoplaced yes)
 		(effects
 			(font
 				(size 1.27 1.27)
