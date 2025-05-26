@@ -17,7 +17,8 @@
 (YM2149)
 
 voltage on outputs (loaded as per rev.C)
-2.26v min, 3.40v max => 1.14 Vp-p (max 1.35Vp-p by datasheet)
+2.26v min, 3.40v max => 1.14 Vp-p [me] (max 1.35Vp-p by datasheet)
+2.22v min, 3.36v max => 1.14 Vp-p [dimka_m]
 
 1.5*1.14 Vp-p (A/C + half B) to 2.0 Vp-p is K=1.17;
 
@@ -36,7 +37,8 @@ Per datasheet, max 2mA current per output, 2 Vp-p @ 1k
   3 channels for line-ins (same number of line-ins as in rev.C)
   total 2 ICs
 
-2. max Vp-p for PT2258 is 2v (1v amplitude or 0.7Vrms, see PT2257 datasheet and THD vs amplitude there)
+2. max Vp-p for PT2258 is 2v (1v amplitude or 0.7Vrms, see PT2257 datasheet and THD vs amplitude there).
+   
 
 3. Vcc for PT2258 is ≈9v, can't be 12v. So, there's AVCC9 regulated voltage
 
@@ -57,25 +59,31 @@ Per datasheet, max 2mA current per output, 2 Vp-p @ 1k
 (general)
 
 1. Use metal film feedback resistors (bigger than 0805, best if MELF),
-   NP0 capacitors for low pass filters
+   NP0/C0G capacitors for low pass filters. Footprint for 1206+0805 is ideal for that.
 
 2. DC blocking/high pass filtering can't be done with polypropylene/etc. caps (too big!),
    so we have to use electrolytics. Try to have related cutoff freqs as low as possible (<<20Hz)
-   to decrease distortion from them.
+   to decrease distortion from them. Typical distortion disappearance happens at *20 cutoff frequency
+
+Gain (or loss) distribution.
+1. YM seems to have 1.14 Vp-p (or 0.57 ampl) outputs each. Not yet known what is with AY, but that's for future.
+2. for PT2258, supposedly optimal ampl. is 1V, more leads to distortion (guessed from datasheet for PT2257).
+   So we'll keep amplitude from each internal source like that. Afterwards it could be decreased before global
+   volume control and will be amplified by audio output circuit.
 
 
 (low-pass filtering)
 
-distributed 3-rd order butterworth, 30kHz -3dB.
+3-rd order butterworth, 30kHz -3dB.
 First stage for AY and for BEEP is 2nd order Q=1, (multiple-feedback),
-Second stage is just 1st-order RC within output amplifier.
+Second stage is just 1st-order RC
 
 Some extra filtering for BEEP at higher freq.
 
 
 (high-pass filtering)
 
-distributed "synchronous" (or not so) 1st-order high-pass filters with electrolytics.
+distributed (?) "synchronous" (or not so) 1st-order high-pass filters with electrolytics.
 <<20Hz cutoffs
 
 
