@@ -19,6 +19,7 @@
 voltage on outputs (loaded as per rev.C)
 2.26v min, 3.40v max => 1.14 Vp-p [me] (max 1.35Vp-p by datasheet)
 2.22v min, 3.36v max => 1.14 Vp-p [dimka_m]
+2.29v min, 3.42v max => 1.13 Vp-p [Nik X]
 
 1.5*1.14 Vp-p (A/C + half B) to 2.0 Vp-p is K=1.17;
 
@@ -26,6 +27,13 @@ voltage on outputs (loaded as per rev.C)
 (AY8910)
 
 Per datasheet, max 2mA current per output, 2 Vp-p @ 1k
+
+(KC89C72)
+
+0.5v min 1.27v max => 0.77 Vp-p [Nik X]
+0.5v min 1.29v max => 0.79 Vp-p [Nik X]
+
+
 
 
 (PT2258 related)

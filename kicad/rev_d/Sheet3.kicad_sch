@@ -4666,12 +4666,6 @@
 		(uuid "74aa0934-3810-4079-af1a-a9b05877462d")
 	)
 	(junction
-		(at 142.24 158.75)
-		(diameter 0)
-		(color 0 0 0 0)
-		(uuid "7a472f80-dde0-420a-b045-0d8594094ebe")
-	)
-	(junction
 		(at 252.73 57.15)
 		(diameter 0)
 		(color 0 0 0 0)
@@ -4816,12 +4810,6 @@
 		(uuid "b0c8ae55-ba81-479c-b19f-40dc30d6ca70")
 	)
 	(junction
-		(at 146.05 171.45)
-		(diameter 0)
-		(color 0 0 0 0)
-		(uuid "b1012009-6ae9-46c3-ab32-abf3fa2b1bc0")
-	)
-	(junction
 		(at 250.19 172.72)
 		(diameter 0)
 		(color 0 0 0 0)
@@ -4874,12 +4862,6 @@
 		(diameter 0)
 		(color 0 0 0 0)
 		(uuid "c4968229-658d-4e2a-baec-1026aec8516f")
-	)
-	(junction
-		(at 123.19 158.75)
-		(diameter 0)
-		(color 0 0 0 0)
-		(uuid "c704fa21-cd5a-4298-a792-9d2b12567cdc")
 	)
 	(junction
 		(at 99.06 64.77)
@@ -4994,12 +4976,6 @@
 		(diameter 0)
 		(color 0 0 0 0)
 		(uuid "eda4388e-5bff-4238-a514-ec07dadd0cea")
-	)
-	(junction
-		(at 163.83 231.14)
-		(diameter 0)
-		(color 0 0 0 0)
-		(uuid "f3b76d49-2314-4442-914f-971240bfe042")
 	)
 	(junction
 		(at 148.59 50.8)
@@ -5398,16 +5374,6 @@
 			(type default)
 		)
 		(uuid "167a49a3-3138-4181-9edf-6ef764436577")
-	)
-	(wire
-		(pts
-			(xy 146.05 163.83) (xy 146.05 171.45)
-		)
-		(stroke
-			(width 0)
-			(type default)
-		)
-		(uuid "16821d25-52a5-4718-875d-5a0c4a89d17e")
 	)
 	(wire
 		(pts
@@ -5815,16 +5781,6 @@
 	)
 	(wire
 		(pts
-			(xy 142.24 158.75) (xy 146.05 158.75)
-		)
-		(stroke
-			(width 0)
-			(type default)
-		)
-		(uuid "30621ec0-d182-4881-931d-61a1a0099d64")
-	)
-	(wire
-		(pts
 			(xy 302.26 279.4) (xy 320.04 279.4)
 		)
 		(stroke
@@ -6180,16 +6136,6 @@
 	)
 	(wire
 		(pts
-			(xy 120.65 158.75) (xy 123.19 158.75)
-		)
-		(stroke
-			(width 0)
-			(type default)
-		)
-		(uuid "473190bf-b9d9-464b-93ba-edccadcbbd2d")
-	)
-	(wire
-		(pts
 			(xy 257.81 81.28) (xy 257.81 85.09)
 		)
 		(stroke
@@ -6228,16 +6174,6 @@
 			(color 0 0 0 1)
 		)
 		(uuid "48d81819-68f9-4c20-8cd7-4874b6911150")
-	)
-	(wire
-		(pts
-			(xy 138.43 158.75) (xy 142.24 158.75)
-		)
-		(stroke
-			(width 0)
-			(type default)
-		)
-		(uuid "4b1dfc54-1fae-4c7f-8761-16b0da07a23b")
 	)
 	(wire
 		(pts
@@ -6738,16 +6674,6 @@
 	)
 	(wire
 		(pts
-			(xy 146.05 171.45) (xy 161.29 171.45)
-		)
-		(stroke
-			(width 0)
-			(type default)
-		)
-		(uuid "7599ca81-0650-4c36-9995-dfa8fbdd42b9")
-	)
-	(wire
-		(pts
 			(xy 96.52 41.91) (xy 96.52 55.88)
 		)
 		(stroke
@@ -6815,16 +6741,6 @@
 			(type default)
 		)
 		(uuid "78b18ff4-5134-4649-aca8-082f3ebf4e99")
-	)
-	(wire
-		(pts
-			(xy 123.19 158.75) (xy 125.73 158.75)
-		)
-		(stroke
-			(width 0)
-			(type default)
-		)
-		(uuid "7a71b235-a047-46db-87a9-121047e81005")
 	)
 	(wire
 		(pts
@@ -7504,16 +7420,6 @@
 	)
 	(wire
 		(pts
-			(xy 163.83 231.14) (xy 163.83 146.05)
-		)
-		(stroke
-			(width 0)
-			(type default)
-		)
-		(uuid "a47f9b99-4ddf-4c97-9962-342a59b57c03")
-	)
-	(wire
-		(pts
 			(xy 228.6 210.82) (xy 227.33 210.82)
 		)
 		(stroke
@@ -7541,16 +7447,6 @@
 			(type default)
 		)
 		(uuid "a53e5e71-2bb5-4381-a4e7-1d48c2d49c28")
-	)
-	(wire
-		(pts
-			(xy 163.83 146.05) (xy 142.24 146.05)
-		)
-		(stroke
-			(width 0)
-			(type default)
-		)
-		(uuid "a55c9c94-939f-45ad-a4fb-f9d02b5cce39")
 	)
 	(polyline
 		(pts
@@ -8360,16 +8256,6 @@
 	)
 	(wire
 		(pts
-			(xy 123.19 171.45) (xy 146.05 171.45)
-		)
-		(stroke
-			(width 0)
-			(type default)
-		)
-		(uuid "de5bf04e-3a20-40a2-9fcb-4cc02e0b3311")
-	)
-	(wire
-		(pts
 			(xy 170.18 49.53) (xy 171.45 49.53)
 		)
 		(stroke
@@ -8672,16 +8558,6 @@
 			(type default)
 		)
 		(uuid "f4fd5563-b1c3-445d-ac77-fc0967af2e95")
-	)
-	(wire
-		(pts
-			(xy 161.29 171.45) (xy 161.29 161.29)
-		)
-		(stroke
-			(width 0)
-			(type default)
-		)
-		(uuid "f5431755-5c62-425c-9116-f7f6cc26b724")
 	)
 	(wire
 		(pts
@@ -9103,16 +8979,6 @@
 			(justify right bottom)
 		)
 		(uuid "98da830b-02fe-4be7-9a52-1299205b054e")
-	)
-	(text "~10Hz cutoff"
-		(exclude_from_sim no)
-		(at 134.874 166.37 0)
-		(effects
-			(font
-				(size 1.27 1.27)
-			)
-		)
-		(uuid "9a7c9d31-bac5-4ec8-8ad6-083492b677ea")
 	)
 	(text "F"
 		(exclude_from_sim no)
@@ -11801,75 +11667,6 @@
 		)
 	)
 	(symbol
-		(lib_id "eva-altium-import:Sheet2_2_mirrored_RESCHIP")
-		(at 123.19 171.45 270)
-		(mirror x)
-		(unit 1)
-		(exclude_from_sim no)
-		(in_bom yes)
-		(on_board yes)
-		(dnp no)
-		(uuid "1d71dbc4-819f-4122-b9ed-7b57f7b64460")
-		(property "Reference" "R195"
-			(at 126.492 159.004 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(justify right top)
-			)
-		)
-		(property "Value" "6K8"
-			(at 123.19 165.1 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
-		(property "Footprint" "R-CHIP"
-			(at 123.19 171.45 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(hide yes)
-			)
-		)
-		(property "Datasheet" ""
-			(at 123.19 171.45 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(hide yes)
-			)
-		)
-		(property "Description" "RESCHIP"
-			(at 123.19 171.45 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(hide yes)
-			)
-		)
-		(pin "2"
-			(uuid "ca38f5a0-d519-46dd-91ee-e3495585bcad")
-		)
-		(pin "1"
-			(uuid "02d8fe67-4539-421f-9c90-3f567045f8b9")
-		)
-		(instances
-			(project "eva"
-				(path "/ab605654-a730-497b-9e09-9b351f74b935/d12fc3f7-914a-41f9-b933-632d1b3e89f3"
-					(reference "R195")
-					(unit 1)
-				)
-			)
-		)
-	)
-	(symbol
 		(lib_id "eva-altium-import:Sheet2_0_CAPCHIP")
 		(at 83.82 68.58 0)
 		(unit 1)
@@ -12558,75 +12355,6 @@
 				(path "/ab605654-a730-497b-9e09-9b351f74b935/d12fc3f7-914a-41f9-b933-632d1b3e89f3"
 					(reference "DA13")
 					(unit 2)
-				)
-			)
-		)
-	)
-	(symbol
-		(lib_id "eva-altium-import:Sheet2_2_ECAPCHIP")
-		(at 120.65 158.75 0)
-		(unit 1)
-		(exclude_from_sim no)
-		(in_bom yes)
-		(on_board yes)
-		(dnp no)
-		(uuid "3be991c0-5d15-4f83-9436-288aa7e4c4d3")
-		(property "Reference" "C131"
-			(at 115.57 159.385 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(justify left top)
-			)
-		)
-		(property "Value" "2.2uF"
-			(at 113.03 158.115 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(justify right bottom)
-			)
-		)
-		(property "Footprint" "EC-CHIP"
-			(at 120.65 158.75 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(hide yes)
-			)
-		)
-		(property "Datasheet" ""
-			(at 120.65 158.75 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(hide yes)
-			)
-		)
-		(property "Description" "ECAPCHIP"
-			(at 120.65 158.75 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(hide yes)
-			)
-		)
-		(pin "2"
-			(uuid "d3bc3606-0aec-40f7-9e25-56caf99edac6")
-		)
-		(pin "1"
-			(uuid "dd3e6905-444f-4366-9d60-85f7224cfd3c")
-		)
-		(instances
-			(project "eva"
-				(path "/ab605654-a730-497b-9e09-9b351f74b935/d12fc3f7-914a-41f9-b933-632d1b3e89f3"
-					(reference "C131")
-					(unit 1)
 				)
 			)
 		)
@@ -14489,75 +14217,6 @@
 		)
 	)
 	(symbol
-		(lib_id "eva-altium-import:Sheet2_2_mirrored_RESCHIP")
-		(at 142.24 158.75 270)
-		(mirror x)
-		(unit 1)
-		(exclude_from_sim no)
-		(in_bom yes)
-		(on_board yes)
-		(dnp no)
-		(uuid "5e704fae-92f2-4e5c-8260-8b042a28ca0e")
-		(property "Reference" "R196"
-			(at 145.542 146.304 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(justify right top)
-			)
-		)
-		(property "Value" "6K8"
-			(at 142.24 152.4 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
-		(property "Footprint" "R-CHIP"
-			(at 142.24 158.75 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(hide yes)
-			)
-		)
-		(property "Datasheet" ""
-			(at 142.24 158.75 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(hide yes)
-			)
-		)
-		(property "Description" "RESCHIP"
-			(at 142.24 158.75 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(hide yes)
-			)
-		)
-		(pin "2"
-			(uuid "4a3bd8f1-c487-47a8-a9f7-b8576c8b749d")
-		)
-		(pin "1"
-			(uuid "32aa3de4-7ca7-44c1-8774-61754ca8c9b8")
-		)
-		(instances
-			(project "eva"
-				(path "/ab605654-a730-497b-9e09-9b351f74b935/d12fc3f7-914a-41f9-b933-632d1b3e89f3"
-					(reference "R196")
-					(unit 1)
-				)
-			)
-		)
-	)
-	(symbol
 		(lib_id "eva-altium-import:Sheet2_3_CAPCHIP")
 		(at 78.74 140.97 180)
 		(unit 1)
@@ -15829,75 +15488,6 @@
 		)
 	)
 	(symbol
-		(lib_id "eva-altium-import:Sheet2_2_ECAPCHIP")
-		(at 138.43 158.75 0)
-		(unit 1)
-		(exclude_from_sim no)
-		(in_bom yes)
-		(on_board yes)
-		(dnp no)
-		(uuid "8e102485-237e-4010-95aa-229793944e80")
-		(property "Reference" "C132"
-			(at 133.35 159.385 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(justify left top)
-			)
-		)
-		(property "Value" "2.2uF"
-			(at 130.81 158.115 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(justify right bottom)
-			)
-		)
-		(property "Footprint" "EC-CHIP"
-			(at 138.43 158.75 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(hide yes)
-			)
-		)
-		(property "Datasheet" ""
-			(at 138.43 158.75 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(hide yes)
-			)
-		)
-		(property "Description" "ECAPCHIP"
-			(at 138.43 158.75 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(hide yes)
-			)
-		)
-		(pin "2"
-			(uuid "c4bbb37b-92e2-4cc3-9748-1d0767f1e1c0")
-		)
-		(pin "1"
-			(uuid "fe2a0856-65c3-4d5a-9188-11d383aa97a6")
-		)
-		(instances
-			(project "eva"
-				(path "/ab605654-a730-497b-9e09-9b351f74b935/d12fc3f7-914a-41f9-b933-632d1b3e89f3"
-					(reference "C132")
-					(unit 1)
-				)
-			)
-		)
-	)
-	(symbol
 		(lib_id "eva-altium-import:Sheet2_2_mirrored_RESCHIP")
 		(at 143.51 50.8 90)
 		(unit 1)
@@ -16397,91 +15987,6 @@
 				(path "/ab605654-a730-497b-9e09-9b351f74b935/d12fc3f7-914a-41f9-b933-632d1b3e89f3"
 					(reference "R174")
 					(unit 1)
-				)
-			)
-		)
-	)
-	(symbol
-		(lib_id "eva-altium-import:TLC072")
-		(at 153.67 161.29 0)
-		(unit 2)
-		(exclude_from_sim no)
-		(in_bom yes)
-		(on_board yes)
-		(dnp no)
-		(uuid "abcc6bd5-0b29-4698-8863-a58f3614f94f")
-		(property "Reference" "DA16"
-			(at 156.718 165.1 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
-		(property "Value" "TLV9162"
-			(at 156.21 156.718 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
-		(property "Footprint" ""
-			(at 153.67 161.29 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(hide yes)
-			)
-		)
-		(property "Datasheet" ""
-			(at 154.94 147.32 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(hide yes)
-			)
-		)
-		(property "Description" "Dual Operational Amplifiers, DIP-8/SOIC-8"
-			(at 154.94 152.4 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(hide yes)
-			)
-		)
-		(pin "8"
-			(uuid "2a48ff44-021c-4d10-9d91-9c40a65ab2ec")
-		)
-		(pin "2"
-			(uuid "95b9d2bd-182c-4561-839a-74715aa2e4bf")
-		)
-		(pin "3"
-			(uuid "07334a6f-c377-4e3f-a795-f8a4ed94aa0b")
-		)
-		(pin "1"
-			(uuid "de703b0a-c7f9-4efd-b125-52ff03ab4d9f")
-		)
-		(pin "4"
-			(uuid "1153573e-c715-407d-b0c4-544c85cf1298")
-		)
-		(pin "6"
-			(uuid "1ec6dd75-3be8-4715-9127-67b25a34b46d")
-		)
-		(pin "5"
-			(uuid "ceb19663-d382-4845-b3fa-44668bf23315")
-		)
-		(pin "7"
-			(uuid "fa5c0f23-9a1b-4cf0-a2cf-9d2e35d0a48a")
-		)
-		(instances
-			(project "eva"
-				(path "/ab605654-a730-497b-9e09-9b351f74b935/d12fc3f7-914a-41f9-b933-632d1b3e89f3"
-					(reference "DA16")
-					(unit 2)
 				)
 			)
 		)
@@ -18108,7 +17613,7 @@
 			)
 		)
 		(pin "8"
-			(uuid "2a48ff44-021c-4d10-9d91-9c40a65ab2ed")
+			(uuid "2a48ff44-021c-4d10-9d91-9c40a65ab2ee")
 		)
 		(pin "2"
 			(uuid "a605f7e7-75f5-4506-8560-bbac2ecb1c99")
@@ -18120,7 +17625,7 @@
 			(uuid "cec748b3-94e9-484e-bbfe-2d072633e22b")
 		)
 		(pin "4"
-			(uuid "1153573e-c715-407d-b0c4-544c85cf1299")
+			(uuid "1153573e-c715-407d-b0c4-544c85cf129a")
 		)
 		(pin "6"
 			(uuid "8f14b4b7-1d2d-4099-909f-989f2d46c546")

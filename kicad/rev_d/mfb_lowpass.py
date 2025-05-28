@@ -405,7 +405,7 @@ def main():
     calc_filter( wc_set=2*math.pi*30000, q_set=1.0, k_set=(-1.75), r1_range=[20.0,30.0], r1_exp=1e3, r1_div=3.0, r_pvalues='e24', c1_range=[33.0,4700.0], c1_exp=1e-12, c_pvalues='e12')
 
     print(" #### beep ####")
-    calc_filter( wc_set=2*math.pi*30000, q_set=1.0, k_set=(-0.388), r1_range=[8.2,10.0], r1_exp=1e3, r1_div=1.0, r1_add=3e3, r_pvalues='e24', c1_range=[33.0,4700.0], c1_exp=1e-12, c_pvalues='e12')
+    calc_filter( wc_set=2*math.pi*30000, q_set=1.0, k_set=(-0.388), r1_range=[4.7,10.0], r1_exp=1e3, r1_div=1.0, r1_add=750, r_pvalues='e24', c1_range=[33.0,4700.0], c1_exp=1e-12, c_pvalues='e12')
 
 
 if __name__=="__main__":
