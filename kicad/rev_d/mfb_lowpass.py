@@ -4,6 +4,7 @@ import sys
 from sympy import *
 import math
 import cmath
+import random
 
 #e24 = [1.0, 1.1, 1.2, 1.3, 1.5, 1.6, 1.8, 2.0, 2.2, 2.4, 2.7, 3.0, 3.3, 3.6, 3.9, 4.3, 4.7, 5.1, 5.6, 6.2, 6.8, 7.5, 8.2, 9.1];
 #e6  = [1.0,                1.5,                2.2,                3.3,                4.7,                6.8               ];
@@ -336,6 +337,47 @@ def select_values_in_range(vrange, vrange_exp, pvalues='e24'):
 
 
 
+def calc_mfb2_parameters(r1,r2,r3,c1,c2):
+
+    wc = 1.0/math.sqrt(c1*c2*r2*r3)
+    k  = (-r2)/r1
+    q  = 1.0 / (wc * c1 * ((1.0-k)*r3 + r2))
+
+    return (wc,k,q)
+
+
+def randomize_mfb2(r1,r2,r3,c1,c2, c_precision=0.05, r_precision=0.01, iters=1000):
+
+    (wc0, k0, q0) = calc_mfb2_parameters(r1,r2,r3,c1,c2)
+ 
+    d_wc = 0.0
+    d_k  = 0.0
+    d_q  = 0.0
+
+    for i in range(iters):
+        dr1 = random.uniform(1.0-r_precision,1.0+r_precision)
+        dr2 = random.uniform(1.0-r_precision,1.0+r_precision)
+        dr3 = random.uniform(1.0-r_precision,1.0+r_precision)
+
+        dc1 = random.uniform(1.0-c_precision,1.0+c_precision)
+        dc2 = random.uniform(1.0-c_precision,1.0+c_precision)
+
+        rr1 = r1 * dr1
+        rr2 = r2 * dr2
+        rr3 = r3 * dr3
+
+        rc1 = c1 * dc1
+        rc2 = c2 * dc2
+
+        (wc,k,q) = calc_mfb2_parameters(rr1,rr2,rr3,rc1,rc2)
+
+        d_wc = max(d_wc, abs(wc-wc0))
+        d_k  = max(d_k,  abs(k-k0)  )
+        d_q  = max(d_q,  abs(q-q0)  )
+
+    return (d_wc/wc0, d_k/k0, d_q/q0)
+
+
 
 def calc_filter( wc_set=2*math.pi*30000, q_set=1.0, k_set=(-1.17), r1_range=[20.0,30.0], r1_exp=1e3, r1_div=3.0, r1_add=0.0, r_pvalues='e24', c1_range=[33.0,4700.0], c1_exp=1e-12, c_pvalues='e12'):
 
@@ -360,6 +402,7 @@ def calc_filter( wc_set=2*math.pi*30000, q_set=1.0, k_set=(-1.17), r1_range=[20.
 
             c2_ideal = (q_set * (k_set - 1.0)) / (r2_ideal * wc_set * (c1 * q_set * r2_ideal * wc_set - 1.0))
 
+            
             r3_ideal = (c1 * q_set * r2_ideal * wc_set - 1.0) / ( (k_set - 1.0) * q_set * wc_set * c1 )
 
             if r2_ideal<=0.0 or c2_ideal<=0.0 or r3_ideal<=0.0:
@@ -373,25 +416,31 @@ def calc_filter( wc_set=2*math.pi*30000, q_set=1.0, k_set=(-1.17), r1_range=[20.
             r3_real = select_one_nearest(r3_ideal, r_pvalues)
             print(' nearest values: r2={:.1f}, r3={:.1f}, c2={:1.1e}'.format(r2_real, r3_real, c2_real))
 
-            wc_real = 1.0/math.sqrt(c1*c2_real*r2_real*r3_real)
-            k_real = (-r2_real)/r1
-            q_real = 1.0 / (wc_real * c1 * ((1.0-k_real)*r3_real + r2_real))
+            #wc_real = 1.0/math.sqrt(c1*c2_real*r2_real*r3_real)
+            #k_real = (-r2_real)/r1
+            #q_real = 1.0 / (wc_real * c1 * ((1.0-k_real)*r3_real + r2_real))
+            (wc_real,k_real,q_real) = calc_mfb2_parameters(r1,r2_real,r3_real,c1,c2_real)
+
             print(' real parameters: q={:.4f}, k={:.4f}, fc={:.1f}'.format(q_real,k_real,wc_real/(2*math.pi)) )
 
-            f_values += [ (r1,r2_real,r3_real, c1, c2_real, wc_real, k_real, q_real) ]
+            #f_values += [ (r1,r2_real,r3_real, c1, c2_real, wc_real, k_real, q_real) ]
+            f_values += [ {'r1':r1,'r2':r2_real,'r3':r3_real, 'c1':c1, 'c2':c2_real, 'wc':wc_real, 'k':k_real, 'q':q_real} ]
 
 
     
+    print(f_values)
 
     # sort values by cutoff freq match
     print('\n\n\n sorted by cutoff freq:')
-    for e in  sorted(f_values, key = lambda tup: abs((tup[5]-wc_set)/wc_set) ):
-        print('  c1={:1.1e}, r1={:.1f}, r2={:.1f}, r3={:.1f}, c2={:1.1e}, q={:.4f}, k={:.4f}, fc={:.1f}'.format(e[3],e[0],e[1],e[2],e[4],e[7],e[6],e[5]/(2*math.pi)) )
+    for e in  sorted(f_values, key = lambda tup: abs((tup['wc']-wc_set)/wc_set) ):
+        print('  c1={:1.1e}, r1={:.1f}, r2={:.1f}, r3={:.1f}, c2={:1.1e}, q={:.4f}, k={:.4f}, fc={:.1f}'.format(e['c1'],e['r1'],e['r2'],e['r3'],e['c2'],e['q'],e['k'],e['wc']/(2*math.pi)) )
+        (p_wc, p_k, p_q) = randomize_mfb2(e['r1'],e['r2'],e['r3'],e['c1'],e['c2'])
+        print('   percent_fc={:.2f}%, percent_k={:.2f}%, percent_q={:.2f}%'.format(100*p_wc,100*p_k,100*p_q))
 
     # sort values by q match
     print('\n\n\n sorted by q:')
-    for e in  sorted(f_values, key = lambda tup: abs((tup[7]-q_set)/q_set) ):
-        print('  c1={:1.1e}, r1={:.1f}, r2={:.1f}, r3={:.1f}, c2={:1.1e}, q={:.4f}, k={:.4f}, fc={:.1f}'.format(e[3],e[0],e[1],e[2],e[4],e[7],e[6],e[5]/(2*math.pi)) )
+    for e in  sorted(f_values, key = lambda tup: abs((tup['q']-q_set)/q_set) ):
+        print('  c1={:1.1e}, r1={:.1f}, r2={:.1f}, r3={:.1f}, c2={:1.1e}, q={:.4f}, k={:.4f}, fc={:.1f}'.format(e['c1'],e['r1'],e['r2'],e['r3'],e['c2'],e['q'],e['k'],e['wc']/(2*math.pi)) )
 
 
 
@@ -404,8 +453,8 @@ def main():
     print(" #### AY ####")
     calc_filter( wc_set=2*math.pi*30000, q_set=1.0, k_set=(-1.75), r1_range=[20.0,30.0], r1_exp=1e3, r1_div=3.0, r_pvalues='e24', c1_range=[33.0,4700.0], c1_exp=1e-12, c_pvalues='e12')
 
-    print(" #### beep ####")
-    calc_filter( wc_set=2*math.pi*30000, q_set=1.0, k_set=(-0.388), r1_range=[4.7,10.0], r1_exp=1e3, r1_div=1.0, r1_add=750, r_pvalues='e24', c1_range=[33.0,4700.0], c1_exp=1e-12, c_pvalues='e12')
+#    print(" #### beep ####")
+#    calc_filter( wc_set=2*math.pi*30000, q_set=1.0, k_set=(-0.388), r1_range=[4.7,10.0], r1_exp=1e3, r1_div=1.0, r1_add=750, r_pvalues='e24', c1_range=[33.0,4700.0], c1_exp=1e-12, c_pvalues='e12')
 
 
 if __name__=="__main__":
