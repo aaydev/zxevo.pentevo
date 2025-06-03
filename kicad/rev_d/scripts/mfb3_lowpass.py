@@ -59,29 +59,27 @@ def calc_mfb3_lowpass():
 
     print(h_expr)
 
-
-
     # now make more substitutions
     #
     h = symbols('h')
     k = symbols('k', real=True, negative=True)
-    q,wc = symbols('q wc', real=True, positive=True)
+    q,w1,w2 = symbols('q w1 w2', real=True, positive=True)
     #
     # filter gain
-    s_eq1 = Eq( k, -r2/r1 )
+    s_eq1 = Eq( k, -r3/(r1+r2) )
     #
-    # cutoff angular frequency
-    s_eq2 = Eq( wc, 1/sqrt(r2*r3*c1*c2) )
+    # canonical H expr
+    s_eq2 = Eq( h, k/( (1+(I*w)/w1) * (1+(I*w)/(q*w2)-(w*w)/(w2*w2)) ) )
     #
-    # quality
-    s_eq3  = Eq( q, sqrt(r2*r3*c1*c2)/(r3*c1+r2*c1-r3*c1*k) )
-    #s_neq3 = Lt( k, 0 )
-    #
-    # new H expression
-    s_eq4 = Eq( h, h_expr )
+    # h through r/c
+    s_eq3 = Eq( h, h_expr )
 
     # solve
-    h_solve = solve( [s_eq1, s_eq2, s_eq3, s_eq4], [h, r1, r2, r3, c1, c2], dict=True )
+    h_solve = solve( [s_eq1, s_eq2, s_eq3], [r1, r2, r3, r4, c1, c2, c3], dict=True )
+
+    print(h_solve)
+
+    sys.exit(0)
 
     if len(h_solve)!=1:
         sys.stderr.write("Many or no solutions: {} !\n".format(h_solve))
