@@ -33,6 +33,6 @@ AA = (c1*r1*r2 + c3*r1*r3 + c3*r1*r4 + c3*r2*r3 + c3*r2*r4 + c3*r3*r4)/(r1 + r2)
 BB = c3*(c1*r1*r2*r3 + c1*r1*r2*r4 + c1*r1*r3*r4 + c2*r1*r3*r4 + c2*r2*r3*r4)/(r1 + r2)
 CC = c1*c2*c3*r1*r2*r3*r4/(r1 + r2)
 
-print('w1={}'.format( (1/(beta*2*pi)).evalf(subs={A:AA,B:BB,C:CC})))
-print('w2={}'.format( (1/(gamma*2*pi)).evalf(subs={A:AA,B:BB,C:CC})))
+print('w1={}'.format( (1/(beta)).evalf(subs={A:AA,B:BB,C:CC})))
+print('w2={}'.format( (1/(gamma)).evalf(subs={A:AA,B:BB,C:CC})))
 print('q={}'.format( (1/kappa).evalf(subs={A:AA,B:BB,C:CC})))
