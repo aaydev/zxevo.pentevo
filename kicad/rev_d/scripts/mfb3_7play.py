@@ -56,7 +56,7 @@ f1_val=30000
 f2_val=30000
 q_val=1
 (AA,BB,CC) = ABC(f1_val,f2_val,q_val,prec)
-print('\nfor f1={}, f2={}, q={}: A={}, B={}, C={}'.format(f1_val,f2_val,q_val,AA,BB,CC))
+print('\nfor f1={}, f2={}, q={}:\nA={}, B={}, C={}'.format(f1_val,f2_val,q_val,AA,BB,CC))
 
 def F1F2Q(A_val,B_val,C_val,w1_sol,w2_sol,q_sol,prec=50):
     w1_val = w1_sol.evalf(subs={A:A_val,B:B_val,C:C_val},n=prec)
@@ -85,11 +85,35 @@ AA = N((c1*r1*r2 + c3*r1*r3 + c3*r1*r4 + c3*r2*r3 + c3*r2*r4 + c3*r3*r4)/(r1 + r
 BB = N(c3*(c1*r1*r2*r3 + c1*r1*r2*r4 + c1*r1*r3*r4 + c2*r1*r3*r4 + c2*r2*r3*r4)/(r1 + r2),prec)
 CC = N(c1*c2*c3*r1*r2*r3*r4/(r1 + r2),prec)
 
-print('\nfor r1={}, r2={}, r3={}, r4={}, c1={}, c2={}, c3={}: A={}, B={}, C={}'.format(r1,r2,r3,r4,c1,c2,c3,AA,BB,CC))
+print('\nfor r1={}, r2={}, r3={}, r4={}, c1={}, c2={}, c3={}:\nA={}, B={}, C={}'.format(r1,r2,r3,r4,c1,c2,c3,AA,BB,CC))
 
 (ff1,ff2,qq) = F1F2Q(AA,BB,CC,w1_sol,w2_sol,q_sol,prec)
 print('\nfor previous A,B,C: f1={}, f2={}, q={}'.format(ff1,ff2,qq))
 
 (AA,BB,CC) = ABC(ff1,ff2,qq,prec)
-print('\nfor f1,f2,q: A={}, B={}, C={}'.format(AA,BB,CC))
+print('\nfor f1,f2,q:\nA={}, B={}, C={}'.format(AA,BB,CC))
+
+
+
+
+
+r1 = Float(1.2e3)
+r2 = Float(47e3)
+r3 = Float(68e3)
+r4 = Float(185038.95471783172862)
+c1 = Float(5.2453655748197971039E-9)
+c2 = Float(1.9333777853391275606E-10)
+c3 = Float(10e-12)
+
+AA = N((c1*r1*r2 + c3*r1*r3 + c3*r1*r4 + c3*r2*r3 + c3*r2*r4 + c3*r3*r4)/(r1 + r2),prec)
+BB = N(c3*(c1*r1*r2*r3 + c1*r1*r2*r4 + c1*r1*r3*r4 + c2*r1*r3*r4 + c2*r2*r3*r4)/(r1 + r2),prec)
+CC = N(c1*c2*c3*r1*r2*r3*r4/(r1 + r2),prec)
+
+print('\nfor r1={}, r2={}, r3={}, r4={}, c1={}, c2={}, c3={}:\nA={}, B={}, C={}'.format(r1,r2,r3,r4,c1,c2,c3,AA,BB,CC))
+
+(ff1,ff2,qq) = F1F2Q(AA,BB,CC,w1_sol,w2_sol,q_sol,prec)
+print('\nfor previous A,B,C: f1={}, f2={}, q={}'.format(ff1,ff2,qq))
+
+(AA,BB,CC) = ABC(ff1,ff2,qq,prec)
+print('\nfor f1,f2,q:\nA={}, B={}, C={}'.format(AA,BB,CC))
 
