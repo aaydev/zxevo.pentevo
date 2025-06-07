@@ -1,4 +1,5 @@
 from sympy import *
+from math import *
 
 A,B,C = symbols('A B C')
 
@@ -33,6 +34,38 @@ AA = (c1*r1*r2 + c3*r1*r3 + c3*r1*r4 + c3*r2*r3 + c3*r2*r4 + c3*r3*r4)/(r1 + r2)
 BB = c3*(c1*r1*r2*r3 + c1*r1*r2*r4 + c1*r1*r3*r4 + c2*r1*r3*r4 + c2*r2*r3*r4)/(r1 + r2)
 CC = c1*c2*c3*r1*r2*r3*r4/(r1 + r2)
 
-print('w1={}'.format( (1/(beta)).evalf(subs={A:AA,B:BB,C:CC})))
-print('w2={}'.format( (1/(gamma)).evalf(subs={A:AA,B:BB,C:CC})))
-print('q={}'.format( (1/kappa).evalf(subs={A:AA,B:BB,C:CC})))
+w1= (1/beta ).evalf(subs={A:AA,B:BB,C:CC})
+w2= (1/gamma).evalf(subs={A:AA,B:BB,C:CC})
+q = (1/kappa).evalf(subs={A:AA,B:BB,C:CC})
+
+print('from values:')
+print('f1={}\nf2={}\nq={}'.format(w1/(2*pi),w2/(2*pi),q))
+
+#print('w1={}'.format( (1/(beta)).evalf(subs={A:AA,B:BB,C:CC})))
+#print('w2={}'.format( (1/(gamma)).evalf(subs={A:AA,B:BB,C:CC})))
+#print('q={}'.format( (1/kappa).evalf(subs={A:AA,B:BB,C:CC})))
+
+print('A={}\nB={}\nC={}'.format(AA,BB,CC))
+
+
+print('\nfrom freq/q:')
+f1=Float(30000.0)
+f2=Float(30000.0)
+qq=Float(1.0)
+
+ww1=N(f1*2*pi,50)
+ww2=N(f2*2*pi,50)
+
+AAA = (1/ww1 + 1/(ww2*qq))
+BBB = (1/(q*ww1*ww2) + 1/(ww2*ww2))
+CCC = 1/(ww1*ww2*ww2)
+
+print('A={}\nB={}\nC={}'.format(AAA,BBB,CCC))
+
+w1= (1/beta ).evalf(subs={A:AAA,B:BBB,C:CCC},n=50)
+w2= (1/gamma).evalf(subs={A:AAA,B:BBB,C:CCC},n=50)
+q = (1/kappa).evalf(subs={A:AAA,B:BBB,C:CCC},n=50)
+
+print('\nagain:')
+print('f1={}\nf2={}\nq={}'.format(w1/(2*pi),w2/(2*pi),q))
+

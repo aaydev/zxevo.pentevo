@@ -47,7 +47,7 @@ def calc_mfb3_lowpass():
     # solve the set
     u_solve = solve( eqs, [u1,u2,u3,ir1,ir2,ir3,ir4,uo], dict=True, domain=S.Complexes )
 
-    print(u_solve)
+    #print(u_solve)
 
     if len(u_solve)!=1:
         sys.stderr.write("Many or no solutions: {} !\n".format(u_solve))
@@ -58,6 +58,8 @@ def calc_mfb3_lowpass():
     h_expr = u_expr[uo]/ui
 
     print(h_expr)
+
+    breakpoint()
 
     # now make more substitutions
     #
