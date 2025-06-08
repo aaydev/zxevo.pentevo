@@ -317,7 +317,7 @@ def randomize_mfb3(r1,r2,r3,r4,c1,c2,c3, c_precision=0.05, r_precision=0.01, ite
 
 
 
-def calc_filter( w1_set=2*math.pi*30000, w2_set=2*math.pi*30000, q_set=1.0, k_set=(-1.41), r1_range=[1.0,100.0], r1_exp=1e3, r2_range=[1.0,100.0], r2_exp=1e3, r_pvalues='e24', c3_range=[10.0,4700.0], c3_exp=1e-12, c_pvalues='e12'):
+def calc_filter( w1_set=2*math.pi*30000, w2_set=2*math.pi*30000, q_set=1.0, k_set=(-0.4), r1_range=[1.0,20.0], r1_exp=1e3, r2_range=[1.0,20.0], r2_exp=1e3, r_pvalues='e24', c3_range=[56.0,4700.0], c3_exp=1e-12, c_pvalues='e12'):
 
     c3_values = select_values_in_range( c3_range, c3_exp, pvalues=c_pvalues )
 
@@ -376,13 +376,19 @@ def calc_filter( w1_set=2*math.pi*30000, w2_set=2*math.pi*30000, q_set=1.0, k_se
     print('\n\n\n sorted by neares cutoff freqs:')
     for e in  sorted(f_values, key = lambda tup: (tup['w1']-w1_set)**2/(w1_set*w1_set) + (tup['w2']-w2_set)**2/(w2_set*w2_set) ):
         print('  r1={:.1f}, r2={:.1f}, r3={:.1f}, r4={:.1f}, c1={:1.1e}, c2={:1.1e}, c3={:1.1e}, f1={:.1f}, f2={:.1f}, q={:.4f}, k={:.4f}'.format(e['r1'],e['r2'],e['r3'],e['r4'],e['c1'],e['c2'],e['c3'],e['w1']/(2*math.pi),e['w2']/(2*math.pi),e['q'],e['k']) )
-        #(p_wc, p_k, p_q) = randomize_mfb2(e['r1'],e['r2'],e['r3'],e['c1'],e['c2'])
-        #print('   percent_fc={:.2f}%, percent_k={:.2f}%, percent_q={:.2f}%'.format(100*p_wc,100*p_k,100*p_q))
+        (p_w1, p_w2, p_q, p_k) = randomize_mfb3(e['r1'],e['r2'],e['r3'],e['r4'], e['c1'],e['c2'],e['c3'])
+        e['p_w1']=p_w1
+        e['p_w2']=p_w2
+        e['p_q'] =p_q
+        e['p_k'] =p_k
+
+        print('   percent_f1={:.2f}%, percent_f2={:.2f}%, percent_q={:.2f}%, percent_k={:.2f}%'.format(100*e['p_w1'],100*e['p_w2'],100*e['p_q'],100*e['p_k']))
 
     # sort values by q match
     print('\n\n\n sorted by q:')
     for e in  sorted(f_values, key = lambda tup: abs((tup['q']-q_set)/q_set) ):
         print('  r1={:.1f}, r2={:.1f}, r3={:.1f}, r4={:.1f}, c1={:1.1e}, c2={:1.1e}, c3={:1.1e}, f1={:.1f}, f2={:.1f}, q={:.4f}, k={:.4f}'.format(e['r1'],e['r2'],e['r3'],e['r4'],e['c1'],e['c2'],e['c3'],e['w1']/(2*math.pi),e['w2']/(2*math.pi),e['q'],e['k']) )
+        print('   percent_f1={:.2f}%, percent_f2={:.2f}%, percent_q={:.2f}%, percent_k={:.2f}%'.format(100*e['p_w1'],100*e['p_w2'],100*e['p_q'],100*e['p_k']))
 
 
 
