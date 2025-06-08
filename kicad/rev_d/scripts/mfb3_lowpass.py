@@ -1,7 +1,6 @@
 #!/usr/bin/env python
 
 import sys
-from sympy import *
 import math
 import cmath
 import random
@@ -11,139 +10,35 @@ import random
 
 
 
-def calc_mfb3_lowpass():
-
-    # as in mfb3.png
-
-    r1,r2,r3,r4,c1,c2,c3 = symbols('r1 r2 r3 r4 c1 c2 c3', real=True, positive=True)
-
-    ui,uo,u1,u2,u3 = symbols('ui uo u1 u2 u3')
-
-    # currents through appropriate elements.
-    ir1,ir2,ir3,ir4 = symbols('ir1 ir2 ir3 ir4')
-    ic1,ic2,ic3 = symbols('ic1 ic2 ic3')
-
-    # angular frequency (omega)
-    w = symbols('w', real=True, positive=True)
-
-
-    # make set of equations to calculate H
-    eqs=[]
-    #
-    # u1 node, currents and voltages
-    eqs += [ Eq( ir1, (ui-u1)/r1 ) ]
-    eqs += [ Eq( ir2, (u2-u1)/r2 ) ]
-    eqs += [ Eq( u1, (ir1+ir2)*(1/(I*w*c1)) ) ]
-    #
-    # u2 node
-    eqs += [ Eq( ir3, (uo-u2)/r3 ) ]
-    eqs += [ Eq( ir4, (u3-u2)/r4 ) ]
-    eqs += [ Eq( u2, (ir3+ir4-ir2)*(1/(I*w*c2)) ) ]
-    #
-    # u3 node
-    eqs += [ Eq( ir4, (uo-u3)/(1/(I*w*c3)) ) ]
-    eqs += [ Eq( u3, 0 ) ]
-
-    # solve the set
-    u_solve = solve( eqs, [u1,u2,u3,ir1,ir2,ir3,ir4,uo], dict=True, domain=S.Complexes )
-
-    #print(u_solve)
-
-    if len(u_solve)!=1:
-        sys.stderr.write("Many or no solutions: {} !\n".format(u_solve))
-        exit(1)
-    
-    u_expr = u_solve[0]
-
-    h_expr = u_expr[uo]/ui
-
-    print(h_expr)
-
-    breakpoint()
-
-    # now make more substitutions
-    #
-    h = symbols('h')
-    k = symbols('k', real=True, negative=True)
-    q,w1,w2 = symbols('q w1 w2', real=True, positive=True)
-    #
-    # filter gain
-    s_eq1 = Eq( k, -r3/(r1+r2) )
-    #
-    # canonical H expr
-    s_eq2 = Eq( h, k/( (1+(I*w)/w1) * (1+(I*w)/(q*w2)-(w*w)/(w2*w2)) ) )
-    #
-    # h through r/c
-    s_eq3 = Eq( h, h_expr )
-
-    # solve
-    h_solve = solve( [s_eq1, s_eq2, s_eq3], [r1, r2, r3, r4, c1, c2, c3], dict=True )
-
-    print(h_solve)
-
-    sys.exit(0)
-
-    if len(h_solve)!=1:
-        sys.stderr.write("Many or no solutions: {} !\n".format(h_solve))
-        exit(1)
-
-    h_expr = h_solve[0]
-    h_result = h_expr[h]
-
-    init_printing()
-    print('')
-    #pprint(h_expr)
-    print('')
-    pprint(Eq(h,h_result))
-
-
-    rc_solve = solve( [s_eq1, s_eq2, s_eq3], [r3,c2], dict=True )
-
-    rc_expr = rc_solve[0]
-
-    print('')
-    pprint(Eq(c2,rc_expr[c2]))
-    print('')
-    pprint(Eq(r3,rc_expr[r3]))
-    print('')
-    pprint(s_eq1)
-    print('')
-    pprint(s_eq2)
-    print('')
-    pprint(s_eq3)
-
 # these formulae calculated symbolically by the function above and are set here in comments
 # as reference for further numerical calculations.
+# see mfb3_*play.py for ways to calculate
 """
-         ____________
-       ╲╱ c₁⋅c₂⋅r₂⋅r₃ 
-q = ─────────────────────
-     c₁⋅((1 - k)⋅r₃ + r₂) 
+r1,r2,r3,c3 -- select arbitrary/as needed,
+calculate c1,c2,r4
 
-            1             
-wc = ───────────────
-       ____________
-     ╲╱ c₁⋅c₂⋅r₂⋅r₃ 
+(see mfb3.png)
 
+w1   - 1st order,
+w2,q - 2nd order
 
-    -r₂ 
-k = ────
-     r₁ 
+1/w1 + 1/(q*w2)       = A = (c1*r1*r2 + c3*r1*r3 + c3*r1*r4 + c3*r2*r3 + c3*r2*r4 + c3*r3*r4)/(r1 + r2)
+1/w2**2 + 1/(q*w1*w2) = B = c3*(c1*r1*r2*r3 + c1*r1*r2*r4 + c1*r1*r3*r4 + c2*r1*r3*r4 + c2*r2*r3*r4)/(r1 + r2)
+1/(w1*w2**2)          = C = c1*c2*c3*r1*r2*r3*r4/(r1 + r2)
 
-                  2        
-            k⋅q⋅wc         
-h = ───────────────────────
-         2       2         
-    - q⋅w  + q⋅wc  + ⅈ⋅w⋅wc
+w1 = (2**(1/3)*A*C - 2**(1/3)*B**2/3 + B*(9*A*B*C - 2*B**3 - 27*C**2 + 3*sqrt(3)*sqrt(C**2*(4*A**3*C - A**2*B**2 - 18*A*B*C + 4*B**3 + 27*C**2)))**(1/3)/3 - (18*A*B*C - 4*B**3 - 54*C**2 + 6*sqrt(3)*sqrt(C**2*(4*A**3*C - A**2*B**2 - 18*A*B*C + 4*B**3 + 27*C**2)))**(2/3)/6)/(C*(9*A*B*C - 2*B**3 - 27*C**2 + 3*sqrt(3)*sqrt(C**2*(4*A**3*C - A**2*B**2 - 18*A*B*C + 4*B**3 + 27*C**2)))**(1/3))
+w2 = 2**(1/6)*sqrt(3)/sqrt((3*2**(2/3)*A*C - 2**(2/3)*B**2 + (2**(1/3)*B - (9*A*B*C - 2*B**3 - 27*C**2 + 3*sqrt(3)*sqrt(C**2*(4*A**3*C - A**2*B**2 - 18*A*B*C + 4*B**3 + 27*C**2)))**(1/3))*(9*A*B*C - 2*B**3 - 27*C**2 + 3*sqrt(3)*sqrt(C**2*(4*A**3*C - A**2*B**2 - 18*A*B*C + 4*B**3 + 27*C**2)))**(1/3))/(9*A*B*C - 2*B**3 - 27*C**2 + 3*sqrt(3)*sqrt(C**2*(4*A**3*C - A**2*B**2 - 18*A*B*C + 4*B**3 + 27*C**2)))**(1/3))
+q  = 2**(5/6)*sqrt(3)*sqrt((3*2**(2/3)*A*C - 2**(2/3)*B**2 + (2**(1/3)*B - (9*A*B*C - 2*B**3 - 27*C**2 + 3*sqrt(3)*sqrt(C**2*(4*A**3*C - A**2*B**2 - 18*A*B*C + 4*B**3 + 27*C**2)))**(1/3))*(9*A*B*C - 2*B**3 - 27*C**2 + 3*sqrt(3)*sqrt(C**2*(4*A**3*C - A**2*B**2 - 18*A*B*C + 4*B**3 + 27*C**2)))**(1/3))/(9*A*B*C - 2*B**3 - 27*C**2 + 3*sqrt(3)*sqrt(C**2*(4*A**3*C - A**2*B**2 - 18*A*B*C + 4*B**3 + 27*C**2)))**(1/3))*(3*2**(2/3)*A*C - 2**(2/3)*B**2 + (2**(1/3)*B - (9*A*B*C - 2*B**3 - 27*C**2 + 3*sqrt(3)*sqrt(C**2*(4*A**3*C - A**2*B**2 - 18*A*B*C + 4*B**3 + 27*C**2)))**(1/3))*(9*A*B*C - 2*B**3 - 27*C**2 + 3*sqrt(3)*sqrt(C**2*(4*A**3*C - A**2*B**2 - 18*A*B*C + 4*B**3 + 27*C**2)))**(1/3))/(6*(A*(3*2**(2/3)*A*C - 2**(2/3)*B**2 + (2**(1/3)*B - (9*A*B*C - 2*B**3 - 27*C**2 + 3*sqrt(3)*sqrt(C**2*(4*A**3*C - A**2*B**2 - 18*A*B*C + 4*B**3 + 27*C**2)))**(1/3))*(9*A*B*C - 2*B**3 - 27*C**2 + 3*sqrt(3)*sqrt(C**2*(4*A**3*C - A**2*B**2 - 18*A*B*C + 4*B**3 + 27*C**2)))**(1/3)) - 3*2**(1/3)*C*(9*A*B*C - 2*B**3 - 27*C**2 + 3*sqrt(3)*sqrt(C**2*(4*A**3*C - A**2*B**2 - 18*A*B*C + 4*B**3 + 27*C**2)))**(1/3)))
 
-           q⋅(k - 1)       
-c₂ = ──────────────────────
-     r₂⋅wc⋅(c₁⋅q⋅r₂⋅wc - 1)
+r4 = (-(-3*B*r1*r2*(r1 + r2)*(r1 + r2 + r3) + 6*c3*r1*r2*r3*(A - c3*r3)*(r1 + r2)*(r1 + r2 + r3) - 3*r1*(A - c3*r3)**2*(r1 + r2)**2*(r2 + r3))/(c3**2*r1*(r2 + r3)*(r1 + r2 + r3)**2) - (c3*r1*r2*r3*(r1 + r2 + r3) - 2*r1*(A - c3*r3)*(r1 + r2)*(r2 + r3))**2/(c3**2*r1**2*(r2 + r3)**2*(r1 + r2 + r3)**2))/(3*(sqrt(-4*((-3*B*r1*r2*(r1 + r2)*(r1 + r2 + r3) + 6*c3*r1*r2*r3*(A - c3*r3)*(r1 + r2)*(r1 + r2 + r3) - 3*r1*(A - c3*r3)**2*(r1 + r2)**2*(r2 + r3))/(c3**2*r1*(r2 + r3)*(r1 + r2 + r3)**2) + (c3*r1*r2*r3*(r1 + r2 + r3) - 2*r1*(A - c3*r3)*(r1 + r2)*(r2 + r3))**2/(c3**2*r1**2*(r2 + r3)**2*(r1 + r2 + r3)**2))**3 + ((-27*B*r1*r2*(A - c3*r3)*(r1 + r2)**2/c3 + 27*C*r1*r2*(r1 + r2)**2/c3 + 27*r1*r2*r3*(A - c3*r3)**2*(r1 + r2)**2)/(c3**2*r1*(r2 + r3)*(r1 + r2 + r3)**2) - (9*c3*r1*r2*r3*(r1 + r2 + r3) - 18*r1*(A - c3*r3)*(r1 + r2)*(r2 + r3))*(B*r1*r2*(r1 + r2)*(r1 + r2 + r3) - 2*c3*r1*r2*r3*(A - c3*r3)*(r1 + r2)*(r1 + r2 + r3) + r1*(A - c3*r3)**2*(r1 + r2)**2*(r2 + r3))/(c3**3*r1**2*(r2 + r3)**2*(r1 + r2 + r3)**3) + 2*(c3*r1*r2*r3*(r1 + r2 + r3) - 2*r1*(A - c3*r3)*(r1 + r2)*(r2 + r3))**3/(c3**3*r1**3*(r2 + r3)**3*(r1 + r2 + r3)**3))**2)/2 + (-27*B*r1*r2*(A - c3*r3)*(r1 + r2)**2/c3 + 27*C*r1*r2*(r1 + r2)**2/c3 + 27*r1*r2*r3*(A - c3*r3)**2*(r1 + r2)**2)/(2*c3**2*r1*(r2 + r3)*(r1 + r2 + r3)**2) - (9*c3*r1*r2*r3*(r1 + r2 + r3) - 18*r1*(A - c3*r3)*(r1 + r2)*(r2 + r3))*(B*r1*r2*(r1 + r2)*(r1 + r2 + r3) - 2*c3*r1*r2*r3*(A - c3*r3)*(r1 + r2)*(r1 + r2 + r3) + r1*(A - c3*r3)**2*(r1 + r2)**2*(r2 + r3))/(2*c3**3*r1**2*(r2 + r3)**2*(r1 + r2 + r3)**3) + (c3*r1*r2*r3*(r1 + r2 + r3) - 2*r1*(A - c3*r3)*(r1 + r2)*(r2 + r3))**3/(c3**3*r1**3*(r2 + r3)**3*(r1 + r2 + r3)**3))**(1/3)) - (sqrt(-4*((-3*B*r1*r2*(r1 + r2)*(r1 + r2 + r3) + 6*c3*r1*r2*r3*(A - c3*r3)*(r1 + r2)*(r1 + r2 + r3) - 3*r1*(A - c3*r3)**2*(r1 + r2)**2*(r2 + r3))/(c3**2*r1*(r2 + r3)*(r1 + r2 + r3)**2) + (c3*r1*r2*r3*(r1 + r2 + r3) - 2*r1*(A - c3*r3)*(r1 + r2)*(r2 + r3))**2/(c3**2*r1**2*(r2 + r3)**2*(r1 + r2 + r3)**2))**3 + ((-27*B*r1*r2*(A - c3*r3)*(r1 + r2)**2/c3 + 27*C*r1*r2*(r1 + r2)**2/c3 + 27*r1*r2*r3*(A - c3*r3)**2*(r1 + r2)**2)/(c3**2*r1*(r2 + r3)*(r1 + r2 + r3)**2) - (9*c3*r1*r2*r3*(r1 + r2 + r3) - 18*r1*(A - c3*r3)*(r1 + r2)*(r2 + r3))*(B*r1*r2*(r1 + r2)*(r1 + r2 + r3) - 2*c3*r1*r2*r3*(A - c3*r3)*(r1 + r2)*(r1 + r2 + r3) + r1*(A - c3*r3)**2*(r1 + r2)**2*(r2 + r3))/(c3**3*r1**2*(r2 + r3)**2*(r1 + r2 + r3)**3) + 2*(c3*r1*r2*r3*(r1 + r2 + r3) - 2*r1*(A - c3*r3)*(r1 + r2)*(r2 + r3))**3/(c3**3*r1**3*(r2 + r3)**3*(r1 + r2 + r3)**3))**2)/2 + (-27*B*r1*r2*(A - c3*r3)*(r1 + r2)**2/c3 + 27*C*r1*r2*(r1 + r2)**2/c3 + 27*r1*r2*r3*(A - c3*r3)**2*(r1 + r2)**2)/(2*c3**2*r1*(r2 + r3)*(r1 + r2 + r3)**2) - (9*c3*r1*r2*r3*(r1 + r2 + r3) - 18*r1*(A - c3*r3)*(r1 + r2)*(r2 + r3))*(B*r1*r2*(r1 + r2)*(r1 + r2 + r3) - 2*c3*r1*r2*r3*(A - c3*r3)*(r1 + r2)*(r1 + r2 + r3) + r1*(A - c3*r3)**2*(r1 + r2)**2*(r2 + r3))/(2*c3**3*r1**2*(r2 + r3)**2*(r1 + r2 + r3)**3) + (c3*r1*r2*r3*(r1 + r2 + r3) - 2*r1*(A - c3*r3)*(r1 + r2)*(r2 + r3))**3/(c3**3*r1**3*(r2 + r3)**3*(r1 + r2 + r3)**3))**(1/3)/3 - (c3*r1*r2*r3*(r1 + r2 + r3) - 2*r1*(A - c3*r3)*(r1 + r2)*(r2 + r3))/(3*c3*r1*(r2 + r3)*(r1 + r2 + r3))
+c1 = -c3*(r1 + r2 + r3)*((-(-3*B*r1*r2*(r1 + r2)*(r1 + r2 + r3) + 6*c3*r1*r2*r3*(A - c3*r3)*(r1 + r2)*(r1 + r2 + r3) - 3*r1*(A - c3*r3)**2*(r1 + r2)**2*(r2 + r3))/(c3**2*r1*(r2 + r3)*(r1 + r2 + r3)**2) - (c3*r1*r2*r3*(r1 + r2 + r3) - 2*r1*(A - c3*r3)*(r1 + r2)*(r2 + r3))**2/(c3**2*r1**2*(r2 + r3)**2*(r1 + r2 + r3)**2))/(3*(sqrt(-4*((-3*B*r1*r2*(r1 + r2)*(r1 + r2 + r3) + 6*c3*r1*r2*r3*(A - c3*r3)*(r1 + r2)*(r1 + r2 + r3) - 3*r1*(A - c3*r3)**2*(r1 + r2)**2*(r2 + r3))/(c3**2*r1*(r2 + r3)*(r1 + r2 + r3)**2) + (c3*r1*r2*r3*(r1 + r2 + r3) - 2*r1*(A - c3*r3)*(r1 + r2)*(r2 + r3))**2/(c3**2*r1**2*(r2 + r3)**2*(r1 + r2 + r3)**2))**3 + ((-27*B*r1*r2*(A - c3*r3)*(r1 + r2)**2/c3 + 27*C*r1*r2*(r1 + r2)**2/c3 + 27*r1*r2*r3*(A - c3*r3)**2*(r1 + r2)**2)/(c3**2*r1*(r2 + r3)*(r1 + r2 + r3)**2) - (9*c3*r1*r2*r3*(r1 + r2 + r3) - 18*r1*(A - c3*r3)*(r1 + r2)*(r2 + r3))*(B*r1*r2*(r1 + r2)*(r1 + r2 + r3) - 2*c3*r1*r2*r3*(A - c3*r3)*(r1 + r2)*(r1 + r2 + r3) + r1*(A - c3*r3)**2*(r1 + r2)**2*(r2 + r3))/(c3**3*r1**2*(r2 + r3)**2*(r1 + r2 + r3)**3) + 2*(c3*r1*r2*r3*(r1 + r2 + r3) - 2*r1*(A - c3*r3)*(r1 + r2)*(r2 + r3))**3/(c3**3*r1**3*(r2 + r3)**3*(r1 + r2 + r3)**3))**2)/2 + (-27*B*r1*r2*(A - c3*r3)*(r1 + r2)**2/c3 + 27*C*r1*r2*(r1 + r2)**2/c3 + 27*r1*r2*r3*(A - c3*r3)**2*(r1 + r2)**2)/(2*c3**2*r1*(r2 + r3)*(r1 + r2 + r3)**2) - (9*c3*r1*r2*r3*(r1 + r2 + r3) - 18*r1*(A - c3*r3)*(r1 + r2)*(r2 + r3))*(B*r1*r2*(r1 + r2)*(r1 + r2 + r3) - 2*c3*r1*r2*r3*(A - c3*r3)*(r1 + r2)*(r1 + r2 + r3) + r1*(A - c3*r3)**2*(r1 + r2)**2*(r2 + r3))/(2*c3**3*r1**2*(r2 + r3)**2*(r1 + r2 + r3)**3) + (c3*r1*r2*r3*(r1 + r2 + r3) - 2*r1*(A - c3*r3)*(r1 + r2)*(r2 + r3))**3/(c3**3*r1**3*(r2 + r3)**3*(r1 + r2 + r3)**3))**(1/3)) - (sqrt(-4*((-3*B*r1*r2*(r1 + r2)*(r1 + r2 + r3) + 6*c3*r1*r2*r3*(A - c3*r3)*(r1 + r2)*(r1 + r2 + r3) - 3*r1*(A - c3*r3)**2*(r1 + r2)**2*(r2 + r3))/(c3**2*r1*(r2 + r3)*(r1 + r2 + r3)**2) + (c3*r1*r2*r3*(r1 + r2 + r3) - 2*r1*(A - c3*r3)*(r1 + r2)*(r2 + r3))**2/(c3**2*r1**2*(r2 + r3)**2*(r1 + r2 + r3)**2))**3 + ((-27*B*r1*r2*(A - c3*r3)*(r1 + r2)**2/c3 + 27*C*r1*r2*(r1 + r2)**2/c3 + 27*r1*r2*r3*(A - c3*r3)**2*(r1 + r2)**2)/(c3**2*r1*(r2 + r3)*(r1 + r2 + r3)**2) - (9*c3*r1*r2*r3*(r1 + r2 + r3) - 18*r1*(A - c3*r3)*(r1 + r2)*(r2 + r3))*(B*r1*r2*(r1 + r2)*(r1 + r2 + r3) - 2*c3*r1*r2*r3*(A - c3*r3)*(r1 + r2)*(r1 + r2 + r3) + r1*(A - c3*r3)**2*(r1 + r2)**2*(r2 + r3))/(c3**3*r1**2*(r2 + r3)**2*(r1 + r2 + r3)**3) + 2*(c3*r1*r2*r3*(r1 + r2 + r3) - 2*r1*(A - c3*r3)*(r1 + r2)*(r2 + r3))**3/(c3**3*r1**3*(r2 + r3)**3*(r1 + r2 + r3)**3))**2)/2 + (-27*B*r1*r2*(A - c3*r3)*(r1 + r2)**2/c3 + 27*C*r1*r2*(r1 + r2)**2/c3 + 27*r1*r2*r3*(A - c3*r3)**2*(r1 + r2)**2)/(2*c3**2*r1*(r2 + r3)*(r1 + r2 + r3)**2) - (9*c3*r1*r2*r3*(r1 + r2 + r3) - 18*r1*(A - c3*r3)*(r1 + r2)*(r2 + r3))*(B*r1*r2*(r1 + r2)*(r1 + r2 + r3) - 2*c3*r1*r2*r3*(A - c3*r3)*(r1 + r2)*(r1 + r2 + r3) + r1*(A - c3*r3)**2*(r1 + r2)**2*(r2 + r3))/(2*c3**3*r1**2*(r2 + r3)**2*(r1 + r2 + r3)**3) + (c3*r1*r2*r3*(r1 + r2 + r3) - 2*r1*(A - c3*r3)*(r1 + r2)*(r2 + r3))**3/(c3**3*r1**3*(r2 + r3)**3*(r1 + r2 + r3)**3))**(1/3)/3 - (c3*r1*r2*r3*(r1 + r2 + r3) - 2*r1*(A - c3*r3)*(r1 + r2)*(r2 + r3))/(3*c3*r1*(r2 + r3)*(r1 + r2 + r3)))/(r1*r2) + (A - c3*r3)*(r1 + r2)/(r1*r2)
+c2 = C*(r1 + r2)/(c3*r3*(-c3*(r1 + r2 + r3)*((-(-3*B*r1*r2*(r1 + r2)*(r1 + r2 + r3) + 6*c3*r1*r2*r3*(A - c3*r3)*(r1 + r2)*(r1 + r2 + r3) - 3*r1*(A - c3*r3)**2*(r1 + r2)**2*(r2 + r3))/(c3**2*r1*(r2 + r3)*(r1 + r2 + r3)**2) - (c3*r1*r2*r3*(r1 + r2 + r3) - 2*r1*(A - c3*r3)*(r1 + r2)*(r2 + r3))**2/(c3**2*r1**2*(r2 + r3)**2*(r1 + r2 + r3)**2))/(3*(sqrt(-4*((-3*B*r1*r2*(r1 + r2)*(r1 + r2 + r3) + 6*c3*r1*r2*r3*(A - c3*r3)*(r1 + r2)*(r1 + r2 + r3) - 3*r1*(A - c3*r3)**2*(r1 + r2)**2*(r2 + r3))/(c3**2*r1*(r2 + r3)*(r1 + r2 + r3)**2) + (c3*r1*r2*r3*(r1 + r2 + r3) - 2*r1*(A - c3*r3)*(r1 + r2)*(r2 + r3))**2/(c3**2*r1**2*(r2 + r3)**2*(r1 + r2 + r3)**2))**3 + ((-27*B*r1*r2*(A - c3*r3)*(r1 + r2)**2/c3 + 27*C*r1*r2*(r1 + r2)**2/c3 + 27*r1*r2*r3*(A - c3*r3)**2*(r1 + r2)**2)/(c3**2*r1*(r2 + r3)*(r1 + r2 + r3)**2) - (9*c3*r1*r2*r3*(r1 + r2 + r3) - 18*r1*(A - c3*r3)*(r1 + r2)*(r2 + r3))*(B*r1*r2*(r1 + r2)*(r1 + r2 + r3) - 2*c3*r1*r2*r3*(A - c3*r3)*(r1 + r2)*(r1 + r2 + r3) + r1*(A - c3*r3)**2*(r1 + r2)**2*(r2 + r3))/(c3**3*r1**2*(r2 + r3)**2*(r1 + r2 + r3)**3) + 2*(c3*r1*r2*r3*(r1 + r2 + r3) - 2*r1*(A - c3*r3)*(r1 + r2)*(r2 + r3))**3/(c3**3*r1**3*(r2 + r3)**3*(r1 + r2 + r3)**3))**2)/2 + (-27*B*r1*r2*(A - c3*r3)*(r1 + r2)**2/c3 + 27*C*r1*r2*(r1 + r2)**2/c3 + 27*r1*r2*r3*(A - c3*r3)**2*(r1 + r2)**2)/(2*c3**2*r1*(r2 + r3)*(r1 + r2 + r3)**2) - (9*c3*r1*r2*r3*(r1 + r2 + r3) - 18*r1*(A - c3*r3)*(r1 + r2)*(r2 + r3))*(B*r1*r2*(r1 + r2)*(r1 + r2 + r3) - 2*c3*r1*r2*r3*(A - c3*r3)*(r1 + r2)*(r1 + r2 + r3) + r1*(A - c3*r3)**2*(r1 + r2)**2*(r2 + r3))/(2*c3**3*r1**2*(r2 + r3)**2*(r1 + r2 + r3)**3) + (c3*r1*r2*r3*(r1 + r2 + r3) - 2*r1*(A - c3*r3)*(r1 + r2)*(r2 + r3))**3/(c3**3*r1**3*(r2 + r3)**3*(r1 + r2 + r3)**3))**(1/3)) - (sqrt(-4*((-3*B*r1*r2*(r1 + r2)*(r1 + r2 + r3) + 6*c3*r1*r2*r3*(A - c3*r3)*(r1 + r2)*(r1 + r2 + r3) - 3*r1*(A - c3*r3)**2*(r1 + r2)**2*(r2 + r3))/(c3**2*r1*(r2 + r3)*(r1 + r2 + r3)**2) + (c3*r1*r2*r3*(r1 + r2 + r3) - 2*r1*(A - c3*r3)*(r1 + r2)*(r2 + r3))**2/(c3**2*r1**2*(r2 + r3)**2*(r1 + r2 + r3)**2))**3 + ((-27*B*r1*r2*(A - c3*r3)*(r1 + r2)**2/c3 + 27*C*r1*r2*(r1 + r2)**2/c3 + 27*r1*r2*r3*(A - c3*r3)**2*(r1 + r2)**2)/(c3**2*r1*(r2 + r3)*(r1 + r2 + r3)**2) - (9*c3*r1*r2*r3*(r1 + r2 + r3) - 18*r1*(A - c3*r3)*(r1 + r2)*(r2 + r3))*(B*r1*r2*(r1 + r2)*(r1 + r2 + r3) - 2*c3*r1*r2*r3*(A - c3*r3)*(r1 + r2)*(r1 + r2 + r3) + r1*(A - c3*r3)**2*(r1 + r2)**2*(r2 + r3))/(c3**3*r1**2*(r2 + r3)**2*(r1 + r2 + r3)**3) + 2*(c3*r1*r2*r3*(r1 + r2 + r3) - 2*r1*(A - c3*r3)*(r1 + r2)*(r2 + r3))**3/(c3**3*r1**3*(r2 + r3)**3*(r1 + r2 + r3)**3))**2)/2 + (-27*B*r1*r2*(A - c3*r3)*(r1 + r2)**2/c3 + 27*C*r1*r2*(r1 + r2)**2/c3 + 27*r1*r2*r3*(A - c3*r3)**2*(r1 + r2)**2)/(2*c3**2*r1*(r2 + r3)*(r1 + r2 + r3)**2) - (9*c3*r1*r2*r3*(r1 + r2 + r3) - 18*r1*(A - c3*r3)*(r1 + r2)*(r2 + r3))*(B*r1*r2*(r1 + r2)*(r1 + r2 + r3) - 2*c3*r1*r2*r3*(A - c3*r3)*(r1 + r2)*(r1 + r2 + r3) + r1*(A - c3*r3)**2*(r1 + r2)**2*(r2 + r3))/(2*c3**3*r1**2*(r2 + r3)**2*(r1 + r2 + r3)**3) + (c3*r1*r2*r3*(r1 + r2 + r3) - 2*r1*(A - c3*r3)*(r1 + r2)*(r2 + r3))**3/(c3**3*r1**3*(r2 + r3)**3*(r1 + r2 + r3)**3))**(1/3)/3 - (c3*r1*r2*r3*(r1 + r2 + r3) - 2*r1*(A - c3*r3)*(r1 + r2)*(r2 + r3))/(3*c3*r1*(r2 + r3)*(r1 + r2 + r3)))**2 + (A - c3*r3)*(r1 + r2)*((-(-3*B*r1*r2*(r1 + r2)*(r1 + r2 + r3) + 6*c3*r1*r2*r3*(A - c3*r3)*(r1 + r2)*(r1 + r2 + r3) - 3*r1*(A - c3*r3)**2*(r1 + r2)**2*(r2 + r3))/(c3**2*r1*(r2 + r3)*(r1 + r2 + r3)**2) - (c3*r1*r2*r3*(r1 + r2 + r3) - 2*r1*(A - c3*r3)*(r1 + r2)*(r2 + r3))**2/(c3**2*r1**2*(r2 + r3)**2*(r1 + r2 + r3)**2))/(3*(sqrt(-4*((-3*B*r1*r2*(r1 + r2)*(r1 + r2 + r3) + 6*c3*r1*r2*r3*(A - c3*r3)*(r1 + r2)*(r1 + r2 + r3) - 3*r1*(A - c3*r3)**2*(r1 + r2)**2*(r2 + r3))/(c3**2*r1*(r2 + r3)*(r1 + r2 + r3)**2) + (c3*r1*r2*r3*(r1 + r2 + r3) - 2*r1*(A - c3*r3)*(r1 + r2)*(r2 + r3))**2/(c3**2*r1**2*(r2 + r3)**2*(r1 + r2 + r3)**2))**3 + ((-27*B*r1*r2*(A - c3*r3)*(r1 + r2)**2/c3 + 27*C*r1*r2*(r1 + r2)**2/c3 + 27*r1*r2*r3*(A - c3*r3)**2*(r1 + r2)**2)/(c3**2*r1*(r2 + r3)*(r1 + r2 + r3)**2) - (9*c3*r1*r2*r3*(r1 + r2 + r3) - 18*r1*(A - c3*r3)*(r1 + r2)*(r2 + r3))*(B*r1*r2*(r1 + r2)*(r1 + r2 + r3) - 2*c3*r1*r2*r3*(A - c3*r3)*(r1 + r2)*(r1 + r2 + r3) + r1*(A - c3*r3)**2*(r1 + r2)**2*(r2 + r3))/(c3**3*r1**2*(r2 + r3)**2*(r1 + r2 + r3)**3) + 2*(c3*r1*r2*r3*(r1 + r2 + r3) - 2*r1*(A - c3*r3)*(r1 + r2)*(r2 + r3))**3/(c3**3*r1**3*(r2 + r3)**3*(r1 + r2 + r3)**3))**2)/2 + (-27*B*r1*r2*(A - c3*r3)*(r1 + r2)**2/c3 + 27*C*r1*r2*(r1 + r2)**2/c3 + 27*r1*r2*r3*(A - c3*r3)**2*(r1 + r2)**2)/(2*c3**2*r1*(r2 + r3)*(r1 + r2 + r3)**2) - (9*c3*r1*r2*r3*(r1 + r2 + r3) - 18*r1*(A - c3*r3)*(r1 + r2)*(r2 + r3))*(B*r1*r2*(r1 + r2)*(r1 + r2 + r3) - 2*c3*r1*r2*r3*(A - c3*r3)*(r1 + r2)*(r1 + r2 + r3) + r1*(A - c3*r3)**2*(r1 + r2)**2*(r2 + r3))/(2*c3**3*r1**2*(r2 + r3)**2*(r1 + r2 + r3)**3) + (c3*r1*r2*r3*(r1 + r2 + r3) - 2*r1*(A - c3*r3)*(r1 + r2)*(r2 + r3))**3/(c3**3*r1**3*(r2 + r3)**3*(r1 + r2 + r3)**3))**(1/3)) - (sqrt(-4*((-3*B*r1*r2*(r1 + r2)*(r1 + r2 + r3) + 6*c3*r1*r2*r3*(A - c3*r3)*(r1 + r2)*(r1 + r2 + r3) - 3*r1*(A - c3*r3)**2*(r1 + r2)**2*(r2 + r3))/(c3**2*r1*(r2 + r3)*(r1 + r2 + r3)**2) + (c3*r1*r2*r3*(r1 + r2 + r3) - 2*r1*(A - c3*r3)*(r1 + r2)*(r2 + r3))**2/(c3**2*r1**2*(r2 + r3)**2*(r1 + r2 + r3)**2))**3 + ((-27*B*r1*r2*(A - c3*r3)*(r1 + r2)**2/c3 + 27*C*r1*r2*(r1 + r2)**2/c3 + 27*r1*r2*r3*(A - c3*r3)**2*(r1 + r2)**2)/(c3**2*r1*(r2 + r3)*(r1 + r2 + r3)**2) - (9*c3*r1*r2*r3*(r1 + r2 + r3) - 18*r1*(A - c3*r3)*(r1 + r2)*(r2 + r3))*(B*r1*r2*(r1 + r2)*(r1 + r2 + r3) - 2*c3*r1*r2*r3*(A - c3*r3)*(r1 + r2)*(r1 + r2 + r3) + r1*(A - c3*r3)**2*(r1 + r2)**2*(r2 + r3))/(c3**3*r1**2*(r2 + r3)**2*(r1 + r2 + r3)**3) + 2*(c3*r1*r2*r3*(r1 + r2 + r3) - 2*r1*(A - c3*r3)*(r1 + r2)*(r2 + r3))**3/(c3**3*r1**3*(r2 + r3)**3*(r1 + r2 + r3)**3))**2)/2 + (-27*B*r1*r2*(A - c3*r3)*(r1 + r2)**2/c3 + 27*C*r1*r2*(r1 + r2)**2/c3 + 27*r1*r2*r3*(A - c3*r3)**2*(r1 + r2)**2)/(2*c3**2*r1*(r2 + r3)*(r1 + r2 + r3)**2) - (9*c3*r1*r2*r3*(r1 + r2 + r3) - 18*r1*(A - c3*r3)*(r1 + r2)*(r2 + r3))*(B*r1*r2*(r1 + r2)*(r1 + r2 + r3) - 2*c3*r1*r2*r3*(A - c3*r3)*(r1 + r2)*(r1 + r2 + r3) + r1*(A - c3*r3)**2*(r1 + r2)**2*(r2 + r3))/(2*c3**3*r1**2*(r2 + r3)**2*(r1 + r2 + r3)**3) + (c3*r1*r2*r3*(r1 + r2 + r3) - 2*r1*(A - c3*r3)*(r1 + r2)*(r2 + r3))**3/(c3**3*r1**3*(r2 + r3)**3*(r1 + r2 + r3)**3))**(1/3)/3 - (c3*r1*r2*r3*(r1 + r2 + r3) - 2*r1*(A - c3*r3)*(r1 + r2)*(r2 + r3))/(3*c3*r1*(r2 + r3)*(r1 + r2 + r3)))))
 
-     c₁⋅q⋅r₂⋅wc - 1 
-r₃ = ───────────────
-     c₁⋅q⋅wc⋅(k - 1)
-
+1. select r1,r2,r3,c3,w1,w2,q (-r3/(r1+r2) makes k)
+2. calc A,B,C from w1,w2,q
+3. calc r4,c1,c2 from A,B,C,r1,r2,r3,c3
+4. fit r4,c1,c2 into Exx
+5. check resulting w1,w2,q,k
 """
 
 
@@ -336,118 +231,158 @@ def select_values_in_range(vrange, vrange_exp, pvalues='e24'):
 
 
 
-def calc_mfb2_parameters(r1,r2,r3,c1,c2):
 
-    wc = 1.0/math.sqrt(c1*c2*r2*r3)
-    k  = (-r2)/r1
-    q  = 1.0 / (wc * c1 * ((1.0-k)*r3 + r2))
+def calc_c1c2r4_from_w1w2q_r1r2r3c3(w1,w2,q,r1,r2,r3,c3):
 
-    return (wc,k,q)
+    A = 1.0/w1 + 1.0/(q*w2)       
+    B = 1.0/(w2*w2) + 1.0/(q*w1*w2) 
+    C = 1.0/(w1*w2*w2)          
+    
+#    print('A={}'.format(A))
+#    print('B={}'.format(B))
+#    print('C={}'.format(C))
+
+    r4 = (-(-3*B*r1*r2*(r1 + r2)*(r1 + r2 + r3) + 6*c3*r1*r2*r3*(A - c3*r3)*(r1 + r2)*(r1 + r2 + r3) - 3*r1*(A - c3*r3)**2*(r1 + r2)**2*(r2 + r3))/(c3**2*r1*(r2 + r3)*(r1 + r2 + r3)**2) - (c3*r1*r2*r3*(r1 + r2 + r3) - 2*r1*(A - c3*r3)*(r1 + r2)*(r2 + r3))**2/(c3**2*r1**2*(r2 + r3)**2*(r1 + r2 + r3)**2))/(3*(math.sqrt(-4*((-3*B*r1*r2*(r1 + r2)*(r1 + r2 + r3) + 6*c3*r1*r2*r3*(A - c3*r3)*(r1 + r2)*(r1 + r2 + r3) - 3*r1*(A - c3*r3)**2*(r1 + r2)**2*(r2 + r3))/(c3**2*r1*(r2 + r3)*(r1 + r2 + r3)**2) + (c3*r1*r2*r3*(r1 + r2 + r3) - 2*r1*(A - c3*r3)*(r1 + r2)*(r2 + r3))**2/(c3**2*r1**2*(r2 + r3)**2*(r1 + r2 + r3)**2))**3 + ((-27*B*r1*r2*(A - c3*r3)*(r1 + r2)**2/c3 + 27*C*r1*r2*(r1 + r2)**2/c3 + 27*r1*r2*r3*(A - c3*r3)**2*(r1 + r2)**2)/(c3**2*r1*(r2 + r3)*(r1 + r2 + r3)**2) - (9*c3*r1*r2*r3*(r1 + r2 + r3) - 18*r1*(A - c3*r3)*(r1 + r2)*(r2 + r3))*(B*r1*r2*(r1 + r2)*(r1 + r2 + r3) - 2*c3*r1*r2*r3*(A - c3*r3)*(r1 + r2)*(r1 + r2 + r3) + r1*(A - c3*r3)**2*(r1 + r2)**2*(r2 + r3))/(c3**3*r1**2*(r2 + r3)**2*(r1 + r2 + r3)**3) + 2*(c3*r1*r2*r3*(r1 + r2 + r3) - 2*r1*(A - c3*r3)*(r1 + r2)*(r2 + r3))**3/(c3**3*r1**3*(r2 + r3)**3*(r1 + r2 + r3)**3))**2)/2 + (-27*B*r1*r2*(A - c3*r3)*(r1 + r2)**2/c3 + 27*C*r1*r2*(r1 + r2)**2/c3 + 27*r1*r2*r3*(A - c3*r3)**2*(r1 + r2)**2)/(2*c3**2*r1*(r2 + r3)*(r1 + r2 + r3)**2) - (9*c3*r1*r2*r3*(r1 + r2 + r3) - 18*r1*(A - c3*r3)*(r1 + r2)*(r2 + r3))*(B*r1*r2*(r1 + r2)*(r1 + r2 + r3) - 2*c3*r1*r2*r3*(A - c3*r3)*(r1 + r2)*(r1 + r2 + r3) + r1*(A - c3*r3)**2*(r1 + r2)**2*(r2 + r3))/(2*c3**3*r1**2*(r2 + r3)**2*(r1 + r2 + r3)**3) + (c3*r1*r2*r3*(r1 + r2 + r3) - 2*r1*(A - c3*r3)*(r1 + r2)*(r2 + r3))**3/(c3**3*r1**3*(r2 + r3)**3*(r1 + r2 + r3)**3))**(1/3)) - (math.sqrt(-4*((-3*B*r1*r2*(r1 + r2)*(r1 + r2 + r3) + 6*c3*r1*r2*r3*(A - c3*r3)*(r1 + r2)*(r1 + r2 + r3) - 3*r1*(A - c3*r3)**2*(r1 + r2)**2*(r2 + r3))/(c3**2*r1*(r2 + r3)*(r1 + r2 + r3)**2) + (c3*r1*r2*r3*(r1 + r2 + r3) - 2*r1*(A - c3*r3)*(r1 + r2)*(r2 + r3))**2/(c3**2*r1**2*(r2 + r3)**2*(r1 + r2 + r3)**2))**3 + ((-27*B*r1*r2*(A - c3*r3)*(r1 + r2)**2/c3 + 27*C*r1*r2*(r1 + r2)**2/c3 + 27*r1*r2*r3*(A - c3*r3)**2*(r1 + r2)**2)/(c3**2*r1*(r2 + r3)*(r1 + r2 + r3)**2) - (9*c3*r1*r2*r3*(r1 + r2 + r3) - 18*r1*(A - c3*r3)*(r1 + r2)*(r2 + r3))*(B*r1*r2*(r1 + r2)*(r1 + r2 + r3) - 2*c3*r1*r2*r3*(A - c3*r3)*(r1 + r2)*(r1 + r2 + r3) + r1*(A - c3*r3)**2*(r1 + r2)**2*(r2 + r3))/(c3**3*r1**2*(r2 + r3)**2*(r1 + r2 + r3)**3) + 2*(c3*r1*r2*r3*(r1 + r2 + r3) - 2*r1*(A - c3*r3)*(r1 + r2)*(r2 + r3))**3/(c3**3*r1**3*(r2 + r3)**3*(r1 + r2 + r3)**3))**2)/2 + (-27*B*r1*r2*(A - c3*r3)*(r1 + r2)**2/c3 + 27*C*r1*r2*(r1 + r2)**2/c3 + 27*r1*r2*r3*(A - c3*r3)**2*(r1 + r2)**2)/(2*c3**2*r1*(r2 + r3)*(r1 + r2 + r3)**2) - (9*c3*r1*r2*r3*(r1 + r2 + r3) - 18*r1*(A - c3*r3)*(r1 + r2)*(r2 + r3))*(B*r1*r2*(r1 + r2)*(r1 + r2 + r3) - 2*c3*r1*r2*r3*(A - c3*r3)*(r1 + r2)*(r1 + r2 + r3) + r1*(A - c3*r3)**2*(r1 + r2)**2*(r2 + r3))/(2*c3**3*r1**2*(r2 + r3)**2*(r1 + r2 + r3)**3) + (c3*r1*r2*r3*(r1 + r2 + r3) - 2*r1*(A - c3*r3)*(r1 + r2)*(r2 + r3))**3/(c3**3*r1**3*(r2 + r3)**3*(r1 + r2 + r3)**3))**(1/3)/3 - (c3*r1*r2*r3*(r1 + r2 + r3) - 2*r1*(A - c3*r3)*(r1 + r2)*(r2 + r3))/(3*c3*r1*(r2 + r3)*(r1 + r2 + r3))
+    c1 = -c3*(r1 + r2 + r3)*((-(-3*B*r1*r2*(r1 + r2)*(r1 + r2 + r3) + 6*c3*r1*r2*r3*(A - c3*r3)*(r1 + r2)*(r1 + r2 + r3) - 3*r1*(A - c3*r3)**2*(r1 + r2)**2*(r2 + r3))/(c3**2*r1*(r2 + r3)*(r1 + r2 + r3)**2) - (c3*r1*r2*r3*(r1 + r2 + r3) - 2*r1*(A - c3*r3)*(r1 + r2)*(r2 + r3))**2/(c3**2*r1**2*(r2 + r3)**2*(r1 + r2 + r3)**2))/(3*(math.sqrt(-4*((-3*B*r1*r2*(r1 + r2)*(r1 + r2 + r3) + 6*c3*r1*r2*r3*(A - c3*r3)*(r1 + r2)*(r1 + r2 + r3) - 3*r1*(A - c3*r3)**2*(r1 + r2)**2*(r2 + r3))/(c3**2*r1*(r2 + r3)*(r1 + r2 + r3)**2) + (c3*r1*r2*r3*(r1 + r2 + r3) - 2*r1*(A - c3*r3)*(r1 + r2)*(r2 + r3))**2/(c3**2*r1**2*(r2 + r3)**2*(r1 + r2 + r3)**2))**3 + ((-27*B*r1*r2*(A - c3*r3)*(r1 + r2)**2/c3 + 27*C*r1*r2*(r1 + r2)**2/c3 + 27*r1*r2*r3*(A - c3*r3)**2*(r1 + r2)**2)/(c3**2*r1*(r2 + r3)*(r1 + r2 + r3)**2) - (9*c3*r1*r2*r3*(r1 + r2 + r3) - 18*r1*(A - c3*r3)*(r1 + r2)*(r2 + r3))*(B*r1*r2*(r1 + r2)*(r1 + r2 + r3) - 2*c3*r1*r2*r3*(A - c3*r3)*(r1 + r2)*(r1 + r2 + r3) + r1*(A - c3*r3)**2*(r1 + r2)**2*(r2 + r3))/(c3**3*r1**2*(r2 + r3)**2*(r1 + r2 + r3)**3) + 2*(c3*r1*r2*r3*(r1 + r2 + r3) - 2*r1*(A - c3*r3)*(r1 + r2)*(r2 + r3))**3/(c3**3*r1**3*(r2 + r3)**3*(r1 + r2 + r3)**3))**2)/2 + (-27*B*r1*r2*(A - c3*r3)*(r1 + r2)**2/c3 + 27*C*r1*r2*(r1 + r2)**2/c3 + 27*r1*r2*r3*(A - c3*r3)**2*(r1 + r2)**2)/(2*c3**2*r1*(r2 + r3)*(r1 + r2 + r3)**2) - (9*c3*r1*r2*r3*(r1 + r2 + r3) - 18*r1*(A - c3*r3)*(r1 + r2)*(r2 + r3))*(B*r1*r2*(r1 + r2)*(r1 + r2 + r3) - 2*c3*r1*r2*r3*(A - c3*r3)*(r1 + r2)*(r1 + r2 + r3) + r1*(A - c3*r3)**2*(r1 + r2)**2*(r2 + r3))/(2*c3**3*r1**2*(r2 + r3)**2*(r1 + r2 + r3)**3) + (c3*r1*r2*r3*(r1 + r2 + r3) - 2*r1*(A - c3*r3)*(r1 + r2)*(r2 + r3))**3/(c3**3*r1**3*(r2 + r3)**3*(r1 + r2 + r3)**3))**(1/3)) - (math.sqrt(-4*((-3*B*r1*r2*(r1 + r2)*(r1 + r2 + r3) + 6*c3*r1*r2*r3*(A - c3*r3)*(r1 + r2)*(r1 + r2 + r3) - 3*r1*(A - c3*r3)**2*(r1 + r2)**2*(r2 + r3))/(c3**2*r1*(r2 + r3)*(r1 + r2 + r3)**2) + (c3*r1*r2*r3*(r1 + r2 + r3) - 2*r1*(A - c3*r3)*(r1 + r2)*(r2 + r3))**2/(c3**2*r1**2*(r2 + r3)**2*(r1 + r2 + r3)**2))**3 + ((-27*B*r1*r2*(A - c3*r3)*(r1 + r2)**2/c3 + 27*C*r1*r2*(r1 + r2)**2/c3 + 27*r1*r2*r3*(A - c3*r3)**2*(r1 + r2)**2)/(c3**2*r1*(r2 + r3)*(r1 + r2 + r3)**2) - (9*c3*r1*r2*r3*(r1 + r2 + r3) - 18*r1*(A - c3*r3)*(r1 + r2)*(r2 + r3))*(B*r1*r2*(r1 + r2)*(r1 + r2 + r3) - 2*c3*r1*r2*r3*(A - c3*r3)*(r1 + r2)*(r1 + r2 + r3) + r1*(A - c3*r3)**2*(r1 + r2)**2*(r2 + r3))/(c3**3*r1**2*(r2 + r3)**2*(r1 + r2 + r3)**3) + 2*(c3*r1*r2*r3*(r1 + r2 + r3) - 2*r1*(A - c3*r3)*(r1 + r2)*(r2 + r3))**3/(c3**3*r1**3*(r2 + r3)**3*(r1 + r2 + r3)**3))**2)/2 + (-27*B*r1*r2*(A - c3*r3)*(r1 + r2)**2/c3 + 27*C*r1*r2*(r1 + r2)**2/c3 + 27*r1*r2*r3*(A - c3*r3)**2*(r1 + r2)**2)/(2*c3**2*r1*(r2 + r3)*(r1 + r2 + r3)**2) - (9*c3*r1*r2*r3*(r1 + r2 + r3) - 18*r1*(A - c3*r3)*(r1 + r2)*(r2 + r3))*(B*r1*r2*(r1 + r2)*(r1 + r2 + r3) - 2*c3*r1*r2*r3*(A - c3*r3)*(r1 + r2)*(r1 + r2 + r3) + r1*(A - c3*r3)**2*(r1 + r2)**2*(r2 + r3))/(2*c3**3*r1**2*(r2 + r3)**2*(r1 + r2 + r3)**3) + (c3*r1*r2*r3*(r1 + r2 + r3) - 2*r1*(A - c3*r3)*(r1 + r2)*(r2 + r3))**3/(c3**3*r1**3*(r2 + r3)**3*(r1 + r2 + r3)**3))**(1/3)/3 - (c3*r1*r2*r3*(r1 + r2 + r3) - 2*r1*(A - c3*r3)*(r1 + r2)*(r2 + r3))/(3*c3*r1*(r2 + r3)*(r1 + r2 + r3)))/(r1*r2) + (A - c3*r3)*(r1 + r2)/(r1*r2)
+    c2 = C*(r1 + r2)/(c3*r3*(-c3*(r1 + r2 + r3)*((-(-3*B*r1*r2*(r1 + r2)*(r1 + r2 + r3) + 6*c3*r1*r2*r3*(A - c3*r3)*(r1 + r2)*(r1 + r2 + r3) - 3*r1*(A - c3*r3)**2*(r1 + r2)**2*(r2 + r3))/(c3**2*r1*(r2 + r3)*(r1 + r2 + r3)**2) - (c3*r1*r2*r3*(r1 + r2 + r3) - 2*r1*(A - c3*r3)*(r1 + r2)*(r2 + r3))**2/(c3**2*r1**2*(r2 + r3)**2*(r1 + r2 + r3)**2))/(3*(math.sqrt(-4*((-3*B*r1*r2*(r1 + r2)*(r1 + r2 + r3) + 6*c3*r1*r2*r3*(A - c3*r3)*(r1 + r2)*(r1 + r2 + r3) - 3*r1*(A - c3*r3)**2*(r1 + r2)**2*(r2 + r3))/(c3**2*r1*(r2 + r3)*(r1 + r2 + r3)**2) + (c3*r1*r2*r3*(r1 + r2 + r3) - 2*r1*(A - c3*r3)*(r1 + r2)*(r2 + r3))**2/(c3**2*r1**2*(r2 + r3)**2*(r1 + r2 + r3)**2))**3 + ((-27*B*r1*r2*(A - c3*r3)*(r1 + r2)**2/c3 + 27*C*r1*r2*(r1 + r2)**2/c3 + 27*r1*r2*r3*(A - c3*r3)**2*(r1 + r2)**2)/(c3**2*r1*(r2 + r3)*(r1 + r2 + r3)**2) - (9*c3*r1*r2*r3*(r1 + r2 + r3) - 18*r1*(A - c3*r3)*(r1 + r2)*(r2 + r3))*(B*r1*r2*(r1 + r2)*(r1 + r2 + r3) - 2*c3*r1*r2*r3*(A - c3*r3)*(r1 + r2)*(r1 + r2 + r3) + r1*(A - c3*r3)**2*(r1 + r2)**2*(r2 + r3))/(c3**3*r1**2*(r2 + r3)**2*(r1 + r2 + r3)**3) + 2*(c3*r1*r2*r3*(r1 + r2 + r3) - 2*r1*(A - c3*r3)*(r1 + r2)*(r2 + r3))**3/(c3**3*r1**3*(r2 + r3)**3*(r1 + r2 + r3)**3))**2)/2 + (-27*B*r1*r2*(A - c3*r3)*(r1 + r2)**2/c3 + 27*C*r1*r2*(r1 + r2)**2/c3 + 27*r1*r2*r3*(A - c3*r3)**2*(r1 + r2)**2)/(2*c3**2*r1*(r2 + r3)*(r1 + r2 + r3)**2) - (9*c3*r1*r2*r3*(r1 + r2 + r3) - 18*r1*(A - c3*r3)*(r1 + r2)*(r2 + r3))*(B*r1*r2*(r1 + r2)*(r1 + r2 + r3) - 2*c3*r1*r2*r3*(A - c3*r3)*(r1 + r2)*(r1 + r2 + r3) + r1*(A - c3*r3)**2*(r1 + r2)**2*(r2 + r3))/(2*c3**3*r1**2*(r2 + r3)**2*(r1 + r2 + r3)**3) + (c3*r1*r2*r3*(r1 + r2 + r3) - 2*r1*(A - c3*r3)*(r1 + r2)*(r2 + r3))**3/(c3**3*r1**3*(r2 + r3)**3*(r1 + r2 + r3)**3))**(1/3)) - (math.sqrt(-4*((-3*B*r1*r2*(r1 + r2)*(r1 + r2 + r3) + 6*c3*r1*r2*r3*(A - c3*r3)*(r1 + r2)*(r1 + r2 + r3) - 3*r1*(A - c3*r3)**2*(r1 + r2)**2*(r2 + r3))/(c3**2*r1*(r2 + r3)*(r1 + r2 + r3)**2) + (c3*r1*r2*r3*(r1 + r2 + r3) - 2*r1*(A - c3*r3)*(r1 + r2)*(r2 + r3))**2/(c3**2*r1**2*(r2 + r3)**2*(r1 + r2 + r3)**2))**3 + ((-27*B*r1*r2*(A - c3*r3)*(r1 + r2)**2/c3 + 27*C*r1*r2*(r1 + r2)**2/c3 + 27*r1*r2*r3*(A - c3*r3)**2*(r1 + r2)**2)/(c3**2*r1*(r2 + r3)*(r1 + r2 + r3)**2) - (9*c3*r1*r2*r3*(r1 + r2 + r3) - 18*r1*(A - c3*r3)*(r1 + r2)*(r2 + r3))*(B*r1*r2*(r1 + r2)*(r1 + r2 + r3) - 2*c3*r1*r2*r3*(A - c3*r3)*(r1 + r2)*(r1 + r2 + r3) + r1*(A - c3*r3)**2*(r1 + r2)**2*(r2 + r3))/(c3**3*r1**2*(r2 + r3)**2*(r1 + r2 + r3)**3) + 2*(c3*r1*r2*r3*(r1 + r2 + r3) - 2*r1*(A - c3*r3)*(r1 + r2)*(r2 + r3))**3/(c3**3*r1**3*(r2 + r3)**3*(r1 + r2 + r3)**3))**2)/2 + (-27*B*r1*r2*(A - c3*r3)*(r1 + r2)**2/c3 + 27*C*r1*r2*(r1 + r2)**2/c3 + 27*r1*r2*r3*(A - c3*r3)**2*(r1 + r2)**2)/(2*c3**2*r1*(r2 + r3)*(r1 + r2 + r3)**2) - (9*c3*r1*r2*r3*(r1 + r2 + r3) - 18*r1*(A - c3*r3)*(r1 + r2)*(r2 + r3))*(B*r1*r2*(r1 + r2)*(r1 + r2 + r3) - 2*c3*r1*r2*r3*(A - c3*r3)*(r1 + r2)*(r1 + r2 + r3) + r1*(A - c3*r3)**2*(r1 + r2)**2*(r2 + r3))/(2*c3**3*r1**2*(r2 + r3)**2*(r1 + r2 + r3)**3) + (c3*r1*r2*r3*(r1 + r2 + r3) - 2*r1*(A - c3*r3)*(r1 + r2)*(r2 + r3))**3/(c3**3*r1**3*(r2 + r3)**3*(r1 + r2 + r3)**3))**(1/3)/3 - (c3*r1*r2*r3*(r1 + r2 + r3) - 2*r1*(A - c3*r3)*(r1 + r2)*(r2 + r3))/(3*c3*r1*(r2 + r3)*(r1 + r2 + r3)))**2 + (A - c3*r3)*(r1 + r2)*((-(-3*B*r1*r2*(r1 + r2)*(r1 + r2 + r3) + 6*c3*r1*r2*r3*(A - c3*r3)*(r1 + r2)*(r1 + r2 + r3) - 3*r1*(A - c3*r3)**2*(r1 + r2)**2*(r2 + r3))/(c3**2*r1*(r2 + r3)*(r1 + r2 + r3)**2) - (c3*r1*r2*r3*(r1 + r2 + r3) - 2*r1*(A - c3*r3)*(r1 + r2)*(r2 + r3))**2/(c3**2*r1**2*(r2 + r3)**2*(r1 + r2 + r3)**2))/(3*(math.sqrt(-4*((-3*B*r1*r2*(r1 + r2)*(r1 + r2 + r3) + 6*c3*r1*r2*r3*(A - c3*r3)*(r1 + r2)*(r1 + r2 + r3) - 3*r1*(A - c3*r3)**2*(r1 + r2)**2*(r2 + r3))/(c3**2*r1*(r2 + r3)*(r1 + r2 + r3)**2) + (c3*r1*r2*r3*(r1 + r2 + r3) - 2*r1*(A - c3*r3)*(r1 + r2)*(r2 + r3))**2/(c3**2*r1**2*(r2 + r3)**2*(r1 + r2 + r3)**2))**3 + ((-27*B*r1*r2*(A - c3*r3)*(r1 + r2)**2/c3 + 27*C*r1*r2*(r1 + r2)**2/c3 + 27*r1*r2*r3*(A - c3*r3)**2*(r1 + r2)**2)/(c3**2*r1*(r2 + r3)*(r1 + r2 + r3)**2) - (9*c3*r1*r2*r3*(r1 + r2 + r3) - 18*r1*(A - c3*r3)*(r1 + r2)*(r2 + r3))*(B*r1*r2*(r1 + r2)*(r1 + r2 + r3) - 2*c3*r1*r2*r3*(A - c3*r3)*(r1 + r2)*(r1 + r2 + r3) + r1*(A - c3*r3)**2*(r1 + r2)**2*(r2 + r3))/(c3**3*r1**2*(r2 + r3)**2*(r1 + r2 + r3)**3) + 2*(c3*r1*r2*r3*(r1 + r2 + r3) - 2*r1*(A - c3*r3)*(r1 + r2)*(r2 + r3))**3/(c3**3*r1**3*(r2 + r3)**3*(r1 + r2 + r3)**3))**2)/2 + (-27*B*r1*r2*(A - c3*r3)*(r1 + r2)**2/c3 + 27*C*r1*r2*(r1 + r2)**2/c3 + 27*r1*r2*r3*(A - c3*r3)**2*(r1 + r2)**2)/(2*c3**2*r1*(r2 + r3)*(r1 + r2 + r3)**2) - (9*c3*r1*r2*r3*(r1 + r2 + r3) - 18*r1*(A - c3*r3)*(r1 + r2)*(r2 + r3))*(B*r1*r2*(r1 + r2)*(r1 + r2 + r3) - 2*c3*r1*r2*r3*(A - c3*r3)*(r1 + r2)*(r1 + r2 + r3) + r1*(A - c3*r3)**2*(r1 + r2)**2*(r2 + r3))/(2*c3**3*r1**2*(r2 + r3)**2*(r1 + r2 + r3)**3) + (c3*r1*r2*r3*(r1 + r2 + r3) - 2*r1*(A - c3*r3)*(r1 + r2)*(r2 + r3))**3/(c3**3*r1**3*(r2 + r3)**3*(r1 + r2 + r3)**3))**(1/3)) - (math.sqrt(-4*((-3*B*r1*r2*(r1 + r2)*(r1 + r2 + r3) + 6*c3*r1*r2*r3*(A - c3*r3)*(r1 + r2)*(r1 + r2 + r3) - 3*r1*(A - c3*r3)**2*(r1 + r2)**2*(r2 + r3))/(c3**2*r1*(r2 + r3)*(r1 + r2 + r3)**2) + (c3*r1*r2*r3*(r1 + r2 + r3) - 2*r1*(A - c3*r3)*(r1 + r2)*(r2 + r3))**2/(c3**2*r1**2*(r2 + r3)**2*(r1 + r2 + r3)**2))**3 + ((-27*B*r1*r2*(A - c3*r3)*(r1 + r2)**2/c3 + 27*C*r1*r2*(r1 + r2)**2/c3 + 27*r1*r2*r3*(A - c3*r3)**2*(r1 + r2)**2)/(c3**2*r1*(r2 + r3)*(r1 + r2 + r3)**2) - (9*c3*r1*r2*r3*(r1 + r2 + r3) - 18*r1*(A - c3*r3)*(r1 + r2)*(r2 + r3))*(B*r1*r2*(r1 + r2)*(r1 + r2 + r3) - 2*c3*r1*r2*r3*(A - c3*r3)*(r1 + r2)*(r1 + r2 + r3) + r1*(A - c3*r3)**2*(r1 + r2)**2*(r2 + r3))/(c3**3*r1**2*(r2 + r3)**2*(r1 + r2 + r3)**3) + 2*(c3*r1*r2*r3*(r1 + r2 + r3) - 2*r1*(A - c3*r3)*(r1 + r2)*(r2 + r3))**3/(c3**3*r1**3*(r2 + r3)**3*(r1 + r2 + r3)**3))**2)/2 + (-27*B*r1*r2*(A - c3*r3)*(r1 + r2)**2/c3 + 27*C*r1*r2*(r1 + r2)**2/c3 + 27*r1*r2*r3*(A - c3*r3)**2*(r1 + r2)**2)/(2*c3**2*r1*(r2 + r3)*(r1 + r2 + r3)**2) - (9*c3*r1*r2*r3*(r1 + r2 + r3) - 18*r1*(A - c3*r3)*(r1 + r2)*(r2 + r3))*(B*r1*r2*(r1 + r2)*(r1 + r2 + r3) - 2*c3*r1*r2*r3*(A - c3*r3)*(r1 + r2)*(r1 + r2 + r3) + r1*(A - c3*r3)**2*(r1 + r2)**2*(r2 + r3))/(2*c3**3*r1**2*(r2 + r3)**2*(r1 + r2 + r3)**3) + (c3*r1*r2*r3*(r1 + r2 + r3) - 2*r1*(A - c3*r3)*(r1 + r2)*(r2 + r3))**3/(c3**3*r1**3*(r2 + r3)**3*(r1 + r2 + r3)**3))**(1/3)/3 - (c3*r1*r2*r3*(r1 + r2 + r3) - 2*r1*(A - c3*r3)*(r1 + r2)*(r2 + r3))/(3*c3*r1*(r2 + r3)*(r1 + r2 + r3)))))
+
+    return (c1,c2,r4)
+
+def remove_imaginary_or_error(x):
+
+    if abs(x.real)>1e10*abs(x.imag) and x.real>0:
+        return x.real
+
+    return -1
 
 
-def randomize_mfb2(r1,r2,r3,c1,c2, c_precision=0.05, r_precision=0.01, iters=1000):
+def calc_mfb3_parameters_from_values(r1,r2,r3,r4,c1,c2,c3):
 
-    (wc0, k0, q0) = calc_mfb2_parameters(r1,r2,r3,c1,c2)
+    A = (c1*r1*r2 + c3*r1*r3 + c3*r1*r4 + c3*r2*r3 + c3*r2*r4 + c3*r3*r4)/(r1 + r2)
+    B = c3*(c1*r1*r2*r3 + c1*r1*r2*r4 + c1*r1*r3*r4 + c2*r1*r3*r4 + c2*r2*r3*r4)/(r1 + r2)
+    C = c1*c2*c3*r1*r2*r3*r4/(r1 + r2)
+
+    k = -r3/(r1+r2)
+    
+    w1 = (2**(1/3)*A*C - 2**(1/3)*B**2/3 + B*(9*A*B*C - 2*B**3 - 27*C**2 + 3*cmath.sqrt(3)*cmath.sqrt(C**2*(4*A**3*C - A**2*B**2 - 18*A*B*C + 4*B**3 + 27*C**2)))**(1/3)/3 - (18*A*B*C - 4*B**3 - 54*C**2 + 6*cmath.sqrt(3)*cmath.sqrt(C**2*(4*A**3*C - A**2*B**2 - 18*A*B*C + 4*B**3 + 27*C**2)))**(2/3)/6)/(C*(9*A*B*C - 2*B**3 - 27*C**2 + 3*cmath.sqrt(3)*cmath.sqrt(C**2*(4*A**3*C - A**2*B**2 - 18*A*B*C + 4*B**3 + 27*C**2)))**(1/3))
+    w2 = 2**(1/6)*cmath.sqrt(3)/cmath.sqrt((3*2**(2/3)*A*C - 2**(2/3)*B**2 + (2**(1/3)*B - (9*A*B*C - 2*B**3 - 27*C**2 + 3*cmath.sqrt(3)*cmath.sqrt(C**2*(4*A**3*C - A**2*B**2 - 18*A*B*C + 4*B**3 + 27*C**2)))**(1/3))*(9*A*B*C - 2*B**3 - 27*C**2 + 3*cmath.sqrt(3)*cmath.sqrt(C**2*(4*A**3*C - A**2*B**2 - 18*A*B*C + 4*B**3 + 27*C**2)))**(1/3))/(9*A*B*C - 2*B**3 - 27*C**2 + 3*cmath.sqrt(3)*cmath.sqrt(C**2*(4*A**3*C - A**2*B**2 - 18*A*B*C + 4*B**3 + 27*C**2)))**(1/3))
+    q  = 2**(5/6)*cmath.sqrt(3)*cmath.sqrt((3*2**(2/3)*A*C - 2**(2/3)*B**2 + (2**(1/3)*B - (9*A*B*C - 2*B**3 - 27*C**2 + 3*cmath.sqrt(3)*cmath.sqrt(C**2*(4*A**3*C - A**2*B**2 - 18*A*B*C + 4*B**3 + 27*C**2)))**(1/3))*(9*A*B*C - 2*B**3 - 27*C**2 + 3*cmath.sqrt(3)*cmath.sqrt(C**2*(4*A**3*C - A**2*B**2 - 18*A*B*C + 4*B**3 + 27*C**2)))**(1/3))/(9*A*B*C - 2*B**3 - 27*C**2 + 3*cmath.sqrt(3)*cmath.sqrt(C**2*(4*A**3*C - A**2*B**2 - 18*A*B*C + 4*B**3 + 27*C**2)))**(1/3))*(3*2**(2/3)*A*C - 2**(2/3)*B**2 + (2**(1/3)*B - (9*A*B*C - 2*B**3 - 27*C**2 + 3*cmath.sqrt(3)*cmath.sqrt(C**2*(4*A**3*C - A**2*B**2 - 18*A*B*C + 4*B**3 + 27*C**2)))**(1/3))*(9*A*B*C - 2*B**3 - 27*C**2 + 3*cmath.sqrt(3)*cmath.sqrt(C**2*(4*A**3*C - A**2*B**2 - 18*A*B*C + 4*B**3 + 27*C**2)))**(1/3))/(6*(A*(3*2**(2/3)*A*C - 2**(2/3)*B**2 + (2**(1/3)*B - (9*A*B*C - 2*B**3 - 27*C**2 + 3*cmath.sqrt(3)*cmath.sqrt(C**2*(4*A**3*C - A**2*B**2 - 18*A*B*C + 4*B**3 + 27*C**2)))**(1/3))*(9*A*B*C - 2*B**3 - 27*C**2 + 3*cmath.sqrt(3)*cmath.sqrt(C**2*(4*A**3*C - A**2*B**2 - 18*A*B*C + 4*B**3 + 27*C**2)))**(1/3)) - 3*2**(1/3)*C*(9*A*B*C - 2*B**3 - 27*C**2 + 3*cmath.sqrt(3)*cmath.sqrt(C**2*(4*A**3*C - A**2*B**2 - 18*A*B*C + 4*B**3 + 27*C**2)))**(1/3)))
+
+    w1 = remove_imaginary_or_error(w1)
+    w2 = remove_imaginary_or_error(w2)
+    q  = remove_imaginary_or_error(q)
+
+    return (w1,w2,q,k)
+
+
+def randomize_mfb3(r1,r2,r3,r4,c1,c2,c3, c_precision=0.05, r_precision=0.01, iters=1000):
+
+    (w1_0, w2_0, q_0, k_0) = calc_mfb3_parameters_from_values(r1,r2,r3,r4,c1,c2,c3)
  
-    d_wc = 0.0
-    d_k  = 0.0
+    d_w1 = 0.0
+    d_w2 = 0.0
     d_q  = 0.0
+    d_k  = 0.0
 
     for i in range(iters):
         dr1 = random.uniform(1.0-r_precision,1.0+r_precision)
         dr2 = random.uniform(1.0-r_precision,1.0+r_precision)
         dr3 = random.uniform(1.0-r_precision,1.0+r_precision)
+        dr4 = random.uniform(1.0-r_precision,1.0+r_precision)
 
         dc1 = random.uniform(1.0-c_precision,1.0+c_precision)
         dc2 = random.uniform(1.0-c_precision,1.0+c_precision)
+        dc3 = random.uniform(1.0-c_precision,1.0+c_precision)
 
         rr1 = r1 * dr1
         rr2 = r2 * dr2
         rr3 = r3 * dr3
+        rr4 = r4 * dr4
 
         rc1 = c1 * dc1
         rc2 = c2 * dc2
+        rc3 = c3 * dc3
 
-        (wc,k,q) = calc_mfb2_parameters(rr1,rr2,rr3,rc1,rc2)
+        (w1,w2,q,k) = calc_mfb3_parameters_from_values(rr1,rr2,rr3,rr4,rc1,rc2,rc3)
 
-        d_wc = max(d_wc, abs(wc-wc0))
-        d_k  = max(d_k,  abs(k-k0)  )
-        d_q  = max(d_q,  abs(q-q0)  )
+        d_w1 = max(d_w1, abs(w1-w1_0))
+        d_w2 = max(d_w2, abs(w2-w2_0))
+        d_q  = max(d_q,  abs( q- q_0))
+        d_k  = max(d_k,  abs( k- k_0))
 
-    return (d_wc/wc0, d_k/k0, d_q/q0)
+    return (d_w1/w1_0, d_w2/w2_0, d_q/q_0, d_k/k_0)
 
 
 
-def calc_filter( wc_set=2*math.pi*30000, q_set=1.0, k_set=(-1.17), r1_range=[20.0,30.0], r1_exp=1e3, r1_div=3.0, r1_add=0.0, r_pvalues='e24', c1_range=[33.0,4700.0], c1_exp=1e-12, c_pvalues='e12'):
+def calc_filter( w1_set=2*math.pi*30000, w2_set=2*math.pi*30000, q_set=1.0, k_set=(-1.41), r1_range=[1.0,100.0], r1_exp=1e3, r2_range=[1.0,100.0], r2_exp=1e3, r_pvalues='e24', c3_range=[10.0,4700.0], c3_exp=1e-12, c_pvalues='e12'):
 
-    c1_values = select_values_in_range( c1_range, c1_exp, pvalues=c_pvalues )
+    c3_values = select_values_in_range( c3_range, c3_exp, pvalues=c_pvalues )
 
-    r1x3_values = select_values_in_range( [x for x in r1_range], r1_exp, pvalues=r_pvalues )
-    print(r1_range,r1_exp,r1x3_values)
-    r1_values = [(x/r1_div+r1_add/y,y) for (x,y) in r1x3_values]
+    r1_values = select_values_in_range( [x for x in r1_range], r1_exp, pvalues=r_pvalues )
+    r2_values = select_values_in_range( [x for x in r2_range], r2_exp, pvalues=r_pvalues )
 
-    print( 'c1 values for sweep: {}'.format([x*y for (x,y) in c1_values]) )
+    print( 'c3 values for sweep: {}'.format([x*y for (x,y) in c3_values]) )
     print( 'r1 values for sweep: {}'.format([x*y for (x,y) in r1_values]) )
+    print( 'r2 values for sweep: {}'.format([x*y for (x,y) in r2_values]) )
 
-    print( '\ncalculating filter for: q={}, k={}, fc={}'.format(q_set,k_set,wc_set/(2*math.pi)) )
+    print( '\ncalculating filter for: f1={}, f2={}, q={}, k={}'.format(w1_set/(2*math.pi),w2_set/(2*math.pi),q_set,k_set) )
 
 
     f_values=[]
 
     for r1 in [x*y for (x,y) in r1_values]:
-        for c1 in [x*y for (x,y) in c1_values]:
+        for r2 in [x*y for (x,y) in r2_values]:
+            for c3 in [x*y for (x,y) in c3_values]:
 
-            r2_ideal = (-1) * k_set * r1
+                r3_ideal = (-1) * k_set * (r1+r2)
+                if r3_ideal<=0.0:
+                    continue
 
-            c2_ideal = (q_set * (k_set - 1.0)) / (r2_ideal * wc_set * (c1 * q_set * r2_ideal * wc_set - 1.0))
+                r3 = select_one_nearest(r3_ideal, r_pvalues)
 
-            
-            r3_ideal = (c1 * q_set * r2_ideal * wc_set - 1.0) / ( (k_set - 1.0) * q_set * wc_set * c1 )
+                (c1_ideal,c2_ideal,r4_ideal) = calc_c1c2r4_from_w1w2q_r1r2r3c3(w1_set,w2_set,q_set,r1,r2,r3,c3)
+                if r4_ideal<=0.0 or c1_ideal<=0.0 or c2_ideal<=0.0:
+                    continue
 
-            if r2_ideal<=0.0 or c2_ideal<=0.0 or r3_ideal<=0.0:
-                continue
+ 
 
-            print('\ntry c1={:1.1e}, r1={:.1f}:'.format(c1,r1))
-            print(' ideal values: r2={:.1f}, r3={:.1f}, c2={:1.4e}'.format(r2_ideal, r3_ideal, c2_ideal))
-
-            r2_real = select_one_nearest(r2_ideal, r_pvalues)
-            c2_real = select_one_nearest(c2_ideal, c_pvalues)
-            r3_real = select_one_nearest(r3_ideal, r_pvalues)
-            print(' nearest values: r2={:.1f}, r3={:.1f}, c2={:1.1e}'.format(r2_real, r3_real, c2_real))
-
-            #wc_real = 1.0/math.sqrt(c1*c2_real*r2_real*r3_real)
-            #k_real = (-r2_real)/r1
-            #q_real = 1.0 / (wc_real * c1 * ((1.0-k_real)*r3_real + r2_real))
-            (wc_real,k_real,q_real) = calc_mfb2_parameters(r1,r2_real,r3_real,c1,c2_real)
-
-            print(' real parameters: q={:.4f}, k={:.4f}, fc={:.1f}'.format(q_real,k_real,wc_real/(2*math.pi)) )
-
-            #f_values += [ (r1,r2_real,r3_real, c1, c2_real, wc_real, k_real, q_real) ]
-            f_values += [ {'r1':r1,'r2':r2_real,'r3':r3_real, 'c1':c1, 'c2':c2_real, 'wc':wc_real, 'k':k_real, 'q':q_real} ]
+                print('\ntry c3={:1.1e}, r1={:.1f}, r2={:.1f}:'.format(c3,r1,r2))
+                print(' ideal values: r3={:.1f}, r4={:.1f}, c1={:1.4e}, c2={:1.4e}'.format(r3, r4_ideal, c1_ideal, c2_ideal))
+ 
+                r4 = select_one_nearest(r4_ideal, r_pvalues)
+                c1 = select_one_nearest(c1_ideal, c_pvalues)
+                c2 = select_one_nearest(c2_ideal, c_pvalues)
+                print(' nearest values: r3={:.1f}, r4={:.1f}, c1={:1.4e}, c2={:1.4e}'.format(r3, r4, c1, c2))
+ 
+                (w1_real,w2_real,q_real,k_real) = calc_mfb3_parameters_from_values(r1,r2,r3,r4,c1,c2,c3)
+                if w1_real<0 or w2_real<0 or q_real<0:
+                    continue
+ 
+                print(' real parameters: f1={:.1f}, f2={:.1f}, q={:.4f}, k={:.4f}'.format(w1_real/(2*math.pi),w2_real/(2*math.pi),q_real,k_real) )
+ 
+                f_values += [ {'r1':r1,'r2':r2,'r3':r3,'r4':r4, 'c1':c1,'c2':c2,'c3':c3, 'w1':w1_real,'w2':w2_real,'q':q_real,'k':k_real} ]
 
 
     
     print(f_values)
 
     # sort values by cutoff freq match
-    print('\n\n\n sorted by cutoff freq:')
-    for e in  sorted(f_values, key = lambda tup: abs((tup['wc']-wc_set)/wc_set) ):
-        print('  c1={:1.1e}, r1={:.1f}, r2={:.1f}, r3={:.1f}, c2={:1.1e}, q={:.4f}, k={:.4f}, fc={:.1f}'.format(e['c1'],e['r1'],e['r2'],e['r3'],e['c2'],e['q'],e['k'],e['wc']/(2*math.pi)) )
-        (p_wc, p_k, p_q) = randomize_mfb2(e['r1'],e['r2'],e['r3'],e['c1'],e['c2'])
-        print('   percent_fc={:.2f}%, percent_k={:.2f}%, percent_q={:.2f}%'.format(100*p_wc,100*p_k,100*p_q))
+#    print('\n\n\n sorted by cutoff freq:')
+#    for e in  sorted(f_values, key = lambda tup: abs((tup['wc']-wc_set)/wc_set) ):
+#        print('  c1={:1.1e}, r1={:.1f}, r2={:.1f}, r3={:.1f}, c2={:1.1e}, q={:.4f}, k={:.4f}, fc={:.1f}'.format(e['c1'],e['r1'],e['r2'],e['r3'],e['c2'],e['q'],e['k'],e['wc']/(2*math.pi)) )
+#        (p_wc, p_k, p_q) = randomize_mfb2(e['r1'],e['r2'],e['r3'],e['c1'],e['c2'])
+#        print('   percent_fc={:.2f}%, percent_k={:.2f}%, percent_q={:.2f}%'.format(100*p_wc,100*p_k,100*p_q))
 
     # sort values by q match
-    print('\n\n\n sorted by q:')
-    for e in  sorted(f_values, key = lambda tup: abs((tup['q']-q_set)/q_set) ):
-        print('  c1={:1.1e}, r1={:.1f}, r2={:.1f}, r3={:.1f}, c2={:1.1e}, q={:.4f}, k={:.4f}, fc={:.1f}'.format(e['c1'],e['r1'],e['r2'],e['r3'],e['c2'],e['q'],e['k'],e['wc']/(2*math.pi)) )
+#    print('\n\n\n sorted by q:')
+#    for e in  sorted(f_values, key = lambda tup: abs((tup['q']-q_set)/q_set) ):
+#        print('  c1={:1.1e}, r1={:.1f}, r2={:.1f}, r3={:.1f}, c2={:1.1e}, q={:.4f}, k={:.4f}, fc={:.1f}'.format(e['c1'],e['r1'],e['r2'],e['r3'],e['c2'],e['q'],e['k'],e['wc']/(2*math.pi)) )
 
 
 
 def main():
 
-    calc_mfb3_lowpass()
-
-    #calc_filter()
+    calc_filter()
 
     #print(" #### AY ####")
     #calc_filter( wc_set=2*math.pi*30000, q_set=1.0, k_set=(-1.75), r1_range=[20.0,30.0], r1_exp=1e3, r1_div=3.0, r_pvalues='e24', c1_range=[33.0,4700.0], c1_exp=1e-12, c_pvalues='e12')
