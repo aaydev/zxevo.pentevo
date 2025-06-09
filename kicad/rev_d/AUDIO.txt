@@ -61,7 +61,7 @@ Per datasheet, max 2mA current per output, 2 Vp-p @ 1k
 3. To compensate for inevitable series resistors at the TPA6120 outputs,
    use opamps.
 
-4. Output resistors should be of high thermal power, preferably MELF
+4. Output resistors should be of high thermal power, preferably MELF or 1205
 
 
 (general)
@@ -83,15 +83,18 @@ Gain (or loss) distribution.
 (low-pass filtering)
 
 3-rd order butterworth, 30kHz -3dB.
-First stage for AY and for BEEP is 2nd order Q=1, (multiple-feedback),
+First stage for AY is 2nd order Q=1, (multiple-feedback). 1st stage is 2nd order to keep input impedance more or less constant for AY/YM.
+For beeper there's low impedance buffer, we use single 3rd-order opamp based stage.
 Second stage is just 1st-order RC
-
-Some extra filtering for BEEP at higher freq.
-
 
 (high-pass filtering)
 
-distributed (?) "synchronous" (or not so) 1st-order high-pass filters with electrolytics.
+"distributed" 2nd-order high-pass filters with electrolytics.
 <<20Hz cutoffs
 
+(line output vs. headphones output)
+
+for headphones there's a need for huge output capacitor.
+For line output relaxation time would be then too big (like tens of seconds), so need different (smaller) cap.
+Also maybe have line output without volume regulation, from summing opamps.
 

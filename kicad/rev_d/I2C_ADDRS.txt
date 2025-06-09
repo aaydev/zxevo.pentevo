@@ -5,9 +5,9 @@ I2C addresses for atmega-controlled I2C bus
  pcf8583 | rtc     | $A0..$A1 (A0=0) <--- selected
          |         | $A2..$A3 (A0=1)
 ---------+---------+---------------------
- pt2258  | volume  | $80 (code1,2=00)
+ pt2258  | volume  | $80 (code1,2=00) <--- selected (AY,beep,in1)
          | ctrl    | $84 (code1,2=01)
-         |         | $88 (code1,2=10)
+         |         | $88 (code1,2=10) <--- selected (in2,in3,volume)
          |         | $8C (code1,2=11)
 ---------+---------+---------------------
  pca9555 | io ext  | $40..$41 (A[2:0]=0) <--- selected
