@@ -4241,6 +4241,108 @@
 				)
 			)
 		)
+		(symbol "Mechanical:MountingHole_Pad"
+			(pin_numbers hide)
+			(pin_names
+				(offset 1.016) hide)
+			(exclude_from_sim yes)
+			(in_bom no)
+			(on_board yes)
+			(property "Reference" "H"
+				(at 0 6.35 0)
+				(effects
+					(font
+						(size 1.27 1.27)
+					)
+				)
+			)
+			(property "Value" "MountingHole_Pad"
+				(at 0 4.445 0)
+				(effects
+					(font
+						(size 1.27 1.27)
+					)
+				)
+			)
+			(property "Footprint" ""
+				(at 0 0 0)
+				(effects
+					(font
+						(size 1.27 1.27)
+					)
+					(hide yes)
+				)
+			)
+			(property "Datasheet" "~"
+				(at 0 0 0)
+				(effects
+					(font
+						(size 1.27 1.27)
+					)
+					(hide yes)
+				)
+			)
+			(property "Description" "Mounting Hole with connection"
+				(at 0 0 0)
+				(effects
+					(font
+						(size 1.27 1.27)
+					)
+					(hide yes)
+				)
+			)
+			(property "ki_keywords" "mounting hole"
+				(at 0 0 0)
+				(effects
+					(font
+						(size 1.27 1.27)
+					)
+					(hide yes)
+				)
+			)
+			(property "ki_fp_filters" "MountingHole*Pad*"
+				(at 0 0 0)
+				(effects
+					(font
+						(size 1.27 1.27)
+					)
+					(hide yes)
+				)
+			)
+			(symbol "MountingHole_Pad_0_1"
+				(circle
+					(center 0 1.27)
+					(radius 1.27)
+					(stroke
+						(width 1.27)
+						(type default)
+					)
+					(fill
+						(type none)
+					)
+				)
+			)
+			(symbol "MountingHole_Pad_1_1"
+				(pin input line
+					(at 0 -2.54 90)
+					(length 2.54)
+					(name "1"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+					(number "1"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+				)
+			)
+		)
 		(symbol "Regulator_Linear:LP2985-3.3"
 			(pin_names
 				(offset 0.254)
@@ -18340,12 +18442,6 @@
 		(uuid "2fc1bcd6-6f27-42ab-8185-c8d5fa770b1a")
 	)
 	(junction
-		(at 308.61 405.13)
-		(diameter 0)
-		(color 0 0 0 0)
-		(uuid "2fe6d9ef-39a9-49da-af9b-b29addbe08cd")
-	)
-	(junction
 		(at 115.57 163.83)
 		(diameter 0)
 		(color 0 0 0 0)
@@ -18634,6 +18730,12 @@
 		(uuid "746d3d3b-4e70-47d4-bd31-d0c80bb9395f")
 	)
 	(junction
+		(at 499.11 132.08)
+		(diameter 0)
+		(color 0 0 0 0)
+		(uuid "7666e927-355a-4e0a-a649-81089b19e46f")
+	)
+	(junction
 		(at 347.98 139.7)
 		(diameter 0)
 		(color 0 0 0 0)
@@ -18856,6 +18958,12 @@
 		(uuid "a1136a9e-1991-4c09-8c62-e92d8adda9ab")
 	)
 	(junction
+		(at 499.11 144.78)
+		(diameter 0)
+		(color 0 0 0 0)
+		(uuid "a2b7dcaa-ca31-403d-b3c7-01a6ca47709f")
+	)
+	(junction
 		(at 339.09 77.47)
 		(diameter 0)
 		(color 0 0 0 0)
@@ -18944,6 +19052,12 @@
 		(diameter 0)
 		(color 0 0 0 0)
 		(uuid "bedf2e3b-0aee-475e-9eb0-589a3e4a8cfb")
+	)
+	(junction
+		(at 499.11 137.16)
+		(diameter 0)
+		(color 0 0 0 0)
+		(uuid "bf10a2ac-6f5b-439a-8759-a9f34a9f21e2")
 	)
 	(junction
 		(at 347.98 389.89)
@@ -19915,6 +20029,16 @@
 	)
 	(wire
 		(pts
+			(xy 401.32 278.13) (xy 402.59 278.13)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "1a9b3fd0-965f-4e1f-a6a6-147af7399f3d")
+	)
+	(wire
+		(pts
 			(xy 195.58 119.38) (xy 200.66 119.38)
 		)
 		(stroke
@@ -20773,6 +20897,16 @@
 	)
 	(wire
 		(pts
+			(xy 497.84 132.08) (xy 499.11 132.08)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "3b258807-3679-4379-a116-d4a5f867ed53")
+	)
+	(wire
+		(pts
 			(xy 335.28 121.92) (xy 337.82 121.92)
 		)
 		(stroke
@@ -21094,6 +21228,16 @@
 	)
 	(wire
 		(pts
+			(xy 314.96 407.67) (xy 316.23 407.67)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "4635b765-37e3-40d7-8ffa-2a2ce82b68ca")
+	)
+	(wire
+		(pts
 			(xy 307.34 121.92) (xy 314.96 121.92)
 		)
 		(stroke
@@ -21353,6 +21497,16 @@
 			(type default)
 		)
 		(uuid "504b05ee-7e14-43a8-a2e1-1805de0b8866")
+	)
+	(wire
+		(pts
+			(xy 316.23 407.67) (xy 316.23 405.13)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "50e498aa-1038-41a1-b5c0-774b98f213ee")
 	)
 	(polyline
 		(pts
@@ -21835,6 +21989,16 @@
 	)
 	(wire
 		(pts
+			(xy 499.11 137.16) (xy 502.92 137.16)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "611dd936-0101-484b-9b3c-129c6b6947c6")
+	)
+	(wire
+		(pts
 			(xy 358.14 276.86) (xy 359.41 276.86)
 		)
 		(stroke
@@ -22239,6 +22403,16 @@
 	)
 	(wire
 		(pts
+			(xy 532.13 105.41) (xy 532.13 106.68)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "6d1ca9d7-8ade-48c7-8851-cd8074616b7d")
+	)
+	(wire
+		(pts
 			(xy 516.89 193.04) (xy 518.16 193.04)
 		)
 		(stroke
@@ -22377,6 +22551,16 @@
 			(type default)
 		)
 		(uuid "731eb29d-6840-4252-9982-e47d8974733c")
+	)
+	(wire
+		(pts
+			(xy 499.11 137.16) (xy 499.11 144.78)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "73386cdf-d528-4356-87b8-a978509c74f5")
 	)
 	(wire
 		(pts
@@ -23761,6 +23945,16 @@
 	)
 	(wire
 		(pts
+			(xy 499.11 152.4) (xy 502.92 152.4)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "a65f225d-7dcf-4b24-a1d5-304c115e5a6e")
+	)
+	(wire
+		(pts
 			(xy 325.12 187.96) (xy 332.74 187.96)
 		)
 		(stroke
@@ -23859,6 +24053,16 @@
 			(type default)
 		)
 		(uuid "aa6fdbef-259c-46d0-ae30-df20c5330ba5")
+	)
+	(wire
+		(pts
+			(xy 499.11 144.78) (xy 502.92 144.78)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "ab07138a-4583-4c7b-a7ab-d526112b9bf1")
 	)
 	(wire
 		(pts
@@ -24827,6 +25031,16 @@
 		)
 		(uuid "cd92bb00-bc38-4db3-8e16-49eae284f348")
 	)
+	(wire
+		(pts
+			(xy 499.11 144.78) (xy 499.11 152.4)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "cdda5c4f-97be-4bd1-ab96-ed3575e22326")
+	)
 	(polyline
 		(pts
 			(xy 410.845 359.41) (xy 337.82 359.41)
@@ -25030,16 +25244,6 @@
 			(type default)
 		)
 		(uuid "d58e3470-2cbb-43b4-ac97-6bfd3152578c")
-	)
-	(wire
-		(pts
-			(xy 308.61 405.13) (xy 316.23 405.13)
-		)
-		(stroke
-			(width 0)
-			(type default)
-		)
-		(uuid "d5a4a31b-2c78-48c5-91ce-50b00d7deeb3")
 	)
 	(wire
 		(pts
@@ -26147,6 +26351,16 @@
 	)
 	(wire
 		(pts
+			(xy 499.11 129.54) (xy 499.11 132.08)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "fb7dd99a-dd87-4467-89f6-2bfccbc0b8a0")
+	)
+	(wire
+		(pts
 			(xy 312.42 185.42) (xy 312.42 160.02)
 		)
 		(stroke
@@ -26184,6 +26398,26 @@
 			(type default)
 		)
 		(uuid "fbe9e397-0c5d-442a-bdeb-a001a2f1e929")
+	)
+	(wire
+		(pts
+			(xy 499.11 132.08) (xy 499.11 137.16)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "fc58802d-e211-472d-a10c-8f93436faf37")
+	)
+	(wire
+		(pts
+			(xy 502.92 129.54) (xy 499.11 129.54)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "fc78992b-6651-4bcc-b792-e33544ba3c33")
 	)
 	(wire
 		(pts
@@ -27264,28 +27498,6 @@
 			)
 		)
 	)
-	(global_label "GND"
-		(shape passive)
-		(at 384.81 88.9 270)
-		(fields_autoplaced yes)
-		(effects
-			(font
-				(size 1.27 1.27)
-			)
-			(justify right)
-		)
-		(uuid "1079cce5-4af4-4951-9b46-66ccfdc3586f")
-		(property "Intersheetrefs" "${INTERSHEET_REFS}"
-			(at 384.81 94.6444 90)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(justify right)
-				(hide yes)
-			)
-		)
-	)
 	(global_label "uSD_~{CS}"
 		(shape input)
 		(at 469.9 111.76 270)
@@ -27480,6 +27692,28 @@
 					(size 1.27 1.27)
 				)
 				(justify left)
+				(hide yes)
+			)
+		)
+	)
+	(global_label "SHIELD"
+		(shape passive)
+		(at 401.32 278.13 180)
+		(fields_autoplaced yes)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify right)
+		)
+		(uuid "1be23506-35de-4991-a0c8-b14b1a494313")
+		(property "Intersheetrefs" "${INTERSHEET_REFS}"
+			(at 392.8542 278.13 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify right)
 				(hide yes)
 			)
 		)
@@ -27871,6 +28105,28 @@
 		(uuid "32abf077-80d9-423f-b3d5-248714241177")
 		(property "Intersheetrefs" "${INTERSHEET_REFS}"
 			(at 391.16 300.3844 90)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify right)
+				(hide yes)
+			)
+		)
+	)
+	(global_label "SHIELD"
+		(shape passive)
+		(at 497.84 132.08 180)
+		(fields_autoplaced yes)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify right)
+		)
+		(uuid "333eb40a-6865-4f44-a677-dd0bf8731485")
+		(property "Intersheetrefs" "${INTERSHEET_REFS}"
+			(at 489.3742 132.08 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -28826,6 +29082,50 @@
 			)
 		)
 	)
+	(global_label "SHIELD"
+		(shape passive)
+		(at 532.13 106.68 270)
+		(fields_autoplaced yes)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify right)
+		)
+		(uuid "5ac61f70-3fe2-4a1d-b9e1-2efbac4fa69a")
+		(property "Intersheetrefs" "${INTERSHEET_REFS}"
+			(at 532.13 115.1458 90)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify right)
+				(hide yes)
+			)
+		)
+	)
+	(global_label "SHIELD"
+		(shape passive)
+		(at 401.32 303.53 180)
+		(fields_autoplaced yes)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify right)
+		)
+		(uuid "5b995dce-f143-4363-85e2-5271ac502a4b")
+		(property "Intersheetrefs" "${INTERSHEET_REFS}"
+			(at 392.8542 303.53 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify right)
+				(hide yes)
+			)
+		)
+	)
 	(global_label "TMS_FPGA"
 		(shape output)
 		(at 119.38 163.83 0)
@@ -29081,28 +29381,6 @@
 		(uuid "6960347d-3501-4fa4-b6a5-8bd4c0e76fa9")
 		(property "Intersheetrefs" "${INTERSHEET_REFS}"
 			(at 271.5768 312.42 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(justify right)
-				(hide yes)
-			)
-		)
-	)
-	(global_label "GND"
-		(shape passive)
-		(at 402.59 278.13 180)
-		(fields_autoplaced yes)
-		(effects
-			(font
-				(size 1.27 1.27)
-			)
-			(justify right)
-		)
-		(uuid "696cbfc6-ae76-4c02-a747-e31ef628b810")
-		(property "Intersheetrefs" "${INTERSHEET_REFS}"
-			(at 396.8456 278.13 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -29477,6 +29755,28 @@
 		(uuid "82d6442b-077a-4207-a562-7ce87bcedac0")
 		(property "Intersheetrefs" "${INTERSHEET_REFS}"
 			(at 259.1414 284.48 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify right)
+				(hide yes)
+			)
+		)
+	)
+	(global_label "SHIELD"
+		(shape passive)
+		(at 314.96 407.67 180)
+		(fields_autoplaced yes)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify right)
+		)
+		(uuid "83899eb2-9ef6-42c2-bd85-8a886cf503e4")
+		(property "Intersheetrefs" "${INTERSHEET_REFS}"
+			(at 306.4942 407.67 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -30344,28 +30644,6 @@
 			)
 		)
 	)
-	(global_label "GND"
-		(shape passive)
-		(at 401.32 303.53 180)
-		(fields_autoplaced yes)
-		(effects
-			(font
-				(size 1.27 1.27)
-			)
-			(justify right)
-		)
-		(uuid "a4480f7d-0eb0-4cfd-9a8e-8d9d20b9b7ff")
-		(property "Intersheetrefs" "${INTERSHEET_REFS}"
-			(at 395.5756 303.53 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(justify right)
-				(hide yes)
-			)
-		)
-	)
 	(global_label "VCC5"
 		(shape passive)
 		(at 339.09 85.09 180)
@@ -30995,28 +31273,6 @@
 		(uuid "cbbe9cee-6bc4-4a56-86c0-f9549e415ada")
 		(property "Intersheetrefs" "${INTERSHEET_REFS}"
 			(at 302.9244 81.28 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(justify left)
-				(hide yes)
-			)
-		)
-	)
-	(global_label "GND"
-		(shape passive)
-		(at 532.13 105.41 0)
-		(fields_autoplaced yes)
-		(effects
-			(font
-				(size 1.27 1.27)
-			)
-			(justify left)
-		)
-		(uuid "cbe2240c-65ec-468a-bde7-2b5067cdce73")
-		(property "Intersheetrefs" "${INTERSHEET_REFS}"
-			(at 537.8744 105.41 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -32060,6 +32316,28 @@
 			)
 		)
 	)
+	(global_label "SHIELD"
+		(shape passive)
+		(at 384.81 88.9 270)
+		(fields_autoplaced yes)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify right)
+		)
+		(uuid "f622aa04-2d57-4425-8cc7-2a2a8c67dc69")
+		(property "Intersheetrefs" "${INTERSHEET_REFS}"
+			(at 384.81 97.3658 90)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify right)
+				(hide yes)
+			)
+		)
+	)
 	(global_label "GND"
 		(shape passive)
 		(at 95.25 142.24 180)
@@ -32378,6 +32656,73 @@
 			(justify right)
 		)
 		(uuid "c15698f3-f067-40e9-b4d9-c66486d09e85")
+	)
+	(symbol
+		(lib_id "Mechanical:MountingHole_Pad")
+		(at 502.92 142.24 0)
+		(unit 1)
+		(exclude_from_sim yes)
+		(in_bom no)
+		(on_board yes)
+		(dnp no)
+		(fields_autoplaced yes)
+		(uuid "00432813-1cad-43d6-842c-8dd079bd4e4c")
+		(property "Reference" "H3"
+			(at 505.46 139.6999 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left)
+			)
+		)
+		(property "Value" "ATX_mounting_hole"
+			(at 505.46 142.2399 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left)
+			)
+		)
+		(property "Footprint" ""
+			(at 502.92 142.24 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Datasheet" "~"
+			(at 502.92 142.24 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Description" "Mounting Hole with connection"
+			(at 502.92 142.24 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(pin "1"
+			(uuid "c0c9d85b-70e1-4ed0-8f9f-81d728846a93")
+		)
+		(instances
+			(project "eva"
+				(path "/ab605654-a730-497b-9e09-9b351f74b935/31d5864f-06ec-4c73-9256-780a6880087d"
+					(reference "H3")
+					(unit 1)
+				)
+			)
+		)
 	)
 	(symbol
 		(lib_id "eva-altium-import:Sheet2_0_CAPCHIP")
@@ -34835,6 +35180,73 @@
 		)
 	)
 	(symbol
+		(lib_id "Mechanical:MountingHole_Pad")
+		(at 502.92 127 0)
+		(unit 1)
+		(exclude_from_sim yes)
+		(in_bom no)
+		(on_board yes)
+		(dnp no)
+		(fields_autoplaced yes)
+		(uuid "2b53bf3b-6b93-4c61-8efb-c945d8d22c02")
+		(property "Reference" "H1"
+			(at 505.46 124.4599 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left)
+			)
+		)
+		(property "Value" "ATX_mounting_hole"
+			(at 505.46 126.9999 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left)
+			)
+		)
+		(property "Footprint" ""
+			(at 502.92 127 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Datasheet" "~"
+			(at 502.92 127 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Description" "Mounting Hole with connection"
+			(at 502.92 127 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(pin "1"
+			(uuid "617a6f34-de62-4e93-a6be-e67f9b41ad90")
+		)
+		(instances
+			(project ""
+				(path "/ab605654-a730-497b-9e09-9b351f74b935/31d5864f-06ec-4c73-9256-780a6880087d"
+					(reference "H1")
+					(unit 1)
+				)
+			)
+		)
+	)
+	(symbol
 		(lib_id "power:GND")
 		(at 341.63 401.32 270)
 		(unit 1)
@@ -35547,7 +35959,7 @@
 				(justify right top)
 			)
 		)
-		(property "Value" "0.1uF"
+		(property "Value" "33nF"
 			(at 390.652 226.06 90)
 			(effects
 				(font
@@ -40232,6 +40644,73 @@
 			(project ""
 				(path "/ab605654-a730-497b-9e09-9b351f74b935/31d5864f-06ec-4c73-9256-780a6880087d"
 					(reference "R26")
+					(unit 1)
+				)
+			)
+		)
+	)
+	(symbol
+		(lib_id "Mechanical:MountingHole_Pad")
+		(at 502.92 134.62 0)
+		(unit 1)
+		(exclude_from_sim yes)
+		(in_bom no)
+		(on_board yes)
+		(dnp no)
+		(fields_autoplaced yes)
+		(uuid "77062201-6384-4711-9f3e-965051bf9364")
+		(property "Reference" "H2"
+			(at 505.46 132.0799 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left)
+			)
+		)
+		(property "Value" "ATX_mounting_hole"
+			(at 505.46 134.6199 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left)
+			)
+		)
+		(property "Footprint" ""
+			(at 502.92 134.62 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Datasheet" "~"
+			(at 502.92 134.62 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Description" "Mounting Hole with connection"
+			(at 502.92 134.62 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(pin "1"
+			(uuid "786f6a54-b8a3-4e8e-bf75-15b66ea50d8c")
+		)
+		(instances
+			(project "eva"
+				(path "/ab605654-a730-497b-9e09-9b351f74b935/31d5864f-06ec-4c73-9256-780a6880087d"
+					(reference "H2")
 					(unit 1)
 				)
 			)
@@ -48623,6 +49102,73 @@
 				(path "/ab605654-a730-497b-9e09-9b351f74b935/31d5864f-06ec-4c73-9256-780a6880087d"
 					(reference "X4")
 					(unit 9)
+				)
+			)
+		)
+	)
+	(symbol
+		(lib_id "Mechanical:MountingHole_Pad")
+		(at 502.92 149.86 0)
+		(unit 1)
+		(exclude_from_sim yes)
+		(in_bom no)
+		(on_board yes)
+		(dnp no)
+		(fields_autoplaced yes)
+		(uuid "ec7cda11-cb1e-4ce4-a220-c7d9758f398f")
+		(property "Reference" "H4"
+			(at 505.46 147.3199 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left)
+			)
+		)
+		(property "Value" "ATX_mounting_hole"
+			(at 505.46 149.8599 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left)
+			)
+		)
+		(property "Footprint" ""
+			(at 502.92 149.86 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Datasheet" "~"
+			(at 502.92 149.86 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Description" "Mounting Hole with connection"
+			(at 502.92 149.86 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(pin "1"
+			(uuid "09ca4f98-9ce5-4c8c-9921-74fae8d33579")
+		)
+		(instances
+			(project "eva"
+				(path "/ab605654-a730-497b-9e09-9b351f74b935/31d5864f-06ec-4c73-9256-780a6880087d"
+					(reference "H4")
+					(unit 1)
 				)
 			)
 		)
