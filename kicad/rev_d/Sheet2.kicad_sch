@@ -17357,211 +17357,6 @@
 				)
 			)
 		)
-		(symbol "eva-altium-import:Sheet2_3_ECAPCHIPB"
-			(exclude_from_sim no)
-			(in_bom yes)
-			(on_board yes)
-			(property "Reference" ""
-				(at 0 0 0)
-				(effects
-					(font
-						(size 1.27 1.27)
-					)
-				)
-			)
-			(property "Value" ""
-				(at 0 0 0)
-				(effects
-					(font
-						(size 1.27 1.27)
-					)
-				)
-			)
-			(property "Footprint" ""
-				(at 0 0 0)
-				(effects
-					(font
-						(size 1.27 1.27)
-					)
-					(hide yes)
-				)
-			)
-			(property "Datasheet" ""
-				(at 0 0 0)
-				(effects
-					(font
-						(size 1.27 1.27)
-					)
-					(hide yes)
-				)
-			)
-			(property "Description" "ECAPCHIPB"
-				(at 0 0 0)
-				(effects
-					(font
-						(size 1.27 1.27)
-					)
-					(hide yes)
-				)
-			)
-			(property "ki_fp_filters" "*EC-CHIPB*"
-				(at 0 0 0)
-				(effects
-					(font
-						(size 1.27 1.27)
-					)
-					(hide yes)
-				)
-			)
-			(symbol "Sheet2_3_ECAPCHIPB_0_0"
-				(pin passive line
-					(at -7.62 -10.16 0)
-					(length 7.62) hide
-					(name ""
-						(effects
-							(font
-								(size 1.27 1.27)
-							)
-						)
-					)
-					(number "3"
-						(effects
-							(font
-								(size 1.27 1.27)
-							)
-						)
-					)
-				)
-				(pin passive line
-					(at -7.62 -12.7 0)
-					(length 7.62) hide
-					(name ""
-						(effects
-							(font
-								(size 1.27 1.27)
-							)
-						)
-					)
-					(number "4"
-						(effects
-							(font
-								(size 1.27 1.27)
-							)
-						)
-					)
-				)
-			)
-			(symbol "Sheet2_3_ECAPCHIPB_1_0"
-				(polyline
-					(pts
-						(xy -2.54 -6.985) (xy 2.54 -6.985)
-					)
-					(stroke
-						(width 0.254)
-						(type solid)
-					)
-					(fill
-						(type none)
-					)
-				)
-				(polyline
-					(pts
-						(xy -2.54 -5.715) (xy 2.54 -5.715)
-					)
-					(stroke
-						(width 0.254)
-						(type solid)
-					)
-					(fill
-						(type none)
-					)
-				)
-				(polyline
-					(pts
-						(xy -1.27 -3.81) (xy -1.27 -5.08)
-					)
-					(stroke
-						(width 0.254)
-						(type solid)
-					)
-					(fill
-						(type none)
-					)
-				)
-				(polyline
-					(pts
-						(xy -0.635 -4.445) (xy -1.905 -4.445)
-					)
-					(stroke
-						(width 0.254)
-						(type solid)
-					)
-					(fill
-						(type none)
-					)
-				)
-				(polyline
-					(pts
-						(xy 0 -6.985) (xy 0 -12.7)
-					)
-					(stroke
-						(width 0.254)
-						(type solid)
-					)
-					(fill
-						(type none)
-					)
-				)
-				(polyline
-					(pts
-						(xy 0 0) (xy 0 -5.715)
-					)
-					(stroke
-						(width 0.254)
-						(type solid)
-					)
-					(fill
-						(type none)
-					)
-				)
-				(pin passive line
-					(at 0 0 270)
-					(length 5.715)
-					(name ""
-						(effects
-							(font
-								(size 0 0)
-							)
-						)
-					)
-					(number "1"
-						(effects
-							(font
-								(size 0 0)
-							)
-						)
-					)
-				)
-				(pin passive line
-					(at 0 -12.7 90)
-					(length 5.715)
-					(name ""
-						(effects
-							(font
-								(size 0 0)
-							)
-						)
-					)
-					(number "2"
-						(effects
-							(font
-								(size 0 0)
-							)
-						)
-					)
-				)
-			)
-		)
 		(symbol "eva-altium-import:Sheet2_3_JUMPER"
 			(exclude_from_sim no)
 			(in_bom yes)
@@ -18308,12 +18103,6 @@
 		(diameter 0)
 		(color 0 0 0 0)
 		(uuid "0a7f3179-4a33-400d-b12e-df98673b6ed0")
-	)
-	(junction
-		(at 175.26 218.44)
-		(diameter 0)
-		(color 0 0 0 0)
-		(uuid "0ab54020-21fa-4082-ae1a-89a2b5341300")
 	)
 	(junction
 		(at 337.82 121.92)
@@ -19202,6 +18991,12 @@
 		(diameter 0)
 		(color 0 0 0 0)
 		(uuid "e791b23a-f737-4e7c-8666-d3f2861d779f")
+	)
+	(junction
+		(at 175.26 218.44)
+		(diameter 0)
+		(color 0 0 0 0)
+		(uuid "e9a821f6-e679-4e6c-9cf5-fb9285d3ea06")
 	)
 	(junction
 		(at 420.37 90.17)
@@ -22383,16 +22178,6 @@
 	)
 	(wire
 		(pts
-			(xy 168.91 218.44) (xy 175.26 218.44)
-		)
-		(stroke
-			(width 0)
-			(type default)
-		)
-		(uuid "6cf54988-cc44-4ade-9f3b-08b215a3a461")
-	)
-	(wire
-		(pts
 			(xy 127 218.44) (xy 130.81 218.44)
 		)
 		(stroke
@@ -22958,6 +22743,16 @@
 			(type default)
 		)
 		(uuid "7e803c43-2aec-4015-9fa3-030f7fdbd717")
+	)
+	(wire
+		(pts
+			(xy 175.26 218.44) (xy 180.34 218.44)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "7fb4a46f-42e5-420a-91d7-b39fca916082")
 	)
 	(wire
 		(pts
@@ -26331,7 +26126,7 @@
 	)
 	(wire
 		(pts
-			(xy 175.26 218.44) (xy 180.34 218.44)
+			(xy 168.91 218.44) (xy 175.26 218.44)
 		)
 		(stroke
 			(width 0)
@@ -39019,6 +38814,75 @@
 		)
 	)
 	(symbol
+		(lib_id "eva-altium-import:Sheet2_3_ECAPCHIP")
+		(at 175.26 218.44 0)
+		(unit 1)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(dnp no)
+		(uuid "5fd24c6b-8947-4a98-8e6b-9b39eb6404bb")
+		(property "Reference" "C13"
+			(at 175.895 223.52 90)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left top)
+			)
+		)
+		(property "Value" "10uF"
+			(at 174.625 226.06 90)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify right bottom)
+			)
+		)
+		(property "Footprint" "EC-CHIP"
+			(at 175.26 218.44 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Datasheet" ""
+			(at 175.26 218.44 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Description" "ECAPCHIP"
+			(at 175.26 218.44 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(pin "1"
+			(uuid "5f549d30-1bed-416d-8b3e-5fafaed261a3")
+		)
+		(pin "2"
+			(uuid "41c28fb3-45fd-4612-bd95-f6c445aeed29")
+		)
+		(instances
+			(project "eva"
+				(path "/ab605654-a730-497b-9e09-9b351f74b935/31d5864f-06ec-4c73-9256-780a6880087d"
+					(reference "C13")
+					(unit 1)
+				)
+			)
+		)
+	)
+	(symbol
 		(lib_id "74xx:74HC14")
 		(at 344.17 335.28 0)
 		(unit 4)
@@ -47223,81 +47087,6 @@
 			(project "eva"
 				(path "/ab605654-a730-497b-9e09-9b351f74b935/31d5864f-06ec-4c73-9256-780a6880087d"
 					(reference "R176")
-					(unit 1)
-				)
-			)
-		)
-	)
-	(symbol
-		(lib_id "eva-altium-import:Sheet2_3_ECAPCHIPB")
-		(at 175.26 218.44 0)
-		(unit 1)
-		(exclude_from_sim no)
-		(in_bom yes)
-		(on_board yes)
-		(dnp no)
-		(uuid "cf729df4-94bb-47c2-9454-a75cf2670715")
-		(property "Reference" "C13"
-			(at 175.895 223.52 90)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(justify left top)
-			)
-		)
-		(property "Value" "100uF"
-			(at 174.625 226.06 90)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(justify right bottom)
-			)
-		)
-		(property "Footprint" "EC-CHIPB"
-			(at 175.26 218.44 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(hide yes)
-			)
-		)
-		(property "Datasheet" ""
-			(at 175.26 218.44 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(hide yes)
-			)
-		)
-		(property "Description" "ECAPCHIPB"
-			(at 175.26 218.44 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(hide yes)
-			)
-		)
-		(pin "4"
-			(uuid "52a949c5-3175-4812-9a00-03b89241afae")
-		)
-		(pin "3"
-			(uuid "d5e031f4-e260-4872-831c-365ca38c12a2")
-		)
-		(pin "1"
-			(uuid "02f190f3-7f0c-47e1-862c-b8877f1cdcae")
-		)
-		(pin "2"
-			(uuid "0fb91042-2326-4b89-b231-ebfdc40fce54")
-		)
-		(instances
-			(project ""
-				(path "/ab605654-a730-497b-9e09-9b351f74b935/31d5864f-06ec-4c73-9256-780a6880087d"
-					(reference "C13")
 					(unit 1)
 				)
 			)
