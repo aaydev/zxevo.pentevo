@@ -4391,6 +4391,12 @@
 		(uuid "2295dc26-0a72-4100-84f1-5d3c4649ec97")
 	)
 	(junction
+		(at 259.08 87.63)
+		(diameter 0)
+		(color 0 0 0 0)
+		(uuid "27622d84-d613-4d64-945f-c264f6722326")
+	)
+	(junction
 		(at 100.33 201.93)
 		(diameter 0)
 		(color 0 0 0 0)
@@ -4407,6 +4413,12 @@
 		(diameter 0)
 		(color 0 0 0 0)
 		(uuid "368d7b8d-50aa-454f-bdac-92e7e041c4da")
+	)
+	(junction
+		(at 261.62 74.93)
+		(diameter 0)
+		(color 0 0 0 0)
+		(uuid "38573378-4970-4f18-8e77-f051a0fa8557")
 	)
 	(junction
 		(at 241.3 72.39)
@@ -4559,6 +4571,12 @@
 		(uuid "871c467b-3955-406a-996b-5caea67c3c6a")
 	)
 	(junction
+		(at 276.86 87.63)
+		(diameter 0)
+		(color 0 0 0 0)
+		(uuid "87531c88-0e4c-403a-b6c6-fd9dc0a0d280")
+	)
+	(junction
 		(at 44.45 76.2)
 		(diameter 0)
 		(color 0 0 0 0)
@@ -4593,6 +4611,12 @@
 		(diameter 0)
 		(color 0 0 0 0)
 		(uuid "92cebb8c-ddd6-43af-8b15-f71ba4ced6e9")
+	)
+	(junction
+		(at 276.86 74.93)
+		(diameter 0)
+		(color 0 0 0 0)
+		(uuid "9696b0ab-f4d6-47bd-84ff-191c9d68be69")
 	)
 	(junction
 		(at 262.89 172.72)
@@ -5055,6 +5079,16 @@
 	)
 	(wire
 		(pts
+			(xy 264.16 74.93) (xy 261.62 74.93)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "068a9400-6152-4b25-b779-683cfed545e7")
+	)
+	(wire
+		(pts
 			(xy 44.45 195.58) (xy 44.45 198.12)
 		)
 		(stroke
@@ -5093,6 +5127,16 @@
 			(type default)
 		)
 		(uuid "0940cb4e-674d-4ba4-b5e2-f02604286f5e")
+	)
+	(wire
+		(pts
+			(xy 259.08 87.63) (xy 264.16 87.63)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "09659232-d8d3-4fde-adfa-345f634ce94d")
 	)
 	(wire
 		(pts
@@ -8570,10 +8614,10 @@
 		)
 		(uuid "39b52b44-edaf-46ea-9ac3-28b80c74e2f1")
 	)
-	(text_box "Audio output"
+	(text_box "line output"
 		(exclude_from_sim no)
-		(at 50.165 189.865 0)
-		(size 11.8 2.54)
+		(at 48.895 192.405 0)
+		(size 10.53 2.54)
 		(stroke
 			(width -0.0001)
 			(type default)
@@ -9063,7 +9107,7 @@
 			)
 		)
 	)
-	(global_label "LOUT"
+	(global_label "LLIN"
 		(shape input)
 		(at 40.64 175.26 180)
 		(fields_autoplaced yes)
@@ -9075,7 +9119,7 @@
 		)
 		(uuid "023045f7-5a77-4715-8090-80b3cd74dca0")
 		(property "Intersheetrefs" "${INTERSHEET_REFS}"
-			(at 32.9981 175.26 0)
+			(at 33.6633 175.26 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -9657,6 +9701,28 @@
 			)
 		)
 	)
+	(global_label "RLIN"
+		(shape input)
+		(at 41.91 200.66 180)
+		(fields_autoplaced yes)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify right)
+		)
+		(uuid "4c8d369e-44de-4ce9-a3ea-bc22322bca86")
+		(property "Intersheetrefs" "${INTERSHEET_REFS}"
+			(at 34.6914 200.66 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify right)
+				(hide yes)
+			)
+		)
+	)
 	(global_label "EXT3_L"
 		(shape input)
 		(at 171.45 105.41 180)
@@ -9899,6 +9965,28 @@
 			)
 		)
 	)
+	(global_label "RLIN"
+		(shape output)
+		(at 289.56 87.63 0)
+		(fields_autoplaced yes)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify left)
+		)
+		(uuid "77312f2d-5126-468a-8e31-bf23737370c5")
+		(property "Intersheetrefs" "${INTERSHEET_REFS}"
+			(at 296.7786 87.63 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left)
+				(hide yes)
+			)
+		)
+	)
 	(global_label "GND"
 		(shape passive)
 		(at 48.26 121.92 270)
@@ -10097,7 +10185,29 @@
 			)
 		)
 	)
-	(global_label "ROUT"
+	(global_label "LLIN"
+		(shape input)
+		(at 41.91 193.04 180)
+		(fields_autoplaced yes)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify right)
+		)
+		(uuid "8de1f0bb-0fb3-4f98-a9b2-627bcf312dd8")
+		(property "Intersheetrefs" "${INTERSHEET_REFS}"
+			(at 34.9333 193.04 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify right)
+				(hide yes)
+			)
+		)
+	)
+	(global_label "RLIN"
 		(shape input)
 		(at 40.64 182.88 180)
 		(fields_autoplaced yes)
@@ -10109,7 +10219,7 @@
 		)
 		(uuid "906262b1-f688-46fe-9f16-b755cdf86fbe")
 		(property "Intersheetrefs" "${INTERSHEET_REFS}"
-			(at 32.7562 182.88 0)
+			(at 33.4214 182.88 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -10427,6 +10537,28 @@
 			)
 		)
 	)
+	(global_label "GND"
+		(shape passive)
+		(at 276.86 62.23 90)
+		(fields_autoplaced yes)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify left)
+		)
+		(uuid "bf2f9b99-68ef-4fd3-a614-032a88c236d9")
+		(property "Intersheetrefs" "${INTERSHEET_REFS}"
+			(at 276.86 56.4856 90)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left)
+				(hide yes)
+			)
+		)
+	)
 	(global_label "SCL"
 		(shape input)
 		(at 172.72 123.19 180)
@@ -10511,28 +10643,6 @@
 					(size 1.27 1.27)
 				)
 				(justify left)
-				(hide yes)
-			)
-		)
-	)
-	(global_label "LOUT"
-		(shape input)
-		(at 41.91 193.04 180)
-		(fields_autoplaced yes)
-		(effects
-			(font
-				(size 1.27 1.27)
-			)
-			(justify right)
-		)
-		(uuid "c4eef1ae-2e93-4b0f-a436-8008cc636793")
-		(property "Intersheetrefs" "${INTERSHEET_REFS}"
-			(at 34.2681 193.04 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(justify right)
 				(hide yes)
 			)
 		)
@@ -10625,28 +10735,6 @@
 			)
 		)
 	)
-	(global_label "ROUT"
-		(shape input)
-		(at 41.91 200.66 180)
-		(fields_autoplaced yes)
-		(effects
-			(font
-				(size 1.27 1.27)
-			)
-			(justify right)
-		)
-		(uuid "dc3651eb-6154-49b6-8f02-adcda60f973f")
-		(property "Intersheetrefs" "${INTERSHEET_REFS}"
-			(at 34.0262 200.66 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(justify right)
-				(hide yes)
-			)
-		)
-	)
 	(global_label "VGND9"
 		(shape input)
 		(at 118.11 144.78 180)
@@ -10704,6 +10792,28 @@
 		(uuid "e48da23b-1a3d-4c41-8f8c-2cb6e909160a")
 		(property "Intersheetrefs" "${INTERSHEET_REFS}"
 			(at 272.0438 219.71 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left)
+				(hide yes)
+			)
+		)
+	)
+	(global_label "LLIN"
+		(shape output)
+		(at 289.56 74.93 0)
+		(fields_autoplaced yes)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify left)
+		)
+		(uuid "e628cd92-6455-4b12-ac14-d5c1c49fbcad")
+		(property "Intersheetrefs" "${INTERSHEET_REFS}"
+			(at 296.5367 74.93 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -10797,6 +10907,28 @@
 					(size 1.27 1.27)
 				)
 				(justify left)
+				(hide yes)
+			)
+		)
+	)
+	(global_label "GND"
+		(shape passive)
+		(at 276.86 100.33 270)
+		(fields_autoplaced yes)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify right)
+		)
+		(uuid "f4d99e30-5e12-43ec-83ac-1fd2bb58d701")
+		(property "Intersheetrefs" "${INTERSHEET_REFS}"
+			(at 276.86 106.0744 90)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify right)
 				(hide yes)
 			)
 		)
@@ -11658,6 +11790,76 @@
 		)
 	)
 	(symbol
+		(lib_id "eva-altium-import:Sheet2_0_ECAPCHIP")
+		(at 264.16 74.93 0)
+		(mirror x)
+		(unit 1)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(dnp no)
+		(uuid "1ae0d850-2bef-493f-a1c8-924412ee2ed7")
+		(property "Reference" "C123"
+			(at 269.24 75.565 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify right bottom)
+			)
+		)
+		(property "Value" "10uF"
+			(at 271.78 74.295 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left top)
+			)
+		)
+		(property "Footprint" "EC-CHIP"
+			(at 264.16 74.93 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Datasheet" ""
+			(at 264.16 74.93 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Description" "ECAPCHIP"
+			(at 264.16 74.93 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(pin "2"
+			(uuid "2181b7f3-7996-44bb-a238-f3fcf7899c32")
+		)
+		(pin "1"
+			(uuid "0c2bf9b6-8c3b-4c3a-9221-af51f55bf9c0")
+		)
+		(instances
+			(project "eva"
+				(path "/ab605654-a730-497b-9e09-9b351f74b935/d12fc3f7-914a-41f9-b933-632d1b3e89f3"
+					(reference "C123")
+					(unit 1)
+				)
+			)
+		)
+	)
+	(symbol
 		(lib_id "eva-altium-import:TLC072")
 		(at 248.92 87.63 0)
 		(unit 2)
@@ -12172,7 +12374,7 @@
 				)
 			)
 		)
-		(property "Value" "AAFP/AC97 audio"
+		(property "Value" "AAFP/AC97 headphones/tapein"
 			(at 60.96 203.2 0)
 			(effects
 				(font
@@ -12300,7 +12502,7 @@
 				(hide yes)
 			)
 		)
-		(property "ALTIUM_VALUE" "headphones"
+		(property "ALTIUM_VALUE" "line output"
 			(at 66.548 179.07 90)
 			(effects
 				(font
@@ -12500,6 +12702,75 @@
 				(path "/ab605654-a730-497b-9e09-9b351f74b935/d12fc3f7-914a-41f9-b933-632d1b3e89f3"
 					(reference "DA13")
 					(unit 2)
+				)
+			)
+		)
+	)
+	(symbol
+		(lib_id "eva-altium-import:Sheet2_0_RESCHIP")
+		(at 276.86 62.23 90)
+		(mirror x)
+		(unit 1)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(dnp no)
+		(uuid "3a745954-7a4b-4a50-b987-bddbb120fa0d")
+		(property "Reference" "R196"
+			(at 280.162 71.12 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify right bottom)
+			)
+		)
+		(property "Value" "47K"
+			(at 276.86 68.58 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Footprint" "R-CHIP"
+			(at 276.86 62.23 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Datasheet" ""
+			(at 276.86 62.23 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Description" "RESCHIP"
+			(at 276.86 62.23 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(pin "1"
+			(uuid "13f003a2-4148-41a3-a641-1816565fd633")
+		)
+		(pin "2"
+			(uuid "f9fbcebf-0471-468f-b8c4-b635819231db")
+		)
+		(instances
+			(project "eva"
+				(path "/ab605654-a730-497b-9e09-9b351f74b935/d12fc3f7-914a-41f9-b933-632d1b3e89f3"
+					(reference "R196")
+					(unit 1)
 				)
 			)
 		)
@@ -14645,6 +14916,75 @@
 	)
 	(symbol
 		(lib_id "eva-altium-import:Sheet2_0_RESCHIP")
+		(at 276.86 87.63 90)
+		(mirror x)
+		(unit 1)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(dnp no)
+		(uuid "68ae811e-a955-4f8b-81e6-8f90e6afdeba")
+		(property "Reference" "R197"
+			(at 275.082 96.52 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify right bottom)
+			)
+		)
+		(property "Value" "47K"
+			(at 276.86 93.98 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Footprint" "R-CHIP"
+			(at 276.86 87.63 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Datasheet" ""
+			(at 276.86 87.63 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Description" "RESCHIP"
+			(at 276.86 87.63 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(pin "2"
+			(uuid "9a50d464-3bf6-4ab9-9a89-0eac1d8cb667")
+		)
+		(pin "1"
+			(uuid "d1977090-0d75-4f02-9a5e-720ff567ca0a")
+		)
+		(instances
+			(project "eva"
+				(path "/ab605654-a730-497b-9e09-9b351f74b935/d12fc3f7-914a-41f9-b933-632d1b3e89f3"
+					(reference "R197")
+					(unit 1)
+				)
+			)
+		)
+	)
+	(symbol
+		(lib_id "eva-altium-import:Sheet2_0_RESCHIP")
 		(at 210.82 144.78 0)
 		(mirror x)
 		(unit 1)
@@ -16526,6 +16866,75 @@
 		)
 	)
 	(symbol
+		(lib_id "eva-altium-import:Sheet2_0_RESCHIP")
+		(at 289.56 74.93 0)
+		(mirror y)
+		(unit 1)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(dnp no)
+		(uuid "ba92544c-76be-4701-a962-98852d21d0a7")
+		(property "Reference" "R189"
+			(at 280.67 78.232 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify right bottom)
+			)
+		)
+		(property "Value" "100"
+			(at 283.21 74.93 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Footprint" "R-CHIP"
+			(at 289.56 74.93 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Datasheet" ""
+			(at 289.56 74.93 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Description" "RESCHIP"
+			(at 289.56 74.93 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(pin "1"
+			(uuid "559b8782-2506-4bb8-879d-dcdcfd52c1e9")
+		)
+		(pin "2"
+			(uuid "c78d195c-cf19-454b-b60d-1eaaf535377d")
+		)
+		(instances
+			(project "eva"
+				(path "/ab605654-a730-497b-9e09-9b351f74b935/d12fc3f7-914a-41f9-b933-632d1b3e89f3"
+					(reference "R189")
+					(unit 1)
+				)
+			)
+		)
+	)
+	(symbol
 		(lib_id "eva-altium-import:Sheet2_0_ECAPCHIP")
 		(at 250.19 172.72 0)
 		(unit 1)
@@ -17820,6 +18229,75 @@
 		)
 	)
 	(symbol
+		(lib_id "eva-altium-import:Sheet2_0_RESCHIP")
+		(at 289.56 87.63 0)
+		(mirror y)
+		(unit 1)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(dnp no)
+		(uuid "de8514be-ed0a-4145-80bd-3f1e031a856d")
+		(property "Reference" "R194"
+			(at 280.67 85.852 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify right bottom)
+			)
+		)
+		(property "Value" "100"
+			(at 283.21 87.63 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Footprint" "R-CHIP"
+			(at 289.56 87.63 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Datasheet" ""
+			(at 289.56 87.63 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Description" "RESCHIP"
+			(at 289.56 87.63 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(pin "2"
+			(uuid "efbcbaf3-8c2d-49d2-a28a-0424f2a09857")
+		)
+		(pin "1"
+			(uuid "02c68468-d264-4aef-9cbc-49f74a7aa8a6")
+		)
+		(instances
+			(project "eva"
+				(path "/ab605654-a730-497b-9e09-9b351f74b935/d12fc3f7-914a-41f9-b933-632d1b3e89f3"
+					(reference "R194")
+					(unit 1)
+				)
+			)
+		)
+	)
+	(symbol
 		(lib_id "Diode:US1A")
 		(at 182.88 160.02 270)
 		(unit 1)
@@ -18105,6 +18583,76 @@
 			(project "eva"
 				(path "/ab605654-a730-497b-9e09-9b351f74b935/d12fc3f7-914a-41f9-b933-632d1b3e89f3"
 					(reference "C44")
+					(unit 1)
+				)
+			)
+		)
+	)
+	(symbol
+		(lib_id "eva-altium-import:Sheet2_0_ECAPCHIP")
+		(at 264.16 87.63 0)
+		(mirror x)
+		(unit 1)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(dnp no)
+		(uuid "e3006067-bb14-4deb-9e66-1dd87aa3569b")
+		(property "Reference" "C130"
+			(at 269.24 88.265 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify right bottom)
+			)
+		)
+		(property "Value" "10uF"
+			(at 271.78 86.995 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left top)
+			)
+		)
+		(property "Footprint" "EC-CHIP"
+			(at 264.16 87.63 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Datasheet" ""
+			(at 264.16 87.63 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Description" "ECAPCHIP"
+			(at 264.16 87.63 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(pin "2"
+			(uuid "d1f6a39d-7726-486a-a973-3df3bffde04a")
+		)
+		(pin "1"
+			(uuid "ec9994ca-3eb1-42be-8d32-e5e294776502")
+		)
+		(instances
+			(project "eva"
+				(path "/ab605654-a730-497b-9e09-9b351f74b935/d12fc3f7-914a-41f9-b933-632d1b3e89f3"
+					(reference "C130")
 					(unit 1)
 				)
 			)
