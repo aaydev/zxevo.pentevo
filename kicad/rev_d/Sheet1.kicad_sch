@@ -60687,7 +60687,7 @@
 		(dnp no)
 		(fields_autoplaced yes)
 		(uuid "1bd5bd88-9e58-4797-b1fe-c548f72a8fee")
-		(property "Reference" "U4"
+		(property "Reference" "D28"
 			(at 275.2441 212.09 0)
 			(effects
 				(font
@@ -60795,7 +60795,7 @@
 		(instances
 			(project "eva"
 				(path "/ab605654-a730-497b-9e09-9b351f74b935/df95af23-acf0-4751-87c3-fbc71e0508c6"
-					(reference "U4")
+					(reference "D28")
 					(unit 1)
 				)
 			)
@@ -60984,7 +60984,7 @@
 		(dnp no)
 		(fields_autoplaced yes)
 		(uuid "1de3b138-6eb3-47f9-88ed-36a3c6160049")
-		(property "Reference" "U5"
+		(property "Reference" "D29"
 			(at 275.2441 160.02 0)
 			(effects
 				(font
@@ -61092,7 +61092,7 @@
 		(instances
 			(project ""
 				(path "/ab605654-a730-497b-9e09-9b351f74b935/df95af23-acf0-4751-87c3-fbc71e0508c6"
-					(reference "U5")
+					(reference "D29")
 					(unit 1)
 				)
 			)
@@ -71987,7 +71987,7 @@
 		(dnp no)
 		(fields_autoplaced yes)
 		(uuid "db71c4f1-f817-4585-93cd-4b4958efcdfa")
-		(property "Reference" "U3"
+		(property "Reference" "D13"
 			(at 238.4141 212.09 0)
 			(effects
 				(font
@@ -71996,7 +71996,7 @@
 				(justify left)
 			)
 		)
-		(property "Value" "74HCT373"
+		(property "Value" "74ACT373"
 			(at 238.4141 214.63 0)
 			(effects
 				(font
@@ -72095,7 +72095,7 @@
 		(instances
 			(project ""
 				(path "/ab605654-a730-497b-9e09-9b351f74b935/df95af23-acf0-4751-87c3-fbc71e0508c6"
-					(reference "U3")
+					(reference "D13")
 					(unit 1)
 				)
 			)
