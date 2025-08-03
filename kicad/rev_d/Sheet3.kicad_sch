@@ -4367,12 +4367,6 @@
 		(uuid "1d1d01af-553b-4da3-a53e-83b45d1cebc0")
 	)
 	(junction
-		(at 33.02 118.11)
-		(diameter 0)
-		(color 0 0 0 0)
-		(uuid "1d841908-cf4a-46e4-a833-994bdf49046c")
-	)
-	(junction
 		(at 77.47 102.87)
 		(diameter 0)
 		(color 0 0 0 0)
@@ -4539,12 +4533,6 @@
 		(diameter 0)
 		(color 0 0 0 0)
 		(uuid "7b3ae272-c718-4bdf-84eb-0bb4cbd66a5d")
-	)
-	(junction
-		(at 33.02 102.87)
-		(diameter 0)
-		(color 0 0 0 0)
-		(uuid "7b79f90c-e030-4287-954f-3887d57c0429")
 	)
 	(junction
 		(at 241.3 81.28)
@@ -4833,12 +4821,6 @@
 		(diameter 0)
 		(color 0 0 0 0)
 		(uuid "e2d313ed-7b51-48ab-ae36-200f9c22a32c")
-	)
-	(junction
-		(at 63.5 118.11)
-		(diameter 0)
-		(color 0 0 0 0)
-		(uuid "e3156d11-83c9-4484-ae73-25b758c3ebbd")
 	)
 	(junction
 		(at 182.88 166.37)
@@ -5714,7 +5696,7 @@
 	)
 	(wire
 		(pts
-			(xy 33.02 118.11) (xy 29.21 118.11)
+			(xy 29.21 118.11) (xy 44.45 118.11)
 		)
 		(stroke
 			(width 0)
@@ -6516,7 +6498,7 @@
 	)
 	(wire
 		(pts
-			(xy 59.69 118.11) (xy 63.5 118.11)
+			(xy 59.69 118.11) (xy 76.2 118.11)
 		)
 		(stroke
 			(width 0)
@@ -6637,16 +6619,6 @@
 	)
 	(wire
 		(pts
-			(xy 63.5 118.11) (xy 76.2 118.11)
-		)
-		(stroke
-			(width 0)
-			(type default)
-		)
-		(uuid "757609f0-2038-40a4-b266-919c22beb0a3")
-	)
-	(wire
-		(pts
 			(xy 96.52 41.91) (xy 96.52 55.88)
 		)
 		(stroke
@@ -6694,16 +6666,6 @@
 			(type default)
 		)
 		(uuid "77895fe0-abf2-4fc7-8a6b-b578c897fa88")
-	)
-	(wire
-		(pts
-			(xy 33.02 118.11) (xy 44.45 118.11)
-		)
-		(stroke
-			(width 0)
-			(type default)
-		)
-		(uuid "784b4202-a49b-4ea7-9ea0-056efbcaf287")
 	)
 	(wire
 		(pts
@@ -7412,16 +7374,6 @@
 			(color 0 0 0 1)
 		)
 		(uuid "a8f117c8-cc95-4233-9e1a-1c32d58de5d7")
-	)
-	(wire
-		(pts
-			(xy 33.02 102.87) (xy 44.45 102.87)
-		)
-		(stroke
-			(width 0)
-			(type default)
-		)
-		(uuid "a9b6461b-575c-4681-b43d-573e21a58e56")
 	)
 	(wire
 		(pts
@@ -8393,7 +8345,7 @@
 	)
 	(wire
 		(pts
-			(xy 29.21 102.87) (xy 33.02 102.87)
+			(xy 29.21 102.87) (xy 44.45 102.87)
 		)
 		(stroke
 			(width 0)
@@ -14056,7 +14008,7 @@
 		(on_board yes)
 		(dnp no)
 		(uuid "51caa0e1-97a9-46f3-b687-99ddc6a628c6")
-		(property "Reference" "DA15"
+		(property "Reference" "DA?"
 			(at 171.704 172.212 0)
 			(effects
 				(font
@@ -14112,17 +14064,25 @@
 		(pin "3"
 			(uuid "c56450ff-c0ee-48df-a2ec-a2194b5f82ac")
 		)
+		(instances
+			(project "eva"
+				(path "/ab605654-a730-497b-9e09-9b351f74b935/d12fc3f7-914a-41f9-b933-632d1b3e89f3"
+					(reference "DA?")
+					(unit 1)
+				)
+			)
+		)
 	)
 	(symbol
 		(lib_id "eva-altium-import:TLC072")
 		(at 116.84 71.12 0)
-		(unit 2)
+		(unit 1)
 		(exclude_from_sim no)
 		(in_bom yes)
 		(on_board yes)
 		(dnp no)
 		(uuid "51d624cd-96cb-4a9a-8bb4-bb53cc5f7ec8")
-		(property "Reference" "DA1"
+		(property "Reference" "DA?"
 			(at 120.65 74.422 0)
 			(effects
 				(font
@@ -14188,6 +14148,14 @@
 		)
 		(pin "3"
 			(uuid "433c1f87-c45d-4edd-a2af-b5ce470ae61a")
+		)
+		(instances
+			(project "eva"
+				(path "/ab605654-a730-497b-9e09-9b351f74b935/d12fc3f7-914a-41f9-b933-632d1b3e89f3"
+					(reference "DA?")
+					(unit 1)
+				)
+			)
 		)
 	)
 	(symbol
@@ -15401,14 +15369,14 @@
 	(symbol
 		(lib_id "eva-altium-import:TLC072")
 		(at 66.04 110.49 0)
-		(unit 3)
+		(unit 1)
 		(exclude_from_sim no)
 		(in_bom yes)
 		(on_board yes)
 		(dnp no)
 		(fields_autoplaced yes)
 		(uuid "73aed0be-b23a-4a55-bb3c-01b1ddd4f871")
-		(property "Reference" "DA12"
+		(property "Reference" "DA?"
 			(at 64.77 109.2199 0)
 			(effects
 				(font
@@ -15476,6 +15444,14 @@
 		)
 		(pin "7"
 			(uuid "90e855a3-bec2-403e-942e-6edd14d1749c")
+		)
+		(instances
+			(project "eva"
+				(path "/ab605654-a730-497b-9e09-9b351f74b935/d12fc3f7-914a-41f9-b933-632d1b3e89f3"
+					(reference "DA?")
+					(unit 1)
+				)
+			)
 		)
 	)
 	(symbol
@@ -15965,14 +15941,14 @@
 	(symbol
 		(lib_id "eva-altium-import:TLC072")
 		(at 50.8 110.49 0)
-		(unit 3)
+		(unit 1)
 		(exclude_from_sim no)
 		(in_bom yes)
 		(on_board yes)
 		(dnp no)
 		(fields_autoplaced yes)
 		(uuid "94ebd5b3-0712-4f7c-811b-d30a53ce34d5")
-		(property "Reference" "DA1"
+		(property "Reference" "DA?"
 			(at 49.53 109.2199 0)
 			(effects
 				(font
@@ -16040,6 +16016,14 @@
 		)
 		(pin "3"
 			(uuid "433c1f87-c45d-4edd-a2af-b5ce470ae61b")
+		)
+		(instances
+			(project "eva"
+				(path "/ab605654-a730-497b-9e09-9b351f74b935/d12fc3f7-914a-41f9-b933-632d1b3e89f3"
+					(reference "DA?")
+					(unit 1)
+				)
+			)
 		)
 	)
 	(symbol
@@ -16395,7 +16379,7 @@
 		(on_board yes)
 		(dnp no)
 		(uuid "ac3b3066-e0b2-4e25-bc30-3ef8bb7eab65")
-		(property "Reference" "DA9"
+		(property "Reference" "DA?"
 			(at 123.444 99.822 0)
 			(effects
 				(font
@@ -16461,6 +16445,14 @@
 		)
 		(pin "2"
 			(uuid "6668c77e-890b-4a4e-a30b-89b113f8bddd")
+		)
+		(instances
+			(project "eva"
+				(path "/ab605654-a730-497b-9e09-9b351f74b935/d12fc3f7-914a-41f9-b933-632d1b3e89f3"
+					(reference "DA?")
+					(unit 1)
+				)
+			)
 		)
 	)
 	(symbol
@@ -17241,13 +17233,13 @@
 	(symbol
 		(lib_id "eva-altium-import:TPA6120")
 		(at 229.87 219.71 0)
-		(unit 2)
+		(unit 1)
 		(exclude_from_sim no)
 		(in_bom yes)
 		(on_board yes)
 		(dnp no)
 		(uuid "c5447f9c-8e24-42a0-933e-c357a4a19399")
-		(property "Reference" "DA14"
+		(property "Reference" "DA?"
 			(at 233.68 215.646 0)
 			(effects
 				(font
@@ -17319,6 +17311,14 @@
 		)
 		(pin "16"
 			(uuid "a2ce711b-da99-4ac3-adf2-64200893f1d5")
+		)
+		(instances
+			(project "eva"
+				(path "/ab605654-a730-497b-9e09-9b351f74b935/d12fc3f7-914a-41f9-b933-632d1b3e89f3"
+					(reference "DA?")
+					(unit 1)
+				)
+			)
 		)
 	)
 	(symbol
@@ -18613,14 +18613,14 @@
 	(symbol
 		(lib_id "eva-altium-import:TLC072")
 		(at 35.56 110.49 0)
-		(unit 3)
+		(unit 1)
 		(exclude_from_sim no)
 		(in_bom yes)
 		(on_board yes)
 		(dnp no)
 		(fields_autoplaced yes)
 		(uuid "e31f6eb5-9940-4fbe-8b85-4872a68d2314")
-		(property "Reference" "DA9"
+		(property "Reference" "DA?"
 			(at 34.29 109.2199 0)
 			(effects
 				(font
@@ -18688,6 +18688,14 @@
 		)
 		(pin "2"
 			(uuid "159602fb-7f75-4e03-981a-9bb12907adf8")
+		)
+		(instances
+			(project "eva"
+				(path "/ab605654-a730-497b-9e09-9b351f74b935/d12fc3f7-914a-41f9-b933-632d1b3e89f3"
+					(reference "DA?")
+					(unit 1)
+				)
+			)
 		)
 	)
 	(symbol
@@ -19379,13 +19387,13 @@
 	(symbol
 		(lib_id "eva-altium-import:TLC072")
 		(at 125.73 147.32 0)
-		(unit 2)
+		(unit 1)
 		(exclude_from_sim no)
 		(in_bom yes)
 		(on_board yes)
 		(dnp no)
 		(uuid "f747ad39-9202-4a0b-a8bf-7f1902eda222")
-		(property "Reference" "DA9"
+		(property "Reference" "DA?"
 			(at 129.286 150.622 0)
 			(effects
 				(font
@@ -19451,6 +19459,14 @@
 		)
 		(pin "2"
 			(uuid "159602fb-7f75-4e03-981a-9bb12907adf9")
+		)
+		(instances
+			(project "eva"
+				(path "/ab605654-a730-497b-9e09-9b351f74b935/d12fc3f7-914a-41f9-b933-632d1b3e89f3"
+					(reference "DA?")
+					(unit 1)
+				)
+			)
 		)
 	)
 	(symbol
@@ -19531,7 +19547,7 @@
 		(on_board yes)
 		(dnp no)
 		(uuid "fc18a717-f812-4d91-84cb-c19cb4b5bc0f")
-		(property "Reference" "DA10"
+		(property "Reference" "DA?"
 			(at 175.768 42.926 0)
 			(effects
 				(font
@@ -19637,6 +19653,14 @@
 		(pin "5"
 			(uuid "1ea47c23-1e38-4604-9cce-1d19aa15621d")
 		)
+		(instances
+			(project "eva"
+				(path "/ab605654-a730-497b-9e09-9b351f74b935/d12fc3f7-914a-41f9-b933-632d1b3e89f3"
+					(reference "DA?")
+					(unit 1)
+				)
+			)
+		)
 	)
 	(symbol
 		(lib_id "eva-altium-import:TPA6120")
@@ -19647,7 +19671,7 @@
 		(on_board yes)
 		(dnp no)
 		(uuid "fc76c8eb-01b9-45e4-9646-1a0ae7023d53")
-		(property "Reference" "DA14"
+		(property "Reference" "DA?"
 			(at 233.426 168.91 0)
 			(effects
 				(font
@@ -19719,6 +19743,14 @@
 		)
 		(pin "16"
 			(uuid "8be78f15-b986-4de9-85e3-3e69e0f5aee5")
+		)
+		(instances
+			(project "eva"
+				(path "/ab605654-a730-497b-9e09-9b351f74b935/d12fc3f7-914a-41f9-b933-632d1b3e89f3"
+					(reference "DA?")
+					(unit 1)
+				)
+			)
 		)
 	)
 )
