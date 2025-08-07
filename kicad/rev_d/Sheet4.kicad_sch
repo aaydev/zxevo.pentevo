@@ -6723,6 +6723,28 @@
 			)
 		)
 	)
+	(global_label "FCLK_VDAC"
+		(shape output)
+		(at 387.35 222.25 90)
+		(fields_autoplaced yes)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify left)
+		)
+		(uuid "2a9e1b0d-9c98-4573-9a8f-5148bc32a6c5")
+		(property "Intersheetrefs" "${INTERSHEET_REFS}"
+			(at 387.35 208.9233 90)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left)
+				(hide yes)
+			)
+		)
+	)
 	(global_label "D_R1"
 		(shape output)
 		(at 419.1 252.73 0)
