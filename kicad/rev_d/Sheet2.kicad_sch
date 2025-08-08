@@ -37418,7 +37418,7 @@
 			)
 		)
 	)
-	(global_label "TMS_FPGA"
+	(global_label "TMS_ALT"
 		(shape output)
 		(at 119.38 163.83 0)
 		(fields_autoplaced yes)
@@ -37430,7 +37430,7 @@
 		)
 		(uuid "603e2a2b-d603-4d1b-9920-4dc2ad5dace8")
 		(property "Intersheetrefs" "${INTERSHEET_REFS}"
-			(at 131.6785 163.83 0)
+			(at 130.0456 163.83 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -41092,7 +41092,7 @@
 			)
 		)
 	)
-	(global_label "TCK_FPGA"
+	(global_label "TCK_ALT"
 		(shape output)
 		(at 127 158.75 0)
 		(fields_autoplaced yes)
@@ -41104,7 +41104,7 @@
 		)
 		(uuid "da64036d-1867-4f6c-83b0-bd4abc0fd411")
 		(property "Intersheetrefs" "${INTERSHEET_REFS}"
-			(at 139.1776 158.75 0)
+			(at 137.5447 158.75 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -48360,7 +48360,7 @@
 		(dnp no)
 		(fields_autoplaced yes)
 		(uuid "4c187064-67cb-4ed5-9633-66546bb81b71")
-		(property "Reference" "D32"
+		(property "Reference" "D30"
 			(at 459.3941 146.05 0)
 			(effects
 				(font
@@ -48480,7 +48480,7 @@
 		(instances
 			(project ""
 				(path "/ab605654-a730-497b-9e09-9b351f74b935/31d5864f-06ec-4c73-9256-780a6880087d"
-					(reference "D32")
+					(reference "D30")
 					(unit 1)
 				)
 			)
