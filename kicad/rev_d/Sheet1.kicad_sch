@@ -28440,6 +28440,16 @@
 	)
 	(wire
 		(pts
+			(xy 342.9 63.5) (xy 340.36 63.5)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "76f664f8-7a9c-4506-a796-b4ef8e188e77")
+	)
+	(wire
+		(pts
 			(xy 134.62 317.5) (xy 137.16 317.5)
 		)
 		(stroke
@@ -31372,6 +31382,16 @@
 	)
 	(wire
 		(pts
+			(xy 340.36 63.5) (xy 340.36 58.42)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "d3d329f4-0b01-430d-83a2-1fac0846d811")
+	)
+	(wire
+		(pts
 			(xy 440.69 328.93) (xy 445.77 328.93)
 		)
 		(stroke
@@ -33711,6 +33731,28 @@
 					(size 1.27 1.27)
 				)
 				(justify right)
+				(hide yes)
+			)
+		)
+	)
+	(global_label "BRD_CLK_OE"
+		(shape input)
+		(at 342.9 63.5 0)
+		(fields_autoplaced yes)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify left)
+		)
+		(uuid "05e1ff72-f57e-4be7-81eb-43a341323952")
+		(property "Intersheetrefs" "${INTERSHEET_REFS}"
+			(at 357.678 63.5 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left)
 				(hide yes)
 			)
 		)
@@ -41348,7 +41390,7 @@
 			)
 		)
 	)
-	(global_label "TDO_FPGA"
+	(global_label "TDO_FPGA_TDI_CPLD"
 		(shape output)
 		(at 137.16 83.82 180)
 		(fields_autoplaced yes)
@@ -41360,7 +41402,7 @@
 		)
 		(uuid "6b76f731-b893-4146-bb30-08d23ce7d736")
 		(property "Intersheetrefs" "${INTERSHEET_REFS}"
-			(at 124.9219 83.82 0)
+			(at 115.3062 83.82 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -42818,28 +42860,6 @@
 					(size 1.27 1.27)
 				)
 				(justify right)
-				(hide yes)
-			)
-		)
-	)
-	(global_label "VCC5"
-		(shape passive)
-		(at 340.36 58.42 0)
-		(fields_autoplaced yes)
-		(effects
-			(font
-				(size 1.27 1.27)
-			)
-			(justify left)
-		)
-		(uuid "7e5df272-e651-471f-9ad3-7b12ebd75c93")
-		(property "Intersheetrefs" "${INTERSHEET_REFS}"
-			(at 347.072 58.42 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(justify left)
 				(hide yes)
 			)
 		)

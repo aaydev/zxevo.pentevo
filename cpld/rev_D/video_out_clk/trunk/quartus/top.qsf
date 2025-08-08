@@ -39,3 +39,36 @@ set_global_assignment -name DEVICE_FILTER_PACKAGE "ANY QFP"
 set_global_assignment -name DEVICE_FILTER_PIN_COUNT 44
 set_global_assignment -name DEVICE_FILTER_SPEED_GRADE 10
 set_global_assignment -name VERILOG_FILE ../rtl/top.v
+
+set_location_assignment PIN_37 -to fclk
+set_location_assignment PIN_44 -to fclk_fpga
+set_location_assignment PIN_43 -to fclk_vdac
+
+set_location_assignment PIN_2  -to v_r[1]
+set_location_assignment PIN_3  -to v_r[0]
+set_location_assignment PIN_5  -to v_g[1]
+set_location_assignment PIN_6  -to v_g[0]
+set_location_assignment PIN_8  -to v_b[1]
+set_location_assignment PIN_10 -to v_b[0]
+
+set_location_assignment PIN_34 -to vvsync
+set_location_assignment PIN_35 -to vhsync
+set_location_assignment PIN_42 -to vcsync
+
+set_location_assignment PIN_27 -to d_r[3]
+set_location_assignment PIN_25 -to d_r[2]
+set_location_assignment PIN_23 -to d_r[1]
+set_location_assignment PIN_22 -to d_r[0]
+set_location_assignment PIN_21 -to d_g[3]
+set_location_assignment PIN_20 -to d_g[2]
+set_location_assignment PIN_19 -to d_g[1]
+set_location_assignment PIN_18 -to d_g[0]
+set_location_assignment PIN_15 -to d_b[3]
+set_location_assignment PIN_14 -to d_b[2]
+set_location_assignment PIN_13 -to d_b[1]
+set_location_assignment PIN_12 -to d_b[0]
+
+set_location_assignment PIN_33 -to fl_vs
+set_location_assignment PIN_31 -to fl_hs
+set_location_assignment PIN_28 -to fl_cs
+

@@ -39354,7 +39354,7 @@
 			)
 		)
 	)
-	(global_label "TDO_FPGA"
+	(global_label "TDO_CPLD"
 		(shape input)
 		(at 119.38 161.29 0)
 		(fields_autoplaced yes)
@@ -39366,7 +39366,7 @@
 		)
 		(uuid "9b24c7f0-71d8-4123-95c7-cdf1720a3385")
 		(property "Intersheetrefs" "${INTERSHEET_REFS}"
-			(at 131.6181 161.29 0)
+			(at 131.739 161.29 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -45823,7 +45823,7 @@
 		(on_board yes)
 		(dnp no)
 		(uuid "3133172c-5dd1-46ca-a414-44750223fe02")
-		(property "Reference" "J5"
+		(property "Reference" "X25"
 			(at 286.004 211.836 0)
 			(effects
 				(font
@@ -45872,7 +45872,7 @@
 		(instances
 			(project ""
 				(path "/ab605654-a730-497b-9e09-9b351f74b935/31d5864f-06ec-4c73-9256-780a6880087d"
-					(reference "J5")
+					(reference "X25")
 					(unit 1)
 				)
 			)
