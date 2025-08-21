@@ -1,5 +1,5 @@
 
-; LAST UPDATE: 16.02.2025 savelij
+; LAST UPDATE: 21.08.2025 savelij
 
 	TITLE "mounter.a80 ROM_RST83"
 
@@ -583,7 +583,7 @@ IOPEN_MOUNT	LD DE,FILE_EXT
 		ADD HL,HL
 		ADD HL,HL
 		ADD HL,HL
-		LD DE,BUF_VOLUMES;BUF_TABLVOL			; адрес таблицы найденных разделов
+		LD DE,BUF_VOLUMES			; адрес таблицы найденных разделов
 		ADD HL,DE
 		LD A,(HL)
 		CP _SD_SDZ
@@ -846,7 +846,7 @@ FIND_MOUNTED	LD A,(DEVMAN_VARS.KOLDVOL)
 		LD H,CMOS.BYTE_01
 	ROMCALL READCMOS,ROM_RST82
 		LD A,L
-		AND CMOS_EC.M_AUTOMOUNT				; определение нужно ли искать файл IMAGE.MNT
+		AND CMOS_EC.M_AUTOMOUNT			; определение нужно ли искать файл IMAGE.MNT
 		JP Z,.L01
 ; ищем файл IMAGE.MNT для автомонтирования
 		LD IYL,INTERNAL
@@ -856,7 +856,7 @@ FIND_MOUNTED	LD A,(DEVMAN_VARS.KOLDVOL)
 		LD HL,(FATVAR.RootDIRCluster)
 		LD (FATVAR.CurrentDIRCluster),HL
 		LD HL,(FATVAR.RootDIRCluster + 2)
-		LD (FATVAR.CurrentDIRCluster + 2),HL		; выбрали корневой каталог выбранного устройства
+		LD (FATVAR.CurrentDIRCluster + 2),HL	; выбрали корневой каталог выбранного устройства
 		CALL INIRTSC				; инициализировали его переменные на ROOTDIR
 		LD HL,TXT_MOUNTER
 		LD DE,BUF_MOVE256;BUF_256
@@ -871,18 +871,18 @@ FIND_MOUNTED	LD A,(DEVMAN_VARS.KOLDVOL)
 		LD A,(HL)
 		DEC HL
 		OR (HL)
-		JP NZ,.L01			; файл не должен быть более 512 байт
+		JP NZ,.L01				; файл не должен быть более 512 байт
 		DEC HL
 		LD A,(HL)
 		CP 2
-		JP NC,.L01			; файл не должен быть более 512 байт
+		JP NC,.L01				; файл не должен быть более 512 байт
 		LD A,1					; читать будем 1 сектор из найденного файла
 		LD B,(HL)
 		DEC HL
 		LD C,(HL)				; взяли длину файла в байтах
 		PUSH BC					; сохранили для дальнейшего использования
 		LD IYL,INTERNAL
-		LD HL,OFFSET_BUFSYM+CPU2
+		LD HL,BUF_512				; буфер куда сектор грузим
 		PUSH HL
 		CALL READ_FILE				; прочитали 1 сектор из файла
 	EVOPORT WIN_P1,RAM_MOUNTER
@@ -1135,11 +1135,6 @@ REST_NAMELOAD	LD HL,NAME_RAMDISK-CPU2
 		LD DE,(RREG_L)
 		LD BC,0x20
 		JP LDIR_BYTES
-
-;STOR_NAMELOAD	LD HL,(RREG_L)
-;		LD DE,NAME_RAMDISK-CPU2
-;		LD BC,0x20
-;		JP LDIR_BYTES
 
 GET_MOUNTED
 	EVOPORT WIN_P1,RAM_MOUNTER

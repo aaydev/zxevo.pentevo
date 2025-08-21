@@ -1,5 +1,5 @@
 
-; LAST UPDATE: 15.02.2025 savelij
+; LAST UPDATE: 28.03.2025 savelij
 
 ; описатель окна (адрес в IX)
 ; +00 X координата
@@ -79,7 +79,7 @@ MAIN_MENU
 		DW SETUP
 		DW FILE_BROWSER
 	IF BUILD_DEBUG=1
-		DW DEBUGGER
+		DW NMI_DEBUG
 	ENDIF
 .EMAINMENU1
 
