@@ -1,0 +1,104 @@
+(footprint "LED100_LED(Primary)"
+	(version 20240108)
+	(generator "pcbnew")
+	(generator_version "8.0")
+	(layer "F.Cu")
+	(property "Reference" "REF**"
+		(at -0.57954 -2.238368 0)
+		(unlocked yes)
+		(layer "F.SilkS")
+		(uuid "405f584a-2055-4627-96e3-8d38216503e9")
+		(effects
+			(font
+				(size 1.75666 1.75666)
+				(thickness 0.254)
+			)
+		)
+	)
+	(property "Value" "green"
+		(at 4.13099 -1.45588 90)
+		(unlocked yes)
+		(layer "F.SilkS")
+		(uuid "9060fce7-c0d1-4d2c-ae83-020569139ce3")
+		(effects
+			(font
+				(size 1.9304 1.9304)
+				(thickness 0.254)
+			)
+		)
+	)
+	(property "Footprint" ""
+		(at 0 0 0)
+		(layer "F.Fab")
+		(hide yes)
+		(uuid "e432de9d-535e-46dd-9698-cc6711867fd1")
+		(effects
+			(font
+				(size 1.27 1.27)
+				(thickness 0.15)
+			)
+		)
+	)
+	(property "Datasheet" ""
+		(at 0 0 0)
+		(layer "F.Fab")
+		(hide yes)
+		(uuid "881dd5f2-daf1-4fa1-bbbe-5429d9086f4e")
+		(effects
+			(font
+				(size 1.27 1.27)
+				(thickness 0.15)
+			)
+		)
+	)
+	(property "Description" ""
+		(at 0 0 0)
+		(layer "F.Fab")
+		(hide yes)
+		(uuid "fbaf5d74-b99f-4497-993e-8165b35083f0")
+		(effects
+			(font
+				(size 1.27 1.27)
+				(thickness 0.15)
+			)
+		)
+	)
+	(fp_line
+		(start 1.905 -1.27)
+		(end -1.905 -1.27)
+		(stroke
+			(width 0.254)
+			(type solid)
+		)
+		(layer "F.SilkS")
+		(uuid "ca4983ca-e223-4e2e-aff9-ef599d6d4cc0")
+	)
+	(fp_arc
+		(start 1.910761 -1.265669)
+		(mid 0 4.445)
+		(end -1.91076 -1.265669)
+		(stroke
+			(width 0.254)
+			(type solid)
+		)
+		(layer "F.SilkS")
+		(uuid "68ec9bb4-d7b5-42d9-8da6-755864287d8c")
+	)
+	(pad "A" thru_hole rect
+		(at 0 2.54)
+		(size 1.5 1.5)
+		(drill 0.9)
+		(layers "*.Cu" "*.Mask")
+		(remove_unused_layers no)
+		(uuid "ef42797d-82b1-4f61-bda7-c2b34388abf5")
+	)
+	(pad "K" thru_hole circle
+		(at 0 0)
+		(size 1.5 1.5)
+		(drill 0.9)
+		(layers "*.Cu" "*.Mask")
+		(remove_unused_layers no)
+		(thermal_bridge_angle 90)
+		(uuid "9418fe01-4afc-4616-a249-a4b8be0bafce")
+	)
+)
