@@ -2095,6 +2095,196 @@
 				)
 			)
 		)
+		(symbol "Transistor_BJT:BC857"
+			(pin_names
+				(offset 0) hide)
+			(exclude_from_sim no)
+			(in_bom yes)
+			(on_board yes)
+			(property "Reference" "Q"
+				(at 5.08 1.905 0)
+				(effects
+					(font
+						(size 1.27 1.27)
+					)
+					(justify left)
+				)
+			)
+			(property "Value" "BC857"
+				(at 5.08 0 0)
+				(effects
+					(font
+						(size 1.27 1.27)
+					)
+					(justify left)
+				)
+			)
+			(property "Footprint" "Package_TO_SOT_SMD:SOT-23"
+				(at 5.08 -1.905 0)
+				(effects
+					(font
+						(size 1.27 1.27)
+						(italic yes)
+					)
+					(justify left)
+					(hide yes)
+				)
+			)
+			(property "Datasheet" "https://www.onsemi.com/pub/Collateral/BC860-D.pdf"
+				(at 0 0 0)
+				(effects
+					(font
+						(size 1.27 1.27)
+					)
+					(justify left)
+					(hide yes)
+				)
+			)
+			(property "Description" "0.1A Ic, 45V Vce, PNP Transistor, SOT-23"
+				(at 0 0 0)
+				(effects
+					(font
+						(size 1.27 1.27)
+					)
+					(hide yes)
+				)
+			)
+			(property "ki_keywords" "PNP transistor"
+				(at 0 0 0)
+				(effects
+					(font
+						(size 1.27 1.27)
+					)
+					(hide yes)
+				)
+			)
+			(property "ki_fp_filters" "SOT?23*"
+				(at 0 0 0)
+				(effects
+					(font
+						(size 1.27 1.27)
+					)
+					(hide yes)
+				)
+			)
+			(symbol "BC857_0_1"
+				(polyline
+					(pts
+						(xy 0.635 0.635) (xy 2.54 2.54)
+					)
+					(stroke
+						(width 0)
+						(type default)
+					)
+					(fill
+						(type none)
+					)
+				)
+				(polyline
+					(pts
+						(xy 0.635 -0.635) (xy 2.54 -2.54) (xy 2.54 -2.54)
+					)
+					(stroke
+						(width 0)
+						(type default)
+					)
+					(fill
+						(type none)
+					)
+				)
+				(polyline
+					(pts
+						(xy 0.635 1.905) (xy 0.635 -1.905) (xy 0.635 -1.905)
+					)
+					(stroke
+						(width 0.508)
+						(type default)
+					)
+					(fill
+						(type none)
+					)
+				)
+				(polyline
+					(pts
+						(xy 2.286 -1.778) (xy 1.778 -2.286) (xy 1.27 -1.27) (xy 2.286 -1.778) (xy 2.286 -1.778)
+					)
+					(stroke
+						(width 0)
+						(type default)
+					)
+					(fill
+						(type outline)
+					)
+				)
+				(circle
+					(center 1.27 0)
+					(radius 2.8194)
+					(stroke
+						(width 0.254)
+						(type default)
+					)
+					(fill
+						(type none)
+					)
+				)
+			)
+			(symbol "BC857_1_1"
+				(pin input line
+					(at -5.08 0 0)
+					(length 5.715)
+					(name "B"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+					(number "1"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+				)
+				(pin passive line
+					(at 2.54 -5.08 90)
+					(length 2.54)
+					(name "E"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+					(number "2"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+				)
+				(pin passive line
+					(at 2.54 5.08 270)
+					(length 2.54)
+					(name "C"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+					(number "3"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+				)
+			)
+		)
 		(symbol "eva-altium-import:MSM5118160F-TS-K"
 			(exclude_from_sim no)
 			(in_bom yes)
@@ -21438,208 +21628,6 @@
 				)
 			)
 		)
-		(symbol "eva-altium-import:Sheet1_0_mirrored_LED"
-			(exclude_from_sim no)
-			(in_bom yes)
-			(on_board yes)
-			(property "Reference" ""
-				(at 0 0 0)
-				(effects
-					(font
-						(size 1.27 1.27)
-					)
-				)
-			)
-			(property "Value" ""
-				(at 0 0 0)
-				(effects
-					(font
-						(size 1.27 1.27)
-					)
-				)
-			)
-			(property "Footprint" ""
-				(at 0 0 0)
-				(effects
-					(font
-						(size 1.27 1.27)
-					)
-					(hide yes)
-				)
-			)
-			(property "Datasheet" ""
-				(at 0 0 0)
-				(effects
-					(font
-						(size 1.27 1.27)
-					)
-					(hide yes)
-				)
-			)
-			(property "Description" "Light Emitting Diode"
-				(at 0 0 0)
-				(effects
-					(font
-						(size 1.27 1.27)
-					)
-					(hide yes)
-				)
-			)
-			(property "ki_fp_filters" "*LED100*"
-				(at 0 0 0)
-				(effects
-					(font
-						(size 1.27 1.27)
-					)
-					(hide yes)
-				)
-			)
-			(symbol "Sheet1_0_mirrored_LED_1_0"
-				(circle
-					(center -5.08 0)
-					(radius 3.175)
-					(stroke
-						(width 0.254)
-						(type solid)
-					)
-					(fill
-						(type none)
-					)
-				)
-				(polyline
-					(pts
-						(xy -8.255 2.21) (xy -9.83 3.81)
-					)
-					(stroke
-						(width 0.254)
-						(type solid)
-					)
-					(fill
-						(type none)
-					)
-				)
-				(polyline
-					(pts
-						(xy -7.29 3.175) (xy -8.89 4.75)
-					)
-					(stroke
-						(width 0.254)
-						(type solid)
-					)
-					(fill
-						(type none)
-					)
-				)
-				(polyline
-					(pts
-						(xy -6.655 -1.905) (xy -6.655 1.905)
-					)
-					(stroke
-						(width 0.254)
-						(type solid)
-					)
-					(fill
-						(type none)
-					)
-				)
-				(polyline
-					(pts
-						(xy -6.655 0) (xy -7.62 0)
-					)
-					(stroke
-						(width 0.254)
-						(type solid)
-					)
-					(fill
-						(type none)
-					)
-				)
-				(polyline
-					(pts
-						(xy -2.54 0) (xy -3.48 0)
-					)
-					(stroke
-						(width 0.254)
-						(type solid)
-					)
-					(fill
-						(type none)
-					)
-				)
-				(polyline
-					(pts
-						(xy -9.195 3.48) (xy -9.525 3.175) (xy -9.83 3.81) (xy -9.195 3.48)
-					)
-					(stroke
-						(width -0.0001)
-						(type solid)
-					)
-					(fill
-						(type outline)
-					)
-				)
-				(polyline
-					(pts
-						(xy -8.255 4.445) (xy -8.56 4.115) (xy -8.89 4.75) (xy -8.255 4.445)
-					)
-					(stroke
-						(width -0.0001)
-						(type solid)
-					)
-					(fill
-						(type outline)
-					)
-				)
-				(polyline
-					(pts
-						(xy -6.655 0) (xy -3.48 1.905) (xy -3.48 -1.905) (xy -6.655 0)
-					)
-					(stroke
-						(width -0.0001)
-						(type solid)
-					)
-					(fill
-						(type outline)
-					)
-				)
-				(pin passive line
-					(at 0 0 180)
-					(length 2.54)
-					(name "A"
-						(effects
-							(font
-								(size 0 0)
-							)
-						)
-					)
-					(number "A"
-						(effects
-							(font
-								(size 0 0)
-							)
-						)
-					)
-				)
-				(pin passive line
-					(at -10.16 0 0)
-					(length 2.54)
-					(name "K"
-						(effects
-							(font
-								(size 0 0)
-							)
-						)
-					)
-					(number "K"
-						(effects
-							(font
-								(size 0 0)
-							)
-						)
-					)
-				)
-			)
-		)
 		(symbol "eva-altium-import:Sheet1_0_mirrored_RESCHIP"
 			(exclude_from_sim no)
 			(in_bom yes)
@@ -24413,12 +24401,6 @@
 		(uuid "9a939b8b-2727-4544-a1da-701399f49f51")
 	)
 	(junction
-		(at 505.46 323.85)
-		(diameter 0)
-		(color 0 0 0 0)
-		(uuid "a01b1196-c7fc-4bde-98a2-af6a5e253b55")
-	)
-	(junction
 		(at 187.96 271.78)
 		(diameter 0)
 		(color 0 0 0 0)
@@ -26321,16 +26303,6 @@
 	)
 	(wire
 		(pts
-			(xy 518.16 332.74) (xy 515.62 332.74)
-		)
-		(stroke
-			(width 0)
-			(type default)
-		)
-		(uuid "27873b7d-d63c-4de7-8cc2-005b8ce38a00")
-	)
-	(wire
-		(pts
 			(xy 34.29 327.66) (xy 38.1 327.66)
 		)
 		(stroke
@@ -26532,6 +26504,16 @@
 	)
 	(wire
 		(pts
+			(xy 505.46 323.85) (xy 505.46 332.74)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "2d946206-4733-4e9c-89de-e6316582e924")
+	)
+	(wire
+		(pts
 			(xy 177.8 167.64) (xy 175.26 167.64)
 		)
 		(stroke
@@ -26663,7 +26645,7 @@
 	)
 	(polyline
 		(pts
-			(xy 528.955 344.17) (xy 528.955 226.06)
+			(xy 528.955 365.76) (xy 528.955 226.06)
 		)
 		(stroke
 			(width 0.254)
@@ -26711,16 +26693,6 @@
 			(type default)
 		)
 		(uuid "345bafb3-b547-4cc0-a59e-daa8b235f9d1")
-	)
-	(wire
-		(pts
-			(xy 502.92 323.85) (xy 505.46 323.85)
-		)
-		(stroke
-			(width 0)
-			(type default)
-		)
-		(uuid "347dbd89-d590-47d7-a3f6-53f5c981bc9a")
 	)
 	(wire
 		(pts
@@ -28105,6 +28077,16 @@
 		)
 		(uuid "691dd431-91e8-48e2-a015-b782070fb77c")
 	)
+	(wire
+		(pts
+			(xy 450.85 48.26) (xy 453.39 48.26)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "696f8a06-c700-4095-89f2-1a5081f98ceb")
+	)
 	(polyline
 		(pts
 			(xy 522.975 398.475) (xy 522.975 385.975)
@@ -28702,6 +28684,16 @@
 	)
 	(wire
 		(pts
+			(xy 518.16 327.66) (xy 520.7 327.66)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "7d7bbd35-7e17-40e4-b0a6-c23ff5bab37a")
+	)
+	(wire
+		(pts
 			(xy 134.62 243.84) (xy 137.16 243.84)
 		)
 		(stroke
@@ -28733,7 +28725,7 @@
 	)
 	(polyline
 		(pts
-			(xy 394.97 344.17) (xy 528.955 344.17)
+			(xy 394.97 365.76) (xy 528.955 365.76)
 		)
 		(stroke
 			(width 0.254)
@@ -29245,7 +29237,7 @@
 	)
 	(polyline
 		(pts
-			(xy 394.97 226.06) (xy 394.97 344.17)
+			(xy 394.97 226.06) (xy 394.97 365.76)
 		)
 		(stroke
 			(width 0.254)
@@ -30825,16 +30817,6 @@
 	)
 	(wire
 		(pts
-			(xy 505.46 323.85) (xy 505.46 332.74)
-		)
-		(stroke
-			(width 0)
-			(type default)
-		)
-		(uuid "c3af8129-cea4-4cf1-a181-f568cac4c928")
-	)
-	(wire
-		(pts
 			(xy 71.12 340.36) (xy 73.66 340.36)
 		)
 		(stroke
@@ -31654,6 +31636,16 @@
 	)
 	(wire
 		(pts
+			(xy 513.08 332.74) (xy 505.46 332.74)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "dc5ea9f2-347f-464a-bd46-8752f78b0dce")
+	)
+	(wire
+		(pts
 			(xy 30.48 62.23) (xy 27.94 62.23)
 		)
 		(stroke
@@ -32457,16 +32449,6 @@
 			(type default)
 		)
 		(uuid "f49f1454-cf90-40a7-9335-b4262966f69a")
-	)
-	(wire
-		(pts
-			(xy 518.16 341.63) (xy 518.16 332.74)
-		)
-		(stroke
-			(width 0)
-			(type default)
-		)
-		(uuid "f4d49b70-888b-4438-8dbf-f0f750f7902f")
 	)
 	(wire
 		(pts
@@ -38333,6 +38315,28 @@
 			)
 		)
 	)
+	(global_label "~{DISK_LED}"
+		(shape output)
+		(at 518.16 327.66 180)
+		(fields_autoplaced yes)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify right)
+		)
+		(uuid "41e247df-b7fa-483a-a233-14c423756dd8")
+		(property "Intersheetrefs" "${INTERSHEET_REFS}"
+			(at 506.4058 327.66 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify right)
+				(hide yes)
+			)
+		)
+	)
 	(global_label "~{VG_RES}"
 		(shape input)
 		(at 400.05 165.1 180)
@@ -39292,6 +39296,28 @@
 		(uuid "4e94a3e9-ec23-4164-b24e-172cf723ac99")
 		(property "Intersheetrefs" "${INTERSHEET_REFS}"
 			(at 23.1405 243.84 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify right)
+				(hide yes)
+			)
+		)
+	)
+	(global_label "~{DISK_LED}"
+		(shape output)
+		(at 450.85 48.26 180)
+		(fields_autoplaced yes)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify right)
+		)
+		(uuid "4ebdb564-eeb6-49a4-b05b-5d7ac4783ccb")
+		(property "Intersheetrefs" "${INTERSHEET_REFS}"
+			(at 439.0958 48.26 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -40304,6 +40330,28 @@
 		(uuid "5ccb74bc-a5b1-4909-b1de-72adb5b7e969")
 		(property "Intersheetrefs" "${INTERSHEET_REFS}"
 			(at 23.9872 157.48 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify right)
+				(hide yes)
+			)
+		)
+	)
+	(global_label "~{SDCS}"
+		(shape input)
+		(at 445.77 53.34 180)
+		(fields_autoplaced yes)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify right)
+		)
+		(uuid "5d4cb37e-76c5-4fe5-beac-625f02a3ae5c")
+		(property "Intersheetrefs" "${INTERSHEET_REFS}"
+			(at 437.8258 53.34 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -45324,28 +45372,6 @@
 					(size 1.27 1.27)
 				)
 				(justify left)
-				(hide yes)
-			)
-		)
-	)
-	(global_label "ILED"
-		(shape output)
-		(at 502.92 323.85 180)
-		(fields_autoplaced yes)
-		(effects
-			(font
-				(size 1.27 1.27)
-			)
-			(justify right)
-		)
-		(uuid "a012ca8b-a6b4-428e-bf0d-e3fff472ad9f")
-		(property "Intersheetrefs" "${INTERSHEET_REFS}"
-			(at 495.8829 323.85 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(justify right)
 				(hide yes)
 			)
 		)
@@ -52500,28 +52526,6 @@
 			)
 		)
 	)
-	(global_label "VCC5"
-		(shape passive)
-		(at 505.46 341.63 180)
-		(fields_autoplaced yes)
-		(effects
-			(font
-				(size 1.27 1.27)
-			)
-			(justify right)
-		)
-		(uuid "fd3bad38-9d87-4a97-b006-ed0efefb1678")
-		(property "Intersheetrefs" "${INTERSHEET_REFS}"
-			(at 498.748 341.63 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(justify right)
-				(hide yes)
-			)
-		)
-	)
 	(global_label "VCC3V3"
 		(shape passive)
 		(at 175.26 111.76 0)
@@ -55501,6 +55505,74 @@
 		)
 	)
 	(symbol
+		(lib_id "power:GND")
+		(at 453.39 58.42 0)
+		(mirror y)
+		(unit 1)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(dnp no)
+		(fields_autoplaced yes)
+		(uuid "25b274be-6936-4d51-9de7-76ed2e6670d3")
+		(property "Reference" "#PWR75"
+			(at 453.39 64.77 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Value" "GND"
+			(at 453.39 63.5 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Footprint" ""
+			(at 453.39 58.42 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Datasheet" ""
+			(at 453.39 58.42 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Description" "Power symbol creates a global label with name \"GND\" , ground"
+			(at 453.39 58.42 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(pin "1"
+			(uuid "1e618841-1b3f-4ce9-bd15-05bdc9019e1b")
+		)
+		(instances
+			(project "eva"
+				(path "/ab605654-a730-497b-9e09-9b351f74b935/df95af23-acf0-4751-87c3-fbc71e0508c6"
+					(reference "#PWR75")
+					(unit 1)
+				)
+			)
+		)
+	)
+	(symbol
 		(lib_id "eva-altium-import:Sheet1_3_CAPCHIP")
 		(at 118.11 368.3 0)
 		(unit 1)
@@ -57296,6 +57368,82 @@
 			(project ""
 				(path "/ab605654-a730-497b-9e09-9b351f74b935/df95af23-acf0-4751-87c3-fbc71e0508c6"
 					(reference "C99")
+					(unit 1)
+				)
+			)
+		)
+	)
+	(symbol
+		(lib_id "Transistor_BJT:BC857")
+		(at 518.16 332.74 0)
+		(mirror x)
+		(unit 1)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(dnp no)
+		(uuid "4771b707-e48f-45b6-bf2e-1044fab98d4b")
+		(property "Reference" "VT9"
+			(at 511.81 330.454 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left)
+			)
+		)
+		(property "Value" "BC857"
+			(at 510.032 334.264 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left)
+			)
+		)
+		(property "Footprint" "Package_TO_SOT_SMD:SOT-23_Handsoldering"
+			(at 523.24 330.835 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+					(italic yes)
+				)
+				(justify left)
+				(hide yes)
+			)
+		)
+		(property "Datasheet" "https://www.onsemi.com/pub/Collateral/BC860-D.pdf"
+			(at 518.16 332.74 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left)
+				(hide yes)
+			)
+		)
+		(property "Description" "0.1A Ic, 45V Vce, PNP Transistor, SOT-23"
+			(at 518.16 332.74 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(pin "1"
+			(uuid "12a476d4-f9f5-403d-a136-72af7a6f2cc1")
+		)
+		(pin "2"
+			(uuid "a48418f9-ec65-4314-a5e5-a5f294c6e947")
+		)
+		(pin "3"
+			(uuid "26c31e84-e068-433f-bdfa-32e5a7aa133e")
+		)
+		(instances
+			(project "eva"
+				(path "/ab605654-a730-497b-9e09-9b351f74b935/df95af23-acf0-4751-87c3-fbc71e0508c6"
+					(reference "VT9")
 					(unit 1)
 				)
 			)
@@ -61043,6 +61191,150 @@
 		)
 	)
 	(symbol
+		(lib_id "Transistor_BJT:BC857")
+		(at 450.85 53.34 0)
+		(mirror x)
+		(unit 1)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(dnp no)
+		(uuid "abac228d-18a2-4e2d-a4b2-371dcafa523e")
+		(property "Reference" "VT10"
+			(at 444.5 51.054 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left)
+			)
+		)
+		(property "Value" "BC857"
+			(at 443.23 56.134 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left)
+			)
+		)
+		(property "Footprint" "Package_TO_SOT_SMD:SOT-23_Handsoldering"
+			(at 455.93 51.435 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+					(italic yes)
+				)
+				(justify left)
+				(hide yes)
+			)
+		)
+		(property "Datasheet" "https://www.onsemi.com/pub/Collateral/BC860-D.pdf"
+			(at 450.85 53.34 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left)
+				(hide yes)
+			)
+		)
+		(property "Description" "0.1A Ic, 45V Vce, PNP Transistor, SOT-23"
+			(at 450.85 53.34 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(pin "1"
+			(uuid "a856b113-cac8-4801-835d-dadd990eb870")
+		)
+		(pin "2"
+			(uuid "4c5199f2-f406-43e1-b3f6-f6258a05f3c8")
+		)
+		(pin "3"
+			(uuid "5aa57afa-6420-46c4-b0aa-53b4ca77cdd7")
+		)
+		(instances
+			(project "eva"
+				(path "/ab605654-a730-497b-9e09-9b351f74b935/df95af23-acf0-4751-87c3-fbc71e0508c6"
+					(reference "VT10")
+					(unit 1)
+				)
+			)
+		)
+	)
+	(symbol
+		(lib_id "power:GND")
+		(at 520.7 337.82 0)
+		(mirror y)
+		(unit 1)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(dnp no)
+		(fields_autoplaced yes)
+		(uuid "ac5cf7ea-be43-45d3-a9de-fe8b7f7a9ca7")
+		(property "Reference" "#PWR74"
+			(at 520.7 344.17 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Value" "GND"
+			(at 520.7 342.9 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Footprint" ""
+			(at 520.7 337.82 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Datasheet" ""
+			(at 520.7 337.82 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Description" "Power symbol creates a global label with name \"GND\" , ground"
+			(at 520.7 337.82 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(pin "1"
+			(uuid "d47d1907-5133-4a62-8be7-d18c35b5f095")
+		)
+		(instances
+			(project "eva"
+				(path "/ab605654-a730-497b-9e09-9b351f74b935/df95af23-acf0-4751-87c3-fbc71e0508c6"
+					(reference "#PWR74")
+					(unit 1)
+				)
+			)
+		)
+	)
+	(symbol
 		(lib_id "power:GND")
 		(at 118.11 405.13 0)
 		(unit 1)
@@ -62315,74 +62607,6 @@
 		)
 	)
 	(symbol
-		(lib_id "eva-altium-import:Sheet1_0_RESCHIP")
-		(at 518.16 341.63 180)
-		(unit 1)
-		(exclude_from_sim no)
-		(in_bom yes)
-		(on_board yes)
-		(dnp no)
-		(uuid "c478ceb6-cc87-4375-9bda-659ba4babf91")
-		(property "Reference" "R19"
-			(at 515.62 341.63 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(justify right bottom)
-			)
-		)
-		(property "Value" "390"
-			(at 511.81 341.63 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
-		(property "Footprint" "R-CHIP"
-			(at 518.16 341.63 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(hide yes)
-			)
-		)
-		(property "Datasheet" ""
-			(at 518.16 341.63 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(hide yes)
-			)
-		)
-		(property "Description" "RESCHIP"
-			(at 518.16 341.63 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(hide yes)
-			)
-		)
-		(pin "1"
-			(uuid "db4f44b3-bb04-4877-ac72-d4e0f20defcf")
-		)
-		(pin "2"
-			(uuid "ac70d62c-8cea-4052-b6ee-4d914c2bf18c")
-		)
-		(instances
-			(project ""
-				(path "/ab605654-a730-497b-9e09-9b351f74b935/df95af23-acf0-4751-87c3-fbc71e0508c6"
-					(reference "R19")
-					(unit 1)
-				)
-			)
-		)
-	)
-	(symbol
 		(lib_id "eva-altium-import:Sheet1_3_CAPCHIP")
 		(at 181.61 368.3 0)
 		(unit 1)
@@ -63610,95 +63834,6 @@
 			(project ""
 				(path "/ab605654-a730-497b-9e09-9b351f74b935/df95af23-acf0-4751-87c3-fbc71e0508c6"
 					(reference "R10")
-					(unit 1)
-				)
-			)
-		)
-	)
-	(symbol
-		(lib_id "eva-altium-import:Sheet1_0_mirrored_LED")
-		(at 515.62 332.74 0)
-		(unit 1)
-		(exclude_from_sim no)
-		(in_bom yes)
-		(on_board yes)
-		(dnp no)
-		(uuid "dade1010-e9bb-457d-a34a-049b8571a14b")
-		(property "Reference" "VD3"
-			(at 508.965 329.032 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(justify left bottom)
-			)
-		)
-		(property "Value" "LED"
-			(at 510.54 340.462 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(justify top)
-				(hide yes)
-			)
-		)
-		(property "Footprint" "LED100"
-			(at 515.62 332.74 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(hide yes)
-			)
-		)
-		(property "Datasheet" ""
-			(at 515.62 332.74 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(hide yes)
-			)
-		)
-		(property "Description" "Light Emitting Diode"
-			(at 515.62 332.74 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(hide yes)
-			)
-		)
-		(property "ALTIUM_VALUE" "red"
-			(at 510.54 336.652 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(justify top)
-			)
-		)
-		(property "DESCRIPTION" "Light Emitting Diode"
-			(at 505.155 320.472 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(justify left bottom)
-				(hide yes)
-			)
-		)
-		(pin "A"
-			(uuid "7e0f7bb1-f812-462d-99bb-95da34354cc8")
-		)
-		(pin "K"
-			(uuid "0cbd235a-2644-410b-836b-d2c9f5b5fbd5")
-		)
-		(instances
-			(project ""
-				(path "/ab605654-a730-497b-9e09-9b351f74b935/df95af23-acf0-4751-87c3-fbc71e0508c6"
-					(reference "VD3")
 					(unit 1)
 				)
 			)
