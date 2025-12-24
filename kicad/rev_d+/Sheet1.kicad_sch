@@ -42362,6 +42362,28 @@
 			)
 		)
 	)
+	(global_label "VCC3V3"
+		(shape passive)
+		(at 307.34 55.88 180)
+		(fields_autoplaced yes)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify right)
+		)
+		(uuid "76d9ce43-93fd-4f10-80c0-1bbdc428373c")
+		(property "Intersheetrefs" "${INTERSHEET_REFS}"
+			(at 298.3299 55.88 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify right)
+				(hide yes)
+			)
+		)
+	)
 	(global_label "A9"
 		(shape bidirectional)
 		(at 69.85 279.4 180)
@@ -42551,28 +42573,6 @@
 		(uuid "7908ee38-695a-49b9-8cb7-8ab81721f036")
 		(property "Intersheetrefs" "${INTERSHEET_REFS}"
 			(at 29.8156 246.38 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(justify right)
-				(hide yes)
-			)
-		)
-	)
-	(global_label "VCC5"
-		(shape passive)
-		(at 307.34 55.88 180)
-		(fields_autoplaced yes)
-		(effects
-			(font
-				(size 1.27 1.27)
-			)
-			(justify right)
-		)
-		(uuid "797c2e2b-a1f2-4c62-ab8c-1f9478db96c9")
-		(property "Intersheetrefs" "${INTERSHEET_REFS}"
-			(at 300.628 55.88 0)
 			(effects
 				(font
 					(size 1.27 1.27)
