@@ -57374,82 +57374,6 @@
 		)
 	)
 	(symbol
-		(lib_id "Transistor_BJT:BC857")
-		(at 518.16 332.74 0)
-		(mirror x)
-		(unit 1)
-		(exclude_from_sim no)
-		(in_bom yes)
-		(on_board yes)
-		(dnp no)
-		(uuid "4771b707-e48f-45b6-bf2e-1044fab98d4b")
-		(property "Reference" "VT9"
-			(at 511.81 330.454 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(justify left)
-			)
-		)
-		(property "Value" "BC857"
-			(at 510.032 334.264 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(justify left)
-			)
-		)
-		(property "Footprint" "Package_TO_SOT_SMD:SOT-23_Handsoldering"
-			(at 523.24 330.835 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-					(italic yes)
-				)
-				(justify left)
-				(hide yes)
-			)
-		)
-		(property "Datasheet" "https://www.onsemi.com/pub/Collateral/BC860-D.pdf"
-			(at 518.16 332.74 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(justify left)
-				(hide yes)
-			)
-		)
-		(property "Description" "0.1A Ic, 45V Vce, PNP Transistor, SOT-23"
-			(at 518.16 332.74 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(hide yes)
-			)
-		)
-		(pin "1"
-			(uuid "12a476d4-f9f5-403d-a136-72af7a6f2cc1")
-		)
-		(pin "2"
-			(uuid "a48418f9-ec65-4314-a5e5-a5f294c6e947")
-		)
-		(pin "3"
-			(uuid "26c31e84-e068-433f-bdfa-32e5a7aa133e")
-		)
-		(instances
-			(project "eva"
-				(path "/ab605654-a730-497b-9e09-9b351f74b935/df95af23-acf0-4751-87c3-fbc71e0508c6"
-					(reference "VT9")
-					(unit 1)
-				)
-			)
-		)
-	)
-	(symbol
 		(lib_id "eva-altium-import:Sheet1_0_mirrored_04")
 		(at 147.32 59.69 0)
 		(unit 2)
@@ -57628,6 +57552,82 @@
 			(project ""
 				(path "/ab605654-a730-497b-9e09-9b351f74b935/df95af23-acf0-4751-87c3-fbc71e0508c6"
 					(reference "R66")
+					(unit 1)
+				)
+			)
+		)
+	)
+	(symbol
+		(lib_id "Transistor_BJT:BC857")
+		(at 450.85 53.34 0)
+		(mirror x)
+		(unit 1)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(dnp no)
+		(uuid "4de200e4-c5b7-47bb-acb9-4600f10b0984")
+		(property "Reference" "VT7"
+			(at 444.5 51.054 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left)
+			)
+		)
+		(property "Value" "BC857"
+			(at 443.23 56.134 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left)
+			)
+		)
+		(property "Footprint" "Package_TO_SOT_SMD:SOT-23_Handsoldering"
+			(at 455.93 51.435 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+					(italic yes)
+				)
+				(justify left)
+				(hide yes)
+			)
+		)
+		(property "Datasheet" "https://www.onsemi.com/pub/Collateral/BC860-D.pdf"
+			(at 450.85 53.34 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left)
+				(hide yes)
+			)
+		)
+		(property "Description" "0.1A Ic, 45V Vce, PNP Transistor, SOT-23"
+			(at 450.85 53.34 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(pin "1"
+			(uuid "1cacf7e9-d2cf-41f5-83a7-9f7913327de9")
+		)
+		(pin "2"
+			(uuid "d14a2aee-fd2e-4e20-9f34-63955dc571f3")
+		)
+		(pin "3"
+			(uuid "175cac66-d74f-4e69-b387-80f06950d447")
+		)
+		(instances
+			(project "eva"
+				(path "/ab605654-a730-497b-9e09-9b351f74b935/df95af23-acf0-4751-87c3-fbc71e0508c6"
+					(reference "VT7")
 					(unit 1)
 				)
 			)
@@ -60931,6 +60931,82 @@
 		)
 	)
 	(symbol
+		(lib_id "Transistor_BJT:BC857")
+		(at 518.16 332.74 0)
+		(mirror x)
+		(unit 1)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(dnp no)
+		(uuid "a70bc785-b81f-412a-bee6-a994881f1d7f")
+		(property "Reference" "VT6"
+			(at 511.81 330.454 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left)
+			)
+		)
+		(property "Value" "BC857"
+			(at 510.032 334.264 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left)
+			)
+		)
+		(property "Footprint" "Package_TO_SOT_SMD:SOT-23_Handsoldering"
+			(at 523.24 330.835 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+					(italic yes)
+				)
+				(justify left)
+				(hide yes)
+			)
+		)
+		(property "Datasheet" "https://www.onsemi.com/pub/Collateral/BC860-D.pdf"
+			(at 518.16 332.74 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left)
+				(hide yes)
+			)
+		)
+		(property "Description" "0.1A Ic, 45V Vce, PNP Transistor, SOT-23"
+			(at 518.16 332.74 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(pin "1"
+			(uuid "a5e70b4f-0b2c-4e01-ad23-1e22ece0e7b3")
+		)
+		(pin "2"
+			(uuid "7cdb37d7-2ed4-4054-b03f-398ed5a9fcbd")
+		)
+		(pin "3"
+			(uuid "30ad22a1-73bf-4984-9795-bb011aba9d23")
+		)
+		(instances
+			(project "eva"
+				(path "/ab605654-a730-497b-9e09-9b351f74b935/df95af23-acf0-4751-87c3-fbc71e0508c6"
+					(reference "VT6")
+					(unit 1)
+				)
+			)
+		)
+	)
+	(symbol
 		(lib_id "eva-altium-import:Sheet1_0_ZXSLOT")
 		(at 73.66 299.72 0)
 		(unit 2)
@@ -61186,82 +61262,6 @@
 				(path "/ab605654-a730-497b-9e09-9b351f74b935/df95af23-acf0-4751-87c3-fbc71e0508c6"
 					(reference "XS2")
 					(unit 2)
-				)
-			)
-		)
-	)
-	(symbol
-		(lib_id "Transistor_BJT:BC857")
-		(at 450.85 53.34 0)
-		(mirror x)
-		(unit 1)
-		(exclude_from_sim no)
-		(in_bom yes)
-		(on_board yes)
-		(dnp no)
-		(uuid "abac228d-18a2-4e2d-a4b2-371dcafa523e")
-		(property "Reference" "VT10"
-			(at 444.5 51.054 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(justify left)
-			)
-		)
-		(property "Value" "BC857"
-			(at 443.23 56.134 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(justify left)
-			)
-		)
-		(property "Footprint" "Package_TO_SOT_SMD:SOT-23_Handsoldering"
-			(at 455.93 51.435 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-					(italic yes)
-				)
-				(justify left)
-				(hide yes)
-			)
-		)
-		(property "Datasheet" "https://www.onsemi.com/pub/Collateral/BC860-D.pdf"
-			(at 450.85 53.34 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(justify left)
-				(hide yes)
-			)
-		)
-		(property "Description" "0.1A Ic, 45V Vce, PNP Transistor, SOT-23"
-			(at 450.85 53.34 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(hide yes)
-			)
-		)
-		(pin "1"
-			(uuid "a856b113-cac8-4801-835d-dadd990eb870")
-		)
-		(pin "2"
-			(uuid "4c5199f2-f406-43e1-b3f6-f6258a05f3c8")
-		)
-		(pin "3"
-			(uuid "5aa57afa-6420-46c4-b0aa-53b4ca77cdd7")
-		)
-		(instances
-			(project "eva"
-				(path "/ab605654-a730-497b-9e09-9b351f74b935/df95af23-acf0-4751-87c3-fbc71e0508c6"
-					(reference "VT10")
-					(unit 1)
 				)
 			)
 		)
