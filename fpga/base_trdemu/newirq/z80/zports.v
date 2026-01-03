@@ -161,8 +161,25 @@ module zports(
 
 	// break enable & address
 	output reg         brk_ena,
-	output reg  [15:0] brk_addr
+	output reg  [15:0] brk_addr,
 
+	// irq control
+	output reg         irq_enh,
+	output reg         irq_ena_int_vec,
+	output reg         irq_ena_ext_vec,
+	output reg         irq_int_autoclr,
+	//
+	input  wire [ 6:0] irq_stat_rd,
+	//
+	output wire        irq_stat_setnrst,
+	output wire [ 6:0] irq_stat_wr_sel,
+	output wire        irq_stat_wr_stb,
+	//
+	input  wire [ 6:0] irq_ena_rd,
+	//
+	output wire        irq_ena_setnrst,
+	output wire [ 6:0] irq_ena_wr_sel,
+	output wire        irq_ena_wr_stb
 );
 
 
@@ -246,6 +263,11 @@ module zports(
 	localparam BD_WRDISRD  = 5'h12;
 	//
 	localparam BD_FDDMASK  = 5'h13;
+	//
+	// irq control
+	localparam BD_IRQCFG   = 5'h14;
+	localparam BD_IRQENA   = 5'h15;
+	localparam BD_IRQSTAT  = 5'h16;
 
 
 
@@ -323,6 +345,11 @@ module zports(
 
 	reg [7:0] sd_rd_buffer;
 
+
+	// irq related
+	wire [7:0] rd_irq_cfg;
+	wire [7:0] rd_irq_ena;
+	wire [7:0] rd_irq_stat;
 
 
 
@@ -988,6 +1015,9 @@ module zports(
 
 	BD_FDDMASK: portbdmux = { 4'bXXXX, fdd_mask };
 
+	BD_IRQCFG:  portbdmux = rd_irq_cfg ;
+	BD_IRQENA:  portbdmux = rd_irq_ena ;
+	BD_IRQSTAT: portbdmux = rd_irq_stat;
 
 	default: portbdmux = 8'bXXXXXXXX;
 
@@ -1032,6 +1062,38 @@ module zports(
 		up_ena <= din[0];
 	//
 	assign up_paldata = {din[4:2],din[7:5],din[1:0]}; // G3R3B2 to R3G3B2
+
+
+	// irq ports
+	assign rd_irq_cfg  = {irq_emh, 4'd0, irq_ena_ext_vec, irq_ena_int_vec, irq_ena_autoclr};
+	assign rd_irq_ena  = {1'b0, irq_ena_rd};
+	assign rd_irq_stat = (1'b0, irq_stat_rd};
+
+	always @(posedge fclk, negedge rst_n)
+	if( !rst_n )
+	begin
+		irq_enh         <= 1'b0;
+		irq_ena_int_vec <= 1'b0;
+		irq_ena_ext_vec <= 1'b0;
+		irq_int_autoclr <= 1'b0;
+	end
+	else if( zxevbd_wr_fclk && a[12:8]==BD_IRQCFG )
+	begin
+		irq_enh         <= din[7];
+		irq_ena_int_vec <= din[2];
+		irq_ena_ext_vec <= din[1];
+		irq_int_autoclr <= din[0];
+	end
+
+	assign  irq_stat_wr_stb = zxevbd_wr_fclk && a[12:8]==BD_IRQSTAT;
+	assign {irq_stat_setnrst,
+	        irq_stat_wr_sel } = din;
+
+	assign  irq_ena_wr_stb = zxevbd_wr_fclk && a[12:8]==BD_IRQENA;
+	assign {irq_ena_setnrst,
+	        irq_ena_wr_sel } = din;
+
+
 
 endmodule
 
