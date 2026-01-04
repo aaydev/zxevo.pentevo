@@ -9,7 +9,11 @@ void ISA_MODEM::open(int port)
 {
    if (open_port == port)
        return;
+
+   //set init values
    whead = wtail = rhead = rtail = 0;
+   reg[5] = 0x60; //write's buffer is empty
+
    if (hPort && hPort != INVALID_HANDLE_VALUE)
    {
        CloseHandle(hPort);
@@ -45,6 +49,7 @@ void ISA_MODEM::open(int port)
    times.WriteTotalTimeoutMultiplier = 0;
    times.WriteTotalTimeoutConstant = 0;
    SetCommTimeouts(hPort, &times);
+
 
 #if 0
    DCB dcb;
@@ -88,11 +93,22 @@ void ISA_MODEM::io()
 
    DWORD written = 0;
    bool WrReady = false;
+
+   //check writed to port
    if(WaitForSingleObject(OvW.hEvent, 0) == WAIT_OBJECT_0)
    {
        written = ULONG(OvW.InternalHigh);
        OvW.InternalHigh = 0;
+
+       //set new position
        wtail = (wtail+written) & (BSIZE-1);
+
+       if ((written > 0) && (wtail == whead))
+       {
+           //all data transmitted - write's buffer is empty
+           reg[5] |= 0x60;
+       }
+
 /*
        if(written)
        {
@@ -102,11 +118,15 @@ void ISA_MODEM::io()
        WrReady = true;
    }
 
-   int needwrite = int(whead - wtail);
-   if (needwrite < 0)
-       needwrite += BSIZE;
-   if (needwrite && WrReady)
+   //int needwrite = int(whead - wtail);
+   //if (needwrite < 0)
+   //    needwrite += BSIZE;
+   //if (needwrite && WrReady)
+   if (((reg[5] & 0x20) == 0) && WrReady)
    {
+      DWORD needwrite = ((whead - wtail) & (BSIZE - 1));
+      if (needwrite == 0) needwrite = BSIZE;
+
       if (whead > wtail)
           memcpy(tempwr, wbuf+wtail, size_t(needwrite));
       else
@@ -115,7 +135,7 @@ void ISA_MODEM::io()
           memcpy(tempwr+BSIZE-wtail, wbuf, whead);
       }
 
-      if (WriteFile(hPort, tempwr, DWORD(needwrite), &written, &OvW))
+      if (WriteFile(hPort, tempwr, needwrite, &written, &OvW))
       {
       // printf("\nsend: "); dump1(temp, written);
       // printf("writen : %d, %d\n", needwrite, written);
@@ -125,8 +145,8 @@ void ISA_MODEM::io()
       // printf("write pending : %d, %d\n", needwrite, written);
       }
    }
-   if (((whead+1) & (BSIZE-1)) != wtail)
-       reg[5] |= 0x60;
+   //if (((whead+1) & (BSIZE-1)) != wtail)
+   //    reg[5] |= 0x60;
 
    bool RdReady = false;
    DWORD read = 0;
@@ -203,21 +223,37 @@ void ISA_MODEM::write(unsigned nreg, unsigned char value)
 
    if (nreg == 0)
    { // THR, write char to output buffer
-      reg[5] &= ~0x60;
-      if (((whead+1) & (BSIZE-1)) == wtail)
-      {
-/*
-         printf("write to ful FIFO\n");
-         reg[5] |= 2; // Overrun error  (Ошибка, этот бит только на прием, а не на передачу)
-*/
-      }
-      else
-      {
-         wbuf[whead++] = value;
-         whead &= (BSIZE-1);
-         if (((whead+1) & (BSIZE-1)) != wtail)
-             reg[5] |= 0x60; // Transmitter holding register empty | transmitter empty
-      }
+//      reg[5] &= ~0x60;
+//      if (((whead+1) & (BSIZE-1)) == wtail)
+//      {
+///*
+//         printf("write to ful FIFO\n");
+//         reg[5] |= 2; // Overrun error  (Ошибка, этот бит только на прием, а не на передачу)
+//*/
+//      }
+//      else
+//      {
+//         wbuf[whead++] = value;
+//         whead &= (BSIZE-1);
+//         if (((whead+1) & (BSIZE-1)) != wtail)
+//             reg[5] |= 0x60; // Transmitter holding register empty | transmitter empty
+//      }
+       
+       if ((whead != wtail) ||   
+           ((reg[5] & 0x20) != 0))
+       {
+           wbuf[whead] = value;
+           //next position
+           whead = (whead + 1) & (BSIZE - 1);
+
+           //clear fifo empty flag			
+           reg[5] &= ~(0x60);
+       }
+       else
+       {
+           //fifo overload			
+       }
+
       setup_int();
       return;
    }
