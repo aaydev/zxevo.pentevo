@@ -26,18 +26,39 @@
 module zint
 (
 	input  wire fclk,
+	input  wire rst_n,
 
 	input  wire zpos,
 	input  wire zneg,
 
-	input  wire int_start,
+	// irq initiators
+	input  wire vbl_start, // vblank interrupt
+	input  wire tmr_start, // timer interrupt
+	// TODO: more inputs
 
 	input  wire iorq_n,
 	input  wire m1_n,
 
 	input  wire wait_n,
 
-	output reg  int_n
+	output reg  int_n,
+
+	input  wire        irq_enh,
+	input  wire        irq_ena_int_vec,
+	input  wire        irq_ena_ext_vec,
+	input  wire        irq_int_autoclr,
+	//
+	output reg  [ 6:0] irq_stat,
+	//
+	input  wire        irq_stat_setnrst,
+	input  wire [ 6:0] irq_stat_wr_sel,
+	input  wire        irq_stat_wr_stb,
+	//
+	output reg  [ 6:0] irq_ena,
+	//
+	input  wire        irq_ena_setnrst,
+	input  wire [ 6:0] irq_ena_wr_sel,
+	input  wire        irq_ena_wr_stb
 );
 
 	wire intend;
@@ -45,6 +66,12 @@ module zint
 	reg [9:0] intctr;
 
 	reg [1:0] wr;
+
+
+	wire [6:0] irq_act;
+	wire [6:0] irq_autoclr;
+
+
 
 
 `ifdef SIMULATE
@@ -59,7 +86,7 @@ module zint
 
 	always @(posedge fclk)
 	begin
-		if( int_start )
+		if( vbl_start )
 			intctr <= 10'd0;
 		else if( !intctr[9:8] && wr[1] )
 			intctr <= intctr + 10'd1;
@@ -71,13 +98,46 @@ module zint
 
 	always @(posedge fclk)
 	begin
-		if( int_start )
+		if( vbl_start )
 			int_n <= 1'b0;
 		else if( intend )
 			int_n <= 1'bZ;
 	end
 
 
+
+
+
+	// enhanced IRQs control
+
+	// enable
+	always @(posedge fclk, negedge rst_n)
+	if( !rst_n )
+		irq_ena <= 7'd0;
+	else if( !irq_enh )
+		irq_ena <= 7'd0;
+	else if( irq_ena_wr_stb )
+		irq_ena <= (irq_ena & (~irq_ena_wr_sel)) | ({7{irq_ena_setnrst}} & irq_ena_wr_sel);
+
+	// status
+	assign irq_autoclr = 7'd0; // TODO: implement autoclr feature
+	assign irq_act = {5'd0, tmr_start, vbl_start};
+
+	always @(posedge fclk, negedge rst_n)
+	if( !rst_n )
+		irq_stat <= 7'd0;
+	else if( !irq_enh )
+		irq_stat <= 7'd0;
+	else 
+	begin : status_bits
+		integer i;
+		for(i=0;i<7;i=i+1) begin
+			if( irq_act[i] || (irq_ena_wr_stb && irq_ena_setnrst && irq_ena_wr_sel[i]) )
+				irq_stat[i] <= 1'b1;
+			else if( irq_autoclr[i] || (irq_ena_wr_stb && !irq_ena_setnrst && irq_ena_wr_sel[i]) )
+				irq_stat[i] <= 1'b0;
+		end
+	end
 
 
 

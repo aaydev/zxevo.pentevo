@@ -240,6 +240,26 @@ module top(
 
 
 
+	wire        irq_enh;
+	wire        irq_ena_int_vec;
+	wire        irq_ena_ext_vec;
+	wire        irq_int_autoclr;
+
+	wire [ 6:0] irq_stat;
+
+	wire        irq_stat_setnrst;
+	wire [ 6:0] irq_stat_wr_sel;
+	wire        irq_stat_wr_stb;
+
+	wire [ 6:0] irq_ena;
+
+	wire        irq_ena_setnrst;
+	wire [ 6:0] irq_ena_wr_sel;
+	wire        irq_ena_wr_stb;
+
+
+
+
 	assign zclk = clkz_in;
 
 
@@ -428,7 +448,7 @@ module top(
 
 
 
-	wire int_start;
+	wire vbl_start;
 
 
 
@@ -758,7 +778,7 @@ module top(
 		.up_paldata(up_paldata),
 		.up_palwr  (up_palwr  ),
 
-		.int_start(int_start),
+		.vbl_start(vbl_start),
 
 		.fnt_a (a[10:0]),
 		.fnt_d (d      ),
@@ -821,8 +841,6 @@ module top(
 	               .vg_res_n    (vg_res_n    ),
 	               .vg_hrdy     (vg_hrdy     ),
 	               .vg_side     (vg_side     ),
-
-			
 
 	               .idein(idein), .ideout(ideout), .idedataout(idedataout),
 	               .ide_a(ide_a), .ide_cs0_n(ide_cs0_n), .ide_cs1_n(ide_cs1_n),
@@ -899,7 +917,20 @@ module top(
 		.brk_ena (brk_ena ),
 		.brk_addr(brk_addr),
 
-		.fdd_mask(fdd_mask)
+		.fdd_mask(fdd_mask),
+
+		.irq_enh         (irq_enh        ),
+		.irq_ena_int_vec (irq_ena_int_vec),
+		.irq_ena_ext_vec (irq_ena_ext_vec),
+		.irq_int_autoclr (irq_int_autoclr),
+		.irq_stat_rd     (irq_stat),
+		.irq_stat_setnrst(irq_stat_setnrst),
+		.irq_stat_wr_sel (irq_stat_wr_sel ),
+		.irq_stat_wr_stb (irq_stat_wr_stb ),
+		.irq_ena_rd      (irq_ena),
+		.irq_ena_setnrst (irq_ena_setnrst),
+		.irq_ena_wr_sel  (irq_ena_wr_sel ),
+		.irq_ena_wr_stb  (irq_ena_wr_stb )
 	);
 
 
@@ -908,7 +939,7 @@ module top(
 		.zpos(zpos),
 		.zneg(zneg),
 
-		.int_start(int_start),
+		.vbl_start(vbl_start),
 
 		.iorq_n(iorq_n),
 		.m1_n  (m1_n  ),
@@ -916,6 +947,19 @@ module top(
 		.wait_n(spiint_n), // spiint_n is 1-0 signal, wait_n is Z-0
 
 		.int_n(int_n)
+
+		.irq_enh         (irq_enh        ),
+		.irq_ena_int_vec (irq_ena_int_vec),
+		.irq_ena_ext_vec (irq_ena_ext_vec),
+		.irq_int_autoclr (irq_int_autoclr),
+		.irq_stat        (irq_stat),
+		.irq_stat_setnrst(irq_stat_setnrst),
+		.irq_stat_wr_sel (irq_stat_wr_sel ),
+		.irq_stat_wr_stb (irq_stat_wr_stb ),
+		.irq_ena         (irq_ena),
+		.irq_ena_setnrst (irq_ena_setnrst),
+		.irq_ena_wr_sel  (irq_ena_wr_sel ),
+		.irq_ena_wr_stb  (irq_ena_wr_stb )
 	);
 
 	znmi znmi
@@ -931,7 +975,7 @@ module top(
 		.csrom (csrom ),
 		.a     (a     ),
 
-		.int_start(int_start),
+		.vbl_start(vbl_start),
 
 		.set_nmi(set_nmi),
 		.imm_nmi(imm_nmi),

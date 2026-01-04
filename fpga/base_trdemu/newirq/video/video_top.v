@@ -100,7 +100,7 @@ module video_top(
 
 
 
-	output wire        int_start,
+	output wire        vbl_start,
 
 
 
@@ -223,7 +223,7 @@ module video_top(
 		.vsync(vsync),
 		.vpix(vpix),
 
-		.int_start(int_start)
+		.int_start(vbl_start)
 	);
 
 
@@ -274,7 +274,7 @@ module video_top(
 		.video_next(video_next),
 
 		.line_start(hsync_start),
-		.int_start (int_start ),
+		.int_start (vbl_start ),
 		.vpix      (vpix      ),
 
 		.scr_page(scr_page),
@@ -329,7 +329,7 @@ module video_top(
 		.pre_cend (pre_cend ),
 		.cend     (cend     ),
 
-		.int_start(int_start),
+		.int_start(vbl_start),
 
 		.mode_atm_n_pent(mode_atm_n_pent),
 		.mode_zx        (mode_zx        ),

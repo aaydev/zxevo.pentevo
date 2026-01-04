@@ -31,7 +31,7 @@ module znmi
 	input  wire        zpos,
 	input  wire        zneg,
 
-	input  wire        int_start, // when INT starts
+	input  wire        vbl_start, // when INT starts
 	input  wire [ 1:0] set_nmi,   // NMI requests from slavespi and #BF port
 	input  wire        imm_nmi,   // immediate NMI from breakpoint
 
@@ -137,7 +137,7 @@ module znmi
 		pending_nmi <= 1'b0;
 	else // posedge clk
 	begin
-		if( int_start )
+		if( vbl_start )
 			pending_nmi <= 1'b0;
 		else if( set_nmi_now )
 			pending_nmi <= 1'b1;
@@ -145,7 +145,7 @@ module znmi
 
 
 	// actual nmi start
-	assign nmi_start = (pending_nmi && int_start) || imm_nmi_now;
+	assign nmi_start = (pending_nmi && vbl_start) || imm_nmi_now;
 
 
 
