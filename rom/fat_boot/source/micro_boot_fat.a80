@@ -1,5 +1,5 @@
 
-; LAST UPDATE: 07.02.2025 savelij
+; LAST UPDATE: 05.01.2026 savelij
 
 		include macros.a80
 		include define.a80
@@ -65,17 +65,15 @@ SETMASL		LD (MAS_SLA),A
 		CALL REALSEC				; преобразовали в номер сектора
 		CALL LOADLST				; загрузили в буфер
 		EXX
-		LD HL,(BUF_512_ + _DIR_Ext + 1)
+		LD HL,(BUF_512_ + 0x09)
 		LD (0x5D45),HL				; адрес старта кода
-		LD HL,(BUF_512_ + _DIR_Attr)
+		LD HL,(BUF_512_ + 0x0D)
 		LD (LENGHT),HL				; установка длины файла в байтах
-		LD DE,0x11
-		ADD HL,DE				; пропуск HOBETA заголовка
 		LD A,L
 		AND A
-		JR Z,READ01				; если младший байт не 0
+		JR Z,.L01				; если младший байт не 0
 		INC H					; старший +1
-READ01		LD A,H
+.L01		LD A,H
 		SRL A					; делим на 2 ибо на FAT сектор 512 байт
 		ADC A,0					; учитываем чет/нечет
 		DEC A					; первый сектор загружен, грузить на 1 меньше
@@ -83,7 +81,7 @@ READ01		LD A,H
 		JP Z,LDIRBUF				; если сектор 1 перенос и запуск
 		DEC A
 		LD IXL,A				; запомнили количество секторов - 1
-		JP Z,READ08				; если файл влез в 2 сектора
+		JP Z,.L08				; если файл влез в 2 сектора
 		EXX
 		CALL LD_ONES				; перенос остатков первого сектора
 		PUSH DE					; адрес куда далее грузить
@@ -91,21 +89,31 @@ READ01		LD A,H
 		LD HL,1					; один сектор уже загружен
 		ADD HL,DE				; далее грузить со следующего сектора 
 		EX DE,HL
-		JR NC,READ04
+		JR NC,.L04
 		INC BC					; BCDE = BCDE + 1
-READ04		POP HL					; в HL адрес для продолжения загрузки
+.L04		POP HL					; в HL адрес для продолжения загрузки
 		LD IY,(FATVAR.SecPerClus)		; LY = количество секторов в кластере
 		LD A,IXL
 		CP IYL					; секторов осталось меньше чем в кластере
-		JR C,READ02				; переход на дозагрузку остатка секторов
+		JR C,.L02				; переход на дозагрузку остатка секторов
 		INC IXL
-		LD A,IYL
+; проверка размера файла на кртаность размеру сектора
+		PUSH HL
+		LD HL,(LENGHT)
+		LD A,H
+		AND 1
+		OR L
+		POP HL
+		JR Z,.L1
+		INC IXL					; если не 0, то грузить на 1 сектор больше
+.L1		LD A,IYL
 		CP 2
-		JR C,READ07
+		JR C,.L07
 		DEC A
-		JR READ05
+		JR .L05
 
-READ07		PUSH HL
+; загрузка секторов по кластерно
+.L07		PUSH HL
 		LD DE,(FATVAR.AFILCLS)
 		LD BC,(FATVAR.AFILCLS + 2)
 		CALL RD_NEXT_CLUSTER			; получить номер следующего кластера
@@ -119,38 +127,42 @@ READ07		PUSH HL
 		POP HL
 		LD A,IXL				; сколько секторов осталось загрузить
 		CP IYL					; сравниваем с размером кластера
-		JR C,READ02				; если осталось загрузить секторов меньше чем в кластере, то дозагружаем остаток
+		JR C,.L2				; если осталось загрузить секторов меньше чем в кластере, то дозагружаем остаток
 		LD A,IYL				; сколько секторов загружать
-READ05		CALL LOADSCS				; загрузка секторов
+.L05		CALL LOADSCS				; загрузка секторов
 		LD A,IXL				; сколько секторов всего загружать
 		SUB IYL					; минус сколько секторов только что загрузили
 		JR Z,RUNLOAD				; сектора кончились, переходим на запуск
 		LD IXL,A				; сколько секторов осталось загрузить
-		JR READ07				; продолжаем загрузку
+		JR .L07					; продолжаем загрузку
 
 ; размер кода в Hobeta менее 2 секторов
 ; копируем хвост первого сектора и догружаем из второго с переносом
-READ08		EXX
+.L08		EXX
 		CALL LD_ONES
 		PUSH DE
 		EXX
 		POP HL
 		LD IXL,1
-		JR READ03
+		JR .L03
 
+; если хвост файла не кратен размеру сектора и меньше
+.L2		DEC IXL
+		JR Z,.L03				; если хвост влез в 1 сектор, грузим через буфер
+		LD A,IXL				; иначе грузим полные сектора на 1 меньше остатка
 ; загрузка количества секторов, если осталось менее размера кластера
-READ02		AND A
-		JR Z,READ03
+.L02		AND A
+		JR Z,.L03
 		CALL LOADSCS
-READ03		PUSH HL
+.L03		PUSH HL
 		LD A,IXL
 		LD L,A
 		LD H,0
 		ADD HL,DE
 		EX DE,HL
-		JR NC,READ06
+		JR NC,.L06
 		INC BC
-READ06		CALL LOADLST
+.L06		CALL LOADLST
 		LD BC,(LENGHT)
 		EX DE,HL
 		LD HL,0x11
