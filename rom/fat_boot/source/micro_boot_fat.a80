@@ -1,5 +1,5 @@
 
-; LAST UPDATE: 05.01.2026 savelij
+; LAST UPDATE: 07.01.2026 savelij
 
 		include macros.a80
 		include define.a80
@@ -57,6 +57,8 @@ SETMASL		LD (MAS_SLA),A
 		LD (FATVAR.AFILCLS+2),BC
 		LD DE,(FATVAR.FILE_SRC + _DIR_FstClusLO)
 		LD (FATVAR.AFILCLS),DE
+		LD HL,(FATVAR.FILE_SRC + _DIR_FileSize)
+		LD (LENGHT),HL				; установка длины файла в байтах
 		LD A,(FATVAR.FILE_SRC + _DIR_Ext + 1)
 		CP 'P'
 		JP Z,RUNSPG2				; переход на запуск SPG файла
@@ -67,8 +69,7 @@ SETMASL		LD (MAS_SLA),A
 		EXX
 		LD HL,(BUF_512_ + 0x09)
 		LD (0x5D45),HL				; адрес старта кода
-		LD HL,(BUF_512_ + 0x0D)
-		LD (LENGHT),HL				; установка длины файла в байтах
+		LD HL,(LENGHT)
 		LD A,L
 		AND A
 		JR Z,.L01				; если младший байт не 0
@@ -97,7 +98,7 @@ SETMASL		LD (MAS_SLA),A
 		CP IYL					; секторов осталось меньше чем в кластере
 		JR C,.L02				; переход на дозагрузку остатка секторов
 		INC IXL
-; проверка размера файла на кртаность размеру сектора
+; проверка размера файла на кратность размеру сектора
 		PUSH HL
 		LD HL,(LENGHT)
 		LD A,H
@@ -127,7 +128,7 @@ SETMASL		LD (MAS_SLA),A
 		POP HL
 		LD A,IXL				; сколько секторов осталось загрузить
 		CP IYL					; сравниваем с размером кластера
-		JR C,.L2				; если осталось загрузить секторов меньше чем в кластере, то дозагружаем остаток
+		JR C,.L02				; если осталось загрузить секторов меньше чем в кластере, то дозагружаем остаток
 		LD A,IYL				; сколько секторов загружать
 .L05		CALL LOADSCS				; загрузка секторов
 		LD A,IXL				; сколько секторов всего загружать
@@ -146,10 +147,6 @@ SETMASL		LD (MAS_SLA),A
 		LD IXL,1
 		JR .L03
 
-; если хвост файла не кратен размеру сектора и меньше
-.L2		DEC IXL
-		JR Z,.L03				; если хвост влез в 1 сектор, грузим через буфер
-		LD A,IXL				; иначе грузим полные сектора на 1 меньше остатка
 ; загрузка количества секторов, если осталось менее размера кластера
 .L02		AND A
 		JR Z,.L03
@@ -163,14 +160,8 @@ SETMASL		LD (MAS_SLA),A
 		JR NC,.L06
 		INC BC
 .L06		CALL LOADLST
-		LD BC,(LENGHT)
-		EX DE,HL
-		LD HL,0x11
-		ADD HL,BC
-		LD B,H
-		LD C,L
-		EX DE,HL
 		POP DE
+		LD BC,(LENGHT)
 		LD A,B
 		AND 1
 		LD B,A
