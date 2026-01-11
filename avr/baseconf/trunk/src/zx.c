@@ -12,6 +12,7 @@
 #include "rs232.h"
 #include "ps2.h"
 #include "rtc.h"
+#include "joystick.h"
 
 //if want Log than comment next string
 #undef LOGENABLE

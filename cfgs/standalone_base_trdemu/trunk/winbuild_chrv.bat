@@ -2,7 +2,7 @@
 rem echo It use MinGW+AVRGCC on Windows
 rem set PATH=c:\mingw\avrgcc\bin;%PATH%
 rem set PATH=c:\mingw\avrgcc\bin;c:\mingw\bin;c:\mingw\msys\bin
-set PATH=c:\mingw\avrgcc\bin;C:\Windows\system32;C:\Windows;C:\Windows\SysWOW64
+set PATH=c:\avrgcc\bin;C:\Windows\system32;C:\Windows;C:\Windows\SysWOW64
 
 set FPGA_PATH=..\..\..\fpga\base_trdemu\trunk\quartus
 set FPGA_FILE=top.rbf

@@ -14,24 +14,30 @@
 #include "rtc.h"
 #include "joystick.h"
 
-ISR(TIMER0_COMP_vect){
-	static BYTE scankbd=12;
+ISR(TIMER0_COMP_vect)
+{
+	static BYTE scanjoy=12;
 	
-	switch(scankbd){
+	switch(scanjoy)
+	{
 		case 13:
-			scankbd=0;
-			jkey_state = 0;
-			jkey_state |= (~JOYSTICK_PIN) & 0b00011111;			// arrows
+			scanjoy=0;
+//			jkey_state = 0;
+//			jkey_state |= (~JOYSTICK_PIN)&0b00011111;			// arrows
+			jkey_state = (~JOYSTICK_PIN)&0b00011111;
 			
 			if( ( gamepad_type & JOY_WITH_KBD ) == 0 )
 			{
-			 jkey_state |= (~PINA) & 0b00100000;			// EJOY_C
+				jkey_state |= (~PINA) & 0b00100000;			// EJOY_C
 			}
 			
 			TCCR0 = 0b00111100;
+		case 2:
+		case 4:
 			SEGA_SYNC_DOWN();
 			OCR0=TCNT0+1;
-		break;
+			break;
+			
 		case 1:
 			jkey_state |= ((~JOYSTICK_PIN) & 0b00010000) << 2;	// EJOY_A
 			
@@ -44,40 +50,48 @@ ISR(TIMER0_COMP_vect){
 			
 			if(gamepad_type & JOY_SEGA_8KEY)
 			{//пропускаем опрос дополнительных кнопок
-				scankbd = 6;
+				scanjoy = 6;
 			}	
 			OCR0=TCNT0+1;
-		break;
-		case 2:
-			SEGA_SYNC_DOWN();
-			OCR0=TCNT0+1;
-		break;
+			break;
+			
+//		case 2:
+//			SEGA_SYNC_DOWN();
+//			OCR0=TCNT0+1;
+//			break;
+
 		case 3:
-			SEGA_SYNC_UP();
-			OCR0=TCNT0+1;
-		break;
-		case 4:
-			SEGA_SYNC_DOWN();
-			OCR0=TCNT0+1;
-		break;
 		case 5:
 			SEGA_SYNC_UP();
 			OCR0=TCNT0+1;
-		break;
+			break;
+			
+//		case 4:
+//			SEGA_SYNC_DOWN();
+//			OCR0=TCNT0+1;
+//			break;
+//
+//		case 5:
+//			SEGA_SYNC_UP();
+//			OCR0=TCNT0+1;
+//			break;
+
 		case 6:
-			jkey_state |= ((UWORD)((~JOYSTICK_PIN) & 0b00001111)) << 8;
+			jkey_state |= (((UWORD)((~JOYSTICK_PIN) & 0b00001111)) << 8);
 			SEGA_SYNC_DOWN();
 			OCR0=TCNT0+1;
 			break;
+			
 		case 7:
 			zx_realkbd[10] = 4;
 			SEGA_SYNC_UP();
 			TCCR0 = 0b00111101;
 		default:
 			OCR0=TCNT0+255;
-		break;
+			break;
 	}
-	scankbd++;
+	
+	scanjoy++;
 }
 
 ISR(TIMER2_OVF_vect)
@@ -152,45 +166,52 @@ ISR(TIMER2_OVF_vect)
 		return;
 	}
 
-	if ( scankbd==0 )
+	//set next scankbd net
+	switch(scankbd)
 	{
-		UBYTE tmp;
-		tmp = PINA;
-		zx_realkbd[5] = tmp & cskey;
-		cskey = tmp | 0xfe;
-		DDRC  = 0b00010000;
-		PORTC = 0b11001111;
-		zx_realkbd[10] = 4;
-		scankbd=4;
-	}
-	else if ( scankbd==1 )
-	{
+	case 0:
+		{
+			UBYTE tmp = PINA;
+			zx_realkbd[5] = tmp & cskey;
+			cskey = tmp | 0xfe;
+			DDRC  = 0b00010000;
+			PORTC = 0b11001111;
+			zx_realkbd[10] = 4;
+			//scankbd = 4;
+			scankbd = 5;
+		}
+		break;
+	
+	case 1:
 		zx_realkbd[6] = PINA;
 		DDRC  = 0b00000001;
 		PORTC = 0b11011110;
-		scankbd=0;
-	}
-	else if ( scankbd==2 )
-	{
+		//scankbd = 0;
+		break;
+		
+	case 2:
 		zx_realkbd[7] = PINA;
 		DDRC  = 0b00000010;
 		PORTC = 0b11011101;
-		scankbd=1;
-	}
-	else if ( scankbd==3 )
-	{
+		//scankbd = 1;
+		break;
+		
+	case 3:
 		zx_realkbd[8] = PINA;
 		DDRC  = 0b00000100;
 		PORTC = 0b11011011;
-		scankbd=2;
-	}
-	else if ( scankbd==4 )
-	{
+		//scankbd = 2;
+		break;
+		
+	case 4:
 		zx_realkbd[9] = PINA;
 		DDRC  = 0b00001000;
 		PORTC = 0b11010111;
-		scankbd=3;
+		//scankbd = 3;
+		break;
 	}
+	
+	scankbd--;
 }
 
 // receive/send PS/2 keyboard data
