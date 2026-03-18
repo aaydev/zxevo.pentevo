@@ -127,21 +127,21 @@ static void ProcessSingle(const char *pFileName)
       else
         chkio_printf(OutName, "%-13s ", FoundId->Name);
 
-      chkio_printf(OutName, "%-7s   ", SegNames[Segment]); ChkIO(OutName);
+      chkio_printf(OutName, "%-7s   ", SegNames[Segment]);
 
       if (!Read4(ProgFile, &StartAdr))
         chk_wr_read_error(pFileName);
-      chkio_printf(OutName, "%08lX          ", LoDWord(StartAdr)); ChkIO(OutName);
+      chkio_printf(OutName, "%08lX          ", LoDWord(StartAdr));
 
       if (!Read2(ProgFile, &Len))
         chk_wr_read_error(pFileName);
-      chkio_printf(OutName, "%04X       ", LoWord(Len));  ChkIO(OutName);
+      chkio_printf(OutName, "%04X       ", LoWord(Len));
 
       if (Len != 0)
-        StartAdr += (Len / Gran) - 1;
+        chkio_printf(OutName, "%08lX", LoDWord(record_target_word_last_address(StartAdr, Len, Gran)));
       else
-        StartAdr--;
-      chkio_printf(OutName, "%08lX\n", LoDWord(StartAdr));  ChkIO(OutName);
+        chkio_printf(OutName, "%8s", "");
+      chkio_printf(OutName, "\n");
 
       Sums[Segment] += Len;
 
@@ -203,7 +203,7 @@ int main(int argc, char **argv)
   {
     char *ph1, *ph2;
 
-    chkio_printf(OutName, "%s%s%s\n", getmessage(Num_InfoMessHead1), as_cmdarg_get_executable_name(), getmessage(Num_InfoMessHead2));
+    chkio_printf(OutName, "%s%s %s\n", getmessage(Num_InfoMessUsage), as_cmdarg_get_executable_name(), getmessage(Num_InfoMessUsage1));
     for (ph1 = getmessage(Num_InfoMessHelp), ph2 = strchr(ph1, '\n'); ph2; ph1 = ph2 + 1, ph2 = strchr(ph1, '\n'))
     {
       *ph2 = '\0';

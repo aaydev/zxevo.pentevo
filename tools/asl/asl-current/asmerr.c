@@ -43,6 +43,8 @@ static Boolean treat_warnings_as_errors,
                def_warn_relative_set,
                warn_relative;
 
+static unsigned warn_registered;
+
 static void ClearExpectErrors(void)
 {
   tExpectError *pOld;
@@ -99,8 +101,6 @@ enum
 
 static unsigned registered_test_and_set(unsigned mask)
 {
-  static unsigned warn_registered;
-
   unsigned curr = warn_registered;
   warn_registered |= mask;
   return curr & mask;
@@ -327,6 +327,10 @@ static const char *ErrorNum2String(tErrorNum Num, char *Buf, int BufSize)
       msgno = Num_ErrMsgTreatedAsVector; break;
     case ErrNum_LargeIntAsFloat:
       msgno = Num_ErrMsgLargeIntAsFloat; break;
+    case ErrNum_CodeNotInCodeSegment:
+      msgno = Num_ErrMsgCodeNotInCodeSegment; break;
+    case ErrNum_WillOverwriteSP:
+      msgno = Num_ErrMsgWillOverwriteSP; break;
     case ErrNum_DoubleDef:
       msgno = Num_ErrMsgDoubleDef; break;
     case ErrNum_SymbolUndef:
@@ -477,6 +481,12 @@ static const char *ErrorNum2String(tErrorNum Num, char *Buf, int BufSize)
       msgno = Num_ErrMsgInvPMMUType; break;
     case ErrNum_InvCtrlReg:
       msgno = Num_ErrMsgInvCtrlReg; break;
+    case ErrNum_UnknownVector:
+      msgno = Num_ErrMsgUnknownVector; break;
+    case ErrNum_RegAccessibleOnlyInExecMode:
+      msgno = Num_ErrMsgRegAccessibleOnlyInExecMode; break;
+    case ErrNum_RegReadOnlyInExecMode:
+      msgno = Num_ErrMsgRegReadOnlyInExecMode; break;
     case ErrNum_InvReg:
       msgno = Num_ErrMsgInvReg; break;
     case ErrNum_DoubleReg:
@@ -497,6 +507,8 @@ static const char *ErrorNum2String(tErrorNum Num, char *Buf, int BufSize)
       msgno = Num_ErrMsgMissEndif; break;
     case ErrNum_InvIfConst:
       msgno = Num_ErrMsgInvIfConst; break;
+    case ErrNum_ForwardNonCurrent:
+      msgno = Num_ErrMsgForwardNonCurrent; break;
     case ErrNum_DoubleSection:
       msgno = Num_ErrMsgDoubleSection; break;
     case ErrNum_InvSection:
@@ -594,6 +606,8 @@ static const char *ErrorNum2String(tErrorNum Num, char *Buf, int BufSize)
       msgno = Num_ErrMsgOpenWHILE; break;
     case ErrNum_EXITMOutsideMacro:
       msgno = Num_ErrMsgEXITMOutsideMacro; break;
+    case ErrNum_ENDMOutsideMacro:
+      msgno = Num_ErrMsgENDMOutsideMacro; break;
     case ErrNum_TooManyMacParams:
       msgno = Num_ErrMsgTooManyMacParams; break;
     case ErrNum_UndefKeyArg:
@@ -752,6 +766,8 @@ static const char *ErrorNum2String(tErrorNum Num, char *Buf, int BufSize)
       msgno = Num_ErrMsgInvCBAR; break;
     case ErrNum_InAccPageErr:
       msgno = Num_ErrMsgInAccPageErr; break;
+    case ErrNum_CurrPCInInAccPageErr:
+      msgno = Num_ErrMsgCurrPCInInAccPageErr; break;
     case ErrNum_InAccFieldErr:
       msgno = Num_ErrMsgInAccFieldErr; break;
     case ErrNum_TargInDiffField:
@@ -1141,24 +1157,11 @@ Boolean asmerr_check_fp_dispose_result(int ret, const struct sStrComp *p_arg)
 }
 
 /*!------------------------------------------------------------------------
- * \fn     AsmErrPassInit(void)
- * \brief  module initialization prior to (another) pass through sources
- * ------------------------------------------------------------------------ */
-
-void AsmErrPassInit(void)
-{
-  ErrorCount = 0;
-  WarnCount = 0;
-  ClearExpectErrors();
-  InExpect = False;
-}
-
-/*!------------------------------------------------------------------------
- * \fn     AsmErrPassExit(void)
+ * \fn     exit_pass(void)
  * \brief  module checks & cleanups after a pass through sources
  * ------------------------------------------------------------------------ */
 
-void AsmErrPassExit(void)
+static void exit_pass(void)
 {
   if (InExpect)
     WrError(ErrNum_MissingENDEXPECT);
@@ -1226,6 +1229,20 @@ static const as_cmd_rec_t cmd_params[] =
 };
 
 /*!------------------------------------------------------------------------
+ * \fn     init_pass(void)
+ * \brief  called before start of each pass
+ * ------------------------------------------------------------------------ */
+
+static void init_pass(void)
+{
+  ErrorCount = 0;
+  WarnCount = 0;
+  ClearExpectErrors();
+  InExpect = False;
+  warn_registered = 0;
+}
+
+/*!------------------------------------------------------------------------
  * \fn     asmerr_init(void)
  * \brief  module setup
  * ------------------------------------------------------------------------ */
@@ -1236,4 +1253,6 @@ void asmerr_init(void)
   warn_sign_extension = True;
   def_warn_relative = def_warn_relative_set = False;
   as_cmd_register(cmd_params, as_array_size(cmd_params));
+  AddInitPassProc(init_pass);
+  add_exit_pass_proc(exit_pass);
 }

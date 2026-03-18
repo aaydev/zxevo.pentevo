@@ -25,6 +25,9 @@
 #include "codepseudo.h"
 #include "intpseudo.h"
 #include "codevars.h"
+#include "headids.h"
+
+#include "codem16.h"
 
 #define REG_SP 15
 #define REG_FP 14
@@ -166,10 +169,10 @@ static Boolean DecodeRegCore(const char *pArg, Word *pResult)
     *pResult = REG_FP | REGSYM_FLAG_ALIAS;
   else if ((strlen(pArg) > 1) && (as_toupper(*pArg) == 'R'))
   {
-    Boolean OK;
+    char *p_end;
 
-    *pResult = ConstLongInt(pArg + 1, &OK, 10);
-    return OK && (*pResult <= 15);
+    *pResult = strtoul(pArg + 1, &p_end, 10);
+    return !*p_end && (*pResult <= 15);
   }
   else
     return False;
@@ -3198,11 +3201,13 @@ static void SwitchFrom_M16(void)
 
 static void SwitchTo_M16(void)
 {
+  const TFamilyDescr *p_descr = FindFamilyByName("M16");
+
   TurnWords = True;
   SetIntConstMode(eIntConstModeIntel);
 
   PCSymbol = "$";
-  HeaderID = 0x13;
+  HeaderID = p_descr->Id;
   NOPCode = 0x1bd6;
   DivideChars=",";
   HasAttrs = True;

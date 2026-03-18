@@ -45,7 +45,8 @@ typedef enum
   eIntPseudoFlag_ASCIC = 1 << 9,
   eIntPseudoFlag_ASCID = eIntPseudoFlag_ASCIZ | eIntPseudoFlag_ASCIC,
   eIntPseudoFlag_ASCIAll = eIntPseudoFlag_ASCIZ | eIntPseudoFlag_ASCIC,
-  eIntPseudoFlag_MotoRep = 1 << 10
+  eIntPseudoFlag_MotoRep = 1 << 10,
+  eIntPseudoFlag_TMS340Format = 1 << 11
 } int_pseudo_flags_t;
 
 #ifdef __cplusplus
@@ -54,9 +55,11 @@ typedef enum
 
 struct sInstTable;
 
+extern void DecodeIntelD1(Word Flags);
 extern void DecodeIntelDN(Word Flags);
 extern void DecodeIntelDB(Word Flags);
 extern void DecodeIntelDW(Word Flags);
+extern void DecodeIntelDP(Word Flags);
 extern void DecodeIntelDD(Word Flags);
 extern void DecodeIntelDM(Word Flags);
 extern void DecodeIntelDQ(Word Flags);

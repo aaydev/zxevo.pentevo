@@ -29,11 +29,14 @@
 #include "asmstructs.h"
 #include "chunks.h"
 #include "trees.h"
+#include "fwd_sym.h"
+#include "fwd_refs.h"
 #include "operator.h"
 #include "function.h"
 #include "intformat.h"
 #include "as_float.h"
 #include "chartrans.h"
+#include "assume.h"
 #include "dynstr_nls.h"
 #include "cmdarg.h"
 
@@ -88,11 +91,13 @@ tIntTypeDef IntTypeDefs[IntTypeCnt] =
   { 0xc010, 0, 0, 0 }, /* Int16 */
   { 0x0011, 0, 0, 0 }, /* UInt17 */
   { 0x0012, 0, 0, 0 }, /* UInt18 */
+  { 0xc012, 0, 0, 0 }, /* Int18 */
   { 0x0013, 0, 0, 0 }, /* UInt19 */
   { 0x8014, 0, 0, 0 }, /* SInt20 */
   { 0x0014, 0, 0, 0 }, /* UInt20 */
   { 0xc014, 0, 0, 0 }, /* Int20 */
   { 0x0015, 0, 0, 0 }, /* UInt21 */
+  { 0xc015, 0, 0, 0 }, /* Int21 */
   { 0x0016, 0, 0, 0 }, /* UInt22 */
   { 0x0017, 0, 0, 0 }, /* UInt23 */
   { 0x8018, 0, 0, 0 }, /* SInt24 */
@@ -108,6 +113,19 @@ tIntTypeDef IntTypeDefs[IntTypeCnt] =
   { 0x8040, 0, 0, 0 }, /* SInt64 */
   { 0x0040, 0, 0, 0 }, /* UInt64 */
   { 0xc040, 0, 0, 0 }, /* Int64 */
+#else
+  { 0x0000, 0, 0, 0 },
+  { 0x0000, 0, 0, 0 },
+  { 0x0000, 0, 0, 0 },
+#endif
+#ifdef HAS128
+  { 0x8080, 0, 0, 0 }, /* SInt128 */
+  { 0x0080, 0, 0, 0 }, /* UInt128 */
+  { 0xc080, 0, 0, 0 }, /* Int128 */
+#else
+  { 0x0000, 0, 0, 0 },
+  { 0x0000, 0, 0, 0 },
+  { 0x0000, 0, 0, 0 },
 #endif
 };
 
@@ -134,7 +152,7 @@ char TmpSymCounterVal[10];     /* representation as string                   */
 TTmpSymLog TmpSymLog[LOCSYMSIGHT];
 LongInt TmpSymLogDepth;
 
-LongInt LocHandleCnt;          /* mom. verwendeter lokaler Handle            */
+static LongInt next_loc_handle;
 
 typedef struct sSymbolEntry
 {
@@ -218,11 +236,22 @@ static const char inf_name[] = "INF";
 static Boolean inf_reserved;
 static int def_radix_base;
 
-void InitPass_AsmPars(void)
+/*!------------------------------------------------------------------------
+ * \fn     initpass_asmpars(void)
+ * \brief  module-specific pass initialization
+ * ------------------------------------------------------------------------ */
+
+void initpass_asmpars(void)
 {
   RadixBase = def_radix_base;
   OutRadixBase = 16;
+  next_loc_handle = LOC_HANDLE_OFFSET;
 }
+
+/*!------------------------------------------------------------------------
+ * \fn     AsmParsInit(void)
+ * \brief  initialize/register module
+ * ------------------------------------------------------------------------ */
 
 void AsmParsInit(void)
 {
@@ -234,9 +263,10 @@ void AsmParsInit(void)
   FirstStack = NULL;
   FirstFunction = NULL;
   DoRefs = True;
-  InitPass_AsmPars();
   RegistersDefined = False;
-  AddInitPassProc(InitPass_AsmPars);
+
+  initpass_asmpars();
+  AddInitPassProc(initpass_asmpars);
 }
 
 /*!------------------------------------------------------------------------
@@ -248,10 +278,14 @@ void AsmParsInit(void)
 
 static Boolean range_not_checkable(IntType type)
 {
-#ifndef HAS64
-  return (((int)type) >= ((int)SInt32));
+#ifdef HAS128
+  return (((int)type) >= ((int)SInt128));
 #else
+#ifdef HAS64
   return (((int)type) >= ((int)SInt64));
+#else
+  return (((int)type) >= ((int)SInt32));
+#endif
 #endif
 }
 
@@ -1212,11 +1246,8 @@ func_exit:
 
 typedef enum { e_expand_chk_none, e_expand_chk_upto, e_expand_chk_empty_upto } expand_chk_t;
 
-static PSymbolEntry ExpandAndFindNode(
-#ifdef __PROTOS__
-const struct sStrComp *pComp, TempType SearchType, Boolean SearchLocal, expand_chk_t chk, lookup_symbol_error_t *p_lookup_error
-#endif
-);
+static PSymbolEntry ExpandAndFindNodeRet(const struct sStrComp *pName, struct sStrComp *p_expanded_name, TempType SearchType, Boolean SearchLocal, expand_chk_t chk, lookup_symbol_error_t *p_lookup_error);
+static PSymbolEntry ExpandAndFindNode(const struct sStrComp *pName, TempType SearchType, Boolean SearchLocal, expand_chk_t chk, lookup_symbol_error_t *p_lookup_error);
 
 /*!------------------------------------------------------------------------
  * \fn     EvalResultClear(tEvalResult *pResult)
@@ -1966,17 +1997,26 @@ func_exit2:
       LEAVE;
     }
 
+    else if (!strcmp(FName.str.p_str, "SYMEXIST"))
+    {
+      as_tempres_set_int(pErg, !!is_symbol_existing(&FArg));
+      LEAVE;
+    }
+
+    else if (!strcmp(FName.str.p_str, "SYMUSED"))
+    {
+      as_tempres_set_int(pErg, !!IsSymbolUsed(&FArg));
+      LEAVE;
+    }
+
     else if (!strcmp(FName.str.p_str, "ASSUMEDVAL"))
     {
-      unsigned IdxAssume;
+      const as_assume_rec_t *p_rec = assume_lookup(FArg.str.p_str);
 
-      for (IdxAssume = 0; IdxAssume < ASSUMERecCnt; IdxAssume++)
-        if (!as_strcasecmp(FArg.str.p_str, pASSUMERecs[IdxAssume].Name))
-        {
-          as_tempres_set_int(pErg, *(pASSUMERecs[IdxAssume].Dest));
-          LEAVE;
-        }
-      WrStrErrorPos(ErrNum_SymbolUndef, &FArg);
+      if (p_rec)
+        as_tempres_set_int(pErg, *(p_rec->p_dest));
+      else
+        WrStrErrorPos(ErrNum_SymbolUndef, &FArg);
       LEAVE;
     }
 
@@ -2106,7 +2146,21 @@ func_exit2:
 
   /* plain symbol */
 
-  LookupSymbol(&CopyComp, pErg, True, TempAll, eval_flags, NULL);
+  {
+    String exp_name_buf;
+    tStrComp exp_name;
+
+    StrCompMkTemp(&exp_name, exp_name_buf, sizeof(exp_name_buf));
+    LookupSymbolRet(&CopyComp, &exp_name, pErg, True, TempAll, eval_flags, NULL);
+
+    /* no forward reference entries if just ifdef was queried: */
+
+    if ((pErg->Flags & eSymbolFlag_FirstPassUnknown)
+     && !(eval_flags & e_eval_flag_undefined_is_unknown))
+    {
+      as_forward_ref_add(exp_name.str.p_str);
+    }
+  }
 
 func_exit:
 
@@ -2394,16 +2448,15 @@ tErrorNum EvalStrRegExpressionWithResult(const struct sStrComp *pExpr, tRegDescr
 
   EvalResultClear(pEvalResult);
 
-  pEntry = ExpandAndFindNode(pExpr, TempReg, True, e_expand_chk_empty_upto, NULL);
+  pEntry = ExpandAndFindNode(pExpr, TempAll, True, e_expand_chk_empty_upto, NULL);
   if (!pEntry)
     return ErrNum_SymbolUndef;
-
-  set_symbol_entry_flag(pEntry, used, True);
-  pEvalResult->DataSize = pEntry->SymWert.DataSize;
-
   if (pEntry->SymWert.Typ != TempReg)
     return ErrNum_ExpectReg;
+
   *pResult = pEntry->SymWert.Contents.RegDescr;
+  set_symbol_entry_flag(pEntry, used, True);
+  pEvalResult->DataSize = pEntry->SymWert.DataSize;
 
   if (pEntry->SymWert.Contents.RegDescr.Dissect != DissectReg)
     return ErrNum_RegWrongTarget;
@@ -2510,6 +2563,7 @@ static Boolean SymbolAdder(PTree *PDest, PTree Neu, void *pData)
   if (!PDest)
   {
     set_symbol_entry_flag(NewEntry, defined, True);
+    /* usage by possible forward references is updated on-demand in update_and_get_used() */
     set_symbol_entry_flag(NewEntry, used, False);
     set_symbol_entry_flag(NewEntry, changeable, EnterStruct->MayChange);
     NewEntry->RefList = NULL;
@@ -2539,9 +2593,12 @@ static Boolean SymbolAdder(PTree *PDest, PTree Neu, void *pData)
     return False;
   }
 
-  /* tried to reassign a constant (EQU) a value with SET and vice versa ? */
+  /* Tried to reassign a constant (EQU) a value with SET and vice versa ?
+     Forwards may always be overwritten. */
 
-  else if (get_symbol_entry_flag((*Node), defined) && (EnterStruct->MayChange != get_symbol_entry_flag(*Node, changeable)) )
+  else if (get_symbol_entry_flag((*Node), defined)
+        && (EnterStruct->MayChange != get_symbol_entry_flag(*Node, changeable))
+        && ((*Node)->SymWert.Typ != TempNone) )
   {
     strmaxcpy(serr, (*Node)->Tree.Name, STRINGSIZE);
     if (EnterStruct->DoCross)
@@ -2552,6 +2609,11 @@ static Boolean SymbolAdder(PTree *PDest, PTree Neu, void *pData)
     FreeSymbolEntry(&NewEntry, TRUE);
     return False;
   }
+
+  /* Forward (none) definition shall not overwrite actual symbol type: */
+
+  else if (((*Node)->SymWert.Typ != TempNone) && (NewEntry->SymWert.Typ == TempNone))
+    return False;
 
   else
   {
@@ -2634,26 +2696,6 @@ static void EnterLocSymbol(PSymbolEntry Neu)
   FirstLocSymbol = (PSymbolEntry)TreeRoot;
 }
 
-static Boolean EnterSymbol_SearchAndUnchain(PSymbolEntry Neu, PForwardSymbol *pp_root, LongInt *p_override_section)
-{
-  PForwardSymbol p_run, p_prev;
-
-  for (p_run = *pp_root, p_prev= NULL;
-       p_run;
-       p_prev = p_run, p_run = p_run->Next)
-    if (!strcmp(p_run->Name, Neu->Tree.Name))
-    {
-      *p_override_section = p_run->DestSection;
-      if (!p_prev)
-        *pp_root = p_run->Next;
-      else
-        p_prev->Next = p_run->Next;
-      free_forward_symbol(p_run);
-      return True;
-    }
-  return False;
-}
-
 static void EnterSymbol(PSymbolEntry Neu, Boolean MayChange, LongInt ResHandle)
 {
   String CombName;
@@ -2676,17 +2718,17 @@ static void EnterSymbol(PSymbolEntry Neu, Boolean MayChange, LongInt ResHandle)
     /* FORWARD: just an info to avoid resolution to global symbol.  This symbol remains
        in current section: */
 
-    if (EnterSymbol_SearchAndUnchain(Neu, &(SectionStack->LocSyms), &override_section))
+    if (as_fwd_sym_search_and_move_dest_section(&(SectionStack->LocSyms), Neu->Tree.Name, &override_section))
     { }
 
     /* PUBLIC: relocate scope of symbol to given section: */
 
-    else if (EnterSymbol_SearchAndUnchain(Neu, &(SectionStack->GlobSyms), &override_section))
+    else if (as_fwd_sym_search_and_move_dest_section(&(SectionStack->GlobSyms), Neu->Tree.Name, &override_section))
       Neu->Tree.Attribute = override_section;
 
     /* GLOBAL: create copy with scope in given section: */
 
-    else if (EnterSymbol_SearchAndUnchain(Neu, &(SectionStack->ExportSyms), &override_section))
+    else if (as_fwd_sym_search_and_move_dest_section(&(SectionStack->ExportSyms), Neu->Tree.Name, &override_section))
     {
       strmaxcpy(CombName, Neu->Tree.Name, STRINGSIZE);
       RunSect = SectionStack;
@@ -3040,6 +3082,44 @@ void EnterRegSymbol(const struct sStrComp *pName, const tRegDescr *pDescr, tSymb
   }
 }
 
+/*!------------------------------------------------------------------------
+ * \fn     EnterNoneSymbol(const struct sStrComp *p_name)
+ * \brief  enter empty (forward) symbol
+ * \param  p_name unexpanded name
+ * ------------------------------------------------------------------------ */
+
+void EnterNoneSymbol(const struct sStrComp *p_name)
+{
+  LongInt dest_handle;
+  PSymbolEntry p_new;
+
+  if (symbol_name_reserved(p_name->str.p_str))
+  {
+    WrStrErrorPos(ErrNum_RsvdSymName, p_name);
+    return;
+  }
+
+  p_new = CreateSymbolEntry(p_name, &dest_handle, eSymbolFlag_None);
+  if (!p_new)
+    return;
+
+  as_tempres_set_none(&p_new->SymWert);
+  p_new->SymWert.AddrSpaceMask = 0;
+  p_new->SymWert.Flags = eSymbolFlag_None;
+  p_new->SymWert.DataSize = eSymbolSizeUnknown;
+  p_new->RefList = NULL;
+  p_new->SymWert.Relocs = NULL;
+
+  if ((MomLocHandle == -1) || (dest_handle != -2))
+  {
+    EnterSymbol(p_new, True, dest_handle);
+    if (MakeDebug)
+      PrintSymTree(p_new->Tree.Name);
+  }
+  else
+    EnterLocSymbol(p_new);
+}
+
 static void AddReference(PSymbolEntry Node)
 {
   PCrossRef Lauf, Neu;
@@ -3092,7 +3172,7 @@ static PSymbolEntry FindGlobNode_FNode(const char *Name, TempType SearchType, Lo
 
   if (Lauf)
   {
-    if (Lauf->SymWert.Typ & SearchType)
+    if ((Lauf->SymWert.Typ & SearchType) || (SearchType == TempAll))
     {
       if (MakeCrossList && DoRefs)
         AddReference(Lauf);
@@ -3104,21 +3184,17 @@ static PSymbolEntry FindGlobNode_FNode(const char *Name, TempType SearchType, Lo
   return Lauf;
 }
 
-static Boolean FindGlobNode_FSpec(const char *Name, PForwardSymbol Root)
-{
-  while ((Root) && (strcmp(Root->Name, Name)))
-    Root = Root->Next;
-  return (Root != NULL);
-}
-
 static PSymbolEntry FindGlobNode(const char *p_name, TempType SearchType, LongInt DestSection)
 {
   PSaveSection Lauf;
   PSymbolEntry Result = NULL;
 
-  if (SectionStack)
-    if (PassNo <= MaxSymPass)
-      if (FindGlobNode_FSpec(p_name, SectionStack->LocSyms)) DestSection = MomSectionHandle;
+#if 0
+  if (SectionStack
+   && (PassNo <= MaxSymPass)
+   && search_forward_symbol(SectionStack->LocSyms, p_name))
+     DestSection = MomSectionHandle;
+#endif
 
   if (DestSection == -2)
   {
@@ -3148,7 +3224,7 @@ static PSymbolEntry FindLocNode_FNode(const char *Name, TempType SearchType, Lon
 
   if (Lauf)
   {
-    if (!(Lauf->SymWert.Typ & SearchType))
+    if ((SearchType != TempAll) && !(Lauf->SymWert.Typ & SearchType))
       Lauf = NULL;
   }
 
@@ -3218,7 +3294,7 @@ static PSymbolEntry FindNode(const tStrComp *p_exp_name, TempType SearchType, Bo
 }
 
 /*!------------------------------------------------------------------------
- * \fn     ExpandAndFindNode(const struct sStrComp *pComp, TempType SearchType, Boolean SearchLocal, expand_chk_t chk, lookup_symbol_error_t *p_lookup_error)
+ * \fn     ExpandAndFindNode(const struct sStrComp *pName, TempType SearchType, Boolean SearchLocal, expand_chk_t chk, lookup_symbol_error_t *p_lookup_error)
  * \brief  expand, optionally check and find node in global and/or local symbol table
  * \param  pComp name of symbol to expand & search
  * \param  SearchType data type to search for
@@ -3228,17 +3304,14 @@ static PSymbolEntry FindNode(const tStrComp *p_exp_name, TempType SearchType, Bo
  * \return * to node or NULL
  * ------------------------------------------------------------------------ */
 
-PSymbolEntry ExpandAndFindNode(const struct sStrComp *pComp, TempType SearchType, Boolean SearchLocal, expand_chk_t chk, lookup_symbol_error_t *p_lookup_error)
+PSymbolEntry ExpandAndFindNodeRet(const struct sStrComp *pName, struct sStrComp *p_exp_name, TempType SearchType, Boolean SearchLocal, expand_chk_t chk, lookup_symbol_error_t *p_lookup_error)
 {
-  String exp_name_buf;
-  tStrComp exp_name;
-  const tStrComp *p_exp_name;
+  const tStrComp *p_exp_name_ret;
   const char *pKlPos;
 
   if (p_lookup_error) *p_lookup_error = e_lookup_error_none;
-  StrCompMkTemp(&exp_name, exp_name_buf, sizeof(exp_name_buf));
-  p_exp_name = ExpandStrSymbol(&exp_name, pComp, !CaseSensitive);
-  if (!p_exp_name)
+  p_exp_name_ret = ExpandStrSymbol(p_exp_name, pName, !CaseSensitive);
+  if (!p_exp_name_ret)
   {
     if (p_lookup_error) *p_lookup_error = e_lookup_error_expand;
     return NULL;
@@ -3248,15 +3321,24 @@ PSymbolEntry ExpandAndFindNode(const struct sStrComp *pComp, TempType SearchType
   {
     /* just [...] without symbol name itself is not valid */
 
-    pKlPos = strchr(p_exp_name->str.p_str, '[');
-    if ((pKlPos == p_exp_name->str.p_str) || (ChkSymbNameUpTo(p_exp_name->str.p_str, pKlPos) != pKlPos))
+    pKlPos = strchr(p_exp_name_ret->str.p_str, '[');
+    if ((pKlPos == p_exp_name_ret->str.p_str) || (ChkSymbNameUpTo(p_exp_name->str.p_str, pKlPos) != pKlPos))
     {
       if (p_lookup_error) *p_lookup_error = e_lookup_error_namecheck;
       return NULL;
     }
   }
 
-  return FindNode(p_exp_name, SearchType, SearchLocal, p_lookup_error);
+  return FindNode(p_exp_name_ret, SearchType, SearchLocal, p_lookup_error);
+}
+
+PSymbolEntry ExpandAndFindNode(const struct sStrComp *pName, TempType SearchType, Boolean SearchLocal, expand_chk_t chk, lookup_symbol_error_t *p_lookup_error)
+{
+  String exp_name_buf;
+  tStrComp exp_name;
+
+  StrCompMkTemp(&exp_name, exp_name_buf, sizeof(exp_name_buf));
+  return ExpandAndFindNodeRet(pName, &exp_name, SearchType, SearchLocal, chk, p_lookup_error);
 }
 
 /**
@@ -3274,14 +3356,32 @@ void SetSymbolType(const tStrComp *pName, Byte NTyp)
 }
 **/
 
-void LookupSymbol(const struct sStrComp *pComp, TempResult *pValue, Boolean WantRelocs, TempType ReqType,
+void LookupSymbolRet(const struct sStrComp *pComp, struct sStrComp *p_exp_name, TempResult *pValue, Boolean WantRelocs, TempType ReqType,
                   as_eval_flags_t eval_flags, as_symbol_entry_flags_t *p_symbol_entry_flags)
 {
   lookup_symbol_error_t lookup_error;
-  PSymbolEntry pEntry = ExpandAndFindNode(pComp, ReqType, True, e_expand_chk_upto, &lookup_error);
+  PSymbolEntry pEntry = ExpandAndFindNodeRet(pComp, p_exp_name, ReqType, True, e_expand_chk_upto, &lookup_error);
 
-  if (pEntry && !get_symbol_entry_flag(pEntry, defined) && (eval_flags & e_eval_flag_undefined_is_unknown))
-    pEntry = NULL;
+  if (pEntry)
+  {
+    /* A pure forward definition is handled like a 'not found' at this place.  Only
+       set the flag that the entry was used: */
+
+    if (pEntry->SymWert.Typ == TempNone)
+    {
+      set_symbol_entry_flag(pEntry, used, True);
+      lookup_error = e_lookup_error_notfound;
+      pEntry = NULL;
+    }
+
+    /* Was it requested to treat yet-not-defined symbols as unknown? */
+
+    else if (!get_symbol_entry_flag(pEntry, defined) && (eval_flags & e_eval_flag_undefined_is_unknown))
+    {
+      lookup_error = e_lookup_error_notfound;
+      pEntry = NULL;
+    }
+  }
 
   if (pEntry)
   {
@@ -3303,7 +3403,12 @@ void LookupSymbol(const struct sStrComp *pComp, TempResult *pValue, Boolean Want
         pValue->Flags |= eSymbolFlag_Questionable;
       pValue->Flags |= eSymbolFlag_UsesForwards;
     }
-    set_symbol_entry_flag(pEntry, used, True);
+
+    /* If this is part of an IFDEF query, accesses to the symbol shall not set the
+       'used' flag: */
+
+    if (!(eval_flags & e_eval_flag_undefined_is_unknown))
+      set_symbol_entry_flag(pEntry, used, True);
   }
 
   else switch (lookup_error)
@@ -3334,6 +3439,15 @@ void LookupSymbol(const struct sStrComp *pComp, TempResult *pValue, Boolean Want
   }
 }
 
+void LookupSymbol(const struct sStrComp *pComp, TempResult *pValue, Boolean WantRelocs, TempType ReqType,
+                  as_eval_flags_t eval_flags, as_symbol_entry_flags_t *p_symbol_entry_flags)
+{
+  String exp_name_buf;
+  tStrComp exp_name;
+
+  StrCompMkTemp(&exp_name, exp_name_buf, sizeof(exp_name_buf));
+  LookupSymbolRet(pComp, &exp_name, pValue, WantRelocs, ReqType, eval_flags, p_symbol_entry_flags);
+}
 /*!------------------------------------------------------------------------
  * \fn     SetSymbolOrStructElemSize(const struct sStrComp *pName, tSymbolSize Size)
  * \brief  set (integer) data size associated with a symbol
@@ -3381,13 +3495,44 @@ Boolean IsSymbolDefined(const struct sStrComp *pName)
   as_tempres_free(&result);
   return ret;
 #else
-  Boolean error_on_find;
+  lookup_symbol_error_t error_on_find;
   PSymbolEntry pEntry = ExpandAndFindNode(pName, TempAll, True, e_expand_chk_upto, &error_on_find);
   if (error_on_find)
     WrStrErrorPos(ErrNum_InvSymName, pName);
 
   return pEntry && get_symbol_entry_flag(pEntry, defined);
 #endif
+}
+
+/*!------------------------------------------------------------------------
+ * \fn     is_symbol_existing(const struct sStrComp *p_name)
+ * \brief  check whether symbol of given name exists
+ * \param  p_name name of symbol
+ * \return true if existing
+ * ------------------------------------------------------------------------ */
+
+Boolean is_symbol_existing(const struct sStrComp *p_name)
+{
+  lookup_symbol_error_t error_on_find;
+  PSymbolEntry p_entry = ExpandAndFindNode(p_name, TempAll, True, e_expand_chk_upto, &error_on_find);
+  if (error_on_find == e_lookup_error_namecheck)
+    WrStrErrorPos(ErrNum_InvSymName, p_name);
+
+  return !!p_entry;
+}
+
+/*!------------------------------------------------------------------------
+ * \fn     update_and_get_used(TSymbolEntry *p_entry)
+ * \brief  retrieve the 'used flag of a node, an possibly update it before
+ * \param  p_entry symbol in question
+ * \return True if used
+ * ------------------------------------------------------------------------ */
+
+static Boolean update_and_get_used(TSymbolEntry *p_entry)
+{
+  if (!get_symbol_entry_flag(p_entry, used))
+    set_symbol_entry_flag(p_entry, used, as_forward_ref_search_and_mark(p_entry->Tree.Name, p_entry->Tree.Attribute));
+  return get_symbol_entry_flag(p_entry, used);
 }
 
 /*!------------------------------------------------------------------------
@@ -3404,7 +3549,7 @@ Boolean IsSymbolUsed(const struct sStrComp *pName)
   if (lookup_error == e_lookup_error_namecheck)
     WrStrErrorPos(ErrNum_InvSymName, pName);
 
-  return pEntry && get_symbol_entry_flag(pEntry, used);
+  return pEntry && update_and_get_used(pEntry);
 }
 
 /*!------------------------------------------------------------------------
@@ -3476,21 +3621,24 @@ static void PrintSymbolList_PNode(PTree Tree, void *pData)
     TListContext *pContext = (TListContext*) pData;
     int l1, nBlanks;
     const TempResult *pValue = &Node->SymWert;
+    Boolean symbol_used;
 
     if ((pValue->Typ == TempInt) && DissectBit && (pValue->AddrSpaceMask & (1 << SegBData)))
       DissectBit(pContext->s1.p_str, pContext->s1.capacity, pValue->Contents.Int);
     else
       StrSym(pValue, False, &pContext->s1, ListRadixBase);
 
-    as_sdprintf(&pContext->sh, "%c%s : ", get_symbol_entry_flag(Node, used) ? ' ' : '*', Tree->Name);
+    symbol_used = update_and_get_used(Node);
+    as_sdprintf(&pContext->sh, "%c%s", symbol_used ? ' ' : '*', Tree->Name);
     if (Tree->Attribute != -1)
-      as_sdprcatf(&pContext->sh, " [%s]", GetSectionName(Tree->Attribute));
+      as_sdprcatf(&pContext->sh, "[%s]", GetSectionName(Tree->Attribute));
+    as_sdprcatf(&pContext->sh, " : ");
     l1 = (strlen(pContext->s1.p_str) + visible_strlen(pContext->sh.p_str) + 4);
     for (nBlanks = pContext->cwidth - 1 - l1; nBlanks < 0; nBlanks += pContext->cwidth);
     as_sdprcatf(&pContext->sh, "%s%s %c | ", Blanks(nBlanks), pContext->s1.p_str, SegShorts[addrspace_from_mask(pValue->AddrSpaceMask)]);
     PrintSymbolList_AddOut(pContext->sh.p_str, pContext);
     pContext->Sum++;
-    if (!get_symbol_entry_flag(Node, used))
+    if (!symbol_used)
       pContext->USum++;
   }
 }
@@ -3604,7 +3752,7 @@ static void PrintDebSymbols_PNode(PTree Tree, void *pData)
     fprintf(DebContext->f, "%s", DebContext->s.p_str); ChkIO(ErrNum_FileWriteError);
   }
   fprintf(DebContext->f, "%s %-3d %d %d\n", Blanks(25 - l1), Node->SymWert.DataSize,
-          get_symbol_entry_flag(Node, used), get_symbol_entry_flag(Node, changeable));
+          update_and_get_used(Node), get_symbol_entry_flag(Node, changeable));
   ChkIO(ErrNum_FileWriteError);
 }
 
@@ -3635,9 +3783,9 @@ static void PrNoISection(PTree Tree, void *pData)
 
   if ((Node->SymWert.AddrSpaceMask & NoICEMask) && (Node->Tree.Attribute == pContext->Handle) && (Node->SymWert.Typ == TempInt))
   {
-    errno = 0; fprintf(pContext->f, "DEFINE %s 0x", Node->Tree.Name); ChkIO(ErrNum_FileWriteError);
-    errno = 0; fprintf(pContext->f, LargeHIntFormat, Node->SymWert.Contents.Int); ChkIO(ErrNum_FileWriteError);
-    errno = 0; fprintf(pContext->f, "\n"); ChkIO(ErrNum_FileWriteError);
+    String buf;
+    as_snprintf(buf, sizeof(buf), "DEFINE %s 0x%lllx\n", Node->Tree.Name, Node->SymWert.Contents.Int);
+    fputs(buf, pContext->f); ChkIO(ErrNum_FileWriteError);
   }
 }
 
@@ -3651,22 +3799,21 @@ void PrintNoISymbols(FILE *f)
   IterTree((PTree)FirstSymbol, PrNoISection, &Context);
   Context.Handle++;
   for (CurrSection = FirstSection; CurrSection; CurrSection = CurrSection->Next)
-   if (ChunkSum(&CurrSection->Usage)>0)
-   {
-     fprintf(f, "FUNCTION %s ", CurrSection->Name); ChkIO(ErrNum_FileWriteError);
-     fprintf(f, LargeIntFormat, ChunkMin(&CurrSection->Usage)); ChkIO(ErrNum_FileWriteError);
-     fprintf(f, "\n"); ChkIO(ErrNum_FileWriteError);
-     IterTree((PTree)FirstSymbol, PrNoISection, &Context);
-     Context.Handle++;
-     fprintf(f, "}FUNC "); ChkIO(ErrNum_FileWriteError);
-     fprintf(f, LargeIntFormat, ChunkMax(&CurrSection->Usage)); ChkIO(ErrNum_FileWriteError);
-     fprintf(f, "\n"); ChkIO(ErrNum_FileWriteError);
-   }
+    if (ChunkSum(&CurrSection->Usage) > 0)
+    {
+      String buf;
+      as_snprintf(buf, sizeof(buf), "FUNCTION %s %llld\n", CurrSection->Name, ChunkMin(&CurrSection->Usage));
+      fputs(buf, f); ChkIO(ErrNum_FileWriteError);
+      IterTree((PTree)FirstSymbol, PrNoISection, &Context);
+      Context.Handle++;
+      as_snprintf(buf, sizeof(buf), "}FUNC %llld\n", ChunkMax(&CurrSection->Usage));
+      fputs(buf, f); ChkIO(ErrNum_FileWriteError);
+    }
 }
 
 void PrintSymbolTree(void)
 {
-  DumpTree((PTree)FirstSymbol);
+  DumpTree(Debug, (PTree)FirstSymbol);
 }
 
 static void ClearSymbolList_ClearNode(PTree Node, void *pData)
@@ -4250,6 +4397,46 @@ void PrintDebSections(FILE *f)
   }
 }
 
+/*!------------------------------------------------------------------------
+ * \fn     get_section_parent(LongInt section_handle)
+ * \brief  retrieve parent of section
+ * \param  section_handle child section
+ * \return section handle of parent or -2
+ * ------------------------------------------------------------------------ */
+
+LongInt get_section_parent(LongInt section_handle)
+{
+  PCToken p_run = FirstSection;
+
+  if (section_handle <= 0)
+    return -2;
+  while ((section_handle > 0) && p_run)
+  {
+    p_run = p_run->Next;
+    section_handle--;
+  }
+  return p_run ? p_run->Parent : -2;
+}
+
+/*!------------------------------------------------------------------------
+ * \fn     is_sub_section(LongInt child, LongInt parent)
+ * \brief  check whether one section is direct or indirect child of another section
+ * \param  child possible child
+ * \param  parent possible parent
+ * \return True if yes
+ * ------------------------------------------------------------------------ */
+
+Boolean is_sub_section(LongInt child, LongInt parent)
+{
+  while (child >= 0)
+  {
+    child = get_section_parent(child);
+    if (child == parent)
+      return True;
+  }
+  return False;
+}
+
 void ClearSectionList(void)
 {
   PCToken Tmp;
@@ -4369,7 +4556,7 @@ void ClearCrossList(void)
 
 LongInt GetLocHandle(void)
 {
-  return LocHandleCnt++;
+  return next_loc_handle++;
 }
 
 void PushLocHandle(LongInt NewLoc)
@@ -4409,6 +4596,7 @@ static void PrintRegList_PNode(PTree Tree, void *pData)
   {
     TListContext *pContext = (TListContext*) pData;
     String tmp, tmp2;
+    Boolean symbol_used;
 
     if (Node->SymWert.Contents.RegDescr.Dissect)
       Node->SymWert.Contents.RegDescr.Dissect(tmp2, sizeof(tmp2), Node->SymWert.Contents.RegDescr.Reg, Node->SymWert.DataSize);
@@ -4417,7 +4605,8 @@ static void PrintRegList_PNode(PTree Tree, void *pData)
     *tmp = '\0';
     if (Tree->Attribute != -1)
       as_snprcatf(tmp, sizeof(tmp), "[%s]", GetSectionName(Tree->Attribute));
-    as_snprcatf(tmp, sizeof(tmp), "%c%s --> %s", get_symbol_entry_flag(Node, used) ? ' ' : '*', Tree->Name, tmp2);
+    symbol_used = update_and_get_used(Node);
+    as_snprcatf(tmp, sizeof(tmp), "%c%s --> %s", symbol_used ? ' ' : '*', Tree->Name, tmp2);
     if ((int)strlen(tmp) > pContext->cwidth - 3)
     {
       if (*pContext->Zeilenrest.p_str)
@@ -4438,7 +4627,7 @@ static void PrintRegList_PNode(PTree Tree, void *pData)
       }
     }
     pContext->Sum++;
-    if (!get_symbol_entry_flag(Node, used))
+    if (!symbol_used)
       pContext->USum++;
   }
 }
@@ -4582,10 +4771,10 @@ static as_cmd_result_t cmd_radix(Boolean negate, const char *p_arg)
     return e_cmd_err;
   else
   {
-    Boolean ok;
-    int new_def_radix_base = ConstLongInt(p_arg, &ok, 10);
+    const char *p_end;
+    int new_def_radix_base = as_cmd_strtol(p_arg, &p_end);
 
-    if (!ok || (new_def_radix_base < 2) || (new_def_radix_base > 36))
+    if (*p_end || (new_def_radix_base < 2) || (new_def_radix_base > 36))
       return e_cmd_err;
     def_radix_base = new_def_radix_base;
     return e_cmd_arg;

@@ -26,7 +26,9 @@
 #include "intpseudo.h"
 #include "motpseudo.h"
 #include "codevars.h"
+#include "assume.h"
 #include "errmsg.h"
+#include "headids.h"
 
 #include "codexa.h"
 
@@ -79,8 +81,7 @@ static Byte AdrVals[4];
 static tSymbolSize OpSize;
 static Boolean DoBranchExt; /* automatically extend branches */
 
-#define ASSUMEXACount 1
-static ASSUMERec ASSUMEXAs[ASSUMEXACount] =
+static as_assume_rec_t ASSUMEXAs[] =
 {
   {"DS", &Reg_DS, 0, 0xff, 0x100, NULL}
 };
@@ -215,6 +216,11 @@ static tRegEvalResult DecodeReg(const tStrComp *pArg, tSymbolSize *pSize, Byte *
   {
     *pResult = RegDescr.Reg & ~REGSYM_FLAG_ALIAS;
     *pSize = EvalResult.DataSize;
+  }
+  else
+  {
+    *pResult = 0;
+    *pSize = eSymbolSizeUnknown;
   }
   return RegEvalResult;
 }
@@ -594,7 +600,7 @@ static void DecodePORT(Word Index)
 {
   UNUSED(Index);
 
-  CodeEquate(SegIO, 0x400, 0x7ff);
+  code_equate_range(SegIO, 0x400, 0x7ff);
 }
 
 static void DecodeBIT(Word Index)
@@ -2161,11 +2167,17 @@ static Boolean IsDef_XA(void)
 
 static void SwitchTo_XA(void)
 {
+  const TFamilyDescr *p_descr = FindFamilyByName("XA");
+
   TurnWords = False;
   SetIntConstMode(eIntConstModeIntel);
 
-  PCSymbol = "$"; HeaderID = 0x3c; NOPCode = 0x00;
-  DivideChars = ","; HasAttrs = True; AttrChars = ".";
+  PCSymbol = "$";
+  HeaderID = p_descr->Id;
+  NOPCode = 0x00;
+  DivideChars = ",";
+  HasAttrs = True;
+  AttrChars = ".";
 
   ValidSegs =(1 << SegCode) | (1 << SegData) | (1 << SegIO);
   Grans[SegCode ] = 1; ListGrans[SegCode ] = 1; SegInits[SegCode ] = 0;
@@ -2185,8 +2197,7 @@ static void SwitchTo_XA(void)
   AddONOFF(BranchExtCmdName, &DoBranchExt, BranchExtSymName , False);
   AddMoto16PseudoONOFF(False);
 
-  pASSUMERecs = ASSUMEXAs;
-  ASSUMERecCnt = ASSUMEXACount;
+  assume_set(ASSUMEXAs, as_array_size(ASSUMEXAs));
 }
 
 void codexa_init(void)

@@ -23,6 +23,7 @@
 #include "intpseudo.h"
 #include "codevars.h"
 #include "errmsg.h"
+#include "headids.h"
 
 #include "codetms7.h"
 
@@ -999,22 +1000,27 @@ static Boolean IsDef_TMS7(void)
 
 static void InternSymbol_TMS7(char *pAsc, TempResult *pErg)
 {
-  String h;
-  Boolean OK;
+  char *p_end, prefix;
+  unsigned base;
   LargeInt Num;
 
   as_tempres_set_none(pErg);
   if ((strlen(pAsc) < 2) || ((as_toupper(*pAsc) != 'R') && (as_toupper(*pAsc) != 'P')))
     return;
+  prefix = *pAsc++;
 
-  strmaxcpy(h, pAsc + 1, STRINGSIZE);
-  if ((*h == '0') && (strlen(h) > 1))
-    *h = '$';
-  Num = ConstLongInt(h, &OK, 10);
-  if (!OK || (Num < 0) || (Num > 255))
+  if ((*pAsc == '0') && (strlen(pAsc) > 1))
+  {
+    base = 16;
+    pAsc++;
+  }
+  else
+    base = 10;
+  Num = strtoul(pAsc, &p_end, base);
+  if (*p_end || (Num < 0) || (Num > 255))
     return;
 
-  if (as_toupper(*pAsc) == 'P')
+  if (as_toupper(prefix) == 'P')
     Num += 0x100;
   as_tempres_set_int(pErg, Num);
 }
@@ -1026,11 +1032,16 @@ static void SwitchFrom_TMS7(void)
 
 static void SwitchTo_TMS7(void)
 {
+  const TFamilyDescr *p_descr = FindFamilyByName("TMS7000");
+
   TurnWords = False;
   SetIntConstMode(eIntConstModeIntel);
 
-  PCSymbol = "$"; HeaderID = 0x73; NOPCode = 0x00;
-  DivideChars = ","; HasAttrs = False;
+  PCSymbol = "$";
+  HeaderID = p_descr->Id;
+  NOPCode = 0x00;
+  DivideChars = ",";
+  HasAttrs = False;
 
   ValidSegs=1 << SegCode;
   Grans[SegCode] = 1; ListGrans[SegCode] = 1; SegInits[SegCode] = 0;

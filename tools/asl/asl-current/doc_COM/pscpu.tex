@@ -1,4 +1,5 @@
- \subsubsection{Motorola 680x0/MCF5xxx}
+%% SPDX-License-Identifier: GPL-2.0-only OR GPL-3.0-only
+\subsubsection{Motorola 680x0/MCF5xxx}
 
 {\em Default Integer Syntax: Motorola}
 
@@ -284,7 +285,19 @@ ACCMODE     \> ASCIC       \> ASCII       \> ASCIZ        \> BLKB \\
 BLKD        \> BLKF        \> BLKG        \> BLKH         \> BLKL \\
 BLKO        \> BLKQ        \> BLKW        \> BYTE         \> D\_FLOATING \\
 DOUBLE      \> F\_FLOATING \> FLOAT       \> G\_FLOATING  \> H\_FLOATING \\
-LONG        \> OCTA        \> QUAD        \> WORD \\
+LONG        \> OCTA        \> REG         \> QUAD         \> WORD \\
+\end{tabbing}}
+
+\subsubsection{WE32xxx}
+
+{\em Default Integer Syntax: C}
+
+{\em \pcsymname{}: . }
+
+{\tt\begin{tabbing}
+\hspace{3cm}\=\hspace{3cm}\=\hspace{3cm}\=\hspace{3cm}\=\kill
+BYTE        \> DOUBLE      \> DS          \> EXECMODE    \> FLT \\
+FPU         \> HALF        \> REG         \> WORD \\
 \end{tabbing}}
 
 \subsubsection{Olympia CP-3F/GI LP8000/SGS M380}
@@ -332,9 +345,10 @@ DQ         \> DS         \> DT          \> DW          \> REG \\
 
 {\tt\begin{tabbing}
 \hspace{3cm}\=\hspace{3cm}\=\hspace{3cm}\=\hspace{3cm}\=\kill
-BIGENDIAN  \> BIT         \> DB          \> DD          \> DN \\
-DO         \> DQ          \> DS          \> DT          \> DW \\
-PORT       \> REG         \> SFR         \> SFRB        \> SRCMODE \\
+BIGENDIAN  \> BIT         \> D1          \> DB          \> DD \\
+DN         \> DO          \> DQ          \> DS          \> DT \\
+DW         \> PORT        \> REG         \> SFR         \> SFRB \\
+SRCMODE \\
 \end{tabbing}}
 
 \subsubsection{Intel MCS-96}
@@ -429,7 +443,7 @@ PACKING    \> PORT       \> REG         \> RES          \> SFR \\
 \hspace{3cm}\=\hspace{3cm}\=\hspace{3cm}\=\hspace{3cm}\=\kill
 ASSUME     \> DB          \> DD          \> DN          \> DO \\
 DQ         \> DS          \> DT          \> DW          \> EMULATED \\
-ERG        \> SUPMODE \\
+REG        \> SUPMODE \\
 \end{tabbing}}
 
 \subsubsection{Siemens 80C166/167}
@@ -451,7 +465,8 @@ REG \\
 \hspace{3cm}\=\hspace{3cm}\=\hspace{3cm}\=\hspace{3cm}\=\kill
 DB         \> DD          \> DEFB        \> DEFW        \> DN \\
 DO         \> DQ          \> DS          \> DT          \> DW \\
-EXTMODE    \> LWORDMODE   \> PRWINS(Z180)\> REG         \> WARNRELATIVE \\
+EXTMODE    \> LWORDMODE   \> PRWINS(Z(1,2)80)\> REG         \> SUPMODE (Z280) \\
+WARNRELATIVE \\
 \end{tabbing}}
 
 \subsubsection{Zilog Z8}
@@ -537,6 +552,16 @@ DS         \> DT          \> DW \\
 \end{tabbing}}
 
 \subsubsection{Toshiba TLCS-47(0(A))}
+
+{\em Default Integer Syntax: Intel}
+
+{\tt\begin{tabbing}
+\hspace{3cm}\=\hspace{3cm}\=\hspace{3cm}\=\hspace{3cm}\=\kill
+ASSUME     \> DB          \> DD         \> DN          \> DO \\
+DQ         \> DS          \> DT         \> DW          \> PORT \\
+\end{tabbing}}
+
+\subsubsection{Toshiba TLCS-42}
 
 {\em Default Integer Syntax: Intel}
 
@@ -692,6 +717,17 @@ BSS         \> DATA        \> DOUBLE     \> PACKING     \> SINGLE \\
 WORD \\
 \end{tabbing}}
 
+\subsubsection{Texas Instruments TMS340xx}
+
+{\em Default Integer Syntax: Intel}
+
+{\tt\begin{tabbing}
+\hspace{3cm}\=\hspace{3cm}\=\hspace{3cm}\=\hspace{3cm}\=\kill
+BES        \> BSS         \> BYTE        \> COPROC      \> DOUBLE \\
+EVEN       \> FIELD       \> FLOAT       \> LONG        \> REG \\
+SPACE      \> WORD \\
+\end{tabbing}}
+
 \subsubsection{Texas Instruments TMS99xx}
 
 {\em Default Integer Syntax: Intel}
@@ -820,6 +856,19 @@ BIGENDIAN  \> BYTE        \> CUSTOM     \> DB           \> DD \\
 DOUBLE     \> DO          \> DQ         \> DS           \> DT \\
 DW         \> FLOAT       \> FPU        \> LONG         \> PMMU \\
 REG        \> SUPMODE     \> WORD \\
+\end{tabbing}}
+
+\subsubsection{National CR16}
+
+{\em Default Integer Syntax: C}
+
+{\tt\begin{tabbing}
+\hspace{3cm}\=\hspace{3cm}\=\hspace{3cm}\=\hspace{3cm}\=\kill
+BLKB       \> BLKD        \> BLKF       \> BLKL         \> BLKW \\
+BYTE       \> DC16        \> DC24       \> DC32         \> DC64 \\
+DC8        \> DF32        \> DF64       \> DOUBLE       \> DS16 \\
+DS32       \> DS64        \> DS8        \> FLOAT        \> LONG \\
+REG        \> SPACE       \> WORD \\
 \end{tabbing}}
 
 \subsubsection{Fairchild ACE}

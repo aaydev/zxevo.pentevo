@@ -18,10 +18,12 @@
 #include "asmsub.h"
 #include "asmpars.h"
 #include "asmitree.h"
+#include "assume.h"
 #include "codepseudo.h"
 #include "intpseudo.h"
 #include "codevars.h"
 #include "errmsg.h"
+#include "headids.h"
 
 #include "code47c00.h"
 
@@ -1145,7 +1147,20 @@ static void DecodePORT(Word Code)
 {
   UNUSED(Code);
 
-  CodeEquate(SegIO, 0, SegLimits[SegIO]);
+  code_equate_segment(SegIO);
+}
+
+/*!------------------------------------------------------------------------
+ * \fn     check_code_segment(Word code)
+ * \brief  checks whether code generation it attempted outside of code segment
+ * ------------------------------------------------------------------------ */
+
+static void check_code_segment(Word code)
+{
+  UNUSED(code);
+
+  if (ActPC != SegCode)
+    WrError(ErrNum_CodeNotInCodeSegment);
 }
 
 /*---------------------------------------------------------------------------*/
@@ -1161,6 +1176,7 @@ static void InitFields(void)
 
   add_null_pseudo(InstTable);
 
+  inst_table_set_prefix_proc(InstTable, check_code_segment, 0);
   AddInstTable(InstTable, "LD", 0, DecodeLD);
   AddInstTable(InstTable, "LDL", 0, DecodeLDL);
   AddInstTable(InstTable, "LDH", 0, DecodeLDH);
@@ -1190,7 +1206,6 @@ static void InitFields(void)
   AddInstTable(InstTable, "B", 0, DecodeB);
   AddInstTable(InstTable, "CALLS", 0, DecodeCALLS);
   AddInstTable(InstTable, "CALL", 0, DecodeCALL);
-  AddInstTable(InstTable, "PORT", 0, DecodePORT);
 
   AddFixed("RET" , 0x2a);
   AddFixed("RETI", 0x2b);
@@ -1201,6 +1216,8 @@ static void InitFields(void)
   AddInstTable(InstTable, "TEST", 2, DecodeBit);
   AddInstTable(InstTable, "TESTP", 3, DecodeBit);
 
+  inst_table_set_prefix_proc(InstTable, NULL, 0);
+  AddInstTable(InstTable, "PORT", 0, DecodePORT);
   AddIntelPseudo(InstTable, eIntPseudoFlag_LittleEndian);
 }
 
@@ -1236,26 +1253,30 @@ static Boolean TrueFnc(void)
 
 static void SwitchTo_47C00(void)
 {
-#define ASSUME47Count (sizeof(ASSUME47s) / sizeof(*ASSUME47s))
-  static ASSUMERec ASSUME47s[] =
+  static as_assume_rec_t ASSUME47s[] =
   {
     { "DMB", &DMBAssume, 0, 3, 4, NULL }
   };
+  const TFamilyDescr *p_descr = FindFamilyByName("TLCS-47xx");
 
   TurnWords = False;
   SetIntConstMode(eIntConstModeIntel);
   SetIsOccupiedFnc = TrueFnc;
 
   PCSymbol = "$";
-  HeaderID = 0x55;
+  HeaderID = p_descr->Id;
   NOPCode = 0x00;
   DivideChars = ",";
   HasAttrs = False;
 
   ValidSegs = (1 << SegCode) | (1 << SegData) | (1 << SegIO);
-  Grans[SegCode] = 1; ListGrans[SegCode] = 1; SegInits[SegCode] = 0;
-  Grans[SegData] = 1; ListGrans[SegData] = 1; SegInits[SegData] = 0;
-  Grans[SegIO  ] = 1; ListGrans[SegIO  ] = 1; SegInits[SegIO  ] = 0;
+  Grans[SegCode] = ListGrans[SegCode] = 1; SegInits[SegCode] = 0;
+  Grans[SegData] = ListGrans[SegData] = 1;
+  list_grans_bits_unused[SegData] = grans_bits_unused[SegData] = 4;
+  SegInits[SegData] = 0;
+  Grans[SegIO  ] = ListGrans[SegIO  ] = 1;
+  list_grans_bits_unused[SegIO  ] = grans_bits_unused[SegIO  ] = 4;
+  SegInits[SegIO  ] = 0;
   if (MomCPU == CPU47C00)
   {
     SegLimits[SegCode] = 0xfff;
@@ -1275,8 +1296,7 @@ static void SwitchTo_47C00(void)
     SegLimits[SegIO] = 0x1f;
   }
 
-  pASSUMERecs = ASSUME47s;
-  ASSUMERecCnt = ASSUME47Count;
+  assume_set(ASSUME47s, as_array_size(ASSUME47s));
 
   MakeCode = MakeCode_47C00;
   IsDef = IsDef_47C00;

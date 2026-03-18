@@ -18,10 +18,12 @@
 #include "asmsub.h"
 #include "asmpars.h"
 #include "asmitree.h"
+#include "assume.h"
 #include "codepseudo.h"
 #include "intpseudo.h"
 #include "codevars.h"
 #include "errmsg.h"
+#include "headids.h"
 
 #include "codest9.h"
 
@@ -83,8 +85,7 @@ static Byte AdrVals[3];
 
 static LongInt DPAssume;
 
-#define ASSUMEST9Count 1
-static ASSUMERec ASSUMEST9s[ASSUMEST9Count] =
+static as_assume_rec_t ASSUMEST9s[] =
 {
   {"DP", &DPAssume, 0,  1, 0x0, NULL}
 };
@@ -94,8 +95,7 @@ static ASSUMERec ASSUMEST9s[ASSUMEST9Count] =
 
 static Boolean DecodeReg(char *Asc_O, Byte *Erg, Byte *Size)
 {
-  Boolean Res;
-  char *Asc;
+  char *Asc, *p_end;
 
   *Size = 0;
   Asc=Asc_O;
@@ -112,8 +112,8 @@ static Boolean DecodeReg(char *Asc_O, Byte *Erg, Byte *Size)
   else
     *Size = 0;
 
-  *Erg = ConstLongInt(Asc, &Res, 10);
-  if ((!Res) || (*Erg > 15)) return False;
+  *Erg = strtoul(Asc, &p_end, 10);
+  if (*p_end || (*Erg > 15)) return False;
   if ((*Size == 1) && (Odd(*Erg))) return False;
 
   return True;
@@ -1789,7 +1789,7 @@ static void DecodeREG(Word Code)
 {
   UNUSED(Code);
 
-  CodeEquate(SegReg,0,0x1ff);
+  code_equate_type(SegReg, UInt9);
 }
 
 static void DecodeBIT(Word Code)
@@ -1974,9 +1974,9 @@ static void SwitchFrom_ST9(void)
 
 static void InternSymbol_ST9(char *Asc, TempResult *Erg)
 {
-  Boolean OK;
+  char *p_end;
   Boolean Pair;
-  LargeInt Num;
+  LargeWord Num;
 
   as_tempres_set_none(Erg);
   if ((strlen(Asc) < 2) || (*Asc != 'R'))
@@ -1991,8 +1991,8 @@ static void InternSymbol_ST9(char *Asc, TempResult *Erg)
   else
     Pair = False;
 
-  Num = ConstLongInt(Asc, &OK, 10);
-  if (!OK || (Num < 0) || (Num > 255)) return;
+  Num = strtoul(Asc, &p_end, 10);
+  if (*p_end || (Num > 255)) return;
   if ((Num & 0xf0) == 0xd0) return;
   if (Pair && Odd(Num)) return;
 
@@ -2002,11 +2002,16 @@ static void InternSymbol_ST9(char *Asc, TempResult *Erg)
 
 static void SwitchTo_ST9(void)
 {
+  const TFamilyDescr *p_descr = FindFamilyByName("ST9");
+
   TurnWords = False;
   SetIntConstMode(eIntConstModeIntel);
 
-  PCSymbol = "PC"; HeaderID = 0x32; NOPCode = 0xff;
-  DivideChars = ","; HasAttrs = False;
+  PCSymbol = "PC";
+  HeaderID = p_descr->Id;
+  NOPCode = 0xff;
+  DivideChars = ",";
+  HasAttrs = False;
 
   ValidSegs = (1 << SegCode) | (1 << SegData) | ( 1 << SegReg);
   Grans[SegCode] = 1; ListGrans[SegCode] = 1; SegInits[SegCode] = 0;
@@ -2019,8 +2024,7 @@ static void SwitchTo_ST9(void)
   MakeCode=MakeCode_ST9; IsDef=IsDef_ST9;
   SwitchFrom=SwitchFrom_ST9; InternSymbol=InternSymbol_ST9;
 
-  pASSUMERecs = ASSUMEST9s;
-  ASSUMERecCnt = ASSUMEST9Count;
+  assume_set(ASSUMEST9s, as_array_size(ASSUMEST9s));
 
   InitFields();
 }

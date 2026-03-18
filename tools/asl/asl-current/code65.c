@@ -17,12 +17,15 @@
 #include "asmdef.h"
 #include "asmpars.h"
 #include "asmsub.h"
+#include "asmcode.h"
 #include "asmitree.h"
 #include "codepseudo.h"
 #include "motpseudo.h"
 #include "intpseudo.h"
 #include "codevars.h"
 #include "errmsg.h"
+#include "assume.h"
+#include "headids.h"
 
 #include "code65.h"
 
@@ -71,6 +74,7 @@ typedef struct
   ShortInt ErgMode;
   int AdrCnt;
   Byte AdrVals[2];
+  tSymbolFlags symbol_flags;
 } tAdrResult;
 
 /* NOTE: keep in the same order as in registration in code65_init()! */
@@ -139,7 +143,7 @@ static void ChkZeroMode(tAdrResult *pResult, const NormOrder *pOrder, ShortInt Z
 
 /*---------------------------------------------------------------------------*/
 
-static Word EvalAddress(const tStrComp *pArg, IntType Type, Boolean *pOK)
+static Word EvalAddress(const tStrComp *pArg, IntType Type, Boolean *pOK, tSymbolFlags *p_flags)
 {
   /* for the HUC6280, check if the address is within one of the selected pages */
 
@@ -147,11 +151,10 @@ static Word EvalAddress(const tStrComp *pArg, IntType Type, Boolean *pOK)
   {
     Word Page;
     LongWord AbsAddress;
-    tSymbolFlags Flags;
 
     /* get the absolute address */
 
-    AbsAddress = EvalStrIntExpressionWithFlags(pArg, UInt21, pOK, &Flags);
+    AbsAddress = EvalStrIntExpressionWithFlags(pArg, UInt21, pOK, p_flags);
     if (!*pOK)
       return 0;
 
@@ -172,7 +175,7 @@ static Word EvalAddress(const tStrComp *pArg, IntType Type, Boolean *pOK)
 
     if ((Type != UInt16) && (Type != Int16) && Hi(AbsAddress))
     {
-      if (mFirstPassUnknown(Flags))
+      if (mFirstPassUnknown(*p_flags))
         AbsAddress &= 0xff;
       else
       {
@@ -188,11 +191,10 @@ static Word EvalAddress(const tStrComp *pArg, IntType Type, Boolean *pOK)
   else if (MomCPU == CPU65CE02)
   {
     Word Address;
-    tSymbolFlags Flags;
 
     /* alwys get a full 16 bit address */
 
-    Address = EvalStrIntExpressionWithFlags(pArg, UInt16, pOK, &Flags);
+    Address = EvalStrIntExpressionWithFlags(pArg, UInt16, pOK, p_flags);
     if (!*pOK)
       return 0;
 
@@ -200,7 +202,7 @@ static Word EvalAddress(const tStrComp *pArg, IntType Type, Boolean *pOK)
 
     if ((Type != UInt16) && (Type != Int16))
     {
-      if ((Hi(Address) != RegB) && !mFirstPassUnknown(Flags))
+      if ((Hi(Address) != RegB) && !mFirstPassUnknown(*p_flags))
       {
         *pOK = False;
         WrError(ErrNum_OverRange);
@@ -212,7 +214,7 @@ static Word EvalAddress(const tStrComp *pArg, IntType Type, Boolean *pOK)
   }
 
   else
-    return EvalStrIntExpression(pArg, Type, pOK);
+    return EvalStrIntExpressionWithFlags(pArg, Type, pOK, p_flags);
 }
 
 static Boolean IsBasePage(Byte Page)
@@ -229,6 +231,7 @@ static void DecodeAdr(tAdrResult *pResult, const NormOrder *pOrder)
   /* normale Anweisungen: Adressausdruck parsen */
 
   pResult->ErgMode = -1;
+  pResult->symbol_flags = eSymbolFlag_None;
 
   if (ArgCnt == 0)
   {
@@ -253,7 +256,7 @@ static void DecodeAdr(tAdrResult *pResult, const NormOrder *pOrder)
       IntType Type = Memo("PHW") ? Int16 : Int8;
       Word Value;
 
-      Value = EvalStrIntExpressionOffs(&ArgStr[1], 1, Type, &ValOK);
+      Value = EvalStrIntExpressionOffsWithFlags(&ArgStr[1], 1, Type, &ValOK, &pResult->symbol_flags);
       if (ValOK)
       {
         pResult->ErgMode = ModImm;
@@ -268,12 +271,10 @@ static void DecodeAdr(tAdrResult *pResult, const NormOrder *pOrder)
 
     else if (*ArgStr[1].str.p_str == '\\')
     {
-      tSymbolFlags Flags;
-
-      AdrWord = EvalStrIntExpressionOffsWithFlags(&ArgStr[1], 1, UInt16, &ValOK, &Flags);
+      AdrWord = EvalStrIntExpressionOffsWithFlags(&ArgStr[1], 1, UInt16, &ValOK, &pResult->symbol_flags);
       if (ValOK)
       {
-        if (mFirstPassUnknown(Flags))
+        if (mFirstPassUnknown(pResult->symbol_flags))
           AdrWord = (SpecPage << 8) | Lo(AdrWord);
         if (Hi(AdrWord) != SpecPage) WrError(ErrNum_UnderRange);
         else
@@ -299,7 +300,7 @@ static void DecodeAdr(tAdrResult *pResult, const NormOrder *pOrder)
         StrCompIncRefLeft(&AddrArg, ChkZero(&AddrArg, &ZeroMode));
         if (Memo("JMP") || Memo("JSR"))
         {
-          AdrWord = EvalAddress(&AddrArg, UInt16, &ValOK);
+          AdrWord = EvalAddress(&AddrArg, UInt16, &ValOK, &pResult->symbol_flags);
           if (ValOK)
           {
             pResult->AdrVals[0] = Lo(AdrWord);
@@ -310,7 +311,7 @@ static void DecodeAdr(tAdrResult *pResult, const NormOrder *pOrder)
         }
         else
         {
-          pResult->AdrVals[0] = EvalAddress(&AddrArg, UInt8, &ValOK);
+          pResult->AdrVals[0] = EvalAddress(&AddrArg, UInt8, &ValOK, &pResult->symbol_flags);
           if (ValOK)
           {
             pResult->ErgMode = ModIndIX;
@@ -333,7 +334,7 @@ static void DecodeAdr(tAdrResult *pResult, const NormOrder *pOrder)
         StrCompIncRefLeft(&AddrArg, ChkZero(&AddrArg, &ZeroMode));
         if (ZeroMode == 2)
         {
-          pResult->AdrVals[0] = EvalAddress(&AddrArg, UInt8, &ValOK);
+          pResult->AdrVals[0] = EvalAddress(&AddrArg, UInt8, &ValOK, &pResult->symbol_flags);
           if (ValOK)
           {
             pResult->ErgMode = ModInd8;
@@ -342,7 +343,7 @@ static void DecodeAdr(tAdrResult *pResult, const NormOrder *pOrder)
         }
         else
         {
-          AdrWord = EvalAddress(&AddrArg, UInt16, &ValOK);
+          AdrWord = EvalAddress(&AddrArg, UInt16, &ValOK, &pResult->symbol_flags);
           if (ValOK)
           {
             pResult->ErgMode = ModInd16;
@@ -364,7 +365,7 @@ static void DecodeAdr(tAdrResult *pResult, const NormOrder *pOrder)
         StrCompRefRight(&AddrArg, &ArgStr[1], ChkZero(&ArgStr[1], &ZeroMode));
         if (ZeroMode == 2)
         {
-          pResult->AdrVals[0] = EvalAddress(&AddrArg, UInt8, &ValOK);
+          pResult->AdrVals[0] = EvalAddress(&AddrArg, UInt8, &ValOK, &pResult->symbol_flags);
           if (ValOK)
           {
             pResult->ErgMode = ModZA;
@@ -373,7 +374,7 @@ static void DecodeAdr(tAdrResult *pResult, const NormOrder *pOrder)
         }
         else
         {
-          AdrWord = EvalAddress(&AddrArg, UInt16, &ValOK);
+          AdrWord = EvalAddress(&AddrArg, UInt16, &ValOK, &pResult->symbol_flags);
           if (ValOK)
           {
             pResult->ErgMode = ModA;
@@ -403,7 +404,7 @@ static void DecodeAdr(tAdrResult *pResult, const NormOrder *pOrder)
 
         StrCompRefRight(&DistArg, &ArgStr[1], 1);
         StrCompShorten(&DistArg, 4);
-        pResult->AdrVals[0] = EvalStrIntExpression(&DistArg, UInt8, &ValOK);
+        pResult->AdrVals[0] = EvalStrIntExpressionWithFlags(&DistArg, UInt8, &ValOK, &pResult->symbol_flags);
         if (ValOK)
         {
           pResult->ErgMode = ModIndSPY;
@@ -425,7 +426,7 @@ static void DecodeAdr(tAdrResult *pResult, const NormOrder *pOrder)
       StrCompRefRight(&AddrArg, &ArgStr[1], 1);
       StrCompShorten(&AddrArg, 1);
       StrCompIncRefLeft(&AddrArg, ChkZero(&AddrArg, &ZeroMode));
-      pResult->AdrVals[0] = EvalAddress(&AddrArg, UInt8, &ValOK);
+      pResult->AdrVals[0] = EvalAddress(&AddrArg, UInt8, &ValOK, &pResult->symbol_flags);
       if (ValOK)
       {
         pResult->ErgMode = ModIndOX + Mode;
@@ -442,7 +443,7 @@ static void DecodeAdr(tAdrResult *pResult, const NormOrder *pOrder)
       StrCompRefRight(&AddrArg, &ArgStr[1], ChkZero(&ArgStr[1], &ZeroMode));
       if (ZeroMode == 2)
       {
-        pResult->AdrVals[0] = EvalAddress(&AddrArg, UInt8, &ValOK);
+        pResult->AdrVals[0] = EvalAddress(&AddrArg, UInt8, &ValOK, &pResult->symbol_flags);
         if (ValOK)
         {
           pResult->AdrCnt = 1;
@@ -456,7 +457,7 @@ static void DecodeAdr(tAdrResult *pResult, const NormOrder *pOrder)
       }
       else
       {
-        AdrWord = EvalAddress(&AddrArg, Int16, &ValOK);
+        AdrWord = EvalAddress(&AddrArg, Int16, &ValOK, &pResult->symbol_flags);
         if (ValOK)
         {
           pResult->AdrCnt = 2;
@@ -527,10 +528,14 @@ static void DecodeBRK(Word Index)
     if (ArgCnt > 0)
     {
       Boolean OK;
+      tSymbolFlags flags;
 
-      BAsmCode[1] = EvalStrIntExpressionOffs(&ArgStr[1], !!(*ArgStr[1].str.p_str == '#'), Int8, &OK);
+      BAsmCode[1] = EvalStrIntExpressionOffsWithFlags(&ArgStr[1], !!(*ArgStr[1].str.p_str == '#'), Int8, &OK, &flags);
       if (OK)
+      {
+        set_b_guessed(flags, 1, 1, 0xff);
         CodeLen = 2;
+      }
     }
     else
       CodeLen = 1;
@@ -543,18 +548,21 @@ static void DecodeSEB_CLB(Word Code)
    && ChkExactCPU(CPUM740))
   {
     Boolean ValOK;
-    Byte BitNo = EvalStrIntExpression(&ArgStr[1], UInt3, &ValOK);
+    tSymbolFlags flags;
+    Byte BitNo = EvalStrIntExpressionWithFlags(&ArgStr[1], UInt3, &ValOK, &flags);
 
     if (ValOK)
     {
       BAsmCode[0] = Code + (BitNo << 5);
+      set_b_guessed(flags, 0, 1, 0xe0);
       if (!as_strcasecmp(ArgStr[2].str.p_str, "A"))
         CodeLen = 1;
       else
       {
-        BAsmCode[1] = EvalStrIntExpression(&ArgStr[2], UInt8, &ValOK);
+        BAsmCode[1] = EvalStrIntExpressionWithFlags(&ArgStr[2], UInt8, &ValOK, &flags);
         if (ValOK)
         {
+          set_b_guessed(flags, 1, 1, 0xff);
           CodeLen = 2;
           BAsmCode[0] += 4;
         }
@@ -572,29 +580,32 @@ static void DecodeBBC_BBS(Word Code)
   if (ChkArgCnt(3, 3)
    && ChkExactCPU(CPUM740))
   {
-    BAsmCode[0] = EvalStrIntExpression(&ArgStr[1], UInt3, &ValOK);
+    BAsmCode[0] = EvalStrIntExpressionWithFlags(&ArgStr[1], UInt3, &ValOK, &Flags);
     if (ValOK)
     {
       BAsmCode[0] = (BAsmCode[0] << 5) + Code;
+      set_b_guessed(Flags, 0, 1, 0xe0);
       b = (as_strcasecmp(ArgStr[2].str.p_str, "A") != 0);
       if (!b)
         ValOK = True;
       else
       {
         BAsmCode[0] += 4;
-        BAsmCode[1] = EvalStrIntExpression(&ArgStr[2], UInt8, &ValOK);
+        BAsmCode[1] = EvalStrIntExpressionWithFlags(&ArgStr[2], UInt8, &ValOK, &Flags);
+        set_b_guessed(Flags, 1, 1, 0xff);
       }
       if (ValOK)
       {
-        Integer AdrInt = EvalStrIntExpressionWithFlags(&ArgStr[3], Int16, &ValOK, &Flags) - (EProgCounter() + 2 + Ord(b) + Ord(Last_CLI_SEI_Flag));
+        Integer distance = EvalStrIntExpressionWithFlags(&ArgStr[3], Int16, &ValOK, &Flags) - (EProgCounter() + 2 + Ord(b) + Ord(Last_CLI_SEI_Flag));
 
         if (ValOK)
         {
-          if (((AdrInt > 127) || (AdrInt < -128)) && !mSymbolQuestionable(Flags)) WrError(ErrNum_JmpDistTooBig);
+          if (!RangeCheck(distance, SInt8) && !mFirstPassUnknownOrQuestionable(Flags)) WrError(ErrNum_JmpDistTooBig);
           else
           {
             CodeLen = 2 + Ord(b);
-            BAsmCode[CodeLen - 1] = AdrInt & 0xff;
+            BAsmCode[CodeLen - 1] = distance & 0xff;
+            set_b_guessed(Flags, CodeLen - 1, 1, 0xff);
             if (Last_CLI_SEI_Flag)
               InsNOP();
           }
@@ -606,8 +617,6 @@ static void DecodeBBC_BBS(Word Code)
 
 static void DecodeBBR_BBS(Word Code)
 {
-  Boolean ValOK;
-
   if (ChkArgCnt(2, 2)
    && (ChkExactCPUMask(M_65C02 | M_65CE02 | M_W65C02S | M_65C19 | M_HUC6280, CPU6502) >= 0))
   {
@@ -617,21 +626,25 @@ static void DecodeBBR_BBS(Word Code)
     if (ForceSize == 1) WrStrErrorPos(ErrNum_InvAddrMode, &ArgStr[1]);
     else
     {
-      BAsmCode[1] = EvalStrIntExpressionOffs(&ArgStr[1], Offset, UInt8, &ValOK);
+      Boolean ValOK;
+      tSymbolFlags Flags;
+
+      BAsmCode[1] = EvalStrIntExpressionOffsWithFlags(&ArgStr[1], Offset, UInt8, &ValOK, &Flags);
       if (ValOK)
       {
-        Integer AdrInt;
-        tSymbolFlags Flags;
+        Integer distance;
 
+        set_b_guessed(Flags, 1, 1, 0xff);
         BAsmCode[0] = Code;
-        AdrInt = EvalStrIntExpressionWithFlags(&ArgStr[2], UInt16, &ValOK, &Flags) - (EProgCounter() + 3);
+        distance = EvalStrIntExpressionWithFlags(&ArgStr[2], UInt16, &ValOK, &Flags) - (EProgCounter() + 3);
         if (ValOK)
         {
-          if (((AdrInt > 127) || (AdrInt < -128)) && !mSymbolQuestionable(Flags)) WrError(ErrNum_JmpDistTooBig);
+          if (!RangeCheck(distance, SInt8) && !mFirstPassUnknownOrQuestionable(Flags)) WrError(ErrNum_JmpDistTooBig);
           else
           {
             CodeLen = 3;
-            BAsmCode[2] = AdrInt & 0xff;
+            BAsmCode[2] = distance & 0xff;
+            set_b_guessed(Flags, 2, 1, 0xff);
           }
         }
       }
@@ -651,10 +664,12 @@ static void DecodeRMB_SMB(Word Code)
     else
     {
       Boolean ValOK;
+      tSymbolFlags symbol_flags;
 
-      BAsmCode[1] = EvalStrIntExpressionOffs(&ArgStr[1], Offset, UInt8, &ValOK);
+      BAsmCode[1] = EvalStrIntExpressionOffsWithFlags(&ArgStr[1], Offset, UInt8, &ValOK, &symbol_flags);
       if (ValOK)
       {
+        set_b_guessed(symbol_flags, 1, 1, 0xff);
         BAsmCode[0] = Code;
         CodeLen = 2;
       }
@@ -668,17 +683,20 @@ static void DecodeRBA_SBA(Word Code)
    && ChkExactCPU(CPU65C19))
   {
     Boolean OK;
+    tSymbolFlags symbol_flags;
     Word Addr;
 
-    Addr = EvalStrIntExpression(&ArgStr[1], UInt16, &OK);
+    Addr = EvalStrIntExpressionWithFlags(&ArgStr[1], UInt16, &OK, &symbol_flags);
     if (OK)
     {
-      BAsmCode[3] = EvalStrIntExpressionOffs(&ArgStr[2], ImmStart(ArgStr[2].str.p_str), UInt8, &OK);
+      BAsmCode[1] = Lo(Addr);
+      BAsmCode[2] = Hi(Addr);
+      set_b_guessed(symbol_flags, 1, 2, 0xff);
+      BAsmCode[3] = EvalStrIntExpressionOffsWithFlags(&ArgStr[2], ImmStart(ArgStr[2].str.p_str), UInt8, &OK, &symbol_flags);
       if (OK)
       {
+        set_b_guessed(symbol_flags, 3, 1, 0xff);
         BAsmCode[0] = Code;
-        BAsmCode[1] = Lo(Addr);
-        BAsmCode[2] = Hi(Addr);
         CodeLen = 4;
       }
     }
@@ -692,25 +710,29 @@ static void DecodeBAR_BAS(Word Code)
   {
     Boolean OK;
     Word Addr;
+    tSymbolFlags flags;
 
-    Addr = EvalStrIntExpression(&ArgStr[1], UInt16, &OK);
+    Addr = EvalStrIntExpressionWithFlags(&ArgStr[1], UInt16, &OK, &flags);
     if (OK)
     {
-      BAsmCode[3] = EvalStrIntExpressionOffs(&ArgStr[2], ImmStart(ArgStr[2].str.p_str), UInt8, &OK);
+      BAsmCode[1] = Lo(Addr);
+      BAsmCode[2] = Hi(Addr);
+      set_b_guessed(flags, 1, 2, 0xff);
+      BAsmCode[3] = EvalStrIntExpressionOffsWithFlags(&ArgStr[2], ImmStart(ArgStr[2].str.p_str), UInt8, &OK, &flags);
       if (OK)
       {
-        tSymbolFlags Flags;
-        Integer Dist = EvalStrIntExpressionWithFlags(&ArgStr[3], UInt16, &OK, &Flags) - (EProgCounter() + 5);
+        Integer distance;
 
+        set_b_guessed(flags, 3, 1, 0xff);
+        distance = EvalStrIntExpressionWithFlags(&ArgStr[3], UInt16, &OK, &flags) - (EProgCounter() + 5);
         if (OK)
         {
-          if (((Dist > 127) || (Dist < -128)) && !mSymbolQuestionable(Flags)) WrError(ErrNum_JmpDistTooBig);
+          if (!RangeCheck(distance, SInt8) && !mFirstPassUnknownOrQuestionable(flags)) WrError(ErrNum_JmpDistTooBig);
           else
           {
             BAsmCode[0] = Code;
-            BAsmCode[1] = Lo(Addr);
-            BAsmCode[2] = Hi(Addr);
-            BAsmCode[4] = Dist & 0xff;
+            BAsmCode[4] = distance & 0xff;
+            set_b_guessed(flags, 4, 1, 0xff);
             CodeLen = 5;
           }
         }
@@ -727,13 +749,16 @@ static void DecodeSTI(Word Code)
    && ChkExactCPU(CPU65C19))
   {
     Boolean OK;
+    tSymbolFlags flags;
 
-    BAsmCode[1] = EvalStrIntExpression(&ArgStr[1], UInt8, &OK);
+    BAsmCode[1] = EvalStrIntExpressionWithFlags(&ArgStr[1], UInt8, &OK, &flags);
     if (OK)
     {
-      BAsmCode[2] = EvalStrIntExpressionOffs(&ArgStr[2], ImmStart(ArgStr[2].str.p_str), UInt8, &OK);
+      set_b_guessed(flags, 1, 1, 0xff);
+      BAsmCode[2] = EvalStrIntExpressionOffsWithFlags(&ArgStr[2], ImmStart(ArgStr[2].str.p_str), UInt8, &OK, &flags);
       if (OK)
       {
+        set_b_guessed(flags, 2, 1, 0xff);
         BAsmCode[0] = 0xb2;
         CodeLen = 3;
       }
@@ -743,23 +768,28 @@ static void DecodeSTI(Word Code)
 
 static void DecodeLDM(Word Code)
 {
-  Boolean ValOK;
-
   UNUSED(Code);
 
   if (ChkArgCnt(2, 2)
    && ChkExactCPU(CPUM740))
   {
+    Boolean ValOK;
+    tSymbolFlags flags;
+
     BAsmCode[0] = 0x3c;
-    BAsmCode[2] = EvalStrIntExpression(&ArgStr[2], UInt8, &ValOK);
+    BAsmCode[2] = EvalStrIntExpressionWithFlags(&ArgStr[2], UInt8, &ValOK, &flags);
     if (ValOK)
     {
+      set_b_guessed(flags, 2, 1, 0xff);
       if (*ArgStr[1].str.p_str != '#') WrError(ErrNum_InvAddrMode);
       else
       {
-        BAsmCode[1] = EvalStrIntExpressionOffs(&ArgStr[1], 1, Int8, &ValOK);
+        BAsmCode[1] = EvalStrIntExpressionOffsWithFlags(&ArgStr[1], 1, Int8, &ValOK, &flags);
         if (ValOK)
+        {
+          set_b_guessed(flags, 1, 1, 0xff);
           CodeLen = 3;
+        }
       }
     }
   }
@@ -785,6 +815,7 @@ static void DecodeJSB(Word Code)
       else
       {
         BAsmCode[0] = 0x0b | ((Addr & 0x000e) << 3);
+        set_b_guessed(Flags, 0, 1, 0x1c);
         CodeLen = 1;
       }
     }
@@ -824,11 +855,12 @@ static void DecodeNorm(Word Index)
     {
       BAsmCode[0] = Lo(pOrder->Codes[AdrResult.ErgMode]);
       memcpy(BAsmCode + 1, AdrResult.AdrVals, AdrResult.AdrCnt);
+      set_b_guessed(AdrResult.symbol_flags, 1, AdrResult.AdrCnt, 0xff);
       CodeLen = AdrResult.AdrCnt + 1;
       if ((AdrResult.ErgMode == ModInd16) && (MomCPU != CPU65C02) && (BAsmCode[1] == 0xff))
       {
         WrError(ErrNum_NotOnThisAddress);
-        CodeLen = 0;
+        code_len_reset();
       }
     }
   }
@@ -903,11 +935,12 @@ static void DecodeCond(Word Index)
     {
       case 2:
         if (!MayShort) WrError(ErrNum_InvAddrMode);
-        else if (((AdrInt > 127) || (AdrInt < -128)) && !mSymbolQuestionable(Flags)) WrError(ErrNum_JmpDistTooBig);
+        else if (!RangeCheck(AdrInt, SInt8) && !mFirstPassUnknownOrQuestionable(Flags)) WrError(ErrNum_JmpDistTooBig);
         else
         {
           BAsmCode[0] = pOrder->CodeShort;
           BAsmCode[1] = AdrInt & 0xff;
+          set_b_guessed(Flags, 1, 1, 0xff);
           CodeLen = 2;
         }
         break;
@@ -918,6 +951,7 @@ static void DecodeCond(Word Index)
           BAsmCode[0] = pOrder->CodeLong;
           BAsmCode[1] = AdrInt & 0xff;
           BAsmCode[2] = (AdrInt >> 8) & 0xff;
+          set_b_guessed(Flags, 1, 2, 0xff);
           CodeLen = 3;
         }
         break;
@@ -2432,11 +2466,13 @@ static Boolean ChkZeroArgs(void)
 
 static void SwitchTo_65(void)
 {
+  const TFamilyDescr *p_descr = FindFamilyByName("65xx");
+
   TurnWords = False;
   SetIntConstMode(eIntConstModeMoto);
 
   PCSymbol = "*";
-  HeaderID = 0x11;
+  HeaderID = p_descr->Id;
   NOPCode = 0xea;
   DivideChars = ",";
   HasAttrs = False;
@@ -2447,18 +2483,17 @@ static void SwitchTo_65(void)
 
   if (MomCPU == CPUM740)
   {
-    static ASSUMERec ASSUME740s[] =
+    static as_assume_rec_t ASSUME740s[] =
     {
       { "SP", &SpecPage, 0, 0xff, -1, NULL }
     };
 
-    pASSUMERecs = ASSUME740s;
-    ASSUMERecCnt = (sizeof(ASSUME740s) / sizeof(*ASSUME740s));
+    assume_set(ASSUME740s, as_array_size(ASSUME740s));
     SetIsOccupiedFnc = ChkZeroArgs;
   }
   else if (MomCPU == CPUHUC6280)
   {
-    static ASSUMERec ASSUME6280s[] =
+    static as_assume_rec_t ASSUME6280s[] =
     {
       { "MPR0", MPR + 0, 0, 0xff, -1, NULL },
       { "MPR1", MPR + 1, 0, 0xff, -1, NULL },
@@ -2470,19 +2505,17 @@ static void SwitchTo_65(void)
       { "MPR7", MPR + 7, 0, 0xff, -1, NULL },
     };
 
-    pASSUMERecs = ASSUME6280s;
-    ASSUMERecCnt = (sizeof(ASSUME6280s) / sizeof(*ASSUME6280s));
+    assume_set(ASSUME6280s, as_array_size(ASSUME6280s));
     SetIsOccupiedFnc = ChkZeroArgs;
   }
   else if (MomCPU == CPU65CE02)
   {
-    static ASSUMERec ASSUME65CE02s[] =
+    static as_assume_rec_t ASSUME65CE02s[] =
     {
       { "B", &RegB, 0, 0xff, 0, NULL }
     };
 
-    pASSUMERecs = ASSUME65CE02s;
-    ASSUMERecCnt = (sizeof(ASSUME65CE02s) / sizeof(*ASSUME65CE02s));
+    assume_set(ASSUME65CE02s, as_array_size(ASSUME65CE02s));
   }
   else
     SetIsOccupiedFnc = NULL;

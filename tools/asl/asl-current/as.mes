@@ -1,3 +1,4 @@
+;SPDX-License-Identifier: GPL-2.0-only OR GPL-3.0-only
 ;* as.mes
 ;*****************************************************************************
 ;* AS-Portierung                                                             *
@@ -250,6 +251,14 @@ Message ErrMsgTreatedAsVector
 Message ErrMsgLargeIntAsFloat
  "Zu grosse Integer-Konstante wird als Gleitkomma interpretiert"
  "interpreting too large integer constant as float"
+
+Message ErrMsgCodeNotInCodeSegment
+ "Code-Erzeugung ausserhalb des CODE-Segments"
+ "code generation outside of CODE segment"
+
+Message ErrMsgWillOverwriteSP
+ "Befehl wird SP &uuml;berschreiben"
+ "instruction will overwrite SP"
 
 ;*****
 
@@ -517,6 +526,14 @@ Message ErrMsgInvPMMUType
  "ung&uuml;ltiger PMMU-Typ"
  "invalid PMMU type"
 
+Message ErrMsgRegAccessibleOnlyInExecMode
+ "Register im aktuellen Ausf&uuml;hrungsmodus nicht zugreifbar"
+ "register is not accessible in current execution mode"
+
+Message ErrMsgRegReadOnlyInExecMode
+ "Register darf im aktuellen Ausf&uuml;hrungsmodus nur gelesen werden"
+ "register is read-only in current execution mode"
+
 Message ErrMsgInvCtrlReg
  "ung&uuml;ltiges Kontrollregister"
  "invalid control register"
@@ -524,6 +541,10 @@ Message ErrMsgInvCtrlReg
 Message ErrMsgInvReg
  "ung&uuml;ltiges Register"
  "invalid register"
+
+Message ErrMsgUnknownVector
+ "unbekannter Vektor"
+ "unknown vector"
 
 Message ErrMsgDoubleReg
  "Register mehr als einmal gelistet"
@@ -560,6 +581,10 @@ Message ErrMsgMissEndif
 Message ErrMsgInvIfConst
  "ung&uuml;ltiges IF-Konstrukt"
  "invalid IF-structure"
+
+Message ErrMsgForwardNonCurrent
+ "FORWARD-Anweisung mu&szlig; sich auf aktuelle Sektion beziehen"
+ "FORWARD statement must reference to current section"
 
 Message ErrMsgDoubleSection
  "doppelter Sektionsname"
@@ -745,6 +770,10 @@ Message ErrMsgOpenWHILE
  "WHILE ohne ENDM"
  "WHILE without ENDM"
 
+Message ErrMsgENDMOutsideMacro
+ "ENDM au&szlig;erhalb eines Makrorumpfes"
+ "ENDM used outside of macro"
+
 Message ErrMsgDoubleMacro
  "doppelte Makrodefinition"
  "macro double defined"
@@ -763,7 +792,7 @@ Message ErrMsgNoPosArg
 
 Message ErrMsgEXITMOutsideMacro
  "EXITM au&szlig;erhalb eines Makrorumpfes"
- "EXITM not called from within macro"
+ "EXITM used outside of macro"
 
 Message ErrMsgFirstPassCalc
  "Ausdruck mu&szlig; im ersten Pass berechenbar sein"
@@ -1064,6 +1093,10 @@ Message ErrMsgInvCBAR
 Message ErrMsgInAccPageErr
  "Seite nicht zugreifbar"
  "page not accessible"
+
+Message ErrMsgCurrPCInInAccPageErr
+ "aktueller Programmz&auml;hler in nicht-zugreifbarer Seite"
+ "current program counter in inaccessible page"
 
 Message ErrMsgInAccFieldErr
  "Feld nicht zugreifbar"
@@ -1535,12 +1568,20 @@ Message KeyWaitMsg
  "--- <ENTER> to go on ---"
 
 Message ErrMsgInvParam
- "ung&uuml;ltige Option (-help f&uuml; Hilfe): "
- "Invalid option (-help for help): "
+ "ung&uuml;ltiger Parameter (-help f&uuml; Hilfe): "
+ "invalid parameter (-help for help): "
 
 Message ErrMsgInvEnvParam
+ "ung&uuml;ltiger Environment-Parameter (-help f&uuml; Hilfe): "
+ "invalid parameter (-help for help): "
+
+Message ErrMsgInvOption
+ "ung&uuml;ltige Option (-help f&uuml; Hilfe): "
+ "invalid option (-help for help): "
+
+Message ErrMsgInvEnvOption
  "ung&uuml;ltige Environment-Option (-help f&uuml; Hilfe): "
- "Invalid environment option (-help for help): "
+ "invalid environment option (-help for help): "
 
 Message InvMsgSource
  "Quelldatei?"
@@ -1573,10 +1614,12 @@ Message InfoMessHelp
  "  -listline-prefix <fmt> : Format des Pro-Zeile-Pr&auml;fix im Listing setzen\n" \
  "  -listradix <2...36>  : Zahlensystem im Listing\n" \
  "  -list-macro-handles  : Symbol-Handles von Makros im Listing anzeigen\n" \
+ "  -[no-]list-unknown-values : Unbekannte Werte in Listing als Fragezeichen anzeigen\n" \
  "  -l                   : Listing auf Konsole\n" \
  "  -M                   : Makrodefinitionen extrahieren\n" \
  "  -maxerrors <Anzahl>  : Assemblierung nach <Anzahl> Fehlern abbrechen\n" \
  "  -maxinclevel <Anzahl>: Include-Verschachtelungstiefe auf <Anzahl> begrenzen\n" \
+ "  -maxsympass <Nummer> : Unaufgel&ouml;ste Vorw&auml;rtsreferenzen bis Pass <Nummer> erlauben\n" \
  "  -n                   : Fehlermeldungen mit Nummer\n" \
  "  -olist <Name>        : Namen der Listdatei neu setzen\n" \
  "  -o <Name>            : Namen der Code-Datei neu setzen\n" \
@@ -1633,9 +1676,11 @@ Message InfoMessHelp
  "  -listline-prefix <fmt> : set format of listing per-line prefix\n" \
  "  -listradix <2...36>  : number system in listing\n" \
  "  -list-macro-handles  : list macro's symbol handles\n" \
+ "  -[no-]list-unknown-values : display unknown values in listing as question marks\n" \
  "  -M                   : extract macro definitions\n" \
  "  -maxerrors <number>  : terminate assembly after <number> errors\n" \
  "  -maxinclevel <number>: limit include nesting level to <number>\n" \
+ "  -maxsympass <number> : allow unresolved forward references up to pass <number>\n" \
  "  -n                   : add error #s to error messages\n" \
  "  -olist <nname>       : change name of list file\n" \
  "  -o <name>            : change name of code file\n" \

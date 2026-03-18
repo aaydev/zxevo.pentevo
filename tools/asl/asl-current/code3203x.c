@@ -28,6 +28,7 @@
 #include "tifloat.h"
 #include "headids.h"
 #include "onoff_common.h"
+#include "assume.h"
 #include "errmsg.h"
 
 #include "code3203x.h"
@@ -128,17 +129,15 @@ static Boolean DecodeReg(const char *Asc, Byte *Erg)
 {
   if ((as_toupper(*Asc) == 'R') && (strlen(Asc) <= 3) && (strlen(Asc) >= 2))
   {
-    Boolean OK;
+    char *p_end;
 
-    *Erg = ConstLongInt(Asc + 1, &OK, 10);
+    *Erg = strtoul(Asc + 1, &p_end, 10);
 
     /* For C3x, tolerate R8...R27 as aliases for other registers for backward compatibility.
        For C4x, four new registers R8...R11 are mapped at register file address 28..31.
        So for C4x, only allow the defined R0..11 registers: */
 
-    if (OK)
-      OK = *Erg <= Is4x() ? 11 : 27;
-    if (OK)
+    if (!*p_end && (*Erg <= (Is4x() ? 11 : 27)))
     {
       if (Is4x() && (*Erg >= 8))
         *Erg += 20;
@@ -1869,8 +1868,7 @@ static void SwitchFrom_3203X(void)
 
 static void SwitchTo_3203X(void)
 {
-#define ASSUME3203Count sizeof(ASSUME3203s) / sizeof(*ASSUME3203s)
-  static ASSUMERec ASSUME3203s[] =
+  static as_assume_rec_t ASSUME3203s[] =
   {
     { "DP", &DPValue, -1, 0xff, 0x100, NULL }
   };
@@ -1907,8 +1905,7 @@ static void SwitchTo_3203X(void)
 
   onoff_packing_add(True);
 
-  pASSUMERecs = ASSUME3203s;
-  ASSUMERecCnt = ASSUME3203Count;
+  assume_set(ASSUME3203s, as_array_size(ASSUME3203s));
 
   MakeCode = MakeCode_3203X;
   IsDef = IsDef_3203X;

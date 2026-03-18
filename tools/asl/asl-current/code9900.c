@@ -29,6 +29,7 @@
 #include "ibmfloat.h"
 #include "chartrans.h"
 #include "errmsg.h"
+#include "headids.h"
 
 #include "code9900.h"
 
@@ -1363,7 +1364,7 @@ static Boolean IsDef_9900(void)
 
 static void InternSymbol_9900(char *Asc, TempResult*Erg)
 {
-  Boolean OK;
+  char *p_end;
   char *h = Asc;
   LargeInt Num;
 
@@ -1373,8 +1374,8 @@ static void InternSymbol_9900(char *Asc, TempResult*Erg)
   else if ((strlen(Asc) >= 3) && (as_toupper(*Asc) == 'W') && (as_toupper(Asc[1]) == 'R'))
     h = Asc + 2;
 
-  Num = ConstLongInt(h, &OK, 10);
-  if (!OK || (Num < 0) || (Num > 15))
+  Num = strtoul(h, &p_end, 10);
+  if (*p_end || (Num < 0) || (Num > 15))
     return;
 
   as_tempres_set_int(Erg, Num);
@@ -1382,11 +1383,13 @@ static void InternSymbol_9900(char *Asc, TempResult*Erg)
 
 static void SwitchTo_9900(void *pUser)
 {
+  const TFamilyDescr *p_descr = FindFamilyByName("TMS9900");
+
   TurnWords = True;
   SetIntConstMode(eIntConstModeIntel);
 
   PCSymbol = "$";
-  HeaderID = 0x48;
+  HeaderID = p_descr->Id;
   NOPCode = 0x0000;
   DivideChars = ",";
   HasAttrs = False;

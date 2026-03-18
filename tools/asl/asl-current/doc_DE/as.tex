@@ -1,3 +1,5 @@
+%% SPDX-License-Identifier: GPL-2.0-only OR GPL-3.0-only
+
 %%TITLE Bedienungsanleitung Makroassembler AS
 \documentclass[12pt,a4paper,twoside]{report}
 %% Try \usepackage[german]{babel} if your Tex distribution does not provide the german sty file:
@@ -49,7 +51,7 @@
 
 \vspace{1cm}\par
 
-{\large Stand Januar 2025}
+{\large Stand M"arz 2026}
 \end{raggedright}
 
 \clearpage
@@ -236,6 +238,7 @@ folgende Prozessorfamilien implementiert:
 \item{DEC PDP-11}
 \item{DEC VAX}
 \item{Western Digital WD16}
+\item{AT\&T WE32100/32200 (''Bellmac32'')}
 \item{Intel 4004/4040}
 \item{Intel MCS-48/41, einschlie"slich Siemens SAB80C382 und der
       OKI-Varianten}
@@ -249,7 +252,7 @@ folgende Prozessorfamilien implementiert:
 \item{Atmel (Mega-)AVR}
 \item{AMD 29K}
 \item{Siemens 80C166/167}
-\item{Zilog Z80 (einschlie"slich undokumentierter Befehle), Z180, Z380, eZ80}
+\item{Zilog Z80 (einschlie"slich undokumentierter Befehle), Z180, Z280, Z380, eZ80}
 \item{Sharp LR35902 (,,Gameboy-Z80'')}
 \item{Sharp SC61860}
 \item{Sharp SC62015}
@@ -261,6 +264,7 @@ folgende Prozessorfamilien implementiert:
 \item{Toshiba TLCS-90}
 \item{Toshiba TLCS-870(/C)}
 \item{Toshiba TLCS-47}
+\item{Toshiba TLCS-42}
 \item{Toshiba TLCS-9000}
 \item{Toshiba TC9331}
 \item{Microchip PIC16C54..16C57}
@@ -278,6 +282,7 @@ folgende Prozessorfamilien implementiert:
 \item{Texas Instruments TMS320C20x/TMS320C5x}
 \item{Texas Instruments TMS320C54x}
 \item{Texas Instruments TMS320C6x}
+\item{Texas Instruments TMS340xx}
 \item{Texas Instruments TMS99xx/TMS99xxx}
 \item{Texas Instruments TMS7000}
 \item{Texas Instruments TMS1000}
@@ -291,6 +296,7 @@ folgende Prozessorfamilien implementiert:
 \item{National Semiconductor COP8}
 \item{National Semiconductor SC144xx}
 \item{National Semiconductor NS32xxx}
+\item{National Semiconductor CR16A/B}
 \item{Olympia CP-3F (bzw. SGS M380, GI LP8000)}
 \item{Fairchild ACE}
 \item{Fairchild F8}
@@ -362,7 +368,7 @@ automatisch als lokal betrachtet.
 \par
 Symbole k"onnen f"ur den Assembler sowohl Integer-, String- als auch
 Gleitkommawerte haben.  Diese werden --- wie Zwischenergebnisse bei Formeln
---- mit einer Breite von 32 Bit f"ur Integerwerte, 80/64 Bit f"ur
+--- mit einer Breite von 32, 64, oder 128 Bit f"ur Integerwerte, 80/64 Bit f"ur
 Gleitkommawerte und 255 Zeichen f"ur Strings gespeichert.  F"ur eine Reihe
 von Mikrokontrollern besteht die M"oglichkeit, durch Segmentbildung die
 Symbole bestimmten Klassen zuzuordnen.  Dem Assembler kann man auf diese
@@ -601,6 +607,7 @@ REGST6.INC        & Register- \& Makrodefinitionen ST6 (aktuell)\\
 REGST7.INC        & Register- \& Makrodefinitionen ST7 \\
 REGSTM8.INC       & Register- \& Makrodefinitionen STM8 \\
 REGST9.INC        & Register- \& Makrodefinitionen ST9 \\
+REGZ280.INC       & Registeradressen Z280 \\
 REGZ380.INC       & Registeradressen Z380 \\
 STDDEF04.INC      & Registeradressen 6804 \\
 STDDEF16.INC      & Befehlsmakros und Registeradressen \\
@@ -900,9 +907,12 @@ Momentan sind folgende Schalter definiert:
       bestimmt werden, die im Listing jeder Zeile vorangestellt
       werden.  Der Aufbau des daf"ur verwendeten Formatstrings ist in
       \ref{SectListing} beschrieben.}
+\item{{\tt list-unknown-values} bzw. {\tt no-list-unknown-values}: Schaltet
+      die Anzeige von im ersten Durchlauf unbekannten Werten als Fragezeichen
+      an bzw. aus.}
 \item{\label{radix}\tty{RADIX}: Stellt das Default-Zahlensystem auf
       einen Wert zwischen 2 und 36, anstelle von 10.  Dieser Wert kann
-      durch die gleichnamige Anweisung im Programm übersteuert werden.}
+      durch die gleichnamige Anweisung im Programm "ubersteuert werden.}
 \item{\label{listradix}\tty{LISTRADIX}: Defaultm"a"sig erfolgen alle Zahlenausgaben im Listing
       (Adressen, erzeugter Code, Symboltabelle) im Hexadezimalsystem.  Mit
       diesem Schalter kann ein beliebiges anderes Zahlensystem im Bereich
@@ -1076,7 +1086,7 @@ bzw. \ref{ChapShareOrder}.
       Pseudoanweisung (siehe Abschnitt \ref{SectRELAXED}) eingeschaltet
       werden mu"s.}
 \item{\tty{intsyntax}: Mit diesem Schalter kann man vom Beginn des Programms
-      an die Liste der erlaubten Schreibweisen für Ganzzahl-Konstanten
+      an die Liste der erlaubten Schreibweisen f"ur Ganzzahl-Konstanten
       erweitern oder reduzieren, analog zur gleichnamigen Pseudoanweisung
       (siehe Abschnitt \ref{SectINTSYNTAX} f"ur eine Liste erlauber
       Argumente).}
@@ -1109,12 +1119,16 @@ bzw. \ref{ChapShareOrder}.
       Anzahl von Fehlern die Assemblierung abzubrechen.}
 \item{{\tt maxinclevel [n]}: Weist den Assembler an, nach der gegebenen
       Include-Verschachtelungstiefe abzubrechen (Default ist 200).}
+\item{{\tt maxsympass [n]}: Definiert, bis zu welchen Pass unaufgel"oste
+      Vorw"artsreferenzen erlaubt sind.  Eine Umstellung auf einen
+      Wert gr"o"ser als den Vorgabewert (1) kann in Sonderf"allen, wie
+      bei verketteten Vorw"artsreferenzen erforderlich sein.}
 \item{{\tt Werror}: Weist den Assembler an, Warnungen als Fehler zu
       behandeln.}
 \item{{\tt wrelative} bzw. {\tt wno-relative}: Weist den Assembler an,
       Warnungen auszugeben, falls ein relativer anstelle eines absoluten
       Sprungs m"oglich ist (nur f"ur Z80-Target).}
-\item{{\tt wsign-extension} bzw. {\tt wno-sign-extension}: Weist den
+\item{{\tt wimplicit-sign-extension} bzw. {\tt wno-implicit-sign-extension}: Weist den
       Assembler an, Warnungen "uber implizite Vorzeichen-Erweiterungen
       auszugeben (nur 68K, MOVEQ).}
 \item{\tty{compmode}: Dieser Schalter weist den Assembler an, im Default
@@ -1128,7 +1142,7 @@ Sofern Schalter keine Argumente ben"otigen und ihre Zusammenziehung
 keinen mehrbuchstabigen Schalter ergibt, k"onnen mehrere Schalter
 auch auf einen Rutsch angegeben werden, wie z.B im folgenden Beispiel:
 \begin{verbatim}
- as test*.asm firstprog -cl /i c:\as\8051\include
+ asl test*.asm firstprog -cl /i c:\as\8051\include
 \end{verbatim}
 Es werden alle Dateien TEST*.ASM sowie die Datei FIRSTPROG.ASM
 assembliert, wobei f"ur alle Dateien Listings auf der Konsole
@@ -1401,8 +1415,41 @@ die Breite des Feldes: F"ur einen Prozessor mit 64 KByte Adre"sraum sind
 nur 4 Hex-Stellen erforderlich, bei 4 GByte dagegen acht.
 \par
 Der erzeugte Code selber steht dahinter im Feld \tty{Code}, ebenfalls
-im durch den List-Radix gegebenen Zahlensystem.  Je nach Prozessortyp und aktuellem Segment
-k"onnen die Werte entweder als Bytes oder 16/32-Bit-Worte formatiert sein.
+im durch den List-Radix gegebenen Zahlensystem.  Je nach Prozessortyp und
+aktuellem Segment bzw. Adre"sraum k"onnen die Werte dabei mit unterschiedlicher
+L"ange formatiert sein.  Das k"onnen Bytes mit 8 Bits sein, aber auch Worte
+mit 16 oder 32 Bits, wenn der gerade genutzte Adre"sraum nicht Byte-adressierbar
+ist, oder die Instruktionsworte des Prozessors l"anger als 8 Bit sind.  Dies
+ist z.B. beim 68000 oder der PDP-11 der Fall: Deren Adre"sraum ist Byte-weise
+organisiert, Instruktionsworte sind aber 16 Bit lang.  Bei einigen wenigen
+Targets sind auch L"angen m"oglich, die nicht ein mehrfaches von 8 Bit betragen,
+zum Beispiel 12 Bit bei der PDP-8.
+\par
+Bei Vorw"artsreferenzen gibt es im ersten Durchlauf die Situation, dass der
+endg"ultige Code gar nicht angegeben werden kann. \asname{} macht dann eine
+Annahme f"ur den Wert, der die weitere Assemblierung nicht st"ort.  Bei einer
+(zunehmenden) Zahl von Targets werden diese Felder im Code auch explizit
+mit Fragezeichen angezeigt.  Die folgenden Targets unterst"utzen dies aktuell:
+\begin{itemize}
+\item{68xxx/Coldfire}
+\item{DSP56000/56300}
+\item{PowerPC}
+\item{65xx/65xxx}
+\item{6800/6805/68HC08/6809/68HC11/68HC12}
+\item{8080/8085}
+\item{(e)Z80/Z180/Z280/Z380}
+\item{8048}
+\item{8051/80251}
+\item{8096/80196/80296}
+\item{8086/V20...V55}
+\item{AVR}
+\item{TMS370xxx}
+\item{uCOM-43}
+\end{itemize}
+Falls die Fragezeichen beim Weiterverarbeiten des Listings st"oren, k"ann
+diese Funktion "uber den Kommandozeilen-Schalter \tty{-no-list-unknown-values}
+abgeschaltet werden.
+\par
 Sollte mehr Code erzeugt worden sein, als in das Feld hineinpa"st, so
 werden im Anschlu"s an die Zeile weitere Zeilen erzeugt, in denen nur
 dieses Feld belegt ist.
@@ -1536,11 +1583,13 @@ Name             & Bedeutung \\
 \tty{TRUE}             & logisch ,,wahr'' \\
 \tty{FALSE}            & logisch ,,falsch'' \\
 \tty{CONSTPI}          & Kreiszahl Pi (3.1415.....) \\
+\tty{INTWIDTH}         & Bitbreite interne Integer-Arithmetik \\
+\tty{HAS64}            & interne Integer-Arithmetik verwendet mindestens 64 Bit \\
 \tty{FLOATMAX}         & gr"o"ste darstellbare Gleitkommazahl \\
 \tty{VERSION}          & Version von \asname{} in BCD-Kodierung, \\
                        & z.B. 1331 hex f"ur Version 1.33p1 \\
 \tty{ARCHITECTURE}     & Zielplattform, f"ur die \asname{} "ubersetzt wurde, \\
-                       & in der Form Prozesor-Hersteller-Betriebssystem \\
+                       & in der Form Prozessor-Hersteller-Betriebssystem \\
 \tty{DATE}             & Datum und \\
 \tty{TIME}             & Zeitpunkt der Assemblierung (Beginn) \\
 \tty{MOMCPU}           & momentan gesetzte Ziel-CPU \\
@@ -1611,9 +1660,42 @@ Den einzelnen Segmenttypen sind die in Tabelle \ref{TabSegNums}
 aufgelisteten Nummern zugeordnet.  Die aus der Ordnung normaler Symbole
 etwas herausfallenden Registersymbole sind n"aher in Abschnitt
 \ref{SectRegSyms} erl"autert.  Mit einem undefinierten Symbol als Argument
-liefert die \tty{SYMTYPE}-Funktion -1 als Ergebnis.  Ob ein Symbol "uberhaupt
-definiert ist, oder ein Formelausdruck keine bisher undefinierten Symbole
-enth"alt, l"a"st sich auch einfach mit der \tty{DEFINED}-Funktion abfragen.
+liefert die \tty{SYMTYPE}-Funktion -1 als Ergebnis.
+
+Ob ein Symbol definiert ist, kann mit den Funktionen \tty{DEFINED} bzw.
+\tty{SYMEXIST} gepr"uft werden.  Der Unterschied: \tty{SYMEXIST} liefert
+bei einer Vorw"artsdeklaration im ersten Durchlauf ein 'false' und bei
+weiteren Durchl"aufen ein 'true'.  Im Gegensatz dazu liefert \tty{DEFINED} nur
+dann ein 'true', wenn das Symbol im bis zu diesem Punkt assemblierten Code
+definiert wurde.  Bei Vorw"artsdeklarationen bleibt es also bei einem 'false',
+unabh"angig vom Durchlauf.
+
+\label{sect_symused}
+Mittels der Funktion \tty{SYMUSED} kann abgefragt werden, ob ein Symbol
+bisher schon einmal verwendet wurde.  Dies schlie"st auch Bez"uge auf
+ein Symbol ein, die {\em vor} seiner Definition erfolgen, falls
+eine der folgenden Bedingungen erf"ullt ist:
+\begin{itemize}
+\item{Sowohl die Vorw"artsreferenz als auch die Definition erfolgen im
+      globalen Symbol-Namensraum, d.h. au"serhalb von Sektionen oder
+      expandierten Makro-Rümpfen.}
+\item{Die Vorw"artsreferenz erfolgt in einer Sektion, aber au"serhalb
+      eines expandierten Makro-Rumpfes, und die Definition erfolgt ebenfalls
+      au"serhalb eines expandierten Makro-Rumpfes, in der selben Sektion, oder
+      einer Eltern-Sektion dieser Sektion, oder global.}
+\item{Die Vorw"artsreferenz erfolgt innerhalb eines expandierten Makro-Rumpfes,
+      und die Definition im selben Makro-Rumpf.}
+\end{itemize}
+Falls ein Symbol auf Benutzung gepr"uft werden soll und es Vorw"artsreferenzen
+gibt, die keine dieser drei Situationen erf"ullt, bleibt die M"oglichkeit,
+ein Symbol vor der ersten Vorw"artsreferenz mittels des \tty{FORWARD}-Befehls
+anzuk"undigen.  Es wird dann quasi ein 'Leereintrag' in der Symboltabelle
+angelegt, an dem Vorw"artsreferenzen explizit vermerkt werden k"onnen.
+
+\tty{DEFINED} akzeptiert nicht nur einen einfachen Symbolnamen, sondern auch
+einen kompletten Formelausdruck.  Der R"uckgabewert ist in so einem Fall
+nur dann 'true', falls der Ausdruck keine Symbole enth"alt, die nach der im
+vorigen Absatz gegebenen Erkl"arung undefiniert sind.
 \begin{table}[htb]
 \begin{center}
 \begin{tabular}{|l|c|}
@@ -2132,11 +2214,10 @@ bin"are UND-Verkn"upfung mit einer passenden Maske ist daher unvermeidlich!
 
 \subsection{Funktionen}
 
-Zus"atzlich zu den Operatoren definiert der Assembler noch eine Reihe
+Zus"atzlich zu den Operatoren definiert \asname{} noch eine Reihe
 in erster Linie transzendenter Funktionen mit Gleitkomma-Argument, die
 Tabellen \ref{TabFuncs1} und \ref{TabFuncs2} auflisten.
-\begin{table*}[htbp]
-\begin{center}\begin{tabular}{|l|l|l|l|}
+\begin{center}\begin{longtable}{|l|l|l|l|}
 \hline
 Name     & Funktion             & Argument & Ergebnis \\
 \hline
@@ -2176,12 +2257,10 @@ FIRSTBIT & niedrigstes 1-Bit    & Integer      & Integer \\
 LASTBIT  & h"ochstes 1-Bit      & Integer      & Integer \\
 BITPOS   & einziges 1-Bit       & Integer      & Integer \\
 \hline
-\end{tabular}\end{center}
 \caption{vordefinierte Funktionen in \asname{} - Teil 1 (Integer- und
          Gleitkomma-Funktionen)\label{TabFuncs1}}
-\end{table*}
-\begin{table*}[htb]
-\begin{center}\begin{tabular}{|l|l|l|l|}
+\end{longtable}\end{center}
+\begin{center}\begin{longtable}{|l|l|l|l|}
 \hline
 Name     & Funktion             & Argument & Ergebnis \\
 \hline
@@ -2211,11 +2290,11 @@ VAL         & evaluiert Stringin-   & String       & abh. von \\
 EXPRTYPE    & liefert Typ des       & Integer,     & 0 \\
             & Arguments             & Gleitkomma,  & 1 \\
             &                       & String       & 2 \\
+FSIZE       & liefert Dateigr"o"se  & String       & Integer \\
 \hline
-\end{tabular}\end{center}
 \caption{vordefinierte Funktionen in \asname{} - Teil 2
          (Integer- und String-Funk\-tio\-nen)\label{TabFuncs2}}
-\end{table*}
+\end{longtable}\end{center}
 Die Funktionen \tty{FIRSTBIT}, \tty{LASTBIT} und \tty{BITPOS} liefern
 als Ergebnis -1, falls "uberhaupt kein bzw. nicht genau ein Bit gesetzt
 ist. Zus"atzlich gibt \tty{BITPOS} in einem solchen Fall eine
@@ -2251,6 +2330,12 @@ dbstr   macro   arg
 im ersten bzw. -1, falls das Suchmuster nicht gefunden wurde.
 Analog zu \tty{SUBSTR} und \tty{CHARFROMSTR} hat das erste
 Zeichen den Positionswert 0.
+
+\tty{FSIZE} liefert die Gr"o"se einer Datei in Bytes.  Die
+Datei wird sowohl im aktuellen Verzeichnis gesucht, als auch
+relativ zum Verzeichnis der gerade assemblierten Quelldatei.
+Im Gegensatz zu \tty{INCLUDE} und \tty{BINCLUDE} wird jedoch
+nicht im Include-Pfad gesucht!
 
 Wenn eine Funktion auch Gleitkommaargumente erwartet, so soll
 dies nicht bedeuten, da"s man nicht z.B.
@@ -2436,8 +2521,9 @@ einmal sein.  Was sollte man als Erkenntnis aus diesem Abschnitt mitnehmen?
 \label{SectRegSyms} \ttindex{Registersymbole}
 
 {\em G"ultigkeit: PowerPC, M-Core, XGate, 4004/4040, MCS-48/(2)51, 8086,
-     80C16x, AVR, XS1, Z8, KCPSM, Mico8, MSP430(X), ST9, M16, M16C, H8/300,
-     H8/500, SH7x00, H16, i960, XA, 29K, TLCS-9000, KENBAK, SC/MP}
+     80C16x, AVR, XS1, Z8, KCPSM, Mico8, TMS340xx, MSP430(X), ST9, M16,
+     M16C, H8/300, H8/500, SH7x00, H16, i960, XA, 29K, TLCS-9000, KENBAK,
+     SC/MP, PDP-11, VAX}
 
 Manchmal ist es erw"unscht, nicht nur einer Speicheradresse oder einer
 Konstanten, sondern auch einem Register einen symbolischen Namen zuzuweisen,
@@ -2921,7 +3007,7 @@ f"ur \tty{BFINS} und \tty{BFEXT} verwendet werden.
 \subsection{PORT}
 \ttindex{PORT}
 
-{\em G"ultigkeit: PALM, 8008/8080/8085/8086, XA, Z80, Z8000, 320C2x/5x, TLCS-47, AVR,
+{\em G"ultigkeit: PALM, 8008/8080/8085/8086, XA, Z80, Z8000, 320C2x/5x, TLCS-42/47, AVR,
      F8, IMP-16}
 
 \tty{PORT} arbeitet analog zu \tty{SFR}, nur wird das Symbol dem I/O-Adre"sbereich
@@ -2941,8 +3027,11 @@ PIO_Ctrl   PORT PIO_Port_A+3
 \subsection{REG und NAMEREG}
 \ttindex{REG}\ttindex{NAMEREG}
 
-{\em G"ultigkeit: 680x0, AVR, M*Core, ST9, 80C16x, Z8000, KCPSM, \\
-     PDP-11, WD16 \\
+{\em G"ultigkeit: 680x0, PowerPC, PALM, M*Core, XGate, H8,\\
+     SH7x00, H16, M16(C), PDP-11, WD16, VAX, 4004, MCS-48/51,\\
+     8086, i960, XA, AVR, 29xxx,  80C16x, Z8, Z80, Z8000,\\
+     KCPSM(3), LatticeMico8, TLCS-9000, ST9, MSP430(X), V60,\\
+     SC/MP, NS32xxx, WE32xxx, XCore, KENBAK\\
      (\tty{NAMEREG} nur f"ur KCPSM(3)), LatticeMico8, MSP430(X)}
 
 Obwohl immer mit gleicher Syntax, hat diese Anweisung von Prozessor
@@ -2959,10 +3048,20 @@ Register- als auch symbolischer Name als Argumente angegeben, z.B. so:
      NAMEREG  s08, treg
 \end{verbatim}
 
-Auf der PDP-11 darf \tty{REG} zus"atzlich ohne Namen im Label-Feld benutzt
+Auf PDP-11 und TMS340xx darf \tty{REG} zus"atzlich ohne Namen im Label-Feld benutzt
 werden.  Es wird dann als einziges Argument entweder \tty{ON} oder \tty{OFF}
-erwartet, und damit werden die eingebauten Register-Aliase (\tty{Rn} = \tty{\%n},
-\tty{SP} = \tty{R6}, \tty{PC} = \tty{R7}) ein- und ausgeschaltet.  Sie
+erwartet, und damit werden die eingebauten Register-Aliase:
+\begin{itemize}
+\item{PDP-11: \tty{Rn} = \tty{\%n}, \tty{SP} = \tty{R6}, \tty{PC} = \tty{R7}}
+\item{TMS340xx: \tty{SADDR} = \tty{B0}, \tty{SPTCH} = \tty{B1},
+                \tty{DADDR} = \tty{B2}, \tty{DPTCH} = \tty{B3},
+                \tty{OFFSET} = \tty{B4}, \tty{WSTART} = \tty{B5},
+                \tty{WEND} = \tty{B6}, \tty{DYDX} = \tty{B7},
+                \tty{COLOR0} = \tty{B8}, \tty{COLOR1} = \tty{B9},
+                \tty{COUNT} = \tty{B10}, \tty{INC1} = \tty{B11},
+                \tty{INC2} = \tty{B12}, \tty{PATTRN1} = \tty{B13}}
+\end{itemize}
+ein- und ausgeschaltet.  Sie
 sind im Default verf"ugbar, und sollten nur abgeschaltet werden, wenn
 sie mit eigenen Symbolnamen in einem Programm kollidieren.  Die augenblickliche
 Einstellung l"a"st sich aus dem Symbol \tty{DEFAULT\_REGSYMS} lesen.
@@ -3253,10 +3352,11 @@ Mittel der Wahl.
 \\ \hline
 \multicolumn{11}{|l|}{$^{1}$ Initialwert 80h. } \\
 \multicolumn{11}{|l|}{  Da der 8051 kein RAM jenseits 80h hat, mu"s der Initialwert f"ur den 8051} \\
-\multicolumn{11}{|l|}{  als Zielprozessor auf jeden Fall mit \tty{ORG} angepa"st werden!} \\
+\multicolumn{11}{|l|}{  als Zielprozessor auf jeden Fall mit \tty{ORG} angepa"st werden.} \\
 \hline
-\multicolumn{11}{|l|}{$^{2}$ Da der Z180 weiterhin logisch nur 64K ansprechen kann, ist der} \\
-\multicolumn{11}{|l|}{ganze Adre"sraum nur mittels \tty{PHASE}-Anweisungen erreichbar!} \\
+\multicolumn{11}{|l|}{$^{2}$ Da Z180 und Z280 weiterhin logisch nur 64K ansprechen k"onnen, ist der} \\
+\multicolumn{11}{|l|}{ganze Adre"sraum nur mittels \tty{PHASE}-Anweisungen oder passenden \tty{ASSUME}-} \\
+\multicolumn{11}{|l|}{Werten f"ur die MMU-Register erreichbar.} \\
 \hline
 \multicolumn{11}{|l|}{$^{3}$ Initialwert 400h.} \\
 \hline
@@ -3273,6 +3373,8 @@ Mittel der Wahl.
 \multicolumn{11}{|l|}{$^{9}$ typabh"angig} \\
 \hline
 \multicolumn{11}{|l|}{$^{10}$ modellabh"angig} \\
+\hline
+\multicolumn{11}{|l|}{$^{11}$ Nur die ersten 128 KByte sind f"ur ausf"uhrbaren Code nutzbar.} \\
 \hline
 \caption{Adre"sbereiche f"ur \tty{ORG}}
 \label{TabORG}
@@ -3404,14 +3506,15 @@ noch ein paar mehr), bietet der 6811 neben weiteren Befehlen ein
 zweites Indexregister Y zur Adressierung.
 %%-----------
 \begin{cpulist}
-   6809/6309 und 6805/68HC08/68HCS08
+   6809/6809UNDOC/6309 und 6805/68HC08/68HCS08
 \end{cpulist}
 Diese Prozessoren sind zwar teilweise Quellcode-kompatibel zu den
 anderen 68xx-ern, haben aber ein anderes Bin"arcode-Format und einen
 deutlich eingeschr"ankteren (6805) bzw. erweiterten (6809) Befehlssatz.
 Der 6309 ist eine CMOS-Version des 6809, die zwar offiziell
 nur kompatibel zum 6809 ist, inoffiziell aber mehr Register und
-deutlich mehr Befehle besitzt (siehe \cite{Kaku}).
+deutlich mehr Befehle besitzt (siehe \cite{Kaku}).  6809UNDOC schaltet
+die undokumentierte {\tt HCF}-Instruktion frei.
 %%-----------
 \begin{cpulist}
    68HC12 $\longrightarrow$ 68HC12X
@@ -3588,6 +3691,14 @@ gleichen Kern-Befehlssatz.  Einige Erweiterungen, wie z.B.
 Befehle zur Verarbeitung von Strings, gepackten Dezimalzahlen
 oder bestimmten Gleitkommaformaten, sind nicht immer in
 Hardware implementiert.
+%%-----------
+\begin{cpulist}
+   WE32100 $\rightarrow$ WE32200
+\end{cpulist}
+Die dritte Generation des WE32xxx-Prozessors bietet sechzehn
+zus"atzliche CPU-Register, und mit diesen zusammen neue
+Adressierungsmodi wie Indiziert oder Auto-Inkrement und -Dekrement.
+Des weiteren wurden neue Maschinenbefehle hinzu gef"ugt.
 %%-----------
 \begin{cpulist}
    CP-3F, LP8000, M380
@@ -3774,6 +3885,7 @@ eingebauten Peripherie.
 \> $\rightarrow$ Z180 \\
 \> $\rightarrow$ eZ80190, eZ80L92, eZ80F91, \\
 \> eZ80F92, eZ80F93, \\
+\> $\rightarrow$ Z280 \\
 \> $\rightarrow$ Z380
 \end{cpulist}
 W"ahrend f"ur den Z180 nur die zus"atzlichen Befehle definiert sind
@@ -3881,6 +3993,14 @@ Momentan ist nur der Prozessorkern der TLCS-870/C-Familie implementiert.
 Diese drei Varianten der TLCS-47-Familie haben unterschiedlich gro"se
 RAM-und ROM-Adre"sbereiche, wodurch jeweils einige Befehle zur
 Bankumschaltung hinzukommen oder wegfallen.
+%%-----------
+\begin{cpulist}
+4240P, 4250N, 4260P, 4270N \\
+42C00Y, 42C40P, 42C50N, 42C60P, 42C70N\\
+\end{cpulist}
+Die CMOS-Varianten verf"ugen "uber zwei zus"atzliche Befehle.  Ansonsten
+unterscheiden die Varianten sich in der Anzahl der I/O-Ports und der
+Gr"o"se des Prorammspeichers.
 %%-----------
 \begin{cpulist}
    97C241
@@ -4038,6 +4158,16 @@ C5x-Prozessoren wird von \asname{} momentan nicht ausgenutzt.
 Dies ist momentan der Repr"asentant f"ur die TMS320C54x-Familie...
 %%-----------
 \begin{cpulist}
+   32060
+\end{cpulist}
+%%-----------
+\begin{cpulist}
+   34010 $\rightarrow$ 34020
+\end{cpulist}
+Der TMS34020 unterst"utzt eine vollen 4 GBit-Adres"raum, zus"atzliche
+Maschinenbefehle sowie eine Koprozessor-Schnittstelle.
+%%-----------
+\begin{cpulist}
    TI990/4, TI990/10, TI990/12 \\
 \> TMS9900, TMS9940, TMS9995, TMS99105, TMS99110
 \end{cpulist}
@@ -4145,6 +4275,12 @@ und der NS32CG16 ist eine Embedded-Variante mit Zusatzbefehlen f"ur
 Bitblock-Transfers.
 %%-----------
 \begin{cpulist}
+   CR16A $\rightarrow$ CR16B
+\end{cpulist}
+CR16B erweitert den Adre"sraum von 256 KByte auf 2 MByte und stellt
+eine Reihe neuer Befehle zur Verf"ugung.
+%%-----------
+\begin{cpulist}
    ACE1101, ACE1202
 \end{cpulist}
 %%-----------
@@ -4191,14 +4327,17 @@ differieren zum Teil in den Reset-Werten einiger Register!
 \begin{cpulist}
    uPD550, uPD554, uPD652, \\
 \> uPD547, uPD552, uPD651, \\
-\> uPD546, uPD553, uPD556, uPD557, uPD650
+\> uPD546, uPD553, uPD556, uPD557, uPD650, iso650
 \end{cpulist}
 Die drei Gruppen vom Controllers geh"oren jeweils zur
 $\mu$COM-45-, $\mu$COM-44- und $\mu$COM-43-Familie. Die
 ersten beiden Familien implementieren eine Untermenge
 des $\mu$COM-43-Befehlssatzes.  Ansonsten unterscheiden
 die Varianten sich in der Menge des integrierten ROM-
-und RAM-Speichers.
+und RAM-Speichers.  iso650 ist eine FPGA-Implementierung
+des uPD650 und unterscheidet sich vom 'Original' durch
+eine NAND-Anweisung sowie einen von 2000 auf 4096 Byte
+vergr"o"serten Adre"sraum.
 %%-----------
 \begin{cpulist}
    7566 $\leftrightarrow$ 7508
@@ -4465,8 +4604,8 @@ jeweils zugeh"origen Unterkapitel mit prozessorspezifischen Hinweisen beschriebe
 {\em
 \begin{itemize}
 \item{G"ultigkeit SUPMODE: 680x0, NS32xxx, PDP-11, i960, TLCS-900,
-      SH7000, i960, 29K, XA, PowerPC, M*CORE, V60 und TMS9900}
-\item{G"ultigkeit FPU: 680x0, NS32xxx, 80x86}
+      SH7000, i960, 29K, Z280, XA, PowerPC, M*CORE, V60 und TMS9900}
+\item{G"ultigkeit FPU: 680x0, NS32xxx, 80x86, WE32xxx}
 \item{G"ultigkeit PMMU: 680x0, NS32xxx}
 \item{G"ultigkeit CUSTOM: NS32xxx}
 \end{itemize}
@@ -4504,18 +4643,20 @@ eine Warnung, bei \tty{PMMU} und \tty{FPU} eine echte Fehlermeldung.
 
 %%- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
-\subsection{ACCMODE}
+\subsection{ACCMODE bzw. EXECMODE}
 \ttindex{ACCMODE}
+\ttindex{EXECMODE}
 
 {\em
 \begin{itemize}
-\item{G"ultigkeit: VAX}
+\item{G"ultigkeit: VAX (ACCMODE),\\
+      WE32xxx (EXECMODE)}
 \end{itemize}
 }
 
-Die VAX kennt nicht nur einen Supervisor- un User-Mode, sonder vier derartige
+VAX und WE32xxx kennen nicht nur einen Supervisor- un User-Mode, sondern vier derartige
 Privilegstufen.  Mit absteigenden Rechten heissen diese Zugriffs-Modi Kernel,
-Executive, Supervisor und User.  Mit dem {\tt ACCMODE}-Befehl teilt man dem
+Executive, Supervisor und User.  Mit dem {\tt ACCMODE} bzw. {\tt EXECMODE}-Befehl teilt man dem
 Assembler mit, in welchen Modus der folgende Code ausgef"uhrt wird.  Je nach
 Modus sind nicht alle Maschinenbefehle erlaubt.  Als Argument sind entweder
 die genannten Namen der vier Modi zul"assig, oder eine Zahl von Null
@@ -4578,6 +4719,18 @@ Einstellung kann aus einem gleichnamigen Symbol ausgelesen werden.
 \bb{ACHTUNG!}  Der \tty{CPU}-Befehl besetzt f"ur 680x0-Argumente implizit
 diese Einstellung vor!  \tty{FULLPMMU} mu"s also auf jeden Fall nach dem
 \tty{CPU}-Befehl kommen!
+
+%%- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+\subsection{COPROC}
+\ttindex{COPROC}
+
+{\em G"ultigkeit: TMS34020}
+
+Mit diesem Befehl wird festgelegt, welche Id (Adresse) in Koprozessor-
+Befehle eingesetzt werden soll, wenn keine explizite Id angegeben wurde.
+Der Default f"ur diesen Wert wiederum ist Null.  Erlaubte Werte sind von
+0 bis 7.
 
 %%- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
@@ -5208,10 +5361,54 @@ Vorinitialisiert sind folgende \tty{ASSUME}s :
 Der Z180 besitzt eine eingebaute MMU, die den ,,logischen Adre"sraum'' des
 CPU-Kerns von 64 KByte auf einen physischen Adre"sraum von 512 KByte "ubersetzt.
 Das genaue Mapping wird durch die drei Register {\tt CBAR}, {\tt CBR} und {\tt BBR}
-gesteuert.  Im Gegensatz zum 68HC11K4 nimmt der Assembler aktuell keine 
-automatischen Umrechnungen von physischen auf logische Adressen vor, sondern
-h"alt lediglich intern Umrechnungstabellen vor.  Es ist aber m"oglich, diese
-unter Benutzung der {\tt phys2cpu()}-Funktion zu benutzen.
+gesteuert.  "Ahnlich wie beim 68HC11K4 nimmt \asname{} automatische Umrechnungen
+von physischen auf logische Adressen vor, und zwar sowohl f"ur absolute Adressen
+als auch Quelle und Ziel von relativen Spr"ungen.  Es ist ebenfalls m"oglich, auf
+die Mapping-Tabellen "uber die Funktionen {\tt phys2cpu()} und {\tt cpu2phys()}
+zuzugreifen.
+
+%%. . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
+
+\subsubsection{Z280}
+
+Beim Z280 kann man "uber das I-Bit im Trap Control Register festlegen, ob
+I/O-Zugriffe im User-Modus erlaubt sein sollen oder nicht.  Teilt man \asname{}
+"uber ein
+\begin{verbatim}
+   assume i:1
+\end{verbatim}
+mit, dass sie verboten sind, dann wird eine entsprechende Warnung ausgegeben,
+falls I/O-Befehle im User-Modus verwendet werden.
+
+Des weiteren enth"alt der Z280 eine MMU, um den logischen 64K-Adre"sraum der
+CPU auf die physikalisch adressierbaren 16 MByte abzubilden.  Ihre Funktion
+wird zum einen "uber das MMU Master Control Register ({\tt MMUMCR}) gesteuert,
+zum anderen "uber 32 Page Descriptor Register (({\tt UPD0...UPD15},
+{\tt SPD0...SPD15}).  Die aktuellen Werte aller Register k"onnen \asname{} via
+{\tt ASSUME}-Anweisungen mitgeteilt werden.
+
+F"ur die Berechnung des aktuellen Mappings werden die folgenden Bits
+des {\tt MMUMCR} beachtet:
+\begin{itemize}
+\item{Bit 15 (UTE): MMU im User-Modus einschalten}
+\item{Bit 14 (UPD): Programm/Data-Separation im User-Modus einschalten}
+\item{Bit 11 (STE): MMU im System-Modus einschalten}
+\item{Bit 10 (SPD): Programm/Data-Separation im System-Modus einschalten}
+\end{itemize}
+
+Die folgenden Bits von {\tt UPDn/SPDn} werden beachtet:
+\begin{itemize}
+\item{Bit 3 (V): Seite g"ultig/aktiv}
+\item{Bit 15...4 bzw. 15...5: Seitenadresse, also Bits 23...12
+      bzw. 23...13 der Startadresse im physischen Adressraum.}
+\end{itemize}
+
+Abh"angig von den Registerwerten kann die Adress"ubersetzung im System-
+und/oder User-Modus aktiv sein (STE und/oder UTE gesetzt), oder "uberhaupt
+nicht (sowohl STE als auch UTE nicht gesetzt).  Die aktuelle Einstellung
+von {\tt SUPMODE} hat deshalb auch einen Einflu"s auf das aktuelle Mapping.
+Falls es eingeschaltet ist, kann es f"ur Code- und Datenzugriffe gleich
+oder unterschiedlich sein (UPD/SPD nicht gesetzt oder gesetzt).
 
 %%. . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
 
@@ -5782,7 +5979,7 @@ G"ultigkeit: \= Intel (au"ser 4004/4040), Zilog, Toshiba, NEC, TMS370,\\
              \> Siemens, AMD, M16(C), MELPS7700/65816, National, ST9,\\
              \> Atmel, TMS7000, TMS1000, $\mu$PD77230, Signetics,\\
              \> Fairchild, Intersil,\\
-             \> XS1, SC62015
+             \> XS1, SC62015, WE32xxx
 \end{tabbing}}
 
 Diese Befehle stellen sozusagen das Intel-Gegenst"uck zu \tty{DS}
@@ -5837,7 +6034,7 @@ zu verwenden.
 \par
 \tty{DB} und \tty{DW} auf 65xx- und 68xx-Plattformen verstehen neben
 dem \tty{DUP}-Operator zus"atzlich die 'Motorola-Variante' davon,
-nämlich eine in eckigen Klammern davor geschriebene Zahl von
+n"amlich eine in eckigen Klammern davor geschriebene Zahl von
 Wiederholungen.
 \par
 Auf verschiedenen Plattformen existieren Befehle mit identischer
@@ -5858,8 +6055,25 @@ Funktionalit"at, jedoch anderem Namen:
       WD16 wie \tty{DB} bzw. \tty{DW}, akzeptieren aber nur Ganzzahl-Argumente.}
 \item{\tty{LWORD} bzw. \tty{QUAD} funktionieren auf der VAX wie \tty{DD}
       bzw. \tty{DQ}, akzeptieren aber nur Ganzzahl-Argumente.}
-\ttindex{BYTE}\ttindex{WORD}\ttindex{LWORD}\ttindex{QUAD}
+\ttindex{HALF}
+\item{\tty{BYTE} funktioniert auf WE32xxx wie \tty{DB}, \tty{HALF}
+      wie \tty{DW}, und \tty{WORD} wie \tty{DD}, akzeptiert aber nur
+      Ganzzahl-Argumente.}
+\item{\tty{DOUBLE} funktionieren auf WE32xxx wie \tty{DQ}, akzeptiert
+      aber nur Gleitkomma-Argumente)}
+\ttindex{BYTE}\ttindex{STRING}
+\ttindex{WORD}\ttindex{LONG}\ttindex{INT}
 \ttindex{FLOAT}\ttindex{DOUBLE}
+\item{Auf dem TI TMS340xx existieren:
+      \begin{itemize}
+      \item{\tty{BYTE} (wie \tty{DB}, nur Ganzzahl-Argumente)}
+      \item{\tty{STRING} (wie \tty{DB}, nur Zeichenketten-Argumente)}
+      \item{\tty{WORD} (wie \tty{DW}, nur Ganzzahl-Argumente)}
+      \item{\tty{LONG} oder \tty{INT} (wie \tty{DD}, nur Ganzzahl-Argumente)}
+      \item{\tty{FLOAT} (wie \tty{DD}, nur Gleitkomma-Argumente)}
+      \item{\tty{DOUBLE} (wie \tty{DQ}, nur Gleitkomma-Argumente)}
+      \end{itemize}}
+\ttindex{LWORD}\ttindex{QUAD}
 \item{Auf dem Renesas RX existieren:
       \begin{itemize}
       \item{\tty{BYTE} (wie \tty{DB})}
@@ -5867,6 +6081,15 @@ Funktionalit"at, jedoch anderem Namen:
       \item{\tty{LWORD} (wie \tty{DD}, nur Ganzzahl-Argumente)}
       \item{\tty{FLOAT} (wie \tty{DD}, nur Gleitkomma-Argumente)}
       \item{\tty{DOUBLE} (wie \tty{DQ}, nur Gleitkomma-Argumente)}
+      \end{itemize}}
+\item{Auf CR16 existieren:
+      \begin{itemize}
+      \item{\tty{BYTE} oder \tty{DC8} (wie \tty{DB}, Strings oder Ganzzahl-Argumente)}
+      \item{\tty{WORD} oder \tty{DC16} (wie \tty{DW}, nur Ganzzahl-Argumente)}
+      \item{\tty{LONG} oder \tty{DC32} (wie \tty{DD}, nur Ganzzahl-Argumente)}
+      \item{\tty{DC64} (wie \tty{DQ}, nur Ganzzahl-Argumente)}
+      \item{\tty{FLOAT} oder \tty{DF32} (wie \tty{DD}, nur Gleitkomma-Argumente)}
+      \item{\tty{DOUBLE} oder \tty{DF64} (wie \tty{DQ}, nur Gleitkomma-Argumente)}
       \end{itemize}}
 \end{itemize}
 
@@ -5887,11 +6110,51 @@ akzeptiert aber neben String- und Integerargumenten auch Gleitkommawerte
 nicht}!
 
 Bei der Ablage von Gleitkommazahlen ist zu beachten, da"s diese keine h"ohere
-Genauigkeit und Wertebereich haben können als das auf dem Host-System verwendete
+Genauigkeit und Wertebereich haben k"onnen als das auf dem Host-System verwendete
 Format.  Handelt es sich dabei z.B. um das '"ubliche' IEEE 754 64-Bit-Format,
 so ist der Wertebereich auf ca. +/-$1.8*10^{308}$ beschr"ankt (siehe Variable
 \tty{FLOATMAX}), und die untersten zwei bzw. acht Bytes bei \tty{DT} bzw.
 \tty{DO} sind Null.
+
+%%- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+\subsection{D1}
+\ttindex{D1}
+
+{\em\begin{tabbing}
+G"ultigkeit: \= MCS-51 \\
+\end{tabbing}}
+
+\tty{D1} funktioniert analog zu \ttindex{DB} und \ttindex{DN}, der
+Unterschied ist aber, da"s hiermit nur ein einzelnes Bit abgelegt bzw.
+reserviert wird.  Diese Anweisung ergibt daher auch nur in Adre"sr"aumen
+eine Sinn, die bitweise adressiert werden.  Das ist aktuell nur im
+{\tt BITDATA}-Segment des 8051 der Fall, falls die {\tt BITSEGSIZE:1}-Option
+benutzt wurde.
+
+%%- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+\subsection{DC24}
+\ttindex{DC24}
+
+{\em\begin{tabbing}
+G"ultigkeit: \= CR16 \\
+\end{tabbing}}
+
+\tty{DC24} funktioniert analog zu \ttindex{DW} und \ttindex{DD}, legt
+aber (Ganzzahl-)Werte mit 24 Bit L"ange ab.
+
+%%- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+\subsection{FLT}
+\ttindex{FLT}
+
+{\em\begin{tabbing}
+G"ultigkeit: \= WE32xxx \\
+\end{tabbing}}
+
+\tty{FLT} funktioniert analog zu \tty{DD}, legt jedoch ausschlie"slich
+Gleitkomma-Konstanten im IEEE-Format mit einfacher Genauigkeit ab.
 
 %%- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
@@ -5927,13 +6190,16 @@ Die Befehle funktionieren ansonsten wie \tty{DD} und \tty{DQ}.
 
 %%- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
-\subsection{DS, DS8}
+\subsection{DS, DS8, DS16, DS32, DS64}
 \ttindex{DS}
 \ttindex{DS8}
 
 {\em\begin{tabbing}
 G"ultigkeit: \= Intel, Zilog, Toshiba, NEC, TMS370, Siemens, AMD, M16(C),\\
-             \> National, ST9, TMS7000, TMS1000, Intersil, 6502, 68xx
+             \> National, ST9, TMS7000, TMS1000, Intersil, 6502, 68xx,\\
+             \> WE32xxx, CR16 \\
+             \> CR16, SC14xxx (DS8) \\
+             \> CR16 (DS16, DS32, DS64) \\
 \end{tabbing}}
 
 Dieser Befehl stellt eine Kurzschreibweise dar, um Speicherbereiche
@@ -5947,9 +6213,8 @@ ist eine Kurzschreibweise f"ur
 }\end{quote}
 dar, lie"se sich also prinzipiell auch einfach "uber ein Makro realisieren,
 nur scheint dieser Befehl in den K"opfen einiger mit Motorola-CPUs gro"s
-gewordener Leute (gell, Michael?) so fest verdrahtet zu sein, da"s sie
-ihn als eingebauten Befehl erwarten...hoffentlich sind selbige jetzt
-zufrieden {\tt ;-)}
+gewordener Leute so fest verdrahtet zu sein, da"s sie
+ihn als eingebauten Befehl erwarten.
 
 {\tt DS8} ist beim National SC14xxx als Alias f"ur {\tt DS} definiert.
 Achten Sie aber darauf, da"s der Speicher dieser Prozessoren in Worten zu
@@ -5963,7 +6228,7 @@ die n"achstgr"o"sere gerade Zahl aufgerundet.
 \ttindex{BLKB}\ttindex{BLKW}\ttindex{BLKL}\ttindex{BLKQ}\ttindex{BLKO}
 \ttindex{BLKF}\ttindex{BLKD}\ttindex{BLKG}\ttindex{BLKH}
 
-{\em G"ultigkeit: VAX}
+{\em G"ultigkeit: VAX, CR16}
 
 Diese Befehle reservieren Speicher f"ur die angegebene Menge von Datenelementen,
 deren Typ im letzten Zeichen des Befehls kodiert ist.  Dementsprechend ist
@@ -6180,6 +6445,20 @@ aus:
 \end{verbatim}
 Mich m"oge niemand steinigen, wenn ich mich auf meinem HP28
 verrechnet haben sollte...
+
+%%- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+\subsection{FIELD}
+\ttindex{FIELD}
+ 
+{\em G"ultigkeit: TMS340xx}
+ 
+\tty{FIELD} legt im Speicher ein Bitfeld mit einer bestimmten Länge und Wert
+ab.  Das zweite Argument ist die L"ange des Feldes (1 bis 32 Bit), das erste
+ist der darin abzulegende (Integer-)Wert.  Der erlaubte Wertebereich ist von
+der L"ange abh"angig und kann wahlweise vorzeichenlos oder vorzeichenbehaftet
+im Zweierkomplement sein.  F"ur ein Bitfeld mit 16 Bit L"ange geht der erlaubte
+Wertebereich z.B. von -32768 bis +65535.
 
 %%- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
@@ -6420,6 +6699,17 @@ macht den Programmz"ahler gerade.  Wird \tty{ALIGN} in dieser Form mit nur
 einem Argument verwendet, ist der Inhalt des dadurch frei bleibenden
 Speicherbereichs nicht definiert.  Alternativ kann als zweites Argument ein
 (Byte-)Wert angegeben werden, mit dem dieser Bereich gef"ullt wird.
+
+%%- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+ 
+\subsection{EVEN}
+\ttindex{EVEN}
+ 
+{\em G"ultigkeit: TMS340xx}
+
+\tty{EVEN} ist eine Spezialisierung von \tty{ALIGN}.  Der Befehl inkrementiert
+den Programmzähler so weit, da"s er ein mehrfaches von 16 Bit ist, also passend
+zum Beispiel zur Ablage von Prozessorbefehlen.
 
 %%- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
@@ -7342,15 +7632,23 @@ Ein \tty{ELSEIF} bezieht sich immer auf das letzte, noch nicht abgeschlossene \t
 \par
 Neben \tty{IF} sind noch folgende weitere bedingte Befehle definiert:
 \ttindex{IFDEF}\ttindex{IFNDEF}
+\ttindex{IFSYMEXIST}\ttindex{IFNSYMEXIST}
 \ttindex{IFUSED}\ttindex{IFNUSED}
 \ttindex{IFEXIST}\ttindex{IFNEXIST}
 \ttindex{IFB}\ttindex{IFNB}
 \begin{itemize}
-\item{\tty{IFDEF} $<$Ausdruck$>$ : wahr, falls das der Ausdruck keine Symbole
-      enth"alt, die bisher undefiniert sind.}
+\item{\tty{IFDEF} $<$Ausdruck$>$ : wahr, falls der Ausdruck keine Symbole
+      enth"alt, die im bis zu diesem Punkt assemblierten Quellcode (noch) nicht
+      definiert wurden.  ACHTUNG! Bei Vorw"artsdeklarationen liefert diese Abfrage
+      in allen Durchl"aufen  ein negatives Ergebnis!}
 \item{\tty{IFNDEF} $<$Ausdruck$>$ : Umkehrung zu \tty{IFDEF}}
+\item{\tty{IFSYMEXIST} $<$Symbol$>$ : wahr, falls dieses Symbol in der Symboltabelle
+      existiert.  ACHTUNG! Bei Vorw"artsdeklarationen liefert diese Abfrage im
+      ersten Durchlauf ein negatives Ergebnis, aber ein positives in allen
+      weiteren!}
+\item{\tty{IFNSYMEXIST} $<$Symbol$>$ : Umkehrung zu \tty{IFSYMEXIST}}
 \item{\tty{IFUSED} $<$Symbol$>$ : wahr, falls das Symbol bisher mindestens einmal
-      benutzt wurde.}
+      benutzt wurde.  Siehe Abschnitt \ref{sect_symused} f"ur Ausnahmen davon.}
 \item{\tty{IFNUSED} $<$Symbol$>$ : Umkehrung zu \tty{IFUSED}}
 \item{\tty{IFEXIST} $<$Name:  $>$ : wahr, falls die angegebene Datei existiert.
       F"ur Schreibweise und Suchpfade gelten gleiche Regeln wie beim
@@ -8030,7 +8328,7 @@ Symbolnamen mit einem expliziten Bezug versehen:
 \end{verbatim}
 Falls ein lokales Symbol h"aufig referenziert wird, k"onnen die vielen
 Klammern mit dem \tty{FORWARD}-Befehl eingespart werden.  Das Symbol
-wird damit explizit als lokal angek"undigt.  \asname{} wird dann bei Zugriffen
+wird damit explizit als lokal angek"undigt.  \asname{} wird bei Zugriffen
 auf dieses Symbol automatisch nur im lokalen Symbolbereich suchen.
 In diesem Falle m"u"ste an der mit \tty{***} gekennzeichneten Stelle
 daf"ur der Befehl
@@ -8042,6 +8340,17 @@ Damit \tty{FORWARD} Sinn macht, mu"s es nicht nur vor der Definition des
 Symbols, sondern vor seiner ersten Benutzung in der Sektion gegeben werden.
 Ein Symbol gleichzeitig privat und "offentlich zu definieren, ergibt keinen
 Sinn und wird von \asname{} auch angemahnt.
+
+Im Gegensatz zu \tty{PUBLIC} und \tty{GLOBAL} darf \tty{FORWARD} auch
+au"serhalb von Sektionen verwendet werden.  In diesem Fall bleibt die
+Funktion erhalten, da"s in der Symboltabelle ein 'Platzhalter-Eintrag'
+angelegt wird.  Dieser enth"alt zwar keinen Wert, und die Bezugnahme auf
+so einen Eintrag wird wie der Zugriff auf ein (bisher) nicht definiertes
+Symbol behandelt.  Es wird in so einem Fall aber das Used-Flag an diesem
+Platzhalter-Eintrag gesetzt.  Eine \tty{FORWARD}-Deklaration eines
+Symbols kann daher n"utzlich sein, wenn ein Symbol per \tty{SYMUSED} auf
+Benutzung gepr"uft werden soll, und es Referenzen vor seiner eigentlichen
+Definition im Quellcode gibt.
 
 %%- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
@@ -9508,6 +9817,30 @@ die optimale Variante, d.h. \tty{SJMP/AJMP/LJMP} f"ur \tty{JMP} und
 \tty{ACALL/LCALL} f"ur \tty{CALL}.  Es ist nat"urlich weiterhin m"oglich,
 die Varianten direkt zu verwenden, um eine bestimmte Kodierung zu erzwingen.
 
+Aus historischen Gr"unde ist das {\tt BITDATA}-Segment im Default
+{\em nicht} bitweise organisiert, d. h. eine Anweisung wie
+\begin{verbatim}
+flag db ?
+\end{verbatim}
+setzt den Programmz"ahler nur um eins weiter, und nicht um acht.  Es ist
+quasi implizit vereinbart, dass Bytes in Wirklichkeit nur Bits sind - und
+wer nicht nur Speicher reserviert, sollte nur Null und eins als Werte
+ablegen. Dieses etwas unintuitive Verhalten ist der Tatsache geschuldet,
+da"s fr"uhere Versionen von \asname{} schlicht keine Adre"sr"aume mit
+einer Wortbreite unterst"utzten, die nicht 8, 16 oder 32 Bit war.  Und 
+als es dann m"oglich war, h"atte eine harte Umstellung dazu gef"uhrt, da"s
+existierende Programme nicht mehr wie vorher funktionieren.
+
+Wer ein in Bits organisiertes {\tt BITDATA}-Segment haben m"ochte, mu"s
+dieses daher explizit anfordern, indem bei der Auswahl des Ziels eine
+Option angegeben wird:
+\begin{verbatim}
+	cpu     8051:bitsegsize=1
+\end{verbatim}
+Des weiteren ist zu beachten, da"s bei der Ausgabe von in diesem Segment
+abgelegten Daten mittels P2BIN oder P2HEX ein einzelnes Bit nach wie vor
+ein komplettes Byte belegt.
+
 %%---------------------------------------------------------------------------
 
 \section{MCS-251}
@@ -10017,7 +10350,7 @@ in unteilbare 16-Bit-Worte.  Diese kann auch explizit mit dem Argument
 
 %%---------------------------------------------------------------------------
 
-\section{Z80, Z380}
+\section{Z80, Z18, Z280, Z380}
 
 Der Z80 kennt zwei Arten von Spr"ungen: relativ ({\tt JR}) erlaubt Sprungdistanzen
 von -128 bis +127 Byte, w"ahrend man mit absoluten Spr"ungen ({\tt JP}) den
@@ -10025,7 +10358,7 @@ kompletten Adre"sraum erreicht.  \asname{} unterst"utzt einen Pseudobefehl
 {\tt J}, der anhand der Zieladresse und der Sprungbedingung automatisch die
 k"urzestm"ogliche Variante w"ahlt (relative Spr"unge sind nicht f"ur alle
 Bedingungen definiert).  Dies gilt auch f"ur alle vom Z80 abgeleiteten Targets,
-wie Z80UNDOC, Z180, RABBIT2000 und LR35902.
+wie Z80UNDOC, Z180, Z280, RABBIT2000 und LR35902.
 
 F"ur den Z380 wird {\tt J} ebenfalls angeboten, da der Z380 jedoch gr"o"sere
 Sprungdistanzen unterst"utzt, wird erst auf absolute Spr"unge ausgewichen,
@@ -10044,7 +10377,7 @@ Da es von Zilog naturgem"a"s keine Syntaxvorgaben f"ur die undokumentierten
 Befehle gibt und wohl auch nicht jeder den kompletten Satz kennt,
 ist es vielleicht sinnvoll, diese Befehle hier kurz aufzuz"ahlen:
 \par
-Wie auch beim Z380 und eZ80 ist es m"oglich, die Byte-H"alften von IX und IY
+Wie auch beim Z280/Z380 und eZ80 ist es m"oglich, die Byte-H"alften von IX und IY
 einzeln anzusprechen.  Im einzelnen sind dies folgende Varianten:
 \begin{verbatim}
  INC Rx              LD R,Rx             LD  Rx,n
@@ -10168,22 +10501,28 @@ einmal etwas nachbessern, sonst kann man den Z380 selbst beim
 besten Willen nur als ,,16-Bit-Prozessor mit 32-Bit-Erweiterungen''
 bezeichnen...
 
-Kompliziert wird die Sache dadurch, da"s die mit LW eingestellte
-Operandengr"o"se f"ur einzelne Befehle mit den Pr"afixen \tty{DDIR W}
-und \tty{DDIR LW} "ubersteuert werden kann.  \asname{} merkt sich das
-Auftreten solcher Befehle und schaltet dann f"ur den n"achsten
-Prozessorbefehl automatisch mit um.  Andere \tty{DDIR}-Varianten
-als \tty{W} und \tty{LW} sollte man "ubrigens nie explizit
-verwenden, da \asname{} bei zu langen Operanden diese automatisch
-einsetzt, und das k"onnte zu Verwirrungen f"uhren.  Die Automatik
-geht "ubrigens so weit, da"s in der Befehlsfolge
+Kompliziert wird die Sache dadurch, da"s sowohl die mit LW eingestellte
+Operandengr"o"se, als auch die L"ange von immediate- und absoluten
+Operanden, f"ur einzelne Befehle mit den Pr"afixen \tty{DDIR W/LW/IB/IW}
+\asname{} merkt sich die Verwendung solcher Befehle und ber"ucksichtigt
+sie f"ur den n"achsten Befehl automatisch mit.  Dabei sind die folgenden
+F"alle zu unterscheiden:
+
+Ging gar kein \tty{DDIR}-Befehl voraus bzw. einer, der keine explizite
+Operandenl"ange enthielt (also weder \tty{IN}, \tty{IB}, noch \tty{IW}), so wird die
+Operandenl"ange automatisch festgelegt.  Ein eventuell erforderlicher
+\tty{DDIR}-Pr"afix wird automatisch eingef"ugt.  Ein einzelnes
+\begin{verbatim}
+        LD      BC,12345678h
+\end{verbatim}
+wird also automatisch um ein f"uhrendes \tty{DDIR IW} erg"anzt.  In diesem
+Fall jedoch:
 \begin{verbatim}
         DDIR    LW
         LD      BC,12345678h
 \end{verbatim}
-automatisch der erforderliche \tty{IW}-Pr"afix mit in die
-vorangehende Anweisung hineingezogen wird, effektiv wird also
-der Code
+wird der \tty{DDIR}-Pr"afix automatisch um ein \tty{IW} erg"anzt,
+effektiv wird also der Code f"ur
 \begin{verbatim}
         DDIR    LW,IW
         LD      BC,12345678h
@@ -10191,6 +10530,23 @@ der Code
 erzeugt.  Der im ersten Schritt erzeugte Code f"ur \tty{DDIR LW}
 wird verworfen, was an einem \tty{R} im Listing zu erkennen
 ist.
+
+Explizite \tty{DDIR}-Pr"afixe mit einem \tty{IN}, \tty{IB}, oder
+\tty{IW} k"onnen genutzt werden, um eine bestimmte Operandenl"ange
+zu erzwingen.  Zu lange Operanden f"uhren zu einer Fehlermeldung,
+k"urzere werden mit Nullen auf die geforderte L"ange gebracht.  Ein
+\begin{verbatim}
+        DDIR    IB
+        LD      BC,12345678h
+\end{verbatim}
+f"uhrt also zu einer Fehlermeldung, weil die Konstante nicht in 24
+Bit hineinpasst.  Umgekehrt wird hier
+\begin{verbatim}
+        DDIR    LW,IW
+        LD      BC,345678h
+\end{verbatim}
+die Konstante mit einem Byte mehr kodiert, als eigentlich
+erforderlich w"are.
 
 %%---------------------------------------------------------------------------
 
@@ -11423,6 +11779,34 @@ unterst"utzt, die wohl im UNIX-Umfeld g"angig war.
 
 %%---------------------------------------------------------------------------
 
+\section{CR16}
+\label{CR16Spec}
+
+Als National die CR16-Architektur mit dem CR16B auf 2 MByte Adre"sraum
+erweiterte, war die Kompatibilit"at zum Vorg"anger CR16A ein Thema.  CR16B
+hat deshalb ein 'Kompatibilit"atsbit', in dem er vollst"andig bin"ar
+aufw"artskompatibel ist.  Der Preis daf"ur ist, da"s diverse Sprungbefehle
+weiterhin nur die ersten 128 Kbyte des Adre"sraumes erreichen k"onnen.  Im
+,,Large Model'' "andert sich die bin"are Kodierung dieser Befehle, so da"s
+die vollen 2 MByte erreicht werden k"onnen.  Ob man beim CR16B Code f"ur
+das kleine oder gro"se Speichermodell erzeugen will, w"ahlt man zusammen
+mit der \tty{CPU}-Anweisung:
+
+\begin{verbatim}
+   cpu cr16b:model=0
+\end{verbatim}
+
+w"ahlt das kleine Modell,
+
+\begin{verbatim}
+   cpu cr16b:model=1
+\end{verbatim}
+
+w"ahlt das gro"se Modell.  Letzteres ist auch der Default, wenn diese Option
+weggelassen wird.
+
+%%---------------------------------------------------------------------------
+
 \section{uPD78(C)1x}
 \label{78C1xSpec}
 
@@ -11870,22 +12254,7 @@ zu lassen.
 Allen Records ist gemein ist ein Header-Byte, das den Typ des Records
 und die damit folgenden Datenstrukturen festlegt.  In einer Pascal-artigen
 Form l"a"st sich die Record-Struktur folgenderma"sen beschreiben:
-\begin{verbatim}
-FileRecord = RECORD CASE Header:Byte OF
-              $00:(Creator:ARRAY[] OF Char);
-              $01..
-              $7f:(StartAdr : LongInt;
-                   Length   : Word;
-                   Data     : ARRAY[0..Length-1] OF Byte);
-              $80:(EntryPoint:LongInt);
-              $81:(Header   : Byte;
-                   Segment  : Byte;
-                   Gran     : Byte;
-                   StartAdr : LongInt;
-                   Length   : Word;
-                   Data     : ARRAY[0..Length-1] OF Byte);
-             END
-\end{verbatim}
+\input{../doc_COM/recstruct.tex}
 Was in dieser Schreibweise nicht ganz zum Ausdruck kommt, ist, da"s
 die L"ange von Datenfeldern variabel ist und von {\tt Length} abh"angt.
 \par
@@ -11907,7 +12276,7 @@ Daten bzw. der folgende  Code bestimmt ist (siehe Tabelle \ref{TabHeader}).
 
 \begin{center}\begin{longtable}{|c|l||c|l|}
 \hline
-Header & Familie & Header & Familie \\
+FamilyHdr & Familie & FamilyHdr & Familie \\
 \hline
 \hline
 \endhead
@@ -11944,12 +12313,15 @@ Startadresse und L"ange angeben: W"ahrend die Startadresse sich auf die
 Granularit"at bezieht, erfolgt die L"angenangabe immer in Bytes!  W"are
 die Startadresse z.B. \$300 und die L"ange 12, so w"are die sich
 ergebende Endadresse bei einer Granularit"at von 1 \$30b, bei einer
-Granularit"at von z.B. 4 jedoch \$303!  Andere Granularit"aten als eins
+Granularit"at von z.B. 4 jedoch \$303.  Andere Granularit"aten als eins
 sind selten und treten in erster Linie bei Signalprozessoren auf, die
 nicht  auf Einzelbyteverarbeitung ausgelegt sind deren Datenspeicher z.B.
 aus 64kWorten zu 16 Bit besteht (DSP56K).  Der sich ergebende Speicherplatz
 betr"agt dann zwar 128 KByte, er ist aber in $2^{16}$ Worten organisiert,
-die mit Adressen von 0,1,2,...65535 adressiert werden!
+die mit Adressen von 0,1,2,...65535 adressiert werden.  Granularit"aten
+kleiner als 8 Bit werden mit Werten von \$f9..\$ff kodiert.  Falls das
+kleinste adressierbare Element ein Bit ist, ist die Granularit"at \$ff,
+ist sie ein Nibble, ist die Granularit"at \$fc.
 \par
 Die Startadresse ist 32-bittig, unabh"angig von der Adre"sbreite der
 jeweiligen Prozessorfamilie.  Im Gegensatz dazu ist die L"angenangabe
@@ -12162,7 +12534,7 @@ einem Dollarzeichen direkt einen Backslash voranzustellen.  Die
 Ansonsten folgen die Aufrufkonventionen und -variationen (bis auf PLIST
 und AS2MSG) denen von \asname{}, d.h. man kann dauernd gebrauchte Schalter in
 einer Environmentvariablen ablegen (deren Name sich aus dem Anh"angen von
-CMD an den Programmnamen ergibt, z.B. BINDCMD f"ur BIND), Optionen
+CMD an den Programmnamen ergibt, z.B. PBINDCMD f"ur PBIND), Optionen
 negieren und Gro"s-bzw. Kleinschreibung erzwingen (n"aheres zu dem Wie in
 Abschnitt \ref{SectCallConvention}).
 \par
@@ -12210,25 +12582,27 @@ weiterbearbeitet.
 
 %%---------------------------------------------------------------------------
 
-\section{BIND}
+\section{PBIND}
 
-BIND ist ein Programm, mit dem man die Records mehrerer Codedateien
+PBIND ist ein Programm, mit dem man die Records mehrerer Codedateien
 in eine Datei zusammenkopieren kann.  Die dabei vorhandene Filterfunktion
 erlaubt es aber auch, nur Records eines bestimmten Typs zu "ubernehmen.
-Auf diese Weise kann BIND auch dazu verwendet werden, um eine Codedatei
+Auf diese Weise kann PBIND auch dazu verwendet werden, um eine Codedatei
 in mehrere aufzuspalten.
 \par
-Die allgemeine Syntax von BIND lautet
+Die allgemeine Syntax von PBIND lautet
 \begin{verbatim}
-   BIND <Quelldatei(en)> <Zieldatei> [Optionen]
+   PBIND [Optionen] <Quelldatei(en)> [Zieldatei]
 \end{verbatim}
-Wie auch \asname{} betrachtet BIND alle nicht mit einem +, - oder / eingeleiteten
-Parameter als Dateiangaben, von denen die letzte die Zieldatei angeben
-mu"s.  Alle anderen Dateiangaben bezeichnen Quellen, diese Angaben d"urfen
+Wie auch \asname{} betrachtet PBIND alle nicht mit einem +, - oder / eingeleiteten
+Parameter als Dateiangaben.  Falls keine \tty{-o} Option angegeben wurde, wird
+die letzte davon als Zieldatei angenommen.
+Alle anderen Dateiangaben bezeichnen Quellen, diese Angaben d"urfen
 auch wieder Jokerzeichen enthalten.
 \par
-An Optionen definiert BIND momentan nur eine:
+An Optionen definiert PBIND momentan nur zwei:
 \begin{itemize}
+\item{\tty{o $<$Datei$>$}: spezifiziert die Ausgabe/Zieldatei.}
 \item{\tty{f $<$Header[,Header...]$>$}: gibt eine Liste von Header-IDs
       an, die kopiert werden sollen.  Alle anderen Records werden
       nicht kopiert.  Ohne diese Angabe werden alle Records kopiert.
@@ -12237,9 +12611,9 @@ An Optionen definiert BIND momentan nur eine:
       einzelnen Header-Nummern in der Liste werden durch Kommas getrennt.}
 \end{itemize}
 Um z.B. alle MCS-51-Codeteile aus einer Programmdatei auszusieben,
-benutzt man BIND folgenderma"sen:
+benutzt man PBIND folgenderma"sen:
 \begin{verbatim}
-   BIND <Quellname> <Zielname> -f $31
+   PBIND <Quellname> <Zielname> -f $31
 \end{verbatim}
 Fehlt bei einer Dateiangabe eine Endung, so wird automatisch die Endung
 P angef"ugt.
@@ -12248,13 +12622,13 @@ P angef"ugt.
 
 \section{P2HEX}
 
-P2HEX ist eine Erweiterung von BIND.  Es besitzt alle
-Kommandozeilenoptionen von BIND und hat die gleichen Konventionen
-bzgl. Dateinamen.  Im Gegensatz zu BIND wird die Zieldatei aber als
-Hexfile ausgegeben, d.h. als eine Folge von Zeilen, die den Code als
-ASCII-Hexzahlen enthalten.
+P2HEX ist eine Erweiterung von PBIND.  Es besitzt alle
+Kommandozeilenoptionen von PBIND und hat die gleichen Konventionen
+bez"uglich Quell- und Ziel-Dateinamen.  Im Gegensatz zu PBIND wird
+die Zieldatei aber als Hexfile ausgegeben, d.h. als eine Folge von
+Zeilen, die den Code als ASCII-Hexzahlen enthalten.
 \par
-P2HEX kennt neun verschiedene Zielformate, die "uber den
+P2HEX kennt zehn verschiedene Zielformate, die "uber den
 Kommandozeilenparameter \bb{F} ausgew"ahlt werden k"onnen:
 \begin{itemize}
 \item{Motorola S-Record (\tty{-F Moto})}
@@ -12460,7 +12834,7 @@ option
 \end{verbatim}
 kann man P2HEX anweisen, diese automatisch nach der Konversion zu l"oschen.
 \par
-Anders als BIND erzeugt P2HEX keine Leerdatei, wenn nur ein Dateiname
+Anders als PBIND erzeugt P2HEX keine leere Datei, wenn nur ein Dateiname
 (=Zieldatei) angegeben wurde, sondern bearbeitet die dazugeh"orige
 Codedatei.  Es ist also ein Minimalaufruf \`a la
 \begin{verbatim}
@@ -12955,6 +13329,19 @@ Angaben:
                 Wert ist aber au"serhalb dessen, was intern als Ganzzahl dargestellt
                 werden kann.  Die Zahl wird deswegen als Gleitkomma-Zahl gespeichert.}
                {das fragliche Argument}
+\errentry{ 500}{Code-Erzeugung ausserhalb des CODE-Segments}
+               {Warnung}
+               {Maschinencode kann nur innerhalb des CODE-Segments erzeugt werden. Die
+                anderen Adressr"aume verf"ugen nicht "uber die daf"ur erforderliche
+                Wortbreite.}
+               {keines}
+\errentry{ 510}{Befehl wird SP "uberschreiben}
+               {Warnung}
+               {Dieser Befehl benutzt neben dem explizit genannten
+                noch das Folgeregister f"ur das doppelt lange Ergebnis.
+                Das Folgeregister ist in diesem Fall aber der
+                Stackpointer.}
+               {das Zielargument der Anweisung}
 \errentry{1000}{Symbol doppelt definiert}
                {Fehler}
                {Einem Symbol wurde durch ein Label oder
@@ -13329,6 +13716,18 @@ Angaben:
 	        Kontrollregister  kennt der mit CPU gesetzte Prozessor
 	        (noch) nicht.}
                {keines}
+\errentry{1441}{unbekannter Vektor}
+               {Fehler}
+               {Ein Vektor dieses Namens existiert nicht.}
+               {das fragliche Vektor-Argument}
+\errentry{1442}{Register im aktuellen Ausf"uhrungsmodus nicht zugreifbar}
+               {Fehler}
+               {Dieses Register ist nur im Kernel-Modus zugreifbar.}
+               {das fragliche Register}
+\errentry{1443}{Register darf im aktuellen Ausf"uhrungsmodus nur gelesen werden}
+               {Fehler}
+               {Dieses Register ist nur im Kernel-Modus schreibbar.}
+               {das fragliche Register}
 \errentry{1445}{Ung"ultiges Register}
                {Fehler}
                {Das benutzte Register ist zwar prinzipiell
@@ -13381,6 +13780,11 @@ Angaben:
                {Die Reihenfolge der Befehle in einem \tty{IF}-
 	        oder \tty{SWITCH}-Konstrukt stimmt nicht.}
                {keines}
+\errentry{1482}{FORWARD-Anweisung mu"s sich auf aktuelle Sektion beziehen}
+               {Fehler}
+               {\tty{FORWARD}-Direktiven d"urfen sich nicht auf Symbole in
+                einer anderen (h"oheren) Sektion beziehen.}
+               {der fragliche Symbolname}
 \errentry{1483}{doppelter Sektionsname}
                {Fehler}
                {Es existiert bereits eine Sektion gleichen
@@ -13636,7 +14040,13 @@ Angaben:
                 Makro-Konstrukten ab.  Dieser Befehl macht nur innerhalb
                 von Makros Sinn und es wurde versucht, ihn au"serhalb
                 aufzurufen.}
-               {keines}
+               {Der fragliche EXITM-Befehl}
+\errentry{1806}{ENDM au"serhalb eines Makrorumpfes}
+               {Fehler}
+               {\tty{ENDM} schlie"st die Definition eines Makros oder einen
+                \tty{REPT/IRP/WHILE}-Block ab.  Au"serhalt davon ergibt
+                er keinen Sinn.}
+               {Der fragliche ENDM-Befehl}
 \errentry{1810}{mehr als 10 Makroparameter}
                {Fehler}
                {Ein Makro darf h"ochstens 10 Parameter haben.}
@@ -14028,6 +14438,14 @@ Angaben:
                {Fehler}
                {Die Zieladresse liegt auf einer Speicherseite, die aktuell nicht
                 zugreifbar ist.}
+               {keines}
+\errentry{2271}{aktueller Programmz"ahler in nicht-zugreifbarer Seiter}
+               {Fehler}
+               {Die aktuell assemblierte Instruktion liegt auf einer physischen
+                Adresse, die nicht in den logischen Adre"sraum der CPU gemappt
+                ist.  Dies ist ein Problem bei PC-relativer Adressierung, weil
+                f"ur die Berechnung der Distanz die logische Adresse gebraucht
+                wird.}
                {keines}
 \errentry{2280}{Feld nicht zugreifbar}
                {Fehler}
@@ -14504,6 +14922,7 @@ Zus"atzlich existieren:
       ist.}
 \end{itemize}
 
+\newcommand{\pcsymname}{Symbol f"ur Programmz"ahler}
 \input{../doc_COM/pscpu.tex}
 
 %%===========================================================================
@@ -14791,12 +15210,13 @@ unvollst"andig ist!):
 \par
 Ernst Ahlers, Charles Altmann, Marco Awater, Len Bayles, Andreas
 Bolsch, Rolf Buchholz, Bernd Casimir, Nils Eilers, Gunther Ewald,
-Michael Haardt, Stephan Hruschka, Fred van Kempen, Peter
-Kliegelh"ofer, Ulf Meinke, Udo M"oller, Matthias Paul, Norbert Rosch,
-Curt J.  Sampson, Steffen Schmid, Leonhard Schneider, Ernst Schwab,
-Michael Schwingen, Oliver Sellke, Christian Stelter, Patrik
-Str"omdahl, Tadashi G.  Takaoka, Oliver Thamm, Thorsten Thiele,
-Leszek Ulman, Rob Warmelink, Andreas Wassatsch, John Weinrich.
+Daniel E.  Germann Michael Haardt, Stephan Hruschka, Fred van
+Kempen, Peter Kliegelh"ofer, Ulf Meinke, Udo M"oller, Matthias
+Paul, Norbert Rosch, Curt J.  Sampson, Steffen Schmid, Leonhard
+Schneider, Ernst Schwab, Michael Schwingen, Oliver Sellke,
+Christian Stelter, Patrik Str"omdahl, Tadashi G.  Takaoka, Oliver
+Thamm, Thorsten Thiele, Leszek Ulman, Rob Warmelink, Andreas
+Wassatsch, John Weinrich,
 \par
 ...und ein leicht ironischer Dank geht an Rolf-Dieter-Klein und Tobias Thiel, die
 mich mit ihren ASM68K dazu angeregt haben, "uberhaupt einen eigenen

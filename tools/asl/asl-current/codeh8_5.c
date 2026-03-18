@@ -26,6 +26,8 @@
 #include "motpseudo.h"
 #include "codevars.h"
 #include "errmsg.h"
+#include "assume.h"
+#include "headids.h"
 
 #include "codeh8_5.h"
 
@@ -88,8 +90,7 @@ static OneOrder *OneRegOrders;
 static OneOrder *RegEAOrders;
 static OneOrder *TwoRegOrders;
 
-#define ASSUMEH8_5Count 4
-static ASSUMERec ASSUMEH8_5s[ASSUMEH8_5Count] =
+static as_assume_rec_t ASSUMEH8_5s[] =
 {
   {"DP", &Reg_DP, 0, 0xff, -1, NULL},
   {"EP", &Reg_EP, 0, 0xff, -1, NULL},
@@ -2060,11 +2061,17 @@ static void InitCode_H8_5(void)
 
 static void SwitchTo_H8_5(void)
 {
+  const TFamilyDescr *p_descr = FindFamilyByName("H8/500");
+
   TurnWords = True;
   SetIntConstMode(eIntConstModeMoto);
 
-  PCSymbol = "*"; HeaderID = 0x69; NOPCode = 0x00;
-  DivideChars = ","; HasAttrs = True; AttrChars = ".:";
+  PCSymbol = "*";
+  HeaderID = p_descr->Id;
+  NOPCode = 0x00;
+  DivideChars = ",";
+  HasAttrs = True;
+  AttrChars = ".:";
 
   ValidSegs = 1 << SegCode;
   Grans[SegCode] = 1; ListGrans[SegCode] = 1; SegInits[SegCode] = 0;
@@ -2084,8 +2091,7 @@ static void SwitchTo_H8_5(void)
   onoff_compmode_add();
   AddMoto16PseudoONOFF(False);
 
-  pASSUMERecs = ASSUMEH8_5s;
-  ASSUMERecCnt = ASSUMEH8_5Count;
+  assume_set(ASSUMEH8_5s, as_array_size(ASSUMEH8_5s));
 }
 
 void codeh8_5_init(void)

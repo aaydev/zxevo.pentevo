@@ -23,6 +23,7 @@
 #include "tipseudo.h"
 #include "be_le.h"
 #include "errmsg.h"
+#include "headids.h"
 
 #include "code3205x.h"
 
@@ -829,7 +830,7 @@ static void DecodeNORM(Word Index)
 
 static void DecodeRETC(Word Index)
 {
-  if (!ChkArgCnt(1, 1));
+  if (!ChkArgCnt(1, ArgCntMax));
   else if (Index && !ChkMinCPU(CPU32050));
   else
   {
@@ -1012,7 +1013,7 @@ static void DecodeXC(Word Index)
 
   UNUSED(Index);
 
-  if (ChkArgCnt(2, 2)
+  if (ChkArgCnt(2, ArgCntMax)
    && ChkMinCPU(CPU32050))
   {
     Mode = EvalStrIntExpressionWithFlags(&ArgStr[1], UInt2, &OK, &Flags);
@@ -1032,7 +1033,7 @@ static void DecodePORT(Word Code)
 {
   UNUSED(Code);
 
-  CodeEquate(SegIO, 0, 65535);
+  code_equate_type(SegIO, UInt16);
 }
 
 /* ---------------------------------------------------------------------- */
@@ -1288,11 +1289,13 @@ static void SwitchFrom_3205x(void)
 
 static void SwitchTo_3205x(void)
 {
+  const TFamilyDescr *p_descr = FindFamilyByName("TMS320C5x");
+
   TurnWords = False;
   SetIntConstMode(eIntConstModeIntel);
 
   PCSymbol = "$";
-  HeaderID = 0x77;
+  HeaderID = p_descr->Id;
   NOPCode = 0x8b00;
   DivideChars = ",";
   HasAttrs = False;

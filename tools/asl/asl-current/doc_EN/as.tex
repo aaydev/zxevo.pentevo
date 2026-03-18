@@ -1,3 +1,5 @@
+%% SPDX-License-Identifier: GPL-2.0-only OR GPL-3.0-only
+
 %% Hi Folks,
 %%
 %% this is a release of the English AS manual.  I haven't
@@ -67,7 +69,7 @@
 
 \vspace{1cm}\par
 
-{\large Edition Januar 2025}
+{\large Edition March 2026}
 \end{raggedright}
 
 \clearpage
@@ -240,6 +242,7 @@ following processor families have been implemented:
 \item{DEC PDP-11}
 \item{DEC VAX}
 \item{Western Digital WD16}
+\item{AT\&T WE32100/we32200 (''Bellmac32'')}
 \item{Intel 4004/4040}
 \item{Intel MCS-48/41, including Siemens SAB80C382, and the OKI
       variants}
@@ -253,7 +256,7 @@ following processor families have been implemented:
 \item{Atmel (Mega-)AVR}
 \item{AMD 29K}
 \item{Siemens 80C166/167}
-\item{Zilog Z80 (including undocumented instructions), Z180, Z380, eZ80}
+\item{Zilog Z80 (including undocumented instructions), Z180, Z280, Z380, eZ80}
 \item{Sharp LR35902 (,,Gameboy Z80'')}
 \item{Sharp SC61860}
 \item{Sharp SC62015}
@@ -265,6 +268,7 @@ following processor families have been implemented:
 \item{Toshiba TLCS-90}
 \item{Toshiba TLCS-870(/C)}
 \item{Toshiba TLCS-47}
+\item{Toshiba TLCS-42}
 \item{Toshiba TLCS-9000}
 \item{Toshiba TC9331}
 \item{Microchip PIC16C54..16C57}
@@ -282,6 +286,7 @@ following processor families have been implemented:
 \item{Texas Instruments TMS320C20x/TMS320C5x}
 \item{Texas Instruments TMS320C54x}
 \item{Texas Instruments TMS320C6x}
+\item{Texas Instruments TMS340xx}
 \item{Texas Instruments TMS99xx/99xxx}
 \item{Texas Instruments TMS7000}
 \item{Texas Instruments TMS1000}
@@ -295,6 +300,7 @@ following processor families have been implemented:
 \item{National Semiconductor COP8}
 \item{National Semiconductor SC144xx}
 \item{National Semiconductor NS32xxx}
+\item{National Semiconductor CR16A/B}
 \item{Olympia CP-3F (resp. SGS M380, GI LP8000)}
 \item{Fairchild ACE}
 \item{Fairchild F8}
@@ -365,7 +371,7 @@ are automatically processed as being local.
 
 For the assembler, symbols may have either integer, string or floating
 point values.  These will be stored - like interim values in formulas -
-with a width of 32 bits for integer values, 80 or 64 bits for floating
+with a width of 32, 64, or 128 bits for integer values, 80 or 64 bits for floating
 point values, and 255 characters for strings.  For a couple of micro
 controllers, there is the possibility to classify symbols by segmentation.
 So the assembler has a (limited) possibility to recognize accesses to
@@ -595,6 +601,7 @@ REGST7.INC        & register and macro definitions ST7 \\
 REGSTM8.INC       & register and macro definitions STM8 \\
 REGST9.INC        & register and macro definitions ST9 \\
 REGV60.INC        & register addresses NEC V60 \\
+REGZ280.INC       & register addresses Z280 \\
 REGZ380.INC       & register addresses Z380 \\
 STDDEF04.INC      & register addresses 6804 \\
 STDDEF16.INC      & instruction macros and register addresses \\
@@ -894,6 +901,9 @@ At the moment, the following switches are defined:
 \item{\tty{listline-prefix}: This option allows to modify the data that
       is printed in front of every source line in the listing.  The
       structure of the format string is described in \ref{SectListing}.}
+\item{{\tt list-unknown-values} resp. {\tt no-list-unknown-values}: enables
+      or disables displaying question marks for values unknown in the
+      first pass.}
 \item{\label{radix}\tty{RADIX}: This option changes the default number system
       to a value between 2 and 36, thereby overriding the default of 10.
       The value given by this switch can itself be overridden in the program
@@ -1085,14 +1095,18 @@ chapters \ref{ChapShareMain} resp. \ref{ChapShareOrder}.
       display of precise error positions in macro bodies!}
 \item{{\tt maxerrors [n]}: instructs the assembler to terminate
       assembly after the given number of errors.}
-\item{{\tt maxerrors [n]}: instructs the assembler to terminate
+\item{{\tt maxinclevel [n]}: instructs the assembler to terminate
       assembly if the include nesting level exceeds the given limit
       (default is 200).}
+\item{{\tt maxsympass [n]}: defines up to which pass unresolved forward
+      references are allowed.  Changing from the default value (1) to
+      a higher one may be needed in special cases, like chained
+      forwardreferences.}
 \item{{\tt Werror}: instructs the assembler to treat warnings as errors.}
 \item{{\tt wrelative} resp. {\tt wno-relative}: instructs the assembler
       to issue warnings if a relative jump instead of an absolute is
       possible (only for Z80 target).}
-\item{{\tt wsign-extension} resp. {\tt wno-sign-extension}: instructs
+\item{{\tt wimplicit-sign-extension} resp. {\tt wno-implicit-sign-extension}: instructs
       the assembler to issue warnings about implicit sign extensions
       (onlx 68K, MOVEQ).}
 \item{\tty{compmode}: This switch instructs the assembler to operate by
@@ -1105,7 +1119,7 @@ As long as switches require no arguments and their concatenation does
 not result in a multi-letter switch, it is possible to specify several
 switches at one time, as in the following example :
 \begin{verbatim}
- as test*.asm firstprog -cl /i c:\as\8051\include
+ asl test*.asm firstprog -cl /i c:\as\8051\include
 \end{verbatim}
 All files \tty{TEST*.ASM} as well as the file \tty{FIRSTPROG.ASM} will be
 assembled, whereby listings of all files are displayed on the
@@ -1364,8 +1378,41 @@ sufficient, while eight digits are needed if the address space's size
 is 4 GBytes.
 
 The code produced is written behind \tty{address} in the field \tty{code},
-also in the number system defined by the list radix.  Depending on the processor type and actual
-segment the values are formatted either as bytes or 16/32-bit-words.
+also in the number system defined by the list radix.  Depending on the
+processor target and current address space, the values are formatted with
+different length.  In the simplemost case, the code may be shown as a
+sequence of 8 bit bytes.  Words of 16 or 32 bits may also be used, in
+case the address space is not byte-addressable, or the target processor's
+instruction words are longer than one byte.  For instance, the address
+space of the 68000 or the PDP-11 is byte-addressable, their machine instructions
+however have a length of 16 bits.  There are even a few cases when the
+word length is not a multiple of 8 bit, like 12 bits for the PDP-8.
+
+If forward references are used, the final values for parts of the
+machine code cannot be listed in the first pass. \asname{} will then
+make an assumption about the value that permits further assembly.  For
+a (growing) number of targets, these fields will be displayed with
+question marks.  The following targets currently support this feature:
+\begin{itemize}
+\item{68xxx/Coldfire}
+\item{DSP56000/56300}
+\item{PowerPC}
+\item{65xx/65xxx}
+\item{6800/6805/68HC08/6809/68HC11/68HC12}
+\item{8080/8085}
+\item{(e)Z80/Z180/Z280/Z380}
+\item{8048}
+\item{8051/80251}
+\item{8096/80196/80296}
+\item{8086/V20...V55}
+\item{AVR}
+\item{TMS370xxx}
+\item{uCOM-43}
+\end{itemize}
+In case these question marks conflict with further processing of the
+listing, this feature may be disabled via the \tty{-no-list-unknown-values}
+command line switch.
+
 If more code is generated than the field can take, additional lines
 will be  generated, in which case only this field is used.
 
@@ -1498,6 +1545,8 @@ name          & meaning \\
 TRUE          & logically ''true'' \\
 FALSE         & logically ''false'' \\
 CONSTPI       & Pi (3.1415.....) \\
+INTWIDTH      & bit width of internal integer arithmetic \\
+HAS64         & internal integer arithmetic uses at leat 64 bitt \\
 FLOATMAX      & largest representable floating point number \\
 VERSION       & version of \asname{} in BCD-coding, \\
               & e.g. 1331 hex for version 1.33p1 \\
@@ -1570,9 +1619,40 @@ The individual segment types have the assigned numbers listed in table
 \ref{TabSegNums}.  Register symbols which do not really fit into the order
 of normal symbols are explained in section \ref{SectRegSyms}.  The
 \tty{SYMTYPE} function delivers -1 as result when called with an undefined
-symbol as argument.  However, if all you want to know is whether a symbol
-is defined or not, or whether an expression contains no no symbols that are
-undefined so far, you may as well use the \tty{DEFINED} function.
+symbol as argument.
+
+The functions \tty{DEFINED} resp. \tty{SYMEXIST} allow to check whether a
+symbol is defined or not.  The difference between them: \tty{SYMEXIST} returns
+'false' for a forward declaration in pass one, and 'true' in subsequent passes.
+In contrast, \tty{DEFINED} consistently returns 'false' for forward declarations
+in all passes - the meaning is 'defined up to this point in the source'.
+
+\label{sect_symused}
+The function \tty{SYMUSED} allows to query whether a symbol has been
+used at least once up to this point.  This includes references made
+to a symbol prior to its definition, i.e. forward references, in case
+one of these conditions is fulfilled:
+\begin{itemize}
+\item{Both the forward reference and the definition are done in the
+      global symbol name space, i.e. outside of expanded macro bodies
+      and sections.}
+\item{The forward reference is done inside a section, but outside of
+      an expanded macro body, and the definition is also done outside
+      of an expanded macro body, and either in the same section, one
+      of its parent sections, or globally.}
+\item{The forward reference is done inside an expanded macro body, and
+      the definition is done in the same macro body.}
+\end{itemize}
+If a symbol shall be tested for usage, and if there are usages that
+do not match any of these conditions, there is still the option to
+announce the existence of a symbol via a \tty{FORWARD} declaration.
+This effectively creates an 'empty' entry in the symbol table, that
+can hold the usage flag even before actual definition of the symbol.
+
+\tty{DEFINED} not only accepts simple symbol names, but also complete
+formula expressions.  In this case, the return value is 'true' only if the
+expression does not contain any symbols that are undefined by the rule
+given in the previous paragraph.
 \begin{table}[htb]
 \begin{center}
 \begin{tabular}{|l|c|}
@@ -2070,11 +2150,10 @@ fitting mask is therefore unavoidable!
 
 \subsection{Functions}
 
-In addition to the operators, the assembler defines another line of
+In addition to the operators, \asname{} defines another line of
 primarily transcendental functions with floating point arguments which are
 listed in tables \ref{TabFuncs1} and \ref{TabFuncs2}.
-\begin{table*}[htbp]
-\begin{center}\begin{tabular}{|l|l|l|l|}
+\begin{center}\begin{longtable}{|l|l|l|l|}
 \hline
 name     & meaning              & argument             & result \\
 \hline
@@ -2112,12 +2191,10 @@ INT      & integer part         & $arg \in \rz$        & floating point \\
 BITCNT   & number of one's      & integer              & integer \\
 FIRSTBIT & lowest 1-bit         & integer              & integer \\
 \hline
-\end{tabular}\end{center}
 \caption{Functions Predefined by \asname{} - Part 1 (Integer and
          Floating Point Functions \label{TabFuncs1}}
-\end{table*}
-\begin{table*}[htbp]
-\begin{center}\begin{tabular}{|l|l|l|l|}
+\end{longtable}\end{center}
+\begin{center}\begin{longtable}{|l|l|l|l|}
 \hline
 name        & meaning              & argument & result \\
 \hline
@@ -2155,11 +2232,11 @@ VAL         & evaluates contents   & string               & depends on \\
 EXPRTYPE    & delivers type of     & integer,             & 0 \\
             & argument             & float,               & 1 \\
             &                      & string               & 2 \\
+FSIZE       & delivers file size   & string               & integer \\
 \hline
-\end{tabular}\end{center}
 \caption{Functions Predefined by \asname{} - Part 2 (Integer and
          String Functions \label{TabFuncs2}}
-\end{table*}
+\end{longtable}\end{center}
 The functions \tty{FIRSTBIT}, \tty{LASTBIT}, and \tty{BITPOS} return -1 as
 result if no resp. not exactly one bit is set.  \tty{BITPOS} additionally
 issues an error message in such a case.
@@ -2193,6 +2270,12 @@ dbstr   macro   arg
 within the first one resp. -1 if the search pattern was not found.
 Similarly to \tty{SUBSTR} and  \tty{CHARFROMSTR}, the first character
 has the position 0.
+
+\tty{FSIZE} returns the size of a file in bytes.  The file is
+searched for both in the current directory, and relative to
+the directory of the file currently being assembled.  Opposed
+to \tty{INCLUDE} and \tty{BINCLUDE}, the include path is
+not used to find the file!
 
 If a function expects floating point arguments, this does not mean it
 is impossible to write e.g.
@@ -2369,8 +2452,9 @@ necessary.  Which is the essence you should learn from this section?
 \label{SectRegSyms} \ttindex{Register Symbols}
 
 {\em valid for: PowerPC, M-Core, XGate, 4004/4040, MCS-48/(2)51, 8086,
-     80C16x, AVR, XS1, Z8, KCPSM, Mico8, MSP430(X), ST9, M16, M16C, H8/300,
-     H8/500, SH7x00, H16, i960, XA, 29K, TLCS-9000, KENBAK, SC/MP}
+     80C16x, AVR, XS1, Z8, KCPSM, Mico8, TMS340xx, MSP430(X), ST9, M16,
+     M16C, H8/300, H8/500, SH7x00, H16, i960, XA, 29K, TLCS-9000, KENBAK,
+     SC/MP, PDP-11, VAX}
 
 Sometimes it is desirable not only to assign symbolic names to memory
 addresses or constants, but also to a register, to emphasize its function
@@ -2835,7 +2919,7 @@ symbolically defined bit may also be used as argument for
 \subsection{PORT}
 \ttindex{PORT}
 
-{\em valid for: PALM, 8008/8080/8085/8086, XA, Z80, Z8000, 320C2x/5x, TLCS-47, AVR,
+{\em valid for: PALM, 8008/8080/8085/8086, XA, Z80, Z8000, 320C2x/5x, TLCS-42/47, AVR,
      F8, IMP-16}
 
 \tty{PORT} works similar to \tty{EQU}, just the symbol becomes assigned to the
@@ -2856,8 +2940,11 @@ PIO_ctrl   port PIO_port_A+3
 \subsection{REG and NAMEREG}
 \ttindex{REG}\ttindex{NAMEREG}
 
-{\em valid for: 680x0, AVR, M*Core, ST9, 80C16x, Z8000, KCPSM, \\
-     PDP-11, WD16 \\
+{\em valid for: 680x0, PowerPC, PALM, M*Core, XGate, H8,\\
+     SH7x00, H16, M16(C), PDP-11, WD16, VAX, 4004, MCS-48/51,\\
+     8086, i960, XA, AVR, 29xxx,  80C16x, Z8, Z80, Z8000,\\
+     KCPSM(3), LatticeMico8, TLCS-9000, ST9, MSP430(X), V60,\\
+     SC/MP, NS32xxx, WE32xxx, XCore, KENBAK\\
      ({\tt NAMEREG} valid only for KCPSM(3)), LatticeMico8, MSP430(X)}
 
 Though it always has the same syntax, this instruction has a slightly
@@ -2874,10 +2961,20 @@ symbolic name are given as arguments, for example:
      NAMEREG  s08, treg
 \end{verbatim}
 
-On the PDP-11, \tty{REG} may additionally be used without a name in the
+On PDP-11 and TMS340xx, \tty{REG} may additionally be used without a name in the
 label field.  It then expects a single \tty{ON} or \tty{OFF} as argument
-and enables or disables the built-in register aliases (\tty{Rn} = \tty{\%n},
-\tty{SP} = \tty{R6}, \tty{PC} = \tty{R7}).  They are available by default,
+and enables or disables the built-in register aliases:
+\begin{itemize}
+\item{PDP-11: \tty{Rn} = \tty{\%n}, \tty{SP} = \tty{R6}, \tty{PC} = \tty{R7}}
+\item{TMS340xx: \tty{SADDR} = \tty{B0}, \tty{SPTCH} = \tty{B1},
+                \tty{DADDR} = \tty{B2}, \tty{DPTCH} = \tty{B3},
+                \tty{OFFSET} = \tty{B4}, \tty{WSTART} = \tty{B5},
+                \tty{WEND} = \tty{B6}, \tty{DYDX} = \tty{B7},
+                \tty{COLOR0} = \tty{B8}, \tty{COLOR1} = \tty{B9},
+                \tty{COUNT} = \tty{B10}, \tty{INC1} = \tty{B11},
+                \tty{INC2} = \tty{B12}, \tty{PATTRN1} = \tty{B13}}
+\end{itemize}
+They are available by default,
 and should only be disabled if they conflict with own synmbol names in a
 program. The current setting may be read from the symbol \tty{DEFAULT\_REGSYMS}.
 
@@ -3150,8 +3247,9 @@ desired result when used as argument for \tty{ORG}.  The
 \multicolumn{11}{|l|}{   As the 8051 does not have any RAM beyond 80h, this value has to be} \\
 \multicolumn{11}{|l|}{   adapted with ORG for the 8051 as target processor!}\\
 \hline
-\multicolumn{11}{|l|}{$^{2}$ As the Z180 still can address only 64K logically, the whole}\\
-\multicolumn{11}{|l|}{   address space can only be reached via \tty{PHASE} instructions!}\\
+\multicolumn{11}{|l|}{$^{2}$ As Z180 and Z280 are only capable of logically addressing 64 KBytes,}\\
+\multicolumn{11}{|l|}{   the full address space can only be used via \tty{PHASE} instructions}\\
+\multicolumn{11}{|l|}{   or by setting proper \tty{ASSUME} values for MMU registers.}\\
 \hline
 \multicolumn{11}{|l|}{$^{3}$ initial value 400h.}\\
 \hline
@@ -3168,6 +3266,8 @@ desired result when used as argument for \tty{ORG}.  The
 \multicolumn{11}{|l|}{$^{9}$ device dependent} \\
 \hline
 \multicolumn{11}{|l|}{$^{10}$ model dependent} \\
+\hline
+\multicolumn{11}{|l|}{$^{11}$ Only the first 128 kbytes are usable for executable code.} \\
 \hline
 \caption{Address Ranges for \tty{ORG}}
 \label{TabORG}
@@ -3310,14 +3410,15 @@ While the 6801 only offers a few additional instructions (and the
 much more instructions.
 %%-----------
 \begin{cpulist}
-   6809/6309 and 6805/68HC(S)08
+   6809/6809UNDOC/6309 and 6805/68HC(S)08
 \end{cpulist}
 These processors are partially source-code compatible to the other
 68xx processors, but they have a different binary code format and a
 significantly reduced (6805) resp. enhanced (6809) instruction set.
 The 6309 is a CMOS version of the 6809 which is officially only
 compatible to the 6809, but inofficially offers more registers and a
-lot of new instructions (see \cite{Kaku}).
+lot of new instructions (see \cite{Kaku}).  6809UNDOC enables the
+undocumented {\tt HCF} instruction.
 %%-----------
 \begin{cpulist}
    68HC12 $\longrightarrow$ 68HC12X
@@ -3489,6 +3590,14 @@ All implementations of the VAX architecture share the same
 core instruction set.  However, certain extensions, like
 instructions to process strings, packed decimal numbers or
 certain floating point formats, are not available in hardware.
+%%-----------
+\begin{cpulist}
+   WE32100 $\rightarrow$ WE32200
+\end{cpulist}
+The third generation of the WE32xxx processor features sixteen
+additional CPU registers, and along with them, new addressing
+modes like indexed and auto-increment/decrement.  Furthermore,
+new instructions were added.
 %%-----------
 \begin{cpulist}
    CP-3F, LP8000, M380
@@ -3676,6 +3785,7 @@ amount of on-chip peripherals.
 \> $\rightarrow$ Z180 \\
 \> $\rightarrow$ eZ80190, eZ80L92, eZ80F91, \\
 \> eZ80F92, eZ80F93, \\
+\> $\rightarrow$ Z280 \\
 \> $\rightarrow$ Z380
 \end{cpulist}
 While there are only a few additional instructions for the Z180, the
@@ -3778,6 +3888,14 @@ implemented.
 These three variations of the TLCS-47-family have on-chip RAM and ROM
 of different size, which leads to several bank switching instructions
 being added or suppressed.
+%%-----------
+\begin{cpulist}
+4240P, 4250N, 4260P, 4270N \\
+42C00Y, 42C40P, 42C50N, 42C60P, 42C70N\\
+\end{cpulist}
+The CMOS variants support two additional instructions.  Otherwise, the
+variants differ in the number of I/O ports and the size of program
+memory.
 %%-----------
 \begin{cpulist}
    97C241
@@ -3929,6 +4047,16 @@ C5x processors is currently not used by \asname{}.
 This one at the moment represents the TMS320C54x family...
 %%-----------
 \begin{cpulist}
+   32060
+\end{cpulist}
+%%-----------
+\begin{cpulist}
+   34010 $\rightarrow$ 34020
+\end{cpulist}
+The TMS34020 supports a full 4 Gbit address space, additional
+machine instructions, and a coprocessor interface.
+%%-----------
+\begin{cpulist}
    TI990/4, TI990/10, TI990/12 \\
 \> TMS9900, TMS9940, TMS9995, TMS99105, TMS99110
 \end{cpulist}
@@ -4036,6 +4164,12 @@ for bit block transfers.
 \end{cpulist}
 %%-----------
 \begin{cpulist}
+   CR16A $\rightarrow$ CR16B
+\end{cpulist}
+CR16B extends the address from 256 KBytes to 2 MBytes and provides a
+couple of new instructions.
+%%-----------
+\begin{cpulist}
    F3850, MK3850, \\
 \> MK3870, MK3870/10, MK3870/12, "MK3870/20, MK3870/22, \\
 \> MK3870/30, MK3870/32, MK3870/40, MK3870/42, \\
@@ -4077,12 +4211,15 @@ values of some registers!
 \begin{cpulist}
    uPD550, uPD554, uPD652, \\
 \> uPD547, uPD552, uPD651, \\
-\> uPD546, uPD553, uPD556, uPD557, uPD650
+\> uPD546, uPD553, uPD556, uPD557, uPD650, iso650
 \end{cpulist}
 These three groups of controllers belong to the $\mu$COM-45,
 $\mu$COM-44, amd $\mu$COM-43 family.  The first two families
 implement a subset of the $\mu$COM-43 instruction set.  Otherwise,
 the chips differ by the amount of on-chip ROM and RAM.
+iso650 is an FPGA implementation of the uPD650.  It differs from
+the 'original' by an additional NAND instruction, and an address
+space extended from 2000 to 4096 bytes.
 %%-----------
 \begin{cpulist}
    7500 $\leftrightarrow$ 7508
@@ -4342,8 +4479,8 @@ certain target supports such options.
 {\em
 \begin{itemize}
 \item{SUPMODE valid for: 680x0, NS32xxx, PDP-11, i960, TLCS-900,
-      SH7000, i960, 29K, XA, PowerPC, M*Core, V60, and TMS9900}
-\item{FPU valid for: 680x0, NS32xxx, 80x86}
+      SH7000, i960, 29K, Z280, XA, PowerPC, M*Core, V60, and TMS9900}
+\item{FPU valid for: 680x0, NS32xxx, 80x86, WE32xxx}
 \item{PMMU valid for: 680x0, NS32xxx}
 \item{CUSTOM valid for: NS32xxx}
 \end{itemize}
@@ -4383,18 +4520,20 @@ message.
 
 %%- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
-\subsection{ACCMODE}
+\subsection{ACCMODEresp. EXECMODE}
 \ttindex{ACCMODE}
+\ttindex{EXECMODE}
 
 {\em
 \begin{itemize}
-\item{valid for: VAX}
+\item{valid for: VAX (ACCMODE),\\
+      Bellmac32 (EXECMODE)}
 \end{itemize}
 }
 
-The VAX not only knows a user and supervisor mode, it supports four privilege
+VAX and WE32xxx not only know a user and supervisor mode, they supports four privilege
 levels of this type.  Going from more to less rights, these are named Kernel,
-Executive, Supervisor, and User.  The {\tt ACCMODE} instruction informs the
+Executive, Supervisor, and User.  The {\tt ACCMODE} resp. {\tt EXECMODE} instruction informs the
 assembler about the access mode the following code is executed within.  Not
 all machine instructions are allowed in all modes.  Valid arguments are either
 the mode names mentioned before, or a number between zero (kernel mode) to
@@ -4456,6 +4595,17 @@ from a symbol with the same name.  \bb{CAUTION!} The \tty{CPU} instruction
 implicitly sets or resets this switch when its argument is a 68xxx
 processor!  \tty{FULLPMMU} therefore has to be written after the \tty{CPU}
 instruction!
+
+%%- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+\subsection{COPROC}
+\ttindex{COPROC}
+
+{\em valid for: TMS34020}
+
+This instruction defines the default id (address) to be inserted into
+coprocessor instructions if no explicit id was given.  The default for this
+value itself is zero.  Allowed values range from zero to seven.
 
 %%- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
@@ -5052,13 +5202,54 @@ preinitialized:
 
 \subsubsection{Z180}
 
-The Z180 contains a built-in MMU whicht maps the CPU core's ''logical''
+The Z180 contains a built-in MMU which maps the CPU core's ''logical''
 address space of 64 KBytes to a physical address space of 512 KBytes.  The
 precise mappig is defined via the the registers {\tt CBAR}, {\tt CBR} and
-{\tt BBR}.  Opposed to the 68HC11K4, the assembler will not perform any 
-automatic translations of physical to logical addresses; only an internal
-mapping table is kept.  It is however possible to access this table via
-the {\tt phys2cpu()} function.
+{\tt BBR}.  Similar to the 68HC11K4, \asname{} will perform automatic
+translations of physical to logical addresses, both for absolute addresses
+and source and target of relative branches.  It is also possible to access
+the mapping tables via the {\tt phys2cpu()} and {\tt cpu2phys()} functions.
+
+%%. . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
+
+\subsubsection{Z280}
+
+The Z280's I bit in the Trap Control Register allows to define whether I/O
+accesses are allowed in user mode or not.  If \asname{} has been told via
+\begin{verbatim}
+   assume i:1
+\end{verbatim}
+that they are forbidden, a warning is issued if I/O instructions are used in
+user mode.
+
+Furthermore, the Z280 contains a built-in MMU to translate the CPU's 64K
+address space to the 16 Mbytes physically addressable.  Its operation is
+controlled via the MMU master control register ({\tt MMUMCR}), and 32
+page descriptor registers ({\tt UPD0...UPD15}, {\tt SPD0...SPD15}).  The
+value of all these registers can be communicated to \asname{} via
+{\tt ASSUME} statements.
+
+The following bits of {\tt MMUMCR} are regarded:
+\begin{itemize}
+\item{Bit 15 (UTE): User Mode Translate Enable}
+\item{Bit 14 (UPD): User Node Program/Data Separation Enable}
+\item{Bit 11 (STE): System Mode Translate Enable}
+\item{Bit 10 (SPD): System Mode Program/Oata Separation Enable}
+\end{itemize}
+
+The following bits of {\tt UPDn/SPDn} are regarded:
+\begin{itemize}
+\item{Bit 3 (V): Valid Bit}
+\item{Bits 15...4 resp. 15...5: page frame address, i.e. bits 23...12
+      resp. 23...13 of the page address in physical address space.}
+\end{itemize}
+
+Depending on register values, there may be address translation
+in system and/or user mode (STE and/or UTE set), or no translation
+at all (both STE and UTE cleared).  The current setting of {\tt SUPMODE}
+therefore also has an influence on the current mapping tables.  If
+enabled, mapping for code and data accesses may be common or different
+(UPD/SPD cleared or set).
 
 %%. . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
 
@@ -5081,7 +5272,6 @@ the default operating mode, i.e. the mode if no suffixes are given.  Furthermore
 the assembler can be told about the current value of MBASE (0 to 0ff hex) as
 well.  The default assumption for both values is zero, same as to the values
 set in the CPU after a reset.
-      
 
 %%. . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
 
@@ -5624,7 +5814,7 @@ valid for: \= Intel (except for 4004/4040), Zilog, Toshiba,\\
            \> NEC, TMS370, Siemens, AMD, MELPS7700/65816,\\
            \> M16(C), National, ST9, Atmel, TMS70Cxx, TMS1000,\\
            \> Signetics, $\mu$PD77230, Fairchild, Intersil,\\
-           \> XS1, SC62015
+           \> XS1, SC62015, WE32xxx
 \end{tabbing}}
 
 These commands are - one could say - the Intel counterpart to \tty{DS} and
@@ -5687,12 +5877,28 @@ but different names:
       order: instructions defined by National for address storage use big
       endian, \tty{BYTE} resp. \tty{WORD} in contrast use little endian.}
 \ttindex{BYTE}\ttindex{WORD}
-\item{\tty{BYTE} resp. \tty{WORD} on PDP-11, VAX and WD16 work like \tty{DB}
+\item{\tty{BYTE} resp. \tty{WORD} on PDP-11, VAX, WD16 work like \tty{DB}
       resp. \tty{DW}, however only accept integer arguments.}
-\item{\tty{LWORD} resp. \tty{QUAD} on VAXwork like \tty{DD} resp. \tty{DQ},
+\item{\tty{LWORD} resp. \tty{QUAD} on VAX work like \tty{DD} resp. \tty{DQ},
       however only accept integer arguments.}
-\ttindex{BYTE}\ttindex{WORD}\ttindex{LWORD}\ttindex{QUAD}
+\ttindex{HALF}
+\item{\tty{BYTE} works on WE32xxx like \tty{DB}, \tty{HALF} like \tty{DW},
+      and \tty{WORD} like \tty{DD}, however only stores integer values.}
+\item{\tty{DOUBLE} works on WE32xxx like \tty{DQ}, however only stores
+      floating point values.}
+\ttindex{BYTE}\ttindex{STRING}
+\ttindex{WORD}\ttindex{LONG}\ttindex{INT}
 \ttindex{FLOAT}\ttindex{DOUBLE}
+\item{The TMS340xx target provides:
+      \begin{itemize}
+      \item{\tty{BYTE} (like \tty{DB}, only integer arguments)}
+      \item{\tty{STRING} (like \tty{DB}, only character string arguments)}
+      \item{\tty{WORD} (like \tty{DW}, only integer arguments)}
+      \item{\tty{LONG} or \tty{INT} (like \tty{DD}, only integer arguments)}
+      \item{\tty{FLOAT} (like \tty{DD}, only floating point arguments)}
+      \item{\tty{DOUBLE} (like \tty{DQ}, only floating point arguments)}
+      \end{itemize}}
+\ttindex{LWORD}\ttindex{QUAD}
 \item{The Renesas RX target provides:
       \begin{itemize}
       \item{\tty{BYTE} (like \tty{DB})}
@@ -5700,6 +5906,15 @@ but different names:
       \item{\tty{LWORD} (like \tty{DD}, only integer arguments)}
       \item{\tty{FLOAT} (like \tty{DD}, only floating point arguments)}
       \item{\tty{DOUBLE} (like \tty{DQ}, only floating point arguments)}
+      \end{itemize}}
+\item{The CR16 target provides:
+      \begin{itemize}
+      \item{\tty{BYTE} or \tty{DC8} (like \tty{DB}, string or integer arguments)}
+      \item{\tty{WORD} or \tty{DC16} (like \tty{DW}, only integer arguments)}
+      \item{\tty{LONG} or \tty{DC32} (like \tty{DD}, only integer arguments)}
+      \item{\tty{DC64} (like \tty{DQ}, only integer arguments)}
+      \item{\tty{FLOAT} or \tty{DF32} (like \tty{DD}, only floating point arguments)}
+      \item{\tty{DOUBLE} or \tty{DF64} (like \tty{DQ}, only floating point arguments)}
       \end{itemize}}
 \end{itemize}
 
@@ -5724,6 +5939,45 @@ For instance, if the common 64 bit IEEE 754 format is used on the host side,
 the value range is limited to roughly +/-$1.8*10^{308}$ (see the variable \tty{FLOATMAX}),
 and the lowest two resp. eight bytes of \tty{DT} resp. \tty{DO} are filled
 with zeros.
+
+%%- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+\subsection{D1}
+\ttindex{D1}
+
+{\em\begin{tabbing}
+valid for: \= MCS-51 \\
+\end{tabbing}}
+
+\tty{D1} works the same way as \ttindex{DB} and \ttindex{DN}.  The difference
+however is that it defines or reserves only a single bit.  This instruction
+therefore only makes sense if an address space is addressed bitwise.  Currently,
+this is only the case for the 8051's {\tt BITDATA} segment if the {\tt BITSEGSIZE:1}
+option has been used.
+
+%%- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+\subsection{DC24}
+\ttindex{DC24}
+
+{\em\begin{tabbing}
+valid for: \= CR16 \\
+\end{tabbing}}
+
+\tty{DC24} works the same way as \ttindex{DW} and \ttindex{DD}, however
+stores (integer) values of 24 bits length.
+
+%%- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+\subsection{FLT}
+\ttindex{FLT}
+
+{\em\begin{tabbing}
+valid for: \= WE32xxx \\
+\end{tabbing}}
+
+\tty{FLT} works the same way as \ttindex{DD}, it however only stores floating
+point numbers in IEEE single precision format.
 
 %%- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
@@ -5765,7 +6019,7 @@ Otherwise, these instructions work like \tty{DD} and \tty{DQ}.
 {\em\begin{tabbing}
 valid for: \= Intel, Zilog, Toshiba, NEC, TMS370, Siemens, AMD, \\
            \> M16(C), National, ST9, TMS7000, TMS1000, Intersil, \\
-           \> 6502, 68xx \\
+           \> 6502, 68xx, WE32xxx \\
 \end{tabbing}}
 
 With this instruction, you can reserve a memory area:
@@ -5777,8 +6031,7 @@ It is an abbreviation of
         DB      <count> DUP (?)
 \end{verbatim}
 Although this could easily be made by a macro, some people grown up
-with Motorola CPUs (Hi Michael!) suggest \tty{DS} to be a built-in
-instruction...I hope they are satisfied now \tty{;-)}
+with Motorola CPUs suggest \tty{DS} to be a built-in instruction.
 
 {\tt DS8} is defined as an alias for {\tt DS} on the National SC14xxx.
 Beware that the code memory of these processors is organized in words of
@@ -5792,7 +6045,7 @@ number.
 \ttindex{BLKB}\ttindex{BLKW}\ttindex{BLKL}\ttindex{BLKQ}\ttindex{BLKO}
 \ttindex{BLKF}\ttindex{BLKD}\ttindex{BLKG}\ttindex{BLKH}
 
-{\em valid for: VAX}
+{\em valid for: VAX, CR16}
 
 These instructions reserve storage space for the given number of elements,
 with the element size coded into the instruction's last character.  Therefore,
@@ -6007,6 +6260,20 @@ first):
 Please do not flame me in case I calculated something wrong on my
 HP28...
 
+%%- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+ 
+\subsection{FIELD}
+\ttindex{FIELD}
+ 
+{\em valid for: TMS340xx}
+ 
+\tty{FIELD} stores a bitfield of given length and value in memory. Its second
+argument defines the field's length (1 to 32 bits), while the first argument
+defines the (integer) value to be stored in the field.  The value's allowed
+range depends on the field length and includes both unsigned and two's complement
+signed values.  For instance, if the field length is 16 bits, allowed values
+range from -32768 to +65535.
+ 
 %%- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
 \subsection{DATA}
@@ -6232,6 +6499,17 @@ only one argument, the contents of the skipped memory space is not defined.
 An optinal second argument may be used to define the (byte) value
 used to fill the area.
 
+%%- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+ 
+\subsection{EVEN}
+\ttindex{EVEN}
+ 
+{\em valid for: TMS340xx}
+
+\tty{EVEN} is a specialization of \tty{ALIGN}. The instruction increments the
+program counter so it becomes a muliple of 16 bits.  This is for example the
+proper alignment for processor instructions.
+ 
 %%- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
 \subsection{LTORG}
@@ -7124,16 +7402,26 @@ the last branch.
 \tty{ELSEIF} always refers to the innermost, unfinished \tty{IF} construct
 in case \tty{IF}'s are nested.
 
-\ttindex{IFDEF}\ttindex{IFNDEF}\ttindex{IFUSED}\ttindex{IFNUSED}
-\ttindex{IFEXIST}\ttindex{IFNEXIST}\ttindex{IFB}\ttindex{IFNB}
+\ttindex{IFDEF}\ttindex{IFNDEF}
+\ttindex{IFSYMEXIST}\ttindex{IFNSYMEXIST}
+\ttindex{IFUSED}\ttindex{IFNUSED}
+\ttindex{IFEXIST}\ttindex{IFNEXIST}
+\ttindex{IFB}\ttindex{IFNB}
 In addition to \tty{IF}, the following further conditional statements are
 defined:
 \begin{itemize}
 \item{\tty{IFDEF $<$expressionl$>$}: true if the expression does not contain
-      any symbols that are so far undefined.}
+      any symbols that are undefined by the source assembled up to this
+      point.  CAUTION! Querying forward declarations will return a 'false',
+      also in the second and subsequent passes.}
 \item{\tty{IFNDEF $<$expression$>$}: counterpart to \tty{IFDEF}.}
+\item{\tty{IFSYMEXIST $<$symbol$>$} : true if the queried symbol exists
+      in the symbol table.  CAUTION! Querying a forward declaration returns
+      false in the first pass, but true in all subsequent passes.}
+\item{\tty{IFNSYMEXIST $<$symbol$>$}: counterpart to \tty{IFSYMEXIST}.}
 \item{\tty{IFUSED $<$symbol$>$}: true if if the given symbol has been
-      referenced at least once up to now.}
+      referenced at least once up to now.  See section \ref{sect_symused}
+      for exceptions from this.}
 \item{\tty{IFNUSED $<$symbol$>$}: counterpart to \tty{IFUSED}.}
 \item{\tty{IFEXIST $<$name$>$}: true if the given file exists.  The same
            rules for search paths and syntax apply as for the
@@ -7828,8 +8116,9 @@ explicitly specify the symbol's section:
 \end{verbatim}
 If a local symbol is referenced several times, the brackets can be saved
 by using a \tty{FORWARD} statement.  The symbol is thereby explicitly
-announced to be local, and \asname{} will only look in the local symbol table
-part when this symbol is referenced.  For our example, the statement
+announced to be local, and \asname{} will only look in the symbol table's
+part local to this section when this symbol is referenced.  In our
+example, the statement
 \begin{verbatim}
         FORWARD loop
 \end{verbatim}
@@ -7839,6 +8128,15 @@ should be placed at the position marked with \tty{***}.
 also prior to its first usage in a section to make sense.  It does not
 make sense to define a symbol private and public; this will be regarded as
 an error by \asname{}.
+
+Opposed to \tty{PUBLIC} and \tty{GLOBAL}, \tty{FORWARD} may also be used
+outside a section.  In this case, one of its properties is preserved: A
+'placeholder entry' is added to the symbol table.  It does not contain an
+actual value, and references to such a placeholder entry are treated like
+accessing a (yet) undefined symbol.  The 'used' flag will however be set.
+A \tty{FORWARD} declaration may therefore be useful if usage of it is
+checked via \tty{SYMUSED}, and if there are references in the source code
+prior to its actual definition.
 
 %%- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
@@ -8689,8 +8987,7 @@ their operands can be found in the tables \ref{TabOLMS40Meta} and
 \ref{TabOLMS40MetaOps}, their practical use can be seen in the
 file \tty{t\_olms4.asm}.
 
-\begin{table*}
-\begin{center}\begin{tabular}{|l|l|}
+\begin{center}\begin{longtable}{|l|l|}
 \hline
 Meta Instruction          & Replaces \\
 \hline
@@ -8703,13 +9000,11 @@ Meta Instruction          & Replaces \\
 \tty{BCLR} {\em bit}            & \tty{RPB, RMB, RC} \\
 \tty{BTST} {\em bit}            & \tty{TAB, TMB, Tc} \\
 \hline
-\end{tabular}\end{center}
 \caption{Meta Instructions OLMS-40}
 \label{TabOLMS40Meta}
-\end{table*}
+\end{longtable}\end{center}
 
-\begin{table*}
-\begin{center}\begin{tabular}{|l|l|}
+\begin{center}\begin{longtable}{|l|l|}
 \hline
 Operand                 & Types \\
 \hline
@@ -8724,10 +9019,9 @@ Operand                 & Types \\
                         & \tty{(A)},{\em bitpos} \\
 {\em bitpos}            & \tty{0..3} \\
 \hline
-\end{tabular}\end{center}
 \caption{Operand Types for OLMS-40 Meta Instructions}
 \label{TabOLMS40MetaOps}
-\end{table*}
+\end{longtable}\end{center}
 
 %%---------------------------------------------------------------------------
 
@@ -9301,6 +9595,28 @@ AJMP}, or \tty{LJMP} for \tty{JMP} resp. \tty{ACALL} or \tty{LCALL} for
 \tty{CALL}.  Of course it is still possible to use these variants
 directly, in case one wants to force a certain coding.
 
+For historical reasons, the {\tt BITDATA} segment is by default {\em not}
+actually organized in bits.  This means that a statement like this:
+\begin{verbatim}
+flag db ?
+\end{verbatim}
+will increase the program counter only by one, and not by eight.  There is
+an implicit assumption that a byte in the {\tt BITDATA} segment is actually
+only a bit, and if one is not only reserving memory, only the values zero and
+one should be stored in these bytes.  This property is indeed not intuitive,
+but is due to the fact that earlier versions of \asname{} did not support
+address spaces with a word with other than eight, sixteen or thitry-two bits.
+And when it became possible to handle other widths, changing the (default)
+word size would have broken existing code.
+
+So if the {\tt BITDATA} segment shall actually be organized in bits, this
+has to be requested explicitly when selecting the target:
+\begin{verbatim}
+        cpu     8051:bitsegsize=1
+\end{verbatim}
+Furthermore, keep in mind that the output of P2BIN or P2HEX for this segment
+will still use one byte per bit.
+
 %%---------------------------------------------------------------------------
 
 \section{MCS-251}
@@ -9801,7 +10117,7 @@ may explicitly be selected by using the argument \verb!codesegsize=1!.
 
 %%---------------------------------------------------------------------------
 
-\section{Z80, Z380}
+\section{Z80, Z180, Z280, Z380}
 
 The Z80 supports two types of jump instructions: relative ({\tt JR}) supports
 jump distances from -128 to +127 bytes, while absolute jumps  ({\tt JP})
@@ -9809,7 +10125,7 @@ allow to reach the complete address space. \asname{} additionally supports
 a pseudo instruction {\tt J} which automatically selects the shortest
 possible variant, depending on the target address and the condition (relative
 jumps do not support all conditions).  This also applies to all targets
-'derived' from Z80, like Z80UNDOC, Z180, RABBIT2000, and LR35902.
+'derived' from Z80, like Z80UNDOC, Z180, Z280, RABBIT2000, and LR35902.
 
 {\tt J} is also offered for the Z380, but since the Z380 supports larger
 jump distances, absolute jumps will only be used if the largest possible
@@ -9829,7 +10145,7 @@ undocumented instructions; furthermore, not everyone might know the
 full set.  It might therefore make sense to list all instructions at
 this place:
 
-Similar to the Z380 and eZ80, it is possible to access the byte halves
+Similar to the Z280/Z380 and eZ80, it is possible to access the byte halves
 of IX and IY separately.  In detail, these are the instructions that allow
 this:
 \begin{verbatim}
@@ -9946,26 +10262,49 @@ done in 16 bits.  Zilog really should do something about this, otherwise
 the most positive description for the Z380 would be ''16-bit processor
 with 32-bit extensions''...
 
-The whole thing becomes complicated by the ability to override the operand
-size set by LW with the instruction prefixes \tty{DDIR W} resp.
-\tty{DDIR LW}.  \asname{} will note the occurrence of such instructions and will
-toggle setting for the instruction following directly.  By the way, one
-should never explicitly use other \tty{DDIR} variants than \tty{W} resp.
-\tty{LW}, as \asname{} will introduce them automatically when an operand is
-discovered that is too long.  Explicit usage might puzzle \asname{}.  The
-automatism is so powerful that in a case like this:
+The whole situation becomes complicated by by the usage of the instruction
+prexixes \tty{DDIR W/LW/IB/IW}.  These allow to override the word size
+and/or the length of immediate and absolute operands for the next instruction.
+\asname{} memorizes the explicit usage of these prefixes and will take this
+into account when assembling the following instruction.  The following
+cases have to be differentiated:
+
+If no \tty{DDIR} instruction preceded the current instruction, or a \tty{DDIR}
+instruction that contained no explicit specification of operand length, the
+operand length will be determined automatically.  For instance, a single
+\begin{verbatim}
+        LD      BC,12345678h
+\end{verbatim}
+will be augmented with a leading \tty{DDIR IW}.  However, in this case:
 \begin{verbatim}
         DDIR    LW
-        LD      BC,12345678h   ,
+        LD      BC,12345678h
 \end{verbatim}
-the necessary \tty{IW} prefix will automatically be merged into the previous
-instruction, resulting in
+the existing \tty{DDIR} will be augmented with a \tty{IW}, and the code
+generated is the same as for
 \begin{verbatim}
         DDIR    LW,IW
-        LD      BC,12345668h   .
+        LD      BC,12345678h
 \end{verbatim}
-The machine code that was first created for \tty{DDIR LW} is retracted and
-replaced, which is signified with an \tty{R} in the listing.
+The code generated previously for \tty{DDIR LW} is withdrawn, as can be seen
+from the \tty{R} marker in the listing.
+
+Explicit \tty{DDIR} prefixes containing \tty{IN}, \tty{IB}, or\tty{IW}
+may be used to enforce a certain operand length.  Arguments not fitting
+into the given operand size result in an error message, while shorter
+ones are zero-extended to achieve the requested length.  For instance,
+\begin{verbatim}
+        DDIR    IB
+        LD      BC,12345678h
+\end{verbatim}
+will result in an error message, since the constant cannot be represented
+in 24 bits.  Vice versa, in this example,
+\begin{verbatim}
+        DDIR    LW,IW
+        LD      BC,345678h
+\end{verbatim}
+the constant will be encoded with one byte more than absolutely
+necessary.
 
 %%---------------------------------------------------------------------------
 
@@ -11162,6 +11501,32 @@ which used to be common in UNIX environments.
 
 %%---------------------------------------------------------------------------
 
+\section{CR16}
+\label{CR16Spec}
+
+When National extended the CR16 architecture to 2 Mbytes address space,
+compatibility to the CR16A predecessor was an issue.  The CR16B core therefore
+has a 'compatibility bit' that provides full binary upward compatibility.  The
+downside of this mode is that various branch and jump instructions still address
+only the first 128 KBytes of address space.  The binary encoding of these
+instructions changes in ''large model'', so the complete 2 MBytes address space
+can be reached.  The \tty{CPU} selects the memory model code shall be created
+for:
+
+\begin{verbatim}
+   cpu cr16b:model=0
+\end{verbatim}
+
+selects the small model, while
+
+\begin{verbatim}
+   cpu cr16b:model=1
+\end{verbatim}
+
+selects the large model.  The latter is also the default if the option is omitted.
+
+%%---------------------------------------------------------------------------
+
 \section{uPD78(C)1x}
 \label{78C1xSpec}
 
@@ -11591,22 +11956,7 @@ tries to keep the file as short as possible.
 Common to all records is a header byte which defines the record's type
 and its contents.  Written in a PASCALish way, the record structure
 can be described in the following way:
-\begin{verbatim}
-FileRecord = RECORD CASE Header:Byte OF
-              $00:(Creator:ARRAY[] OF Char);
-              $01..
-              $7f:(StartAdr : LongInt;
-                   Length   : Word;
-                   Data     : ARRAY[0..Length-1] OF Byte);
-              $80:(EntryPoint:LongInt);
-              $81:(Header   : Byte;
-                   Segment  : Byte;
-                   Gran     : Byte;
-                   StartAdr : LongInt;
-                   Length   : Word;
-                   Data     : ARRAY[0..Length-1] OF Byte);
-             END
-\end{verbatim}
+\input{../doc_COM/recstruct.tex}
 This description does not express fully that the length of data
 fields is variable and depends on the value of the \tty{Length} entries.
 
@@ -11628,7 +11978,7 @@ table \ref{TabHeader}).
 
 \begin{center}\begin{longtable}{|c|l||c|l|}
 \hline
-Header  & Family & Header  & Family \\
+FamilyHdr  & Family & FamilyHdr  & Family \\
 \hline
 \hline
 \endhead
@@ -11664,12 +12014,15 @@ describe the block's start address and its length: While the start
 address refers to the granularity, the \tty{Length} value is always
 expressed in bytes!  For example, if the start address is \$300 and
 the length is 12, the resulting end address would be \$30b for a
-granularity of 1, however \$303 for a granularity of 4!  Granularities
+granularity of 1, however \$303 for a granularity of 4.  Granularities
 that differ from 1 are rare and mostly appear in DSP CPU's that are
 not designed for byte processing.  For example, a DSP56K's address
 space is organized in 64 Kwords of 16 bits.  The resulting storage
 capacity is 128 Kbytes, however it is organized as $2^{16}$ words that
-are addressed with addresses 0,1,2,...65535!
+are addressed with addresses 0,1,2,...65535.  Granularities
+smaller than 8 bits are encoded asvalues of \$f9 to \$ff.  In case
+the smalles addressablelement is one bit, the granularity is \$ff,
+while it is \$fc for a nibble.
 
 The start address is always 32 bits in size, independent of the
 processor family.  In contrast, the length specification has only 16
@@ -11881,8 +12234,8 @@ backslash.  The \tty{0x} variant is definitely more comfortable in this case.
 Otherwise, calling conventions and variations are equivalent to those
 of \asname{} (except for PLIST and AS2MSG); i.e. it is possible to store
 frequently used parameters in an environment variable (whose name is
-constructed by appending CMD to the program's name, i.e. \tty{BINDCMD} for
-BIND), to negate options, and to use all upper- resp. lower-case
+constructed by appending CMD to the program's name, i.e. \tty{PBINDCMD} for
+PBIND), to negate options, and to use all upper- resp. lower-case
 writing (for details on this, see section \ref{SectCallConvention}).
 
 Address specifications always relate to the granularity of the
@@ -11929,25 +12282,26 @@ to examine a file's contents before one continues to process it.
 
 %%---------------------------------------------------------------------------
 
-\section{BIND}
+\section{PBIND}
 
-BIND is a program that allows to concatenate the records of several
+PBIND is a program that allows to concatenate the records of several
 code files into a single file.  A filter function is available that
 can be used to copy only records of certain types.  Used in this way,
-BIND can also be used to split a code file into several files.
+PBIND can also be used to split a code file into several files.
 
-The general syntax of BIND is
+The general syntax of PBIND is
 \begin{verbatim}
-   BIND <source file(s)> <target file> [options]
+   PBIND [options] <source file(s)> [target file]
 \end{verbatim}
-Just like \asname{}, BIND regards all command line arguments that do not
-start with a \tty{+, -} or \tty{/} as file specifications, of which the last one
-must designate the destination file.  All other file specifications
-name sources, which may again contain wildcards.
+Just like \asname{}, PBIND regards all command line arguments that do not
+start with a \tty{+, -} or \tty{/} as file specifications.  If no
+\tty{-o} was used, the last of them is assumed to be the target file.
+All other file specifications name sources, which may contain wildcards.
 
-Currently, BIND defines only one command line option:
+Currently, PBIND defines only two command line options:
 \begin{itemize}
-\item{\tty{f $<$Header[,Header]$>$}: sets a list of record headers that should
+\item{\tty{o $<$name$>$}: specifies the output/target file.}
+\item{\tty{f $<$header[,header]$>$}: sets a list of record headers that should
       be copied.  Records with other header IDs will
       not be copied.  Without such an option, all
       records will be copied.  The headers given in
@@ -11956,10 +12310,10 @@ Currently, BIND defines only one command line option:
       Individual headers in this list are separated
       with commas.}
 \end{itemize}
-For example, to filter all MCS-51 code out of a code file, use BIND
+For example, to filter all MCS-51 code out of a code file, use PBIND
 in the following way:
 \begin{verbatim}
-   BIND <source name> <target name> -f $31
+   PBIND <source name> <target name> -f $31
 \end{verbatim}
 If a file name misses an extension, the extension \tty{P} will be added
 automatically.
@@ -11968,12 +12322,12 @@ automatically.
 
 \section{P2HEX}
 
-P2HEX is an extension of BIND.  It has all command line options of BIND and
-uses the same conventions for file names.  In contrary to BIND, the
+P2HEX is an extension of PBIND.  It has all command line options of PBIND and
+uses the same conventions for source and destination file names.  Different to PBIND, the
 target file is written as a Hex file, i.e. as a sequence of lines
 which represent the code as ASCII hex numbers.
 
-P2HEX knows nine different target formats, which can be selected via the
+P2HEX knows ten different target formats, which can be selected via the
 command line parameter \tty{F}:
 \begin{itemize}
 \item{Motorola S-Records (\tty{-F Moto)})}
@@ -12179,7 +12533,7 @@ any further need after P2HEX has been run.  The command line option
 allows to instruct P2HEX to erase them automatically after
 conversion.
 
-In contrast to BIND, P2HEX will not produce an empty target file if
+In contrast to PBIND, P2HEX will not produce an empty target file if
 only one file name (i.e. the target name) has been given.  Instead,
 P2HEX will use the corresponding code file.  Therefore, a minimal
 call in the style of
@@ -12665,6 +13019,17 @@ described by:
                 integer.  The number is therefore stored as a floating point
                 number.}
                {the argument in question}
+\errentry{ 500}{code generation outside of CODE segment}
+               {warning}
+               {machine code can only be generated inside the CODE segment. All
+                other address spaces do not have the necessary word width.}
+               {none}
+\errentry{ 510}{instruction will overwrite SPt}
+               {warning}
+               {Aside from the explicitly named register, this instruction
+                uses the subsequent register for the double-length result.
+                However, the subsequent register would be the stack pointer.}
+               {the instruction's destination register}
 \errentry{1000}{symbol double defined}
                {error}
                {A new value is assigned to a symbol, using a label or a
@@ -13012,6 +13377,18 @@ described by:
                {The control register used by a \tty{MOVEC} is not (yet) available
                 for the processor defined by the \tty{CPU} command.}
                {none}
+\errentry{1441}{unknown vector}
+               {error}
+               {A vector of this name does not exist.}
+               {the vector argument in question}
+\errentry{1442}{register is not accessible in current execution modee}
+               {error}
+               {This register may only be accessed in kernel mode.}
+               {The register in question}
+\errentry{1443}{register is read-only in current execution mode}
+               {error}
+               {This register may only be written in kernel mode.}
+               {The register in question}
 \errentry{1445}{invalid register}
                {error}
                {The register used, although valid, cannot be used in this
@@ -13059,6 +13436,11 @@ described by:
                {The command structure in a \tty{IF}- or \tty{SWITCH}- sequence is
                 wrong.}
                {none}
+\errentry{1482}{FORWARD statement must reference to current section}
+               {error}
+               {\tty{FORWARD} directives must not reference symbols in
+                another (higher) section.}
+               {The symbol name in question}
 \errentry{1483}{section name double defined}
                {error}
                {In this program module a section with the same name still
@@ -13293,12 +13675,18 @@ described by:
                {An incomplete WHILE block was found. Probably an
                 \tty{ENDM} statement is missing.}
                {none}
-\errentry{1805}{EXITM not called from within macro}
+\errentry{1805}{EXITM used outside of macro}
                {error}
                {\tty{EXITM} is designed to terminate a macro expansion.  This
                 instruction only makes sense within macros and an attempt
                 was made to call it in the absence of macros.}
-               {none}
+               {The \tty{EXITM} statement in question}
+\errentry{1806}{ENDM used outside of macro}
+               {error}
+               {\tty{ENDM} finalizes either a macro's definition or a
+                \tty{REPT/IRP/WHILE} block.  Using it outside of either
+                makes no sense.}
+               {The \tty{ENDM} statement in question}
 \errentry{1810}{more than 10 macro parameters}
                {error}
                {A macro cannot have more than 10 parameters}
@@ -13671,6 +14059,13 @@ described by:
                {error}
                {The target address is located in a memory page that is currently
                 inaccessible.}
+               {none}
+\errentry{2271}{current program counter in inaccessible page}
+               {error}
+               {The instruction currently being assembled is located on a physical
+                address that is not mapped into the CPU's logical address space.
+                This is an issue if PC-relative addressin is used, because the
+                logical address is needed to compute the distance.}
                {none}
 \errentry{2280}{field not accessible}
                {error}
@@ -14093,6 +14488,7 @@ Additionally, there are:
       instruction.}
 \end{itemize}
 
+\newcommand{\pcsymname}[0]{Program Counter Symbol}
 \input{../doc_COM/pscpu.tex}
 
 %%===========================================================================
@@ -14332,14 +14728,15 @@ documentation.  I received information from an enormous amount of
 people, ranging from tips up to complete data books.  An enumeration
 follows (as stated before, this is very probably incomplete!):
 
-Ernst Ahlers, Charles Altmann, Marco Awater, Len Bayles,
-Andreas Bolsch, Rolf Buchholz, Bernd Casimir, Nils Eilers,
-Gunther Ewald, Michael Haardt, Stephan Hruschka,  Fred van Kempen,
-Peter Kliegelh\"ofer, Ulf Meinke, Udo M\"oller, Matthias Paul,
-Norbert Rosch, Curt J. Sampson, Steffen Schmid, Leonhard Schneider,
-Ernst Schwab, Michael Schwingen, Oliver Sellke, Christian Stelter,
-Patrik Str\"omdahl, Tadashi G. Takaoka, Oliver Thamm, Thorsten Thiele,
-Leszek Ulman, Rob Warmelink, Andreas Wassatsch, John Weinrich.
+Ernst Ahlers, Charles Altmann, Marco Awater, Len Bayles, Andreas
+Bolsch, Rolf Buchholz, Bernd Casimir, Nils Eilers, Gunther Ewald,
+Daniel E. Germann, Michael Haardt, Stephan Hruschka, Fred van
+Kempen, Peter Kliegelh\"ofer, Ulf Meinke, Udo M\"oller, Matthias
+Paul, Norbert Rosch, Curt J.  Sampson, Steffen Schmid, Leonhard
+Schneider, Ernst Schwab, Michael Schwingen, Oliver Sellke,
+Christian Stelter, Patrik Str\"omdahl, Tadashi G.  Takaoka,
+Oliver Thamm, Thorsten Thiele, Leszek Ulman, Rob Warmelink,
+Andreas Wassatsch, John Weinrich.
 
 ...and a somewhat ironic ''thank you'' to Rolf-Dieter-Klein and Tobias
 Thiel, who gave me the initial impulse with their ASM68K.  Several things

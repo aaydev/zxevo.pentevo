@@ -1,4 +1,4 @@
-/* codepdp11.c */
+/* codevax.c */
 /*****************************************************************************/
 /* SPDX-License-Identifier: GPL-2.0-only OR GPL-3.0-only                     */
 /*                                                                           */
@@ -27,7 +27,7 @@
 #include "intpseudo.h"
 #include "decpseudo.h"
 #include "decfloat.h"
-#include "codepdp11.h"
+#include "codevax.h"
 
 typedef enum
 {
@@ -178,7 +178,7 @@ static Boolean decode_reg_core(const char *p_arg, Byte *p_result, tSymbolSize *p
 
 /*!------------------------------------------------------------------------
  * \fn     dissect_reg_vax(char *p_dest, size_t dest_size, tRegInt value, tSymbolSize inp_size)
- * \brief  dissect register symbols - PDP-11 variant
+ * \brief  dissect register symbols - VAX variant
  * \param  p_dest destination buffer
  * \param  dest_size destination buffer size
  * \param  value numeric register value
@@ -247,7 +247,6 @@ static Boolean reset_adr_vals(adr_vals_t *p_vals)
  * \param  p_vals where to append
  * \param  int_value value to append
  * \param  size integer size
- * \return 
  * ------------------------------------------------------------------------ */
 
 static void append_adr_vals_int(adr_vals_t *p_vals, LargeWord int_value, tSymbolSize size)
@@ -331,14 +330,14 @@ static Boolean decode_abs(const tStrComp *p_arg, adr_vals_t *p_result)
   return ok;
 }
 
-static int index_qualifier(const char *p_arg, int next_non_blank_pos, int split_pos)
+static int index_qualifier(const char *p_arg, int last_non_blank_pos, int split_pos)
 {
   /* extra check for post increment: good enough? */
 
-  int ret = ((next_non_blank_pos >= 4)
+  int ret = ((last_non_blank_pos >= 4)
        && (p_arg[0] == '(')
-       && (p_arg[next_non_blank_pos - 1] == ')')
-       && (p_arg[next_non_blank_pos] == '+'))
+       && (p_arg[last_non_blank_pos - 1] == ')')
+       && (p_arg[last_non_blank_pos] == '+'))
    ? split_pos : -1;
   return ret;
 }
@@ -473,14 +472,14 @@ static Boolean decode_adr(tStrComp *p_arg, adr_vals_t *p_result, LongWord pc_val
         case eSymbolSize16Bit:
           eval_int_type = Int16;
           goto int_common;
-        case eSymbolSize64Bit:
-        case eSymbolSize128Bit:
-#ifdef HAS64
-          eval_int_type = Int64;
-          goto int_common;
-#endif
         case eSymbolSize32Bit:
           eval_int_type = Int32;
+          goto int_common;
+        case eSymbolSize64Bit:
+          eval_int_type = Int64;
+          goto int_common;
+        case eSymbolSize128Bit:
+          eval_int_type = Int128;
           goto int_common;
 
         case eSymbolSizeFloat32Bit:
@@ -1698,6 +1697,8 @@ static void init_fields(void)
   AddInstTable(InstTable, "D_FLOATING", eIntPseudoFlag_LittleEndian | eIntPseudoFlag_AllowFloat | eIntPseudoFlag_DECFormat , DecodeIntelDQ);
   AddInstTable(InstTable, "G_FLOATING", eIntPseudoFlag_LittleEndian | eIntPseudoFlag_AllowFloat | eIntPseudoFlag_DECGFormat, DecodeIntelDQ);
   AddInstTable(InstTable, "H_FLOATING", eIntPseudoFlag_LittleEndian | eIntPseudoFlag_AllowFloat | eIntPseudoFlag_DECFormat , DecodeIntelDO);
+
+  AddInstTable(InstTable, "REG", 0, CodeREG);
 }
 
 /*!------------------------------------------------------------------------
@@ -1725,7 +1726,6 @@ static void deinit_fields(void)
 static void intern_symbol_vax(char *p_arg, TempResult *p_result)
 {
   Byte reg_num;
-  (void)p_arg; (void)p_result;
 
   if (decode_reg_core(p_arg, &reg_num, &p_result->DataSize))
   {
@@ -1801,9 +1801,7 @@ static void switch_to_vax(void *p_user)
   IsDef = is_def_vax;
   SwitchFrom = switch_from_vax;
   InternSymbol = intern_symbol_vax;
-#if 0
   DissectReg = dissect_reg_vax;
-#endif
   multi_char_le = True;
 
   init_fields();

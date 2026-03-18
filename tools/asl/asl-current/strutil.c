@@ -1172,97 +1172,6 @@ int DigitVal(char ch, int Base)
   return (Result >= Base) ? -1 : Result;
 }
 
-/*--------------------------------------------------------------------*/
-/* Zahlenkonstante umsetzen: $ hex, % binaer, @ oktal */
-/* inp: Eingabezeichenkette */
-/* erg: Zeiger auf Ergebnis-Longint */
-/* liefert TRUE, falls fehlerfrei, sonst FALSE */
-
-LargeInt ConstLongInt(const char *inp, Boolean *pErr, LongInt Base)
-{
-  static const char Prefixes[4] = { '$', '@', '%', '\0' }; /* die moeglichen Zahlensysteme */
-  static const char Postfixes[4] = { 'H', 'O', '\0', '\0' };
-  static const LongInt Bases[3] = { 16, 8, 2 };            /* die dazugehoerigen Basen */
-  LargeInt erg, val;
-  int z, vorz = 1;  /* Vermischtes */
-  int InpLen = strlen(inp);
-
-  /* eventuelles Vorzeichen abspalten */
-
-  if (*inp == '-')
-  {
-    vorz = -1;
-    inp++;
-    InpLen--;
-  }
-
-  /* Sonderbehandlung 0x --> $ */
-
-  if ((InpLen >= 2)
-   && (*inp == '0')
-   && (as_toupper(inp[1]) == 'X'))
-  {
-    inp += 2;
-    InpLen -= 2;
-    Base = 16;
-  }
-
-  /* Jetzt das Zahlensystem feststellen.  Vorgabe ist dezimal, was
-     sich aber durch den Initialwert von Base jederzeit aendern
-     laesst.  Der break-Befehl verhindert, dass mehrere Basenzeichen
-     hintereinander eingegeben werden koennen */
-
-  else if (InpLen > 0)
-  {
-    for (z = 0; z < 3; z++)
-      if (*inp == Prefixes[z])
-      {
-        Base = Bases[z];
-        inp++;
-        InpLen--;
-        break;
-      }
-      else if (as_toupper(inp[InpLen - 1]) == Postfixes[z])
-      {
-        Base = Bases[z];
-        InpLen--;
-        break;
-      }
-  }
-
-  /* jetzt die Zahlenzeichen der Reihe nach durchverwursten */
-
-  erg = 0;
-  *pErr = False;
-  for(; InpLen > 0; inp++, InpLen--)
-  {
-    val = DigitVal(*inp, 16);
-    if (val < -0)
-      break;
-
-    /* entsprechend der Basis zulaessige Ziffer ? */
-
-    if (val >= Base)
-      break;
-
-    /* Zahl linksschieben, zusammenfassen, naechster bitte */
-
-    erg = erg * Base + val;
-  }
-
-  /* bis zum Ende durchgelaufen ? */
-
-  if (!InpLen)
-  {
-    /* Vorzeichen beruecksichtigen */
-
-    erg *= vorz;
-    *pErr = True;
-  }
-
-  return erg;
-}
-
 /*--------------------------------------------------------------------------*/
 /* fuehrende Leerzeichen loeschen */
 
@@ -1406,6 +1315,21 @@ char *ParenthPos(char *pHaystack, char Needle)
 char TabCompressed(char in)
 {
   return (in == '\t') ? ' ' : (as_isprint(in) ? in : '*');
+}
+
+/*!------------------------------------------------------------------------
+ * \fn     as_bit_count(LongWord i)
+ * \brief  count set bits in i
+ * \return # of bits set
+ * ------------------------------------------------------------------------ */
+
+unsigned as_bit_count(LongWord i)
+{
+  i = i - ((i >> 1) & 0x55555555);
+  i = (i & 0x33333333) + ((i >> 2) & 0x33333333);
+  i = (i + (i >> 4)) & 0x0F0F0F0F;
+  i *= 0x01010101;
+  return  i >> 24;
 }
 
 /*--------------------------------------------------------------------------*/

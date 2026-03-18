@@ -20,6 +20,7 @@
 #include "asmpars.h"
 #include "asmstructs.h"
 #include "asmitree.h"
+#include "assume.h"
 #include "asmallg.h"
 #include "codepseudo.h"
 #include "intpseudo.h"
@@ -152,10 +153,10 @@ static Boolean IsWRegCore(const char *pArg, Byte *pResult)
   if ((strlen(pArg) < 2) || (as_toupper(*pArg) != 'R')) return False;
   else
   {
-    Boolean OK;
+    char *p_end;
 
-    *pResult = ConstLongInt(pArg + 1, &OK, 10);
-    return OK && (*pResult <= 15);
+    *pResult = strtoul(pArg + 1, &p_end, 10);
+    return !*p_end && (*pResult <= 15);
   }
 }
 
@@ -195,10 +196,10 @@ static Boolean IsWRRegCore(const char *pArg, Byte *pResult)
   if ((strlen(pArg) < 3) || as_strncasecmp(pArg, "RR", 2)) return False;
   else
   {
-    Boolean OK;
+    char *p_end;
 
-    *pResult = ConstLongInt(pArg + 2, &OK, 10);
-    return OK && (*pResult <= 15);
+    *pResult = strtoul(pArg + 2, &p_end, 10);
+    return !*p_end && (*pResult <= 15);
   }
 }
 
@@ -2397,7 +2398,7 @@ static void DecodeSFR(Word Code)
 {
   UNUSED(Code);
 
-  CodeEquate(SegData, 0, mIsZ8Encore() ? 0xfff : 0xff);
+  code_equate_type(SegData, mIsZ8Encore() ? UInt12 : UInt8);
 }
 
 static void DecodeDEFBIT(Word Code)
@@ -2720,7 +2721,7 @@ static void AdaptRP01(void)
 
 #define ASSUMEeZ8Count 1
 #define ASSUMESuper8Count 3
-static ASSUMERec ASSUMEeZ8s[] =
+static as_assume_rec_t ASSUMEeZ8s[] =
 {
   {"RP"  , &RPVal  , 0, 0xff, 0x100, AdaptRP01},
   {"RP0" , &RP0Val , 0, 0xff, 0x100, NULL},
@@ -2771,8 +2772,7 @@ static void SwitchTo_Z8(void *pUser)
     SegLimits[SegData] = 0xff;
   }
 
-  pASSUMERecs = ASSUMEeZ8s;
-  ASSUMERecCnt = mIsSuper8() ? ASSUMESuper8Count : ASSUMEeZ8Count;
+  assume_set(ASSUMEeZ8s, mIsSuper8() ? ASSUMESuper8Count : ASSUMEeZ8Count);
 
   MakeCode = MakeCode_Z8;
   IsDef = IsDef_Z8;

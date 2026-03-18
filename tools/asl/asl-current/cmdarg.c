@@ -75,12 +75,20 @@ static as_cmd_result_t ProcessParam(const as_cmd_rec_t *p_cmd_recs, size_t cmd_r
                                     const char *p_next, Boolean AllowLink,
                                     as_cmd_results_t *p_results)
 {
-  Boolean Negate;
+  Boolean Negate, no_use_next = False;
   as_cmd_result_t TempRes;
   const char *p_act_next;
 
   if (as_strcasecmp(p_param, "-intsyntax"))
-    p_act_next = (is_arg_leadin(*p_next) || (*p_next == '@')) ? "" : p_next;
+  {
+    if (is_arg_leadin(*p_next) || (*p_next == '@'))
+    {
+      no_use_next = True;
+      p_act_next = "";
+    }
+    else
+      p_act_next = p_next;
+  }
   else
     p_act_next = p_next;
   if (*p_param == '@')
@@ -138,11 +146,12 @@ static as_cmd_result_t ProcessParam(const as_cmd_rec_t *p_cmd_recs, size_t cmd_r
           if ((strlen(p_cmd_recs[Search].p_ident) == 1) && (p_cmd_recs[Search].p_ident[0] == p))
             break;
         if (Search >= cmd_rec_cnt)
-          TempRes = e_cmd_err;
+          TempRes = e_cmd_unknown;
         else
           switch (p_cmd_recs[Search].callback(Negate, p_act_next))
           {
             case e_cmd_err:
+            case e_cmd_unknown:
               TempRes = e_cmd_err;
               break;
             case e_cmd_arg:
@@ -160,6 +169,8 @@ static as_cmd_result_t ProcessParam(const as_cmd_rec_t *p_cmd_recs, size_t cmd_r
     }
     if (TempRes == e_cmd_err)
       strmaxcpy(p_results->error_arg, p_param, sizeof(p_results->error_arg));
+    if ((TempRes == e_cmd_arg) && no_use_next)
+      TempRes = e_cmd_ok;
     return TempRes;
   }
   else
@@ -197,15 +208,18 @@ static as_cmd_result_t DecodeLine(const as_cmd_rec_t *p_cmd_recs, int cmd_rec_cn
 
     for (z = 0; z < EnvCnt; z++)
     {
-      switch (ProcessParam(p_cmd_recs, cmd_rec_cnt, EnvStr[z], EnvStr[z + 1], False, p_results))
+      as_cmd_result_t ret = ProcessParam(p_cmd_recs, cmd_rec_cnt, EnvStr[z], EnvStr[z + 1], False, p_results);
+
+      switch (ret)
       {
         case e_cmd_file:
           AddStringListLast(&p_results->file_arg_list, EnvStr[z]);
           break;
         case e_cmd_err:
+        case e_cmd_unknown:
           strmaxcpy(p_results->error_arg, EnvStr[z], sizeof(p_results->error_arg));
           p_results->error_arg_in_env = True;
-          return e_cmd_err;
+          return ret;
         case e_cmd_arg:
           z++;
           break;
@@ -295,6 +309,108 @@ void as_cmd_register(const as_cmd_rec_t *p_add_recs, size_t add_rec_cnt)
 }
 
 /*!------------------------------------------------------------------------
+ * \fn     as_cmd_strtol(const char *p_inp, const char **pp_end)
+ * \brief  similar to strtol(), just with a few more hex/oct/bin notations
+ * \param  p_inp input string
+ * \param  pp_end points to character where parsing ended
+ * \return numeric value
+ * ------------------------------------------------------------------------ */
+
+long as_cmd_strtol(const char *p_inp, const char **pp_end)
+{
+  static const char prefixes[3] = { '$', '@', '%' };
+  static const char suffixes[3] = { 'H', 'O', '\0' };
+  static const long bases[3] = { 16, 8, 2 };
+  long ret, val;
+  int neg, had_digits, base;
+  int inp_len = strlen(p_inp);
+  const char *p_run = p_inp,
+             *p_act_end = &p_inp[inp_len];
+
+  /* split off sign */
+
+  if (*p_run == '-')
+  {
+    neg = True;
+    p_run++;
+    inp_len--;
+  }
+  else
+    neg = False;
+
+  /* Treat '0x' for hex: */
+
+  base = 10;
+  if ((inp_len >= 2)
+   && (*p_run == '0')
+   && (as_toupper(p_run[1]) == 'X'))
+  {
+    p_run += 2;
+    inp_len -= 2;
+    base = 16;
+  }
+
+  /* Deduce base: */
+
+  else if (inp_len > 0)
+  {
+    int z;
+
+    for (z = 0; z < 3; z++)
+      if (*p_run == prefixes[z])
+      {
+        base = bases[z];
+        p_run++;
+        inp_len--;
+        break;
+      }
+      else if (as_toupper(p_inp[inp_len - 1]) == suffixes[z])
+      {
+        base = bases[z];
+        inp_len--;
+        break;
+      }
+  }
+
+  /* Process digits */
+
+  ret = 0;
+  had_digits = False;
+  for(; inp_len > 0; p_run++, inp_len--)
+  {
+    val = DigitVal(*p_run, 16);
+
+    /* allowed according to base? */
+
+    if ((val < 0) || (val >= base))
+    {
+      *pp_end = p_run;
+      return ret;
+    }
+
+    /* next please */
+
+    had_digits = True;
+    ret = ret * base + val;
+  }
+
+  /* at least one digit? */
+
+  if (had_digits)
+  {
+    /* regard sign */
+
+    if (neg)
+      ret = -ret;
+    *pp_end = p_act_end;
+  }
+  else
+    *pp_end = p_inp;
+
+  return ret;
+}
+
+/*!------------------------------------------------------------------------
  * \fn     as_cmd_process(int argc, char **argv,
                           const char *p_env_name, as_cmd_results_t *p_results)
  * \brief  arguments from command line and environment
@@ -340,18 +456,22 @@ as_cmd_result_t as_cmd_process(int argc, char **argv,
   skip_next = False;
   for (z = 1; z < argc; z++)
   {
+    as_cmd_result_t ret;
+
     if (skip_next)
     {
       skip_next = False;
       continue;
     }
-    switch (ProcessParam(sum_cmd_recs, sum_cmd_rec_cnt, argv[z], (z + 1 < argc) ? argv[z + 1] : "",
-                         True, p_results))
+    ret = ProcessParam(sum_cmd_recs, sum_cmd_rec_cnt, argv[z], (z + 1 < argc) ? argv[z + 1] : "",
+                       True, p_results);
+    switch (ret)
     {
       case e_cmd_err:
+      case e_cmd_unknown:
         p_results->error_arg_in_env = False;
         strmaxcpy(p_results->error_arg, argv[z], sizeof(p_results->error_arg));
-        return e_cmd_err;
+        return ret;
       case e_cmd_ok:
         break;
       case e_cmd_arg:

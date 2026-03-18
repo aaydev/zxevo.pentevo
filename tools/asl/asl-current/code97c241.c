@@ -28,6 +28,7 @@
 #include "codevars.h"
 #include "errmsg.h"
 #include "operator.h"
+#include "headids.h"
 
 #include "code97c241.h"
 
@@ -144,7 +145,7 @@ static void InsertSinglePrefix(Byte Index)
 
 static Boolean DecodeRegCore(const char *pArg, Byte *pResult, tSymbolSize *pSize)
 {
-  Boolean OK;
+  char *p_end;
   int l = strlen(pArg);
 
   if (as_toupper(*pArg) != 'R')
@@ -167,8 +168,8 @@ static Boolean DecodeRegCore(const char *pArg, Byte *pResult, tSymbolSize *pSize
     default:
       return False;
   }
-  *pResult = ConstLongInt(pArg + 2, &OK, 10);
-  if (!OK || (*pResult > 15))
+  *pResult = strtoul(pArg + 2, &p_end, 10);
+  if (*p_end || (*pResult > 15))
     return False;
   if ((*pSize == eSymbolSize32Bit) && Odd(*pResult))
     return False;
@@ -226,6 +227,11 @@ static tRegEvalResult DecodeReg(const tStrComp *pArg, Byte *pResult, tSymbolSize
   {
     *pResult = RegDescr.Reg;
     *pSize = EvalResult.DataSize;
+  }
+  else
+  {
+    *pResult = 0;
+    *pSize = eSymbolSizeUnknown;
   }
   return RegEvalResult;
 }
@@ -2569,11 +2575,13 @@ static void SwitchFrom_97C241(void)
 
 static void SwitchTo_97C241(void)
 {
+  const TFamilyDescr *p_descr = FindFamilyByName("TLCS-9000");
+
   TurnWords = False;
   SetIntConstMode(eIntConstModeIntel);
 
   PCSymbol = "$";
-  HeaderID = 0x56;
+  HeaderID = p_descr->Id;
   NOPCode = 0x7fa0;
   DivideChars = ",";
   HasAttrs = True;

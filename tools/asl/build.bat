@@ -1,6 +1,10 @@
 
 @echo off
 
+path=%path%;c:\ProlinSDK2\sdk\tools\msys\bin\
+
+mkdir bin
+
 cd asl-current
 
 copy /Y /B ..\makefile.def

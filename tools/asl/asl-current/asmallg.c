@@ -30,14 +30,20 @@
 #include "asmstructs.h"
 #include "asmcode.h"
 #include "asmrelocs.h"
+#include "cpu2phys.h"
 #include "asmitree.h"
+#include "assume.h"
 #include "operator.h"
 #include "codepseudo.h"
 #include "nlmessages.h"
 #include "literals.h"
 #include "msg_level.h"
 #include "dyn_array.h"
+#include "fwd_sym.h"
 #include "codenone.h"
+#include "cmdarg.h"
+#include "headids.h"
+
 #include "asmallg.h"
 
 #define LEAVE goto func_exit
@@ -127,6 +133,7 @@ static void SetNSeg(as_addrspace_t NSeg, Boolean force_setup)
 {
   if ((ActPC != NSeg) || !PCsUsed[ActPC] || force_setup)
   {
+    flush_bytes();
     ActPC = NSeg;
     if (!PCsUsed[ActPC])
       PCs[ActPC] = SegInits[ActPC];
@@ -179,8 +186,8 @@ static void SetCPUCore(const tCPUDef *pCPUDef, const tStrComp *pCPUArgs)
   PageIsOccupied =
   ShiftIsOccupied = False;
   ChkPC = DefChkPC;
-  ASSUMERecCnt = 0;
-  pASSUMERecs = NULL;
+  cpu_2_phys_set_current_check(NULL);
+  assume_set(NULL, 0);
   pASSUMEOverride = NULL;
   pCommentLeadIn = Default_CommentLeadIn;
   UnsetCPU();
@@ -189,8 +196,28 @@ static void SetCPUCore(const tCPUDef *pCPUDef, const tStrComp *pCPUArgs)
   ParseCPUArgs(pCPUArgs, pCPUDef->pArgs);
   pCPUDef->SwitchProc(pCPUDef->pUserData);
 
+#if 0
+  {
+    as_addrspace_t addr_space;
+    const TFamilyDescr *p_descr = FindFamilyById(HeaderID);
+
+    if (p_descr)
+    {
+      for (addr_space = SegCode; addr_space <= SegEEData; addr_space++)
+        if (((ValidSegs >> addr_space) & 1)
+         && (Grans[addr_space] != p_descr->get_granularity(addr_space)))
+        {
+          fprintf(stderr, "Family %s, segment %d, granularity inconsistent\n",
+                  p_descr->Name, addr_space);
+        }
+    }
+  }
+#endif
+
   if (pCPUDef->Number)
     none_target_seglimit = SegLimits[SegCode];
+
+  as_rebuild_main_inst_tables();
 
   DontPrint = True;
 }
@@ -239,6 +266,12 @@ Boolean SetCPUByName(const tStrComp *pName)
 
 void UnsetCPU(void)
 {
+  as_addrspace_t seg;
+
+  flush_bytes();
+  for (seg = SegNone; seg < SegCountPlusStruct; seg++)
+    grans_bits_unused[seg] =
+    list_grans_bits_unused[seg] = 0;
   literals_chk_alldone();
   if (SwitchFrom)
   {
@@ -303,19 +336,19 @@ static void CodeSECTION(Word Index)
 }
 
 
-static void CodeENDSECTION_ChkEmptList(PForwardSymbol *Root)
+static void CodeENDSECTION_ChkEmptList(as_fwd_sym_t **pp_root)
 {
-  PForwardSymbol Tmp;
+  as_fwd_sym_t *p_tmp;
   String XError;
 
-  while (*Root)
+  while (*pp_root)
   {
-    Tmp = (*Root); *Root = Tmp->Next;
-    strmaxcpy(XError, Tmp->Name, STRINGSIZE);
+    p_tmp = (*pp_root); *pp_root = p_tmp->p_next;
+    strmaxcpy(XError, p_tmp->p_name, STRINGSIZE);
     strmaxcat(XError, ", ", STRINGSIZE);
-    strmaxcat(XError, Tmp->pErrorPos, STRINGSIZE);
+    strmaxcat(XError, p_tmp->p_error_pos, STRINGSIZE);
     WrXError(ErrNum_UndefdForward, XError);
-    free_forward_symbol(Tmp);
+    as_fwd_sym_free(p_tmp);
   }
 }
 
@@ -558,11 +591,7 @@ static void CodeRORG(Word Index)
   if (*AttrPart.str.p_str != '\0') WrError(ErrNum_UseLessAttr);
   else if (ChkArgCnt(1, 1))
   {
-#ifndef HAS64
-    HVal = EvalStrIntExpressionWithFlags(&ArgStr[1], SInt32, &ValOK, &Flags);
-#else
-    HVal = EvalStrIntExpressionWithFlags(&ArgStr[1], Int64, &ValOK, &Flags);
-#endif
+    HVal = EvalStrIntExpressionWithFlags(&ArgStr[1], LargeSIntType, &ValOK, &Flags);
     if (mFirstPassUnknown(Flags)) WrError(ErrNum_FirstPassCalc);
     else if (ValOK)
     {
@@ -1336,14 +1365,13 @@ static void CodeREAD(Word Index)
 
 static void CodeRADIX(Word Index)
 {
-  Boolean OK;
-  LargeWord tmp;
-
   if (ChkArgCnt(1, 1))
   {
-    tmp = ConstLongInt(ArgStr[1].str.p_str, &OK, 10);
-    if (!OK) WrError(ErrNum_ExpectInt);
-    else if (ChkRange(tmp, 2, 36))
+    const char *p_end;
+    long tmp = as_cmd_strtol(ArgStr[1].str.p_str, &p_end);
+
+    if (*p_end) WrStrErrorPos(ErrNum_ExpectInt, &ArgStr[1]);
+    else if (ChkRangePos(tmp, 2, 36, &ArgStr[1]))
     {
       if (Index == 1)
         OutRadixBase = tmp;
@@ -1396,14 +1424,14 @@ static void CodeALIGN(Word Index)
 static void CodeASSUME(Word Index)
 {
   int z1;
-  unsigned z2, z3;
   Boolean OK;
   tSymbolFlags Flags;
   LongInt HVal;
   tStrComp RegPart, ValPart;
   char *pSep, EmptyStr[] = "";
+  const as_assume_rec_t *p_rec;
   void (*pPostProcs[5])(void);
-  unsigned PostProcCount = 0;
+  unsigned PostProcCount = 0, z3;
 
   UNUSED(Index);
 
@@ -1429,19 +1457,20 @@ static void CodeASSUME(Word Index)
         RegPart = ArgStr[z1];
         StrCompMkTemp(&ValPart, EmptyStr, 0);
       }
-      z2 = 0;
       NLS_UpString(RegPart.str.p_str);
-      while ((z2 < ASSUMERecCnt) && (strcmp(pASSUMERecs[z2].Name, RegPart.str.p_str)))
-        z2++;
-      OK = (z2 < ASSUMERecCnt);
-      if (!OK) WrStrErrorPos(ErrNum_InvRegName, &RegPart);
+      p_rec = assume_lookup(RegPart.str.p_str);
+      if (!p_rec)
+      {
+        WrStrErrorPos(ErrNum_InvRegName, &RegPart);
+        OK = False;
+      }
       else
       {
         if (!as_strcasecmp(ValPart.str.p_str, "NOTHING"))
         {
-          if (pASSUMERecs[z2].NothingVal == -1) WrError(ErrNum_InvAddrMode);
+          if (p_rec->nothing_value == -1) WrError(ErrNum_InvAddrMode);
           else
-            *(pASSUMERecs[z2].Dest) = pASSUMERecs[z2].NothingVal;
+            *(p_rec->p_dest) = p_rec->nothing_value;
         }
         else
         {
@@ -1453,15 +1482,15 @@ static void CodeASSUME(Word Index)
               WrError(ErrNum_FirstPassCalc);
               OK = False;
             }
-            else if (ChkRange(HVal, pASSUMERecs[z2].Min, pASSUMERecs[z2].Max))
-              *(pASSUMERecs[z2].Dest) = HVal;
+            else if (ChkRange(HVal, p_rec->min_value, p_rec->max_value))
+              *(p_rec->p_dest) = HVal;
           }
         }
         /* collect different post procs so same proc is called only once */
-        if (pASSUMERecs[z2].pPostProc)
+        if (p_rec->p_post_proc)
         {
           for (z3 = 0; z3 < PostProcCount; z3++)
-            if (pASSUMERecs[z2].pPostProc == pPostProcs[z3])
+            if (p_rec->p_post_proc == pPostProcs[z3])
               break;
           if (z3 >= PostProcCount)
           {
@@ -1471,7 +1500,7 @@ static void CodeASSUME(Word Index)
                 pPostProcs[z3]();
               PostProcCount = 0;
             }
-            pPostProcs[PostProcCount++] = pASSUMERecs[z2].pPostProc;
+            pPostProcs[PostProcCount++] = p_rec->p_post_proc;
           }
         }
       }
@@ -1633,7 +1662,7 @@ void INCLUDE_SearchCore(tStrComp *pDest, const tStrComp *pArg, Boolean SearchPat
   StrCompCopySub(pDest, pArg, offs, l);
 
   /* To keep existing functionality, first search for the file name
-     possibly expanded by a suffix.  If it was extened, and not found
+     possibly expanded by a suffix.  If it was extended, and not found
      with this extension, try the plain name in a second search: */
 
   this_pass = AddSuffix(pDest->str.p_str, IncSuffix) ? 0 : 1;
@@ -1730,7 +1759,7 @@ static void CodeBINCLUDE(Word Index)
           Curr = (Rest <= 256) ? Rest : 256;
           errno = 0; RLen = fread(BAsmCode, 1, Curr, F); ChkIO(ErrNum_FileReadError);
           CodeLen = RLen;
-          WriteBytes();
+          as_code_write_bytes(CodeLen);
           PCs[ActPC] += CodeLen;
           Rest -= RLen;
         }
@@ -1769,17 +1798,6 @@ static void CodePOPV(Word Index)
       PopSymbol(&ArgStr[z], &ArgStr[1]);
   }
 }
-
-static PForwardSymbol CodePPSyms_SearchSym(PForwardSymbol Root, char *Comp)
-{
-  PForwardSymbol Lauf = Root;
-  UNUSED(Comp);
-
-  while (Lauf && strcmp(Lauf->Name, Comp))
-    Lauf = Lauf->Next;
-  return Lauf;
-}
-
 
 static void CodeSTRUCT(Word IsUnion)
 {
@@ -2056,54 +2074,66 @@ static void CodeSEGTYPE(Word Index)
     RelSegs = (as_toupper(*OpPart.str.p_str) == 'R');
 }
 
-static void CodePPSyms(PForwardSymbol *Orig,
-                       PForwardSymbol *Alt1,
-                       PForwardSymbol *Alt2)
+static void CodePPSyms(Boolean is_forward,
+                       as_fwd_sym_t **pp_orig,
+                       as_fwd_sym_t **pp_alt1,
+                       as_fwd_sym_t **pp_alt2)
 {
-  PForwardSymbol Lauf;
-  tStrComp *pArg, SymArg, SectionArg, exp_sym, *p_exp_sym;
-  String exp_sym_buf, Section;
-  char *pSplit;
+  tStrComp *p_arg, exp_sym;
+  String exp_sym_buf;
+  LongInt section;
 
   StrCompMkTemp(&exp_sym, exp_sym_buf, sizeof(exp_sym_buf));
   if (ChkArgCnt(1, ArgCntMax))
-    forallargs (pArg, True)
+    forallargs (p_arg, True)
     {
-      pSplit = QuotPos(pArg->str.p_str, ':');
-      if (pSplit)
+      char *p_split = QuotPos(p_arg->str.p_str, ':');
+      const tStrComp *p_sym_arg;
+      tStrComp sym_arg;
+
+      if (p_split)
       {
-        StrCompSplitRef(&SymArg, &SectionArg, pArg, pSplit);
-        p_exp_sym = ExpandStrSymbol(&exp_sym, &SymArg, !CaseSensitive);
-        if (!p_exp_sym)
-          return;
+        tStrComp section_arg;
+
+        StrCompSplitRef(&sym_arg, &section_arg, p_arg, p_split);
+        IdentifySection(&section_arg, &section);
+        if (is_forward)
+        {
+          if (section != MomSectionHandle)
+            WrStrErrorPos(ErrNum_ForwardNonCurrent, &section_arg);
+          section = -1;
+        }
+        p_sym_arg = &sym_arg;
       }
       else
       {
-        p_exp_sym = ExpandStrSymbol(&exp_sym, pArg, !CaseSensitive);
-        if (!p_exp_sym)
-          return;
-        *Section = '\0';
-        StrCompMkTemp(&SectionArg, Section, sizeof(Section));
+        section = -1; /* SECTION_CURRENT */
+        p_sym_arg = p_arg;
       }
-      Lauf = CodePPSyms_SearchSym(*Alt1, p_exp_sym->str.p_str);
-      if (Lauf) WrStrErrorPos(ErrNum_ContForward, pArg);
-      else
+      if (pp_orig)
       {
-        Lauf = CodePPSyms_SearchSym(*Alt2, p_exp_sym->str.p_str);
-        if (Lauf) WrStrErrorPos(ErrNum_ContForward, pArg);
+        if (!ExpandStrSymbol(&exp_sym, p_sym_arg, !CaseSensitive))
+          return;
+
+        if (as_fwd_sym_search(*pp_alt1, exp_sym.str.p_str)
+         || as_fwd_sym_search(*pp_alt2, exp_sym.str.p_str))
+          WrStrErrorPos(ErrNum_ContForward, p_arg);
         else
         {
-          Lauf = CodePPSyms_SearchSym(*Orig, p_exp_sym->str.p_str);
-          if (!Lauf)
+          as_fwd_sym_t *p_sym = as_fwd_sym_search(*pp_orig, exp_sym.str.p_str);
+          if (!p_sym)
           {
-            Lauf = (PForwardSymbol) malloc(sizeof(TForwardSymbol));
-            Lauf->Next = (*Orig); *Orig = Lauf;
-            Lauf->Name = as_strdup(p_exp_sym->str.p_str);
-            Lauf->pErrorPos = GetErrorPos();
+            p_sym = as_fwd_sym_create();
+            p_sym->p_next = *pp_orig; *pp_orig = p_sym;
+            p_sym->p_name = as_strdup(exp_sym.str.p_str);
+            p_sym->p_error_pos = GetErrorPos();
+            p_sym->dest_section = section;
           }
-          IdentifySection(&SectionArg, &Lauf->DestSection);
         }
       }
+
+      if (!p_split && is_forward)
+        EnterNoneSymbol(p_arg);
     }
 }
 
@@ -2341,16 +2371,12 @@ static Boolean code_forward_cond(Word arg)
 {
   UNUSED(arg);
 
-  if (SectionStack)
-  {
-    if (PassNo <= MaxSymPass)
-        CodePPSyms(&(SectionStack->LocSyms),
-                   &(SectionStack->GlobSyms),
-                   &(SectionStack->ExportSyms));
-    return True;
-  }
-  else
-    return False;
+  if (PassNo <= MaxSymPass)
+    CodePPSyms(True,
+               SectionStack ? &(SectionStack->LocSyms) : NULL,
+               SectionStack ? &(SectionStack->GlobSyms) : NULL,
+               SectionStack ? &(SectionStack->ExportSyms) : NULL);
+  return True;
 }
 
 /*!------------------------------------------------------------------------
@@ -2366,7 +2392,8 @@ static Boolean code_public_cond(Word arg)
 
   if (SectionStack)
   {
-    CodePPSyms(&(SectionStack->GlobSyms),
+    CodePPSyms(False,
+               &(SectionStack->GlobSyms),
                &(SectionStack->LocSyms),
                &(SectionStack->ExportSyms));
     return True;
@@ -2388,7 +2415,8 @@ static Boolean code_global_cond(Word arg)
 
   if (SectionStack)
   {
-    CodePPSyms(&(SectionStack->ExportSyms),
+    CodePPSyms(False,
+               &(SectionStack->ExportSyms),
                &(SectionStack->LocSyms),
                &(SectionStack->GlobSyms));
     return True;
@@ -2482,6 +2510,8 @@ void codeallg_init(void)
   AddInstTable(PseudoTable, ".SAVE",       0, CodeSAVE   );
   AddInstTable(PseudoTable, ".RESTORE",    0, CodeRESTORE);
   AddInstTable(PseudoTable, ".PAGE",       0, CodePAGE   );
+  AddInstTable(PseudoTable, ".TITLE",      2, CodeString );
+  AddInstTable(PseudoTable, ".END",        0, CodeEND    );
 
   ONOFFTable = CreateInstTable(47);
   AddONOFF("DOTTEDSTRUCTS", &DottedStructs, DottedStructsName, True);

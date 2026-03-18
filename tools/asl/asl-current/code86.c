@@ -27,6 +27,7 @@
 #include "codevars.h"
 #include "nlmessages.h"
 #include "as.rsc"
+#include "headids.h"
 #include "code86.h"
 
 /*---------------------------------------------------------------------------*/
@@ -55,9 +56,6 @@ typedef struct
 
 #define NO_FWAIT_FLAG 0x2000
 
-static char ArgSTStr[] = "ST";
-static const tStrComp ArgST = { { 0, 0 }, { 0, ArgSTStr, 0 } };
-
 typedef enum
 {
   TypeNone = -1,
@@ -79,6 +77,7 @@ typedef enum
 static tAdrType AdrType;
 static Byte AdrMode;
 static Byte AdrVals[6];
+static tSymbolFlags adr_vals_flags;
 static tSymbolSize OpSize;
 static Boolean UnknownFlag;
 static unsigned ImmAddrSpaceMask;
@@ -350,6 +349,7 @@ static Byte SegAssumes[6];
 
 static void copy_adr_vals(int Dest)
 {
+  set_b_guessed(adr_vals_flags, CodeLen + Dest, AdrCnt, 0xff);
   memcpy(BAsmCode + CodeLen + Dest, AdrVals, AdrCnt);
 }
 
@@ -388,14 +388,16 @@ static void AddPrefix(Byte Prefix)
 }
 
 /*!------------------------------------------------------------------------
- * \fn     AddPrefixes(void)
+ * \fn     prepend_prefixes(void)
  * \brief  prepend stored prefixes
  * ------------------------------------------------------------------------ */
 
-static void AddPrefixes(void)
+static void prepend_prefixes(void)
 {
   if ((CodeLen != 0) && (PrefixLen != 0))
   {
+    copy_basmcode_guessed(PrefixLen, 0, CodeLen);
+    set_basmcode_guessed(0, PrefixLen, 0x00);
     memmove(BAsmCode + PrefixLen, BAsmCode, CodeLen);
     memcpy(BAsmCode, Prefixes, PrefixLen);
     CodeLen += PrefixLen;
@@ -404,7 +406,7 @@ static void AddPrefixes(void)
 
 /*!------------------------------------------------------------------------
  * \fn     AbleToSign(Word Arg)
- * \brief  can argument be written as 8-bit vlaue that will be sign extended?
+ * \brief  can argument be written as 8-bit value that will be sign extended?
  * \param  Arg value to check
  * \return True if yes
  * ------------------------------------------------------------------------ */
@@ -617,7 +619,9 @@ static tAdrType DecodeAdr(const tStrComp *pArg, unsigned type_mask)
   tStrComp Arg;
   int ArgLen = strlen(pArg->str.p_str);
 
-  AdrType = TypeNone; AdrCnt = 0;
+  AdrType = TypeNone;
+  AdrCnt = 0;
+  adr_vals_flags = eSymbolFlag_None;
   SegBuffer = -1; MomSegment = 0;
 
   /* A somewhat dirty hack to avoid
@@ -679,7 +683,8 @@ static tAdrType DecodeAdr(const tStrComp *pArg, unsigned type_mask)
   as_eval_cb_data_ini(&x86_eval_cb_data.cb_data, x86_eval_cb);
   x86_eval_cb_data.IndexBuf =
   x86_eval_cb_data.BaseBuf = 0;
-  DispAcc = 0; FoundSize = eSymbolSizeUnknown;
+  DispAcc = 0;
+  FoundSize = eSymbolSizeUnknown;
   StrCompRefRight(&Arg, pArg, 0);
   if (!as_strncasecmp(Arg.str.p_str, "WORD PTR", 8))
   {
@@ -755,6 +760,7 @@ static tAdrType DecodeAdr(const tStrComp *pArg, unsigned type_mask)
          goto chk_type;
       UnknownFlag = UnknownFlag || mFirstPassUnknown(EvalResult.Flags);
       MomSegment |= EvalResult.AddrSpaceMask;
+      adr_vals_flags |= EvalResult.Flags;
       if (FoundSize == eSymbolSizeUnknown)
         FoundSize = EvalResult.DataSize;
       if (pIndirStart)
@@ -788,6 +794,7 @@ static tAdrType DecodeAdr(const tStrComp *pArg, unsigned type_mask)
       UnknownFlag = UnknownFlag || mFirstPassUnknown(EvalResult.Flags);
       DispAcc += DispSum;
       MomSegment |= EvalResult.AddrSpaceMask;
+      adr_vals_flags |= EvalResult.Flags;
       if (FoundSize == eSymbolSizeUnknown)
         FoundSize = EvalResult.DataSize;
       Arg = OutRemainder;
@@ -819,7 +826,7 @@ static tAdrType DecodeAdr(const tStrComp *pArg, unsigned type_mask)
           WrStrErrorPos(ErrNum_UndefOpSizes, &Arg);
           break;
         case eSymbolSize8Bit:
-          if ((DispAcc <- 128) || (DispAcc > 255)) WrStrErrorPos(ErrNum_OverRange, &Arg);
+          if (((DispAcc <- 128) || (DispAcc > 255)) && !mFirstPassUnknownOrQuestionable(adr_vals_flags)) WrStrErrorPos(ErrNum_OverRange, &Arg);
           else
           {
             AdrType = TypeImm;
@@ -1022,7 +1029,7 @@ static void decode_mod_reg_core(Word code, Boolean no_seg_check, int start_index
     default:
       break;
   }
-  AddPrefixes();
+  prepend_prefixes();
 }
 
 /*!------------------------------------------------------------------------
@@ -1046,7 +1053,10 @@ static void append_rel(const tStrComp *p_arg)
       CodeLen = 0;
     }
     else
+    {
+      set_b_guessed(eval_result.Flags, CodeLen, 1, 0xff);
       BAsmCode[CodeLen++] = Lo(adr_word);
+    }
   }
   else
     CodeLen = 0;
@@ -1198,7 +1208,7 @@ static void DecodeMOV(Word Index)
         break;
     }
   }
-  AddPrefixes();
+  prepend_prefixes();
 }
 
 /*!------------------------------------------------------------------------
@@ -1237,7 +1247,7 @@ static void DecodeINCDEC(Word Index)
         break;
     }
   }
-  AddPrefixes();
+  prepend_prefixes();
 }
 
 /*!------------------------------------------------------------------------
@@ -1265,7 +1275,7 @@ static void DecodeINT(Word Index)
       }
     }
   }
-  AddPrefixes();
+  prepend_prefixes();
 }
 
 /*!------------------------------------------------------------------------
@@ -1286,12 +1296,12 @@ static void DecodeBrk(Word Index)
     if (OK)
     {
       CodeLen++;
-      AddPrefixes();
+      prepend_prefixes();
     }
     else
       CodeLen = 0;
   }
-  AddPrefixes();
+  prepend_prefixes();
 }
 
 /*!------------------------------------------------------------------------
@@ -1331,7 +1341,7 @@ static void DecodeINOUT(Word Index)
         break;
     }
   }
-  AddPrefixes();
+  prepend_prefixes();
 }
 
 /*!------------------------------------------------------------------------
@@ -1402,6 +1412,7 @@ static void DecodeCALLJMP(Word Index)
             else
             {
               BAsmCode[0] = 0xeb;
+              set_b_guessed(adr_vals_flags, 1, 1, 0xff);
               BAsmCode[1] = Lo(AdrWord);
               CodeLen = 2;
             }
@@ -1410,6 +1421,7 @@ static void DecodeCALLJMP(Word Index)
           {
             AdrWord -= EProgCounter() + 3;
             BAsmCode[0] = 0xe8 | Index;
+            set_b_guessed(adr_vals_flags, 1, 2, 0xff);
             BAsmCode[1] = Lo(AdrWord);
             BAsmCode[2] = Hi(AdrWord);
             CodeLen = 3;
@@ -1421,7 +1433,7 @@ static void DecodeCALLJMP(Word Index)
       }
     }
   }
-  AddPrefixes();
+  prepend_prefixes();
 }
 
 /*!------------------------------------------------------------------------
@@ -1469,6 +1481,7 @@ static void DecodePUSHPOP(Word Index)
         {
           BAsmCode[CodeLen] = 0x68;
           BAsmCode[CodeLen + 1] = AdrVals[0];
+          set_b_guessed(adr_vals_flags, CodeLen + 1, 1, 0xff);
           if (Sgn(AdrVals[0]) == AdrVals[1])
           {
             BAsmCode[CodeLen] += 2;
@@ -1476,6 +1489,7 @@ static void DecodePUSHPOP(Word Index)
           }
           else
           {
+            set_b_guessed(adr_vals_flags, CodeLen + 2, 1, 0xff);
             BAsmCode[CodeLen + 2] = AdrVals[1];
             CodeLen += 3;
           }
@@ -1485,7 +1499,7 @@ static void DecodePUSHPOP(Word Index)
         break;
     }
   }
-  AddPrefixes();
+  prepend_prefixes();
 }
 
 /*!------------------------------------------------------------------------
@@ -1522,7 +1536,7 @@ static void DecodeNOTNEG(Word Index)
         break;
     }
   }
-  AddPrefixes();
+  prepend_prefixes();
 }
 
 /*!------------------------------------------------------------------------
@@ -1625,7 +1639,7 @@ static void DecodeTEST(Word Index)
         break;
     }
   }
-  AddPrefixes();
+  prepend_prefixes();
 }
 
 /*!------------------------------------------------------------------------
@@ -1691,7 +1705,7 @@ static void DecodeXCHG(Word Index)
         break;
     }
   }
-  AddPrefixes();
+  prepend_prefixes();
 }
 
 /*!------------------------------------------------------------------------
@@ -1744,7 +1758,7 @@ static void DecodeCALLJMPF(Word Index)
       }
     }
   }
-  AddPrefixes();
+  prepend_prefixes();
 }
 
 /*!------------------------------------------------------------------------
@@ -1774,7 +1788,7 @@ static void DecodeENTER(Word Index)
       }
     }
   }
-  AddPrefixes();
+  prepend_prefixes();
 }
 
 /*!------------------------------------------------------------------------
@@ -1790,7 +1804,7 @@ static void DecodeFixed(Word Index)
   if (ChkArgCnt(0, 0)
    && check_core_mask(pOrder->core_mask))
     PutCode(pOrder->Code);
-  AddPrefixes();
+  prepend_prefixes();
 }
 
 /*!------------------------------------------------------------------------
@@ -1825,7 +1839,7 @@ static void DecodeALU2(Word Index)
             CodeLen += 2 + AdrCnt;
             break;
           case TypeImm:
-            if (((BAsmCode[CodeLen+1] >> 3) & 7) == 0)
+            if (((BAsmCode[CodeLen + 1] >> 3) & 7) == 0)
             {
               BAsmCode[CodeLen] = (Index << 3) | 4 | OpSize;
               copy_adr_vals(1);
@@ -1879,7 +1893,7 @@ static void DecodeALU2(Word Index)
         break;
     }
   }
-  AddPrefixes();
+  prepend_prefixes();
 }
 
 /*!------------------------------------------------------------------------
@@ -1954,7 +1968,7 @@ static void DecodePORT(Word Code)
 {
   UNUSED(Code);
 
-  CodeEquate(SegIO, 0, 0xffff);
+  code_equate_type(SegIO, UInt16);
 }
 
 /*!------------------------------------------------------------------------
@@ -1971,7 +1985,7 @@ static void DecodeFPUFixed(Word Code)
   if (ChkArgCnt(0, 0))
   {
     PutCode(Code);
-    AddPrefixes();
+    prepend_prefixes();
   }
 }
 
@@ -1992,7 +2006,7 @@ static void DecodeFPUSt(Word Code)
     {
       PutCode(Code);
       BAsmCode[CodeLen-1] |= AdrMode;
-      AddPrefixes();
+      prepend_prefixes();
     }
   }
 }
@@ -2010,7 +2024,8 @@ static void DecodeFLD(Word Code)
 
   if (ChkArgCnt(1, 1))
   {
-    switch (DecodeAdr(&ArgStr[1], MTypeFReg | MTypeMem))
+    tStrComp *p_arg = &ArgStr[1];
+    switch (DecodeAdr(p_arg, MTypeFReg | MTypeMem))
     {
       case TypeFReg:
         BAsmCode[CodeLen++] = 0xd9;
@@ -2034,11 +2049,11 @@ static void DecodeFLD(Word Code)
             BAsmCode[CodeLen++] = AdrMode | 0x28;
             break;
           case eSymbolSizeUnknown:
-            WrStrErrorPos(ErrNum_UndefOpSizes, &ArgStr[1]);
+            WrStrErrorPos(ErrNum_UndefOpSizes, p_arg);
             CodeLen = 0;
             break;
           default:
-            WrStrErrorPos(ErrNum_InvOpSize, &ArgStr[1]);
+            WrStrErrorPos(ErrNum_InvOpSize, p_arg);
             CodeLen = 0;
             break;
         }
@@ -2049,7 +2064,7 @@ static void DecodeFLD(Word Code)
         break;
     }
   }
-  AddPrefixes();
+  prepend_prefixes();
 }
 
 /*!------------------------------------------------------------------------
@@ -2065,7 +2080,8 @@ static void DecodeFILD(Word Code)
 
   if (ChkArgCnt(1, 1))
   {
-    switch (DecodeAdr(&ArgStr[1], MTypeMem))
+    tStrComp *p_arg = &ArgStr[1];
+    switch (DecodeAdr(p_arg, MTypeMem))
     {
       case TypeMem:
         if ((OpSize == eSymbolSizeUnknown) && UnknownFlag)
@@ -2085,11 +2101,11 @@ static void DecodeFILD(Word Code)
             BAsmCode[CodeLen++] = AdrMode | 0x28;
             break;
           case eSymbolSizeUnknown:
-            WrStrErrorPos(ErrNum_UndefOpSizes, &ArgStr[1]);
+            WrStrErrorPos(ErrNum_UndefOpSizes, p_arg);
             CodeLen = 0;
             break;
           default:
-            WrStrErrorPos(ErrNum_InvOpSize, &ArgStr[1]);
+            WrStrErrorPos(ErrNum_InvOpSize, p_arg);
             CodeLen = 0;
             break;
         }
@@ -2100,7 +2116,7 @@ static void DecodeFILD(Word Code)
         break;
     }
   }
-  AddPrefixes();
+  prepend_prefixes();
 }
 
 /*!------------------------------------------------------------------------
@@ -2116,7 +2132,8 @@ static void DecodeFBLD(Word Code)
 
   if (ChkArgCnt(1, 1))
   {
-    switch (DecodeAdr(&ArgStr[1], MTypeMem))
+    tStrComp *p_arg = &ArgStr[1];
+    switch (DecodeAdr(p_arg, MTypeMem))
     {
       case TypeMem:
         if ((OpSize == eSymbolSizeUnknown) && UnknownFlag)
@@ -2124,7 +2141,7 @@ static void DecodeFBLD(Word Code)
         switch (OpSize)
         {
           case eSymbolSizeUnknown:
-            WrStrErrorPos(ErrNum_UndefOpSizes, &ArgStr[1]);
+            WrStrErrorPos(ErrNum_UndefOpSizes, p_arg);
             CodeLen = 0;
             break;
           case eSymbolSize80Bit:
@@ -2132,7 +2149,7 @@ static void DecodeFBLD(Word Code)
             BAsmCode[CodeLen++] = AdrMode + 0x20;
             break;
           default:
-            WrStrErrorPos(ErrNum_InvOpSize, &ArgStr[1]);
+            WrStrErrorPos(ErrNum_InvOpSize, p_arg);
             CodeLen = 0;
             break;
         }
@@ -2143,7 +2160,7 @@ static void DecodeFBLD(Word Code)
         break;
     }
   }
-  AddPrefixes();
+  prepend_prefixes();
 }
 
 /*!------------------------------------------------------------------------
@@ -2159,7 +2176,8 @@ static void DecodeFST_FSTP(Word Code)
 
   if (ChkArgCnt(1, 1))
   {
-    switch (DecodeAdr(&ArgStr[1], MTypeFReg | MTypeMem))
+    tStrComp *p_arg = &ArgStr[1];
+    switch (DecodeAdr(p_arg, MTypeFReg | MTypeMem))
     {
       case TypeFReg:
         BAsmCode[CodeLen++] = 0xdd;
@@ -2185,12 +2203,12 @@ static void DecodeFST_FSTP(Word Code)
             BAsmCode[CodeLen++] = 0x20;
             break;
           case eSymbolSizeUnknown:
-            WrStrErrorPos(ErrNum_UndefOpSizes, &ArgStr[1]);
+            WrStrErrorPos(ErrNum_UndefOpSizes, p_arg);
             CodeLen = 0;
             break;
           invalid:
           default:
-            WrStrErrorPos(ErrNum_InvOpSize, &ArgStr[1]);
+            WrStrErrorPos(ErrNum_InvOpSize, p_arg);
             CodeLen = 0;
             break;
         }
@@ -2204,7 +2222,7 @@ static void DecodeFST_FSTP(Word Code)
         break;
     }
   }
-  AddPrefixes();
+  prepend_prefixes();
 }
 
 /*!------------------------------------------------------------------------
@@ -2220,7 +2238,8 @@ static void DecodeFIST_FISTP(Word Code)
 
   if (ChkArgCnt(1, 1))
   {
-    switch (DecodeAdr(&ArgStr[1], MTypeMem))
+    tStrComp *p_arg = &ArgStr[1];
+    switch (DecodeAdr(p_arg, MTypeMem))
     {
       case TypeMem:
         if ((OpSize == eSymbolSizeUnknown) && UnknownFlag)
@@ -2242,11 +2261,11 @@ static void DecodeFIST_FISTP(Word Code)
             BAsmCode[CodeLen++] = 0x20;
             break;
           case eSymbolSizeUnknown:
-            WrStrErrorPos(ErrNum_UndefOpSizes, &ArgStr[1]);
+            WrStrErrorPos(ErrNum_UndefOpSizes, p_arg);
             break;
           invalid:
           default:
-            WrStrErrorPos(ErrNum_InvOpSize, &ArgStr[1]);
+            WrStrErrorPos(ErrNum_InvOpSize, p_arg);
             CodeLen = 0;
             break;
         }
@@ -2260,7 +2279,7 @@ static void DecodeFIST_FISTP(Word Code)
         break;
     }
   }
-  AddPrefixes();
+  prepend_prefixes();
 }
 
 /*!------------------------------------------------------------------------
@@ -2276,7 +2295,8 @@ static void DecodeFBSTP(Word Code)
 
   if (ChkArgCnt(1, 1))
   {
-    switch (DecodeAdr(&ArgStr[1], MTypeMem))
+    tStrComp *p_arg = &ArgStr[1];
+    switch (DecodeAdr(p_arg, MTypeMem))
     {
       case TypeMem:
         if ((OpSize == eSymbolSizeUnknown) && UnknownFlag)
@@ -2284,7 +2304,7 @@ static void DecodeFBSTP(Word Code)
         switch (OpSize)
         {
           case eSymbolSizeUnknown:
-            WrStrErrorPos(ErrNum_UndefOpSizes, &ArgStr[1]);
+            WrStrErrorPos(ErrNum_UndefOpSizes, p_arg);
             break;
           case eSymbolSize80Bit:
             BAsmCode[CodeLen] = 0xdf;
@@ -2293,14 +2313,14 @@ static void DecodeFBSTP(Word Code)
             CodeLen += 2 + AdrCnt;
             break;
           default:
-            WrStrErrorPos(ErrNum_InvOpSize, &ArgStr[1]);
+            WrStrErrorPos(ErrNum_InvOpSize, p_arg);
         }
         break;
       default:
         break;
     }
   }
-  AddPrefixes();
+  prepend_prefixes();
 }
 
 /*!------------------------------------------------------------------------
@@ -2316,7 +2336,8 @@ static void DecodeFCOM_FCOMP(Word Code)
 
   if (ChkArgCnt(1, 1))
   {
-    switch (DecodeAdr(&ArgStr[1], MTypeFReg | MTypeMem))
+    tStrComp *p_arg = &ArgStr[1];
+    switch (DecodeAdr(p_arg, MTypeFReg | MTypeMem))
     {
       case TypeFReg:
         BAsmCode[CodeLen] = 0xd8;
@@ -2335,11 +2356,11 @@ static void DecodeFCOM_FCOMP(Word Code)
             BAsmCode[CodeLen++] = 0xdc;
             break;
           case eSymbolSizeUnknown:
-            WrStrErrorPos(ErrNum_UndefOpSizes, &ArgStr[1]);
+            WrStrErrorPos(ErrNum_UndefOpSizes, p_arg);
             CodeLen = 0;
             break;
           default:
-            WrStrErrorPos(ErrNum_InvOpSize, &ArgStr[1]);
+            WrStrErrorPos(ErrNum_InvOpSize, p_arg);
             CodeLen = 0;
             break;
         }
@@ -2353,7 +2374,7 @@ static void DecodeFCOM_FCOMP(Word Code)
         break;
     }
   }
-  AddPrefixes();
+  prepend_prefixes();
 }
 
 /*!------------------------------------------------------------------------
@@ -2369,7 +2390,8 @@ static void DecodeFICOM_FICOMP(Word Code)
 
   if (ChkArgCnt(1, 1))
   {
-    switch (DecodeAdr(&ArgStr[1], MTypeMem))
+    tStrComp *p_arg = &ArgStr[1];
+    switch (DecodeAdr(p_arg, MTypeMem))
     {
       case TypeMem:
         if ((OpSize == eSymbolSizeUnknown) && UnknownFlag)
@@ -2383,11 +2405,11 @@ static void DecodeFICOM_FICOMP(Word Code)
             BAsmCode[CodeLen++] = 0xda;
             break;
           case eSymbolSizeUnknown:
-            WrStrErrorPos(ErrNum_UndefOpSizes, &ArgStr[1]);
+            WrStrErrorPos(ErrNum_UndefOpSizes, p_arg);
             CodeLen = 0;
             break;
           default:
-            WrStrErrorPos(ErrNum_InvOpSize, &ArgStr[1]);
+            WrStrErrorPos(ErrNum_InvOpSize, p_arg);
             CodeLen = 0;
             break;
         }
@@ -2401,7 +2423,7 @@ static void DecodeFICOM_FICOMP(Word Code)
         break;
     }
   }
-  AddPrefixes();
+  prepend_prefixes();
 }
 
 /*!------------------------------------------------------------------------
@@ -2412,89 +2434,90 @@ static void DecodeFICOM_FICOMP(Word Code)
 
 static void DecodeFADD_FMUL(Word Code)
 {
+  Byte dest_reg;
+
   if (!FPUEntry(&Code))
     return;
 
-  if (ArgCnt == 0)
+  switch (ArgCnt)
   {
-    BAsmCode[CodeLen] = 0xde;
-    BAsmCode[CodeLen + 1] = 0xc1 + Code;
-    CodeLen += 2;
-  }
-  else if (ChkArgCnt(0, 2))
-  {
-    const tStrComp *pArg1 = &ArgStr[1],
-                   *pArg2 = &ArgStr[2];
-
-    if (ArgCnt == 1)
+    case 0:
+      BAsmCode[CodeLen] = 0xde;
+      BAsmCode[CodeLen + 1] = 0xc1 + Code;
+      CodeLen += 2;
+      break;
+    case 1:
+      dest_reg = 0;
+      goto common;
+    case 2:
+      if (DecodeAdr(&ArgStr[1], MTypeFReg) != TypeFReg)
+        return;
+      dest_reg = AdrMode;
+      goto common;
+    default:
+      (void)ChkArgCnt(0, 2);
+      return;
+    common:
     {
-      pArg2 = &ArgStr[1];
-      pArg1 = &ArgST;
+      tStrComp *p_arg = &ArgStr[ArgCnt];
+      OpSize = eSymbolSizeUnknown;
+      if (dest_reg != 0)   /* ST(i) ist Ziel */
+      {
+        BAsmCode[CodeLen + 1] = dest_reg;
+        switch (DecodeAdr(p_arg, MTypeFReg))
+        {
+          case TypeFReg:
+            BAsmCode[CodeLen] = 0xdc;
+            BAsmCode[CodeLen + 1] += 0xc0 + Code;
+            CodeLen += 2;
+            break;
+          default:
+            break;
+        }
+      }
+      else                      /* ST ist Ziel */
+      {
+        switch (DecodeAdr(p_arg, MTypeFReg | MTypeMem))
+        {
+          case TypeFReg:
+            BAsmCode[CodeLen] = 0xd8;
+            BAsmCode[CodeLen + 1] = 0xc0 + AdrMode + Code;
+            CodeLen += 2;
+            break;
+          case TypeMem:
+            if ((OpSize == eSymbolSizeUnknown) && UnknownFlag)
+              OpSize = eSymbolSize32Bit;
+            switch (OpSize)
+            {
+              case eSymbolSize32Bit:
+                BAsmCode[CodeLen++] = 0xd8;
+                break;
+              case eSymbolSize64Bit:
+                BAsmCode[CodeLen++] = 0xdc;
+                break;
+              case eSymbolSizeUnknown:
+                WrStrErrorPos(ErrNum_UndefOpSizes, p_arg);
+                CodeLen = 0;
+                break;
+              default:
+                WrStrErrorPos(ErrNum_InvOpSize, p_arg);
+                CodeLen = 0;
+                break;
+            }
+            if (CodeLen > 0)
+            {
+              BAsmCode[CodeLen++] = AdrMode + Code;
+              append_adr_vals();
+            }
+            break;
+          default:
+            break;
+        }
+      }
     }
+  } /* switch (ArgCnt) */
 
-    switch (DecodeAdr(pArg1, MTypeFReg))
-    {
-      case TypeFReg:
-        OpSize = eSymbolSizeUnknown;
-        if (AdrMode != 0)   /* ST(i) ist Ziel */
-        {
-          BAsmCode[CodeLen + 1] = AdrMode;
-          switch (DecodeAdr(pArg2, MTypeFReg))
-          {
-            case TypeFReg:
-              BAsmCode[CodeLen] = 0xdc;
-              BAsmCode[CodeLen + 1] += 0xc0 + Code;
-              CodeLen += 2;
-              break;
-            default:
-              break;
-          }
-        }
-        else                      /* ST ist Ziel */
-        {
-          switch (DecodeAdr(pArg2, MTypeFReg | MTypeMem))
-          {
-            case TypeFReg:
-              BAsmCode[CodeLen] = 0xd8;
-              BAsmCode[CodeLen + 1] = 0xc0 + AdrMode + Code;
-              CodeLen += 2;
-              break;
-            case TypeMem:
-              if ((OpSize == eSymbolSizeUnknown) && UnknownFlag)
-                OpSize = eSymbolSize32Bit;
-              switch (OpSize)
-              {
-                case eSymbolSize32Bit:
-                  BAsmCode[CodeLen++] = 0xd8;
-                  break;
-                case eSymbolSize64Bit:
-                  BAsmCode[CodeLen++] = 0xdc;
-                  break;
-                case eSymbolSizeUnknown:
-                  WrStrErrorPos(ErrNum_UndefOpSizes, &ArgStr[1]);
-                  CodeLen = 0;
-                  break;
-                default:
-                  WrStrErrorPos(ErrNum_InvOpSize, &ArgStr[1]);
-                  CodeLen = 0;
-                  break;
-              }
-              if (CodeLen > 0)
-              {
-                BAsmCode[CodeLen++] = AdrMode + Code;
-                append_adr_vals();
-              }
-              break;
-            default:
-              break;
-          }
-        }
-        break;
-      default:
-        break;
-    }
-  }
-  AddPrefixes();
+  prepend_prefixes();
 }
 
 /*!------------------------------------------------------------------------
@@ -2505,64 +2528,65 @@ static void DecodeFADD_FMUL(Word Code)
 
 static void DecodeFIADD_FIMUL(Word Code)
 {
-  const tStrComp *pArg1 = &ArgStr[1],
-                 *pArg2 = &ArgStr[2];
+  tStrComp *p_arg;
 
   if (!FPUEntry(&Code))
     return;
 
-  if (ArgCnt == 1)
+  switch (ArgCnt)
   {
-    pArg2 = &ArgStr[1];
-    pArg1 = &ArgST;
+    case 2:
+      p_arg = &ArgStr[1];
+      if (DecodeAdr(p_arg, MTypeFReg) != TypeFReg)
+        return;
+      if (AdrMode != 0)
+      {
+        WrStrErrorPos(ErrNum_InvAddrMode, p_arg);
+        return;
+      }
+      break;
+    case 1:
+      break;
+    default:
+      (void)ChkArgCnt(1, 2);
+      return;
   }
-  if (ChkArgCnt(1, 2))
+
+  OpSize = eSymbolSizeUnknown;
+  p_arg = &ArgStr[ArgCnt];
+  switch (DecodeAdr(p_arg, MTypeMem))
   {
-    switch (DecodeAdr(pArg1, MTypeFReg))
-    {
-      case TypeFReg:
-        if (AdrMode != 0) WrStrErrorPos(ErrNum_InvAddrMode, pArg1);
-        else
-        {
-          OpSize = eSymbolSizeUnknown;
-          switch (DecodeAdr(pArg2, MTypeMem))
-          {
-            case TypeMem:
-              if ((OpSize == eSymbolSizeUnknown) && UnknownFlag)
-                OpSize = eSymbolSize16Bit;
-              switch (OpSize)
-              {
-                case eSymbolSize16Bit:
-                  BAsmCode[CodeLen++] = 0xde;
-                  break;
-                case eSymbolSize32Bit:
-                  BAsmCode[CodeLen++] = 0xda;
-                  break;
-                case eSymbolSizeUnknown:
-                  WrStrErrorPos(ErrNum_UndefOpSizes, pArg1);
-                  CodeLen = 0;
-                  break;
-                default:
-                  WrStrErrorPos(ErrNum_InvOpSize, pArg1);
-                  CodeLen = 0;
-                  break;
-              }
-              if (CodeLen > 0)
-              {
-                BAsmCode[CodeLen++] = AdrMode + Code;
-                append_adr_vals();
-              }
-              break;
-            default:
-              break;
-          }
-        }
-        break;
-      default:
-        break;
-    }
+    case TypeMem:
+      if ((OpSize == eSymbolSizeUnknown) && UnknownFlag)
+        OpSize = eSymbolSize16Bit;
+      switch (OpSize)
+      {
+        case eSymbolSize16Bit:
+          BAsmCode[CodeLen++] = 0xde;
+          break;
+        case eSymbolSize32Bit:
+          BAsmCode[CodeLen++] = 0xda;
+          break;
+        case eSymbolSizeUnknown:
+          WrStrErrorPos(ErrNum_UndefOpSizes, p_arg);
+          CodeLen = 0;
+          break;
+        default:
+          WrStrErrorPos(ErrNum_InvOpSize, p_arg);
+          CodeLen = 0;
+          break;
+      }
+      if (CodeLen > 0)
+      {
+        BAsmCode[CodeLen++] = AdrMode + Code;
+        append_adr_vals();
+      }
+      break;
+    default:
+      break;
   }
-  AddPrefixes();
+
+  prepend_prefixes();
 }
 
 /*!------------------------------------------------------------------------
@@ -2578,10 +2602,11 @@ static void DecodeFADDP_FMULP(Word Code)
 
   if (ChkArgCnt(2, 2))
   {
-    switch (DecodeAdr(&ArgStr[2], MTypeFReg))
+    tStrComp *p_arg = &ArgStr[2];
+    switch (DecodeAdr(p_arg, MTypeFReg))
     {
       case TypeFReg:
-        if (AdrMode != 0) WrStrErrorPos(ErrNum_InvAddrMode, &ArgStr[2]);
+        if (AdrMode != 0) WrStrErrorPos(ErrNum_InvAddrMode, p_arg);
         else
         {
           switch (DecodeAdr(&ArgStr[1], MTypeFReg))
@@ -2599,7 +2624,7 @@ static void DecodeFADDP_FMULP(Word Code)
         break;
     }
   }
-  AddPrefixes();
+  prepend_prefixes();
 }
 
 /*!------------------------------------------------------------------------
@@ -2610,93 +2635,95 @@ static void DecodeFADDP_FMULP(Word Code)
 
 static void DecodeFSUB_FSUBR_FDIV_FDIVR(Word Code)
 {
+  Byte dest_reg;
+
   if (!FPUEntry(&Code))
     return;
 
-  if (ArgCnt == 0)
+  switch (ArgCnt)
   {
-    BAsmCode[CodeLen] = 0xde;
-    BAsmCode[CodeLen + 1] = 0xe1 + (Code ^ 8);
-    CodeLen += 2;
-  }
-  else if (ChkArgCnt(0, 2))
-  {
-    const tStrComp *pArg1 = &ArgStr[1],
-                   *pArg2 = &ArgStr[2];
-
-    if (ArgCnt == 1)
+    case 0:
+      BAsmCode[CodeLen] = 0xde;
+      BAsmCode[CodeLen + 1] = 0xe1 + (Code ^ 8);
+      CodeLen += 2;
+      break;
+    case 1:
+      dest_reg = 0;
+      goto common;
+    case 2:
+      if (DecodeAdr(&ArgStr[1], MTypeFReg) != TypeFReg)
+        return;
+      dest_reg = AdrMode;
+      goto common;
+    default:
+      (void)ChkArgCnt(0, 2);
+      return;
+    common:
     {
-      pArg1 = &ArgST;
-      pArg2 = &ArgStr[1];
-    }
+      tStrComp *p_arg = &ArgStr[ArgCnt];
 
-    switch (DecodeAdr(pArg1, MTypeFReg))
-    {
-      case TypeFReg:
-        OpSize = eSymbolSizeUnknown;
-        if (AdrMode != 0)   /* ST(i) ist Ziel */
+      OpSize = eSymbolSizeUnknown;
+      if (dest_reg != 0)   /* ST(i) ist Ziel */
+      {
+        BAsmCode[CodeLen + 1] = dest_reg;
+        switch (DecodeAdr(p_arg, MTypeFReg))
         {
-          BAsmCode[CodeLen + 1] = AdrMode;
-          switch (DecodeAdr(pArg2, MTypeFReg))
-          {
-            case TypeFReg:
-              if (AdrMode != 0) WrStrErrorPos(ErrNum_InvAddrMode, pArg2);
-              else
-              {
-                BAsmCode[CodeLen] = 0xdc;
-                BAsmCode[CodeLen + 1] += 0xe0 + (Code ^ 8);
-                CodeLen += 2;
-              }
-              break;
-            default:
-              break;
-          }
-        }
-        else  /* ST ist Ziel */
-        {
-          switch (DecodeAdr(pArg2, MTypeFReg | MTypeMem))
-          {
-            case TypeFReg:
-              BAsmCode[CodeLen] = 0xd8;
-              BAsmCode[CodeLen + 1] = 0xe0 + AdrMode + Code;
+          case TypeFReg:
+            if (AdrMode != 0) WrStrErrorPos(ErrNum_InvAddrMode, p_arg);
+            else
+            {
+              BAsmCode[CodeLen] = 0xdc;
+              BAsmCode[CodeLen + 1] += 0xe0 + (Code ^ 8);
               CodeLen += 2;
-              break;
-            case TypeMem:
-              if ((OpSize == eSymbolSizeUnknown) && UnknownFlag)
-                OpSize = eSymbolSize32Bit;
-              switch (OpSize)
-              {
-                case eSymbolSize32Bit:
-                  BAsmCode[CodeLen++] = 0xd8;
-                  break;
-                case eSymbolSize64Bit:
-                  BAsmCode[CodeLen++] = 0xdc;
-                  break;
-                case eSymbolSizeUnknown:
-                  WrStrErrorPos(ErrNum_UndefOpSizes, pArg2);
-                  CodeLen = 0;
-                  break;
-                default:
-                  WrStrErrorPos(ErrNum_InvOpSize, pArg2);
-                  CodeLen = 0;
-                  break;
-              }
-              if (CodeLen > 0)
-              {
-                BAsmCode[CodeLen++] = AdrMode + 0x20 + Code;
-                append_adr_vals();
-              }
-              break;
-            default:
-              break;
-          }
+            }
+            break;
+          default:
+            break;
         }
-        break;
-      default:
-        break;
+      }
+      else  /* ST ist Ziel */
+      {
+        switch (DecodeAdr(p_arg, MTypeFReg | MTypeMem))
+        {
+          case TypeFReg:
+            BAsmCode[CodeLen] = 0xd8;
+            BAsmCode[CodeLen + 1] = 0xe0 + AdrMode + Code;
+            CodeLen += 2;
+            break;
+          case TypeMem:
+            if ((OpSize == eSymbolSizeUnknown) && UnknownFlag)
+              OpSize = eSymbolSize32Bit;
+            switch (OpSize)
+            {
+              case eSymbolSize32Bit:
+                BAsmCode[CodeLen++] = 0xd8;
+                break;
+              case eSymbolSize64Bit:
+                BAsmCode[CodeLen++] = 0xdc;
+                break;
+              case eSymbolSizeUnknown:
+                WrStrErrorPos(ErrNum_UndefOpSizes, p_arg);
+                CodeLen = 0;
+                break;
+              default:
+                WrStrErrorPos(ErrNum_InvOpSize, p_arg);
+                CodeLen = 0;
+                break;
+            }
+            if (CodeLen > 0)
+            {
+              BAsmCode[CodeLen++] = AdrMode + 0x20 + Code;
+              append_adr_vals();
+            }
+            break;
+          default:
+            break;
+        }
+      }
     }
   }
-  AddPrefixes();
+
+  prepend_prefixes();
 }
 
 /*!------------------------------------------------------------------------
@@ -2707,65 +2734,64 @@ static void DecodeFSUB_FSUBR_FDIV_FDIVR(Word Code)
 
 static void DecodeFISUB_FISUBR_FIDIV_FIDIVR(Word Code)
 {
+  tStrComp *p_arg;
+
   if (!FPUEntry(&Code))
     return;
 
-  if (ChkArgCnt(1, 2))
+  switch (ArgCnt)
   {
-    const tStrComp *pArg1 = &ArgStr[1],
-                   *pArg2 = &ArgStr[2];
-
-    if (ArgCnt == 1)
-    {
-      pArg1 = &ArgST;
-      pArg2 = &ArgStr[1];
-    }
-
-    switch (DecodeAdr(pArg1, MTypeFReg))
-    {
-      case TypeFReg:
-        if (AdrMode != 0) WrStrErrorPos(ErrNum_InvAddrMode, pArg1);
-        else
-        {
-          OpSize = eSymbolSizeUnknown;
-          switch (DecodeAdr(pArg2, MTypeMem))
-          {
-            case TypeMem:
-              if ((OpSize == eSymbolSizeUnknown) && UnknownFlag)
-                OpSize = eSymbolSize16Bit;
-              switch (OpSize)
-              {
-                case eSymbolSize16Bit:
-                  BAsmCode[CodeLen++] = 0xde;
-                  break;
-                case eSymbolSize32Bit:
-                  BAsmCode[CodeLen++] = 0xda;
-                  break;
-                case eSymbolSizeUnknown:
-                  WrStrErrorPos(ErrNum_UndefOpSizes, pArg2);
-                  CodeLen = 0;
-                  break;
-                default:
-                  WrStrErrorPos(ErrNum_InvOpSize, pArg2);
-                  CodeLen = 0;
-                  break;
-              }
-              if (CodeLen > 0)
-              {
-                BAsmCode[CodeLen++] = AdrMode + 0x20 + Code;
-                append_adr_vals();
-              }
-              break;
-            default:
-              break;
-          }
-        }
-        break;
-      default:
-        break;
-    }
+    case 2:
+      p_arg = &ArgStr[1];
+      if (DecodeAdr(p_arg, MTypeFReg) != TypeFReg)
+        return;
+      if (AdrMode != 0)
+      {
+        WrStrErrorPos(ErrNum_InvAddrMode, p_arg);
+        return;
+      }
+      break;
+    case 1:
+      break;
+    default:
+      (void)ChkArgCnt(1, 2);
+      return;
   }
-  AddPrefixes();
+
+  OpSize = eSymbolSizeUnknown;
+  p_arg = &ArgStr[ArgCnt];
+  switch (DecodeAdr(p_arg, MTypeMem))
+  {
+    case TypeMem:
+      if ((OpSize == eSymbolSizeUnknown) && UnknownFlag)
+        OpSize = eSymbolSize16Bit;
+      switch (OpSize)
+      {
+        case eSymbolSize16Bit:
+          BAsmCode[CodeLen++] = 0xde;
+          break;
+        case eSymbolSize32Bit:
+          BAsmCode[CodeLen++] = 0xda;
+          break;
+        case eSymbolSizeUnknown:
+          WrStrErrorPos(ErrNum_UndefOpSizes, p_arg);
+          CodeLen = 0;
+          break;
+        default:
+          WrStrErrorPos(ErrNum_InvOpSize, p_arg);
+          CodeLen = 0;
+          break;
+      }
+      if (CodeLen > 0)
+      {
+        BAsmCode[CodeLen++] = AdrMode + 0x20 + Code;
+        append_adr_vals();
+      }
+      break;
+    default:
+      break;
+  }
+  prepend_prefixes();
 }
 
 /*!------------------------------------------------------------------------
@@ -2781,10 +2807,11 @@ static void DecodeFSUBP_FSUBRP_FDIVP_FDIVRP(Word Code)
 
   if (ChkArgCnt(2, 2))
   {
-    switch (DecodeAdr(&ArgStr[2], MTypeFReg))
+    tStrComp *p_arg = &ArgStr[2];
+    switch (DecodeAdr(p_arg, MTypeFReg))
     {
       case TypeFReg:
-        if (AdrMode != 0) WrStrErrorPos(ErrNum_InvAddrMode, &ArgStr[2]);
+        if (AdrMode != 0) WrStrErrorPos(ErrNum_InvAddrMode, p_arg);
         else
         {
           switch (DecodeAdr(&ArgStr[1], MTypeFReg))
@@ -2803,7 +2830,7 @@ static void DecodeFSUBP_FSUBRP_FDIVP_FDIVRP(Word Code)
         break;
     }
   }
-  AddPrefixes();
+  prepend_prefixes();
 }
 
 /*!------------------------------------------------------------------------
@@ -2832,7 +2859,7 @@ static void DecodeFPU16(Word Code)
         break;
     }
   }
-  AddPrefixes();
+  prepend_prefixes();
 }
 
 /*!------------------------------------------------------------------------
@@ -2860,7 +2887,7 @@ static void DecodeFSAVE_FRSTOR(Word Code)
         break;
     }
   }
-  AddPrefixes();
+  prepend_prefixes();
 }
 
 /*!------------------------------------------------------------------------
@@ -2888,7 +2915,7 @@ static void DecodeRept(Word Index)
       PutCode(StringOrders[z2].Code);
     }
   }
-  AddPrefixes();
+  prepend_prefixes();
 }
 
 /*!------------------------------------------------------------------------
@@ -2975,7 +3002,7 @@ static void DecodeMul(Word Index)
       }
       break;
   }
-  AddPrefixes();
+  prepend_prefixes();
 }
 
 /*!------------------------------------------------------------------------
@@ -3051,7 +3078,7 @@ static void DecodeShift(Word Index)
         break;
     }
   }
-  AddPrefixes();
+  prepend_prefixes();
 }
 
 /*!------------------------------------------------------------------------
@@ -3083,7 +3110,7 @@ static void DecodeROL4_ROR4(Word Code)
         break;
     }
   }
-  AddPrefixes();
+  prepend_prefixes();
 }
 
 /*!------------------------------------------------------------------------
@@ -3145,7 +3172,7 @@ static void DecodeBit1(Word Index)
     default:
       (void)ChkArgCnt(min_arg_cnt, 2);
   }
-  AddPrefixes();
+  prepend_prefixes();
 }
 
 /*!------------------------------------------------------------------------
@@ -3173,7 +3200,7 @@ static void DecodeBSCH(Word code)
       default:
         break;
     }
-  AddPrefixes();
+  prepend_prefixes();
 }
 
 /*!------------------------------------------------------------------------
@@ -3244,11 +3271,12 @@ static void DecodeINS_EXT(Word Code)
           CodeLen += 3;
           break;
         case TypeImm:
-          if (AdrVals[0] > 15) WrStrErrorPos(ErrNum_OverRange, &ArgStr[2]);
+          if ((AdrVals[0] > 15) && !mFirstPassUnknownOrQuestionable(adr_vals_flags)) WrStrErrorPos(ErrNum_OverRange, &ArgStr[2]);
           else
           {
             BAsmCode[CodeLen + 1] += 8;
-            BAsmCode[CodeLen + 3] = AdrVals[0];
+            BAsmCode[CodeLen + 3] = AdrVals[0] & 15;
+            set_b_guessed(adr_vals_flags, CodeLen + 3, 1, 0x0f);
             CodeLen += 4;
           }
           break;
@@ -3257,7 +3285,7 @@ static void DecodeINS_EXT(Word Code)
       }
     }
   }
-  AddPrefixes();
+  prepend_prefixes();
 }
 
 /*!------------------------------------------------------------------------
@@ -3304,7 +3332,7 @@ static void DecodeFPO2(Word Code)
       }
     }
   }
-  AddPrefixes();
+  prepend_prefixes();
 }
 
 /*!------------------------------------------------------------------------
@@ -3345,7 +3373,7 @@ static void DecodeBTCLR(Word Code)
       }
     }
   }
-  AddPrefixes();
+  prepend_prefixes();
 }
 
 /*!------------------------------------------------------------------------
@@ -3370,7 +3398,7 @@ static void DecodeReg16(Word Index)
         break;
     }
   }
-  AddPrefixes();
+  prepend_prefixes();
 }
 
 /*!------------------------------------------------------------------------
@@ -3414,7 +3442,7 @@ static void DecodeString(Word Index)
   if (ChkArgCnt(0, 0)
    && check_core_mask(pOrder->core_mask))
     PutCode(pOrder->Code);
-  AddPrefixes();
+  prepend_prefixes();
 }
 
 /*---------------------------------------------------------------------------*/
@@ -3835,12 +3863,17 @@ static void intern_symbol_86(char *p_arg, TempResult *p_result)
 
 static void SwitchTo_86(void *p_user)
 {
+  const TFamilyDescr *p_descr = FindFamilyByName("8086");
+
   p_curr_cpu_props = (const cpu_props_t*)p_user;
 
   TurnWords = False; SetIntConstMode(eIntConstModeIntel);
 
-  PCSymbol = "$"; HeaderID = 0x42; NOPCode = 0x90;
-  DivideChars = ","; HasAttrs = False;
+  PCSymbol = "$";
+  HeaderID = p_descr->Id;
+  NOPCode = 0x90;
+  DivideChars = ",";
+  HasAttrs = False;
 
   ValidSegs = (1 << SegCode) | (1 << SegData) | (1 << SegXData) | (1 << SegIO);
   Grans[SegCode ] = 1; ListGrans[SegCode ] = 1; SegInits[SegCode ] = 0;

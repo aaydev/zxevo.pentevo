@@ -40,7 +40,7 @@
 
 #ifdef __TURBOC__
 #ifdef __DPMI16__
-#define STKSIZE 32768
+#define STKSIZE 32200
 #else
 #define STKSIZE 49152
 #endif
@@ -61,7 +61,7 @@ static Byte *ValidSymChar;
 /****************************************************************************/
 /* Modulinitialisierung */
 
-void AsmSubPassInit(void)
+static void initpass_asmsub(void)
 {
   PageLength = 60;
   PageWidth = 0;
@@ -697,7 +697,7 @@ void FloatString(char *pDest, size_t DestSize, as_float_t f)
 #define MaxLen (3 + AS_FLOAT_DIG)
   char *p, *d, ExpChar = HexStartCharacter + ('E' - 'A');
   sint n, ExpVal, nzeroes;
-  Boolean WithE, OK;
+  Boolean WithE;
 
   /* 1. mit Maximallaenge wandeln, fuehrendes Vorzeichen weg */
 
@@ -753,8 +753,10 @@ void FloatString(char *pDest, size_t DestSize, as_float_t f)
 
   if (WithE)
   {
+    char *p_end;
+
     p = strchr(pDest, ExpChar);
-    ExpVal = ConstLongInt(p + 1, &OK, 10);
+    ExpVal = strtol(p + 1, &p_end, 10);
   }
   else
   {
@@ -1281,11 +1283,21 @@ Word Granularity(void)
 }
 
 /*--------------------------------------------------------------------------*/
-/* Linstingbreite des aktuellen Segments holen */
+/* Listingbreite des aktuellen Segments holen */
 
 Word ListGran(void)
 {
   return ListGrans[ActPC];
+}
+
+Word gran_bits_unused(void)
+{
+  return grans_bits_unused[ActPC];
+}
+
+Word list_gran_bits_unused(void)
+{
+  return list_grans_bits_unused[ActPC];
 }
 
 /*--------------------------------------------------------------------------*/
@@ -1669,14 +1681,23 @@ typedef struct sProcStore
 } tProcStore;
 
 static tProcStore *pInitPassProcStore = NULL,
+                  *p_exit_pass_proc_store = NULL,
                   *pClearUpProcStore = NULL;
 
-void InitPass(void)
+void exec_init_pass_fncs(void)
 {
   tProcStore *pStore;
 
   for (pStore = pInitPassProcStore; pStore; pStore = pStore->pNext)
     pStore->Proc();
+}
+
+void exec_exit_pass_fncs(void)
+{
+  tProcStore *p_store;
+
+  for (p_store = p_exit_pass_proc_store; p_store; p_store = p_store->pNext)
+    p_store->Proc();
 }
 
 void ClearUp(void)
@@ -1694,6 +1715,15 @@ void AddInitPassProc(SimpProc NewProc)
   pNewStore->pNext = pInitPassProcStore;
   pNewStore->Proc = NewProc;
   pInitPassProcStore = pNewStore;
+}
+
+void add_exit_pass_proc(SimpProc new_proc)
+{
+  tProcStore *p_new_store = (tProcStore*)calloc(1, sizeof(*p_new_store));
+
+  p_new_store->pNext = p_exit_pass_proc_store;
+  p_new_store->Proc = new_proc;
+  p_exit_pass_proc_store = p_new_store;
 }
 
 void AddClearUpProc(SimpProc NewProc)
@@ -2122,5 +2152,6 @@ void asmsub_init(void)
   }
 #endif
 
+  AddInitPassProc(initpass_asmsub);
   version_init();
 }
