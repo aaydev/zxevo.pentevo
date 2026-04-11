@@ -9089,7 +9089,7 @@
 		)
 		(uuid "d1ed2124-12ea-4995-9e7d-84847a67b603")
 	)
-	(text "DA1, DA10, DA12, DA15:\nTLV9162\nOPA2192"
+	(text "DA1, DA10, DA12, DA13:\nTLV9162\nOPA2192"
 		(exclude_from_sim no)
 		(at 62.865 35.56 0)
 		(effects
