@@ -9451,7 +9451,7 @@
 				)
 			)
 		)
-		(symbol "Transistor_FET:2N7002"
+		(symbol "Transistor_FET:BSS138"
 			(pin_names hide)
 			(exclude_from_sim no)
 			(in_bom yes)
@@ -9465,7 +9465,7 @@
 					(justify left)
 				)
 			)
-			(property "Value" "2N7002"
+			(property "Value" "BSS138"
 				(at 5.08 0 0)
 				(effects
 					(font
@@ -9485,7 +9485,7 @@
 					(hide yes)
 				)
 			)
-			(property "Datasheet" "https://www.onsemi.com/pub/Collateral/NDS7002A-D.PDF"
+			(property "Datasheet" "https://www.onsemi.com/pub/Collateral/BSS138-D.PDF"
 				(at 5.08 -3.81 0)
 				(effects
 					(font
@@ -9495,7 +9495,7 @@
 					(hide yes)
 				)
 			)
-			(property "Description" "0.115A Id, 60V Vds, N-Channel MOSFET, SOT-23"
+			(property "Description" "50V Vds, 0.22A Id, N-Channel MOSFET, SOT-23"
 				(at 0 0 0)
 				(effects
 					(font
@@ -9504,7 +9504,7 @@
 					(hide yes)
 				)
 			)
-			(property "ki_keywords" "N-Channel Switching MOSFET"
+			(property "ki_keywords" "N-Channel MOSFET"
 				(at 0 0 0)
 				(effects
 					(font
@@ -9522,7 +9522,7 @@
 					(hide yes)
 				)
 			)
-			(symbol "2N7002_0_1"
+			(symbol "BSS138_0_1"
 				(polyline
 					(pts
 						(xy 0.254 0) (xy -2.54 0)
@@ -9689,7 +9689,7 @@
 					)
 				)
 			)
-			(symbol "2N7002_1_1"
+			(symbol "BSS138_1_1"
 				(pin input line
 					(at -5.08 0 0)
 					(length 2.54)
@@ -27343,12 +27343,6 @@
 		(uuid "033315f6-e539-4ec3-ba5e-0e2e7d813aed")
 	)
 	(junction
-		(at 92.71 204.47)
-		(diameter 0)
-		(color 0 0 0 0)
-		(uuid "03d75b61-b3ff-4d1a-9055-719478d56b37")
-	)
-	(junction
 		(at 488.95 107.95)
 		(diameter 0)
 		(color 0 0 0 0)
@@ -27451,6 +27445,12 @@
 		(uuid "15da6abf-17bb-4685-aac2-881c226a4302")
 	)
 	(junction
+		(at 74.93 199.39)
+		(diameter 0)
+		(color 0 0 0 0)
+		(uuid "178804a6-901b-4f22-8746-ab95f429deed")
+	)
+	(junction
 		(at 302.26 104.14)
 		(diameter 0)
 		(color 0 0 0 0)
@@ -27539,6 +27539,12 @@
 		(diameter 0)
 		(color 0 0 0 0)
 		(uuid "205f77e4-2b35-41e2-82e7-988796de5294")
+	)
+	(junction
+		(at 111.76 222.25)
+		(diameter 0)
+		(color 0 0 0 0)
+		(uuid "21590a2d-d292-439d-9d44-1a306700af80")
 	)
 	(junction
 		(at 52.07 246.38)
@@ -27841,6 +27847,12 @@
 		(uuid "51d3fe66-eb10-4946-8660-0aac70f69140")
 	)
 	(junction
+		(at 92.71 204.47)
+		(diameter 0)
+		(color 0 0 0 0)
+		(uuid "5267a62e-8a6a-4c43-85d2-222cd7b04580")
+	)
+	(junction
 		(at 530.86 143.51)
 		(diameter 0)
 		(color 0 0 0 0)
@@ -27979,6 +27991,12 @@
 		(uuid "6b02ef01-5f5c-49c3-833c-e6d20e6822bf")
 	)
 	(junction
+		(at 427.99 134.62)
+		(diameter 0)
+		(color 0 0 0 0)
+		(uuid "6bb6e9b7-6e56-487b-98a2-cd91c5291c55")
+	)
+	(junction
 		(at 162.56 78.74)
 		(diameter 0)
 		(color 0 0 0 0)
@@ -28025,12 +28043,6 @@
 		(diameter 0)
 		(color 0 0 0 0)
 		(uuid "700421b1-2670-4311-8d0a-8902d8cb53a3")
-	)
-	(junction
-		(at 111.76 222.25)
-		(diameter 0)
-		(color 0 0 0 0)
-		(uuid "706f5b8d-44e2-4d07-808a-26b996358ecd")
 	)
 	(junction
 		(at 384.81 100.33)
@@ -28141,22 +28153,10 @@
 		(uuid "827df00f-7669-4dd4-ad49-fe74009c3e22")
 	)
 	(junction
-		(at 74.93 199.39)
-		(diameter 0)
-		(color 0 0 0 0)
-		(uuid "83af9bd3-e754-4839-bc70-10ef088bd693")
-	)
-	(junction
 		(at 218.44 368.3)
 		(diameter 0)
 		(color 0 0 0 0)
 		(uuid "83d37c2a-71cc-4881-b314-b763b0bdc8b5")
-	)
-	(junction
-		(at 101.6 212.09)
-		(diameter 0)
-		(color 0 0 0 0)
-		(uuid "84ee5562-5682-4936-bff1-d2fc80fac3a6")
 	)
 	(junction
 		(at 360.68 219.71)
@@ -28243,12 +28243,6 @@
 		(uuid "9076fa60-5456-4dbd-9a37-923c838b7111")
 	)
 	(junction
-		(at 410.21 137.16)
-		(diameter 0)
-		(color 0 0 0 0)
-		(uuid "92984e3b-372d-4158-a872-3f8702327ca5")
-	)
-	(junction
 		(at 27.94 297.18)
 		(diameter 0)
 		(color 0 0 0 0)
@@ -28319,6 +28313,12 @@
 		(diameter 0)
 		(color 0 0 0 0)
 		(uuid "a05060ff-2383-4c12-88c1-08e13acfc0c4")
+	)
+	(junction
+		(at 410.21 137.16)
+		(diameter 0)
+		(color 0 0 0 0)
+		(uuid "a0bc86fd-97bd-41ea-9b45-d54c6638f67e")
 	)
 	(junction
 		(at 477.52 71.12)
@@ -28435,6 +28435,12 @@
 		(uuid "b6db87cd-f696-420c-83db-fa95eb832f76")
 	)
 	(junction
+		(at 101.6 212.09)
+		(diameter 0)
+		(color 0 0 0 0)
+		(uuid "b7841ae4-df7e-4435-9309-2e969939fd33")
+	)
+	(junction
 		(at 473.71 68.58)
 		(diameter 0)
 		(color 0 0 0 0)
@@ -28493,12 +28499,6 @@
 		(diameter 0)
 		(color 0 0 0 0)
 		(uuid "bedf2e3b-0aee-475e-9eb0-589a3e4a8cfb")
-	)
-	(junction
-		(at 427.99 134.62)
-		(diameter 0)
-		(color 0 0 0 0)
-		(uuid "bf086111-a9ac-44dd-b5a5-352462b93cb9")
 	)
 	(junction
 		(at 513.08 359.41)
@@ -47183,79 +47183,6 @@
 		)
 	)
 	(symbol
-		(lib_id "Transistor_FET:2N7002")
-		(at 77.47 194.31 180)
-		(unit 1)
-		(exclude_from_sim no)
-		(in_bom yes)
-		(on_board yes)
-		(dnp no)
-		(uuid "0517b38b-748e-4882-8b34-132caccaac21")
-		(property "Reference" "VT14"
-			(at 69.342 192.278 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
-		(property "Value" "2N7002"
-			(at 68.834 194.818 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
-		(property "Footprint" "Package_TO_SOT_SMD:SOT-23"
-			(at 72.39 192.405 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-					(italic yes)
-				)
-				(justify left)
-				(hide yes)
-			)
-		)
-		(property "Datasheet" "https://www.onsemi.com/pub/Collateral/NDS7002A-D.PDF"
-			(at 72.39 190.5 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(justify left)
-				(hide yes)
-			)
-		)
-		(property "Description" "0.115A Id, 60V Vds, N-Channel MOSFET, SOT-23"
-			(at 77.47 194.31 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(hide yes)
-			)
-		)
-		(pin "3"
-			(uuid "cff53167-b922-4fe3-a1de-9430d3dc77dc")
-		)
-		(pin "1"
-			(uuid "3a62d26d-07c4-47c2-b25e-a35715706b73")
-		)
-		(pin "2"
-			(uuid "c10c232d-a704-47a5-be33-4fffcb456f3f")
-		)
-		(instances
-			(project "eva"
-				(path "/ab605654-a730-497b-9e09-9b351f74b935/31d5864f-06ec-4c73-9256-780a6880087d"
-					(reference "VT14")
-					(unit 1)
-				)
-			)
-		)
-	)
-	(symbol
 		(lib_id "eva-altium-import:Sheet1_1_RESCHIP")
 		(at 425.45 204.47 270)
 		(unit 1)
@@ -48277,80 +48204,6 @@
 				(path "/ab605654-a730-497b-9e09-9b351f74b935/31d5864f-06ec-4c73-9256-780a6880087d"
 					(reference "D18")
 					(unit 5)
-				)
-			)
-		)
-	)
-	(symbol
-		(lib_id "Transistor_FET:2N7002")
-		(at 405.13 139.7 270)
-		(mirror x)
-		(unit 1)
-		(exclude_from_sim no)
-		(in_bom yes)
-		(on_board yes)
-		(dnp no)
-		(uuid "0c3a42f2-dc4b-43fa-87bb-b9ec7e04810a")
-		(property "Reference" "VT8"
-			(at 403.352 142.24 90)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
-		(property "Value" "2N7002"
-			(at 409.194 142.24 90)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
-		(property "Footprint" "Package_TO_SOT_SMD:SOT-23"
-			(at 403.225 134.62 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-					(italic yes)
-				)
-				(justify left)
-				(hide yes)
-			)
-		)
-		(property "Datasheet" "https://www.onsemi.com/pub/Collateral/NDS7002A-D.PDF"
-			(at 401.32 134.62 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(justify left)
-				(hide yes)
-			)
-		)
-		(property "Description" "0.115A Id, 60V Vds, N-Channel MOSFET, SOT-23"
-			(at 405.13 139.7 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(hide yes)
-			)
-		)
-		(pin "3"
-			(uuid "348b6174-a2bb-4f0f-be9c-94ca118db73d")
-		)
-		(pin "1"
-			(uuid "64bf0199-ac56-403b-8a05-e302bb664ff5")
-		)
-		(pin "2"
-			(uuid "9962478a-50b8-4e51-9203-a5f11dc87613")
-		)
-		(instances
-			(project ""
-				(path "/ab605654-a730-497b-9e09-9b351f74b935/31d5864f-06ec-4c73-9256-780a6880087d"
-					(reference "VT8")
-					(unit 1)
 				)
 			)
 		)
@@ -50065,6 +49918,81 @@
 		)
 	)
 	(symbol
+		(lib_id "Transistor_FET:BSS138")
+		(at 106.68 222.25 180)
+		(unit 1)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(dnp no)
+		(uuid "21859e52-02f2-473f-9a18-a84e462b46dd")
+		(property "Reference" "VT17"
+			(at 100.33 223.5201 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left)
+			)
+		)
+		(property "Value" "BSS138"
+			(at 100.33 220.9801 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left)
+			)
+		)
+		(property "Footprint" "Package_TO_SOT_SMD:SOT-23"
+			(at 101.6 220.345 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+					(italic yes)
+				)
+				(justify left)
+				(hide yes)
+			)
+		)
+		(property "Datasheet" "https://www.onsemi.com/pub/Collateral/BSS138-D.PDF"
+			(at 101.6 218.44 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left)
+				(hide yes)
+			)
+		)
+		(property "Description" "50V Vds, 0.22A Id, N-Channel MOSFET, SOT-23"
+			(at 106.68 222.25 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(pin "1"
+			(uuid "b2f5f3ed-9d47-4ec1-b797-e2821b2eecf8")
+		)
+		(pin "3"
+			(uuid "b5dbca09-7d77-47a5-8ba6-1aed5fa661a9")
+		)
+		(pin "2"
+			(uuid "96ed895c-a305-4809-8f3c-a6e40814f812")
+		)
+		(instances
+			(project "eva"
+				(path "/ab605654-a730-497b-9e09-9b351f74b935/31d5864f-06ec-4c73-9256-780a6880087d"
+					(reference "VT17")
+					(unit 1)
+				)
+			)
+		)
+	)
+	(symbol
 		(lib_id "eva-altium-import:Sheet2_3_ECAPCHIP")
 		(at 53.34 134.62 0)
 		(unit 1)
@@ -51773,80 +51701,6 @@
 			(project ""
 				(path "/ab605654-a730-497b-9e09-9b351f74b935/31d5864f-06ec-4c73-9256-780a6880087d"
 					(reference "X15")
-					(unit 1)
-				)
-			)
-		)
-	)
-	(symbol
-		(lib_id "Transistor_FET:2N7002")
-		(at 422.91 137.16 270)
-		(mirror x)
-		(unit 1)
-		(exclude_from_sim no)
-		(in_bom yes)
-		(on_board yes)
-		(dnp no)
-		(uuid "33b284d5-563a-48ef-8618-f8045657ac2b")
-		(property "Reference" "VT9"
-			(at 421.132 139.7 90)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
-		(property "Value" "2N7002"
-			(at 426.974 139.7 90)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
-		(property "Footprint" "Package_TO_SOT_SMD:SOT-23"
-			(at 421.005 132.08 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-					(italic yes)
-				)
-				(justify left)
-				(hide yes)
-			)
-		)
-		(property "Datasheet" "https://www.onsemi.com/pub/Collateral/NDS7002A-D.PDF"
-			(at 419.1 132.08 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(justify left)
-				(hide yes)
-			)
-		)
-		(property "Description" "0.115A Id, 60V Vds, N-Channel MOSFET, SOT-23"
-			(at 422.91 137.16 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(hide yes)
-			)
-		)
-		(pin "3"
-			(uuid "db039942-2e9e-44a5-8b79-87dbc4d0146e")
-		)
-		(pin "1"
-			(uuid "9b6499f3-bba9-4326-9883-20a7baf85601")
-		)
-		(pin "2"
-			(uuid "01f6d305-b322-487c-812a-22d97359d317")
-		)
-		(instances
-			(project "eva"
-				(path "/ab605654-a730-497b-9e09-9b351f74b935/31d5864f-06ec-4c73-9256-780a6880087d"
-					(reference "VT9")
 					(unit 1)
 				)
 			)
@@ -54775,6 +54629,81 @@
 		)
 	)
 	(symbol
+		(lib_id "Transistor_FET:BSS138")
+		(at 87.63 204.47 180)
+		(unit 1)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(dnp no)
+		(uuid "4b839ffc-1b83-49fb-a9d4-482cc0acf253")
+		(property "Reference" "VT15"
+			(at 81.28 205.7401 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left)
+			)
+		)
+		(property "Value" "BSS138"
+			(at 82.804 203.2 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left)
+			)
+		)
+		(property "Footprint" "Package_TO_SOT_SMD:SOT-23"
+			(at 82.55 202.565 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+					(italic yes)
+				)
+				(justify left)
+				(hide yes)
+			)
+		)
+		(property "Datasheet" "https://www.onsemi.com/pub/Collateral/BSS138-D.PDF"
+			(at 82.55 200.66 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left)
+				(hide yes)
+			)
+		)
+		(property "Description" "50V Vds, 0.22A Id, N-Channel MOSFET, SOT-23"
+			(at 87.63 204.47 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(pin "1"
+			(uuid "bdd32e37-7dfc-4080-b201-764a59567caa")
+		)
+		(pin "3"
+			(uuid "ac3bf70e-ca41-4cfe-b1f8-78b785734a42")
+		)
+		(pin "2"
+			(uuid "b2f75119-1894-4bcc-b6cf-6d40178e7365")
+		)
+		(instances
+			(project "eva"
+				(path "/ab605654-a730-497b-9e09-9b351f74b935/31d5864f-06ec-4c73-9256-780a6880087d"
+					(reference "VT15")
+					(unit 1)
+				)
+			)
+		)
+	)
+	(symbol
 		(lib_id "Interface_Expansion:PCA9555DB")
 		(at 457.2 327.66 0)
 		(unit 1)
@@ -55372,6 +55301,80 @@
 				(path "/ab605654-a730-497b-9e09-9b351f74b935/31d5864f-06ec-4c73-9256-780a6880087d"
 					(reference "D20")
 					(unit 6)
+				)
+			)
+		)
+	)
+	(symbol
+		(lib_id "Transistor_FET:BSS138")
+		(at 405.13 139.7 270)
+		(mirror x)
+		(unit 1)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(dnp no)
+		(uuid "5117ea5e-4b85-4fc1-b686-0954b5cf5db6")
+		(property "Reference" "VT8"
+			(at 403.098 142.24 90)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Value" "BSS138"
+			(at 409.194 142.24 90)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Footprint" "Package_TO_SOT_SMD:SOT-23"
+			(at 403.225 134.62 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+					(italic yes)
+				)
+				(justify left)
+				(hide yes)
+			)
+		)
+		(property "Datasheet" "https://www.onsemi.com/pub/Collateral/BSS138-D.PDF"
+			(at 401.32 134.62 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left)
+				(hide yes)
+			)
+		)
+		(property "Description" "50V Vds, 0.22A Id, N-Channel MOSFET, SOT-23"
+			(at 405.13 139.7 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(pin "1"
+			(uuid "edc1bc83-dbbb-44ec-8e53-eae74c72376a")
+		)
+		(pin "3"
+			(uuid "64c8f154-e58a-4186-8d8a-4ff0fdb50e75")
+		)
+		(pin "2"
+			(uuid "e5bc86ad-bf2a-4b87-b695-e5eedff73cdf")
+		)
+		(instances
+			(project "eva"
+				(path "/ab605654-a730-497b-9e09-9b351f74b935/31d5864f-06ec-4c73-9256-780a6880087d"
+					(reference "VT8")
+					(unit 1)
 				)
 			)
 		)
@@ -57496,6 +57499,81 @@
 		)
 	)
 	(symbol
+		(lib_id "Transistor_FET:BSS138")
+		(at 96.52 212.09 180)
+		(unit 1)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(dnp no)
+		(uuid "65abd7a3-2916-4898-a0d1-36fb60474cb7")
+		(property "Reference" "VT16"
+			(at 90.17 213.3601 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left)
+			)
+		)
+		(property "Value" "BSS138"
+			(at 90.17 210.8201 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left)
+			)
+		)
+		(property "Footprint" "Package_TO_SOT_SMD:SOT-23"
+			(at 91.44 210.185 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+					(italic yes)
+				)
+				(justify left)
+				(hide yes)
+			)
+		)
+		(property "Datasheet" "https://www.onsemi.com/pub/Collateral/BSS138-D.PDF"
+			(at 91.44 208.28 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left)
+				(hide yes)
+			)
+		)
+		(property "Description" "50V Vds, 0.22A Id, N-Channel MOSFET, SOT-23"
+			(at 96.52 212.09 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(pin "1"
+			(uuid "2109997f-9fd0-43b4-a9cc-b6df258b7304")
+		)
+		(pin "3"
+			(uuid "c72da848-1f18-4ba4-9487-19e0c739366e")
+		)
+		(pin "2"
+			(uuid "0ef112c8-04ad-49d8-9419-4aaec97073be")
+		)
+		(instances
+			(project "eva"
+				(path "/ab605654-a730-497b-9e09-9b351f74b935/31d5864f-06ec-4c73-9256-780a6880087d"
+					(reference "VT16")
+					(unit 1)
+				)
+			)
+		)
+	)
+	(symbol
 		(lib_id "Diode:SS14")
 		(at 168.91 66.04 180)
 		(unit 1)
@@ -58917,6 +58995,80 @@
 			(project "eva"
 				(path "/ab605654-a730-497b-9e09-9b351f74b935/31d5864f-06ec-4c73-9256-780a6880087d"
 					(reference "R200")
+					(unit 1)
+				)
+			)
+		)
+	)
+	(symbol
+		(lib_id "Transistor_FET:BSS138")
+		(at 422.91 137.16 270)
+		(mirror x)
+		(unit 1)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(dnp no)
+		(uuid "6ec84905-42bb-4b89-ad0a-a111df4024fc")
+		(property "Reference" "VT9"
+			(at 420.878 139.7 90)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Value" "BSS138"
+			(at 426.974 139.7 90)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Footprint" "Package_TO_SOT_SMD:SOT-23"
+			(at 421.005 132.08 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+					(italic yes)
+				)
+				(justify left)
+				(hide yes)
+			)
+		)
+		(property "Datasheet" "https://www.onsemi.com/pub/Collateral/BSS138-D.PDF"
+			(at 419.1 132.08 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left)
+				(hide yes)
+			)
+		)
+		(property "Description" "50V Vds, 0.22A Id, N-Channel MOSFET, SOT-23"
+			(at 422.91 137.16 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(pin "1"
+			(uuid "327827a5-7092-4734-a2c0-da8c145f2ce7")
+		)
+		(pin "3"
+			(uuid "0446070b-996c-434b-a082-ac8c215b3d94")
+		)
+		(pin "2"
+			(uuid "0f7324bb-0944-44f8-b288-c12caca6e7f0")
+		)
+		(instances
+			(project "eva"
+				(path "/ab605654-a730-497b-9e09-9b351f74b935/31d5864f-06ec-4c73-9256-780a6880087d"
+					(reference "VT9")
 					(unit 1)
 				)
 			)
@@ -60619,6 +60771,81 @@
 			(project "eva"
 				(path "/ab605654-a730-497b-9e09-9b351f74b935/31d5864f-06ec-4c73-9256-780a6880087d"
 					(reference "#PWR49")
+					(unit 1)
+				)
+			)
+		)
+	)
+	(symbol
+		(lib_id "Transistor_FET:BSS138")
+		(at 77.47 194.31 180)
+		(unit 1)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(dnp no)
+		(uuid "84cc5801-d5fb-4094-8e7c-6c7403e36a53")
+		(property "Reference" "VT14"
+			(at 71.12 195.5801 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left)
+			)
+		)
+		(property "Value" "BSS138"
+			(at 71.12 193.0401 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left)
+			)
+		)
+		(property "Footprint" "Package_TO_SOT_SMD:SOT-23"
+			(at 72.39 192.405 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+					(italic yes)
+				)
+				(justify left)
+				(hide yes)
+			)
+		)
+		(property "Datasheet" "https://www.onsemi.com/pub/Collateral/BSS138-D.PDF"
+			(at 72.39 190.5 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left)
+				(hide yes)
+			)
+		)
+		(property "Description" "50V Vds, 0.22A Id, N-Channel MOSFET, SOT-23"
+			(at 77.47 194.31 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(pin "1"
+			(uuid "446ce4f2-512d-459b-8681-8abafdc1716f")
+		)
+		(pin "3"
+			(uuid "756cec21-6530-4c62-a6f5-ba510ee1b69f")
+		)
+		(pin "2"
+			(uuid "3ba094fa-fb89-4041-ba1c-f1094f7135f0")
+		)
+		(instances
+			(project "eva"
+				(path "/ab605654-a730-497b-9e09-9b351f74b935/31d5864f-06ec-4c73-9256-780a6880087d"
+					(reference "VT14")
 					(unit 1)
 				)
 			)
@@ -66528,79 +66755,6 @@
 		)
 	)
 	(symbol
-		(lib_id "Transistor_FET:2N7002")
-		(at 106.68 222.25 180)
-		(unit 1)
-		(exclude_from_sim no)
-		(in_bom yes)
-		(on_board yes)
-		(dnp no)
-		(uuid "bd277104-9c0c-401b-9b45-c139848beeec")
-		(property "Reference" "VT17"
-			(at 98.552 220.218 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
-		(property "Value" "2N7002"
-			(at 98.552 224.282 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
-		(property "Footprint" "Package_TO_SOT_SMD:SOT-23"
-			(at 101.6 220.345 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-					(italic yes)
-				)
-				(justify left)
-				(hide yes)
-			)
-		)
-		(property "Datasheet" "https://www.onsemi.com/pub/Collateral/NDS7002A-D.PDF"
-			(at 101.6 218.44 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(justify left)
-				(hide yes)
-			)
-		)
-		(property "Description" "0.115A Id, 60V Vds, N-Channel MOSFET, SOT-23"
-			(at 106.68 222.25 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(hide yes)
-			)
-		)
-		(pin "3"
-			(uuid "f09e8d63-277f-4fb9-8f27-ea38cdb95232")
-		)
-		(pin "1"
-			(uuid "e0ee44c4-ba70-400c-9c4e-a3ceba99c294")
-		)
-		(pin "2"
-			(uuid "d6d26e42-1b6a-4aca-be93-b2c4e6f9fa1f")
-		)
-		(instances
-			(project "eva"
-				(path "/ab605654-a730-497b-9e09-9b351f74b935/31d5864f-06ec-4c73-9256-780a6880087d"
-					(reference "VT17")
-					(unit 1)
-				)
-			)
-		)
-	)
-	(symbol
 		(lib_id "eva-altium-import:Sheet2_0_IDC10M")
 		(at 238.76 397.51 0)
 		(unit 4)
@@ -69760,79 +69914,6 @@
 			(project "eva"
 				(path "/ab605654-a730-497b-9e09-9b351f74b935/31d5864f-06ec-4c73-9256-780a6880087d"
 					(reference "#PWR85")
-					(unit 1)
-				)
-			)
-		)
-	)
-	(symbol
-		(lib_id "Transistor_FET:2N7002")
-		(at 87.63 204.47 180)
-		(unit 1)
-		(exclude_from_sim no)
-		(in_bom yes)
-		(on_board yes)
-		(dnp no)
-		(uuid "d95d2500-b172-4dc2-aa62-f13b69a4c6ab")
-		(property "Reference" "VT15"
-			(at 79.502 202.438 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
-		(property "Value" "2N7002"
-			(at 79.502 206.502 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
-		(property "Footprint" "Package_TO_SOT_SMD:SOT-23"
-			(at 82.55 202.565 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-					(italic yes)
-				)
-				(justify left)
-				(hide yes)
-			)
-		)
-		(property "Datasheet" "https://www.onsemi.com/pub/Collateral/NDS7002A-D.PDF"
-			(at 82.55 200.66 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(justify left)
-				(hide yes)
-			)
-		)
-		(property "Description" "0.115A Id, 60V Vds, N-Channel MOSFET, SOT-23"
-			(at 87.63 204.47 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(hide yes)
-			)
-		)
-		(pin "3"
-			(uuid "fa954014-4294-4240-8e18-fb046bd3c82a")
-		)
-		(pin "1"
-			(uuid "245e475a-f3b7-4ee6-a015-bbaa40ed7d39")
-		)
-		(pin "2"
-			(uuid "38b74669-385a-422b-869f-9a5ae923613c")
-		)
-		(instances
-			(project "eva"
-				(path "/ab605654-a730-497b-9e09-9b351f74b935/31d5864f-06ec-4c73-9256-780a6880087d"
-					(reference "VT15")
 					(unit 1)
 				)
 			)
@@ -74230,79 +74311,6 @@
 			(project "eva"
 				(path "/ab605654-a730-497b-9e09-9b351f74b935/31d5864f-06ec-4c73-9256-780a6880087d"
 					(reference "R154")
-					(unit 1)
-				)
-			)
-		)
-	)
-	(symbol
-		(lib_id "Transistor_FET:2N7002")
-		(at 96.52 212.09 180)
-		(unit 1)
-		(exclude_from_sim no)
-		(in_bom yes)
-		(on_board yes)
-		(dnp no)
-		(uuid "ff0fdb98-a9bc-4a9c-80e7-6f71979e19e6")
-		(property "Reference" "VT16"
-			(at 88.392 210.058 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
-		(property "Value" "2N7002"
-			(at 88.392 214.122 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
-		(property "Footprint" "Package_TO_SOT_SMD:SOT-23"
-			(at 91.44 210.185 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-					(italic yes)
-				)
-				(justify left)
-				(hide yes)
-			)
-		)
-		(property "Datasheet" "https://www.onsemi.com/pub/Collateral/NDS7002A-D.PDF"
-			(at 91.44 208.28 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(justify left)
-				(hide yes)
-			)
-		)
-		(property "Description" "0.115A Id, 60V Vds, N-Channel MOSFET, SOT-23"
-			(at 96.52 212.09 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(hide yes)
-			)
-		)
-		(pin "3"
-			(uuid "7a5a1d64-a84f-4b5f-8fee-f9c77fcb0e99")
-		)
-		(pin "1"
-			(uuid "58433989-d2b9-4018-bf86-0020773f1349")
-		)
-		(pin "2"
-			(uuid "f53dd48b-2899-41ef-9aa0-0043c4c1fff3")
-		)
-		(instances
-			(project "eva"
-				(path "/ab605654-a730-497b-9e09-9b351f74b935/31d5864f-06ec-4c73-9256-780a6880087d"
-					(reference "VT16")
 					(unit 1)
 				)
 			)

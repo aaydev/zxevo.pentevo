@@ -8626,6 +8626,18 @@
 		)
 		(uuid "ffec7f06-324f-43eb-8c78-e07b0ac52757")
 	)
+	(rectangle
+		(start 60.96 30.861)
+		(end 87.63 40.386)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(fill
+			(type none)
+		)
+		(uuid d8ae7859-5f89-4110-ba8c-31a1c73f3a87)
+	)
 	(text_box "External audio inputs"
 		(exclude_from_sim no)
 		(at 91.44 175.895 0)
@@ -9076,6 +9088,17 @@
 			)
 		)
 		(uuid "d1ed2124-12ea-4995-9e7d-84847a67b603")
+	)
+	(text "DA1, DA10, DA12, DA15:\nTLV9162\nOPA2192"
+		(exclude_from_sim no)
+		(at 62.865 35.56 0)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify left)
+		)
+		(uuid "d89970a7-c98c-476e-8466-edb7f74a1701")
 	)
 	(text "C"
 		(exclude_from_sim no)
