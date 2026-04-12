@@ -2095,196 +2095,6 @@
 				)
 			)
 		)
-		(symbol "Transistor_BJT:BC857"
-			(pin_names
-				(offset 0) hide)
-			(exclude_from_sim no)
-			(in_bom yes)
-			(on_board yes)
-			(property "Reference" "Q"
-				(at 5.08 1.905 0)
-				(effects
-					(font
-						(size 1.27 1.27)
-					)
-					(justify left)
-				)
-			)
-			(property "Value" "BC857"
-				(at 5.08 0 0)
-				(effects
-					(font
-						(size 1.27 1.27)
-					)
-					(justify left)
-				)
-			)
-			(property "Footprint" "Package_TO_SOT_SMD:SOT-23"
-				(at 5.08 -1.905 0)
-				(effects
-					(font
-						(size 1.27 1.27)
-						(italic yes)
-					)
-					(justify left)
-					(hide yes)
-				)
-			)
-			(property "Datasheet" "https://www.onsemi.com/pub/Collateral/BC860-D.pdf"
-				(at 0 0 0)
-				(effects
-					(font
-						(size 1.27 1.27)
-					)
-					(justify left)
-					(hide yes)
-				)
-			)
-			(property "Description" "0.1A Ic, 45V Vce, PNP Transistor, SOT-23"
-				(at 0 0 0)
-				(effects
-					(font
-						(size 1.27 1.27)
-					)
-					(hide yes)
-				)
-			)
-			(property "ki_keywords" "PNP transistor"
-				(at 0 0 0)
-				(effects
-					(font
-						(size 1.27 1.27)
-					)
-					(hide yes)
-				)
-			)
-			(property "ki_fp_filters" "SOT?23*"
-				(at 0 0 0)
-				(effects
-					(font
-						(size 1.27 1.27)
-					)
-					(hide yes)
-				)
-			)
-			(symbol "BC857_0_1"
-				(polyline
-					(pts
-						(xy 0.635 0.635) (xy 2.54 2.54)
-					)
-					(stroke
-						(width 0)
-						(type default)
-					)
-					(fill
-						(type none)
-					)
-				)
-				(polyline
-					(pts
-						(xy 0.635 -0.635) (xy 2.54 -2.54) (xy 2.54 -2.54)
-					)
-					(stroke
-						(width 0)
-						(type default)
-					)
-					(fill
-						(type none)
-					)
-				)
-				(polyline
-					(pts
-						(xy 0.635 1.905) (xy 0.635 -1.905) (xy 0.635 -1.905)
-					)
-					(stroke
-						(width 0.508)
-						(type default)
-					)
-					(fill
-						(type none)
-					)
-				)
-				(polyline
-					(pts
-						(xy 2.286 -1.778) (xy 1.778 -2.286) (xy 1.27 -1.27) (xy 2.286 -1.778) (xy 2.286 -1.778)
-					)
-					(stroke
-						(width 0)
-						(type default)
-					)
-					(fill
-						(type outline)
-					)
-				)
-				(circle
-					(center 1.27 0)
-					(radius 2.8194)
-					(stroke
-						(width 0.254)
-						(type default)
-					)
-					(fill
-						(type none)
-					)
-				)
-			)
-			(symbol "BC857_1_1"
-				(pin input line
-					(at -5.08 0 0)
-					(length 5.715)
-					(name "B"
-						(effects
-							(font
-								(size 1.27 1.27)
-							)
-						)
-					)
-					(number "1"
-						(effects
-							(font
-								(size 1.27 1.27)
-							)
-						)
-					)
-				)
-				(pin passive line
-					(at 2.54 -5.08 90)
-					(length 2.54)
-					(name "E"
-						(effects
-							(font
-								(size 1.27 1.27)
-							)
-						)
-					)
-					(number "2"
-						(effects
-							(font
-								(size 1.27 1.27)
-							)
-						)
-					)
-				)
-				(pin passive line
-					(at 2.54 5.08 270)
-					(length 2.54)
-					(name "C"
-						(effects
-							(font
-								(size 1.27 1.27)
-							)
-						)
-					)
-					(number "3"
-						(effects
-							(font
-								(size 1.27 1.27)
-							)
-						)
-					)
-				)
-			)
-		)
 		(symbol "eva-altium-import:MSM5118160F-TS-K"
 			(exclude_from_sim no)
 			(in_bom yes)
@@ -28077,16 +27887,6 @@
 		)
 		(uuid "691dd431-91e8-48e2-a015-b782070fb77c")
 	)
-	(wire
-		(pts
-			(xy 450.85 48.26) (xy 453.39 48.26)
-		)
-		(stroke
-			(width 0)
-			(type default)
-		)
-		(uuid "696f8a06-c700-4095-89f2-1a5081f98ceb")
-	)
 	(polyline
 		(pts
 			(xy 522.975 398.475) (xy 522.975 385.975)
@@ -28684,16 +28484,6 @@
 	)
 	(wire
 		(pts
-			(xy 518.16 327.66) (xy 520.7 327.66)
-		)
-		(stroke
-			(width 0)
-			(type default)
-		)
-		(uuid "7d7bbd35-7e17-40e4-b0a6-c23ff5bab37a")
-	)
-	(wire
-		(pts
 			(xy 134.62 243.84) (xy 137.16 243.84)
 		)
 		(stroke
@@ -28701,6 +28491,16 @@
 			(type default)
 		)
 		(uuid "7d9ae2dd-b359-4e16-be5b-72bf65dd1016")
+	)
+	(wire
+		(pts
+			(xy 505.46 332.74) (xy 508 332.74)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "7dee15a5-d6a5-4e28-9936-087fbf7ba143")
 	)
 	(wire
 		(pts
@@ -31633,16 +31433,6 @@
 			(type default)
 		)
 		(uuid "dc4e0ffb-3ee6-4f82-8792-86d61c4dfa55")
-	)
-	(wire
-		(pts
-			(xy 513.08 332.74) (xy 505.46 332.74)
-		)
-		(stroke
-			(width 0)
-			(type default)
-		)
-		(uuid "dc5ea9f2-347f-464a-bd46-8752f78b0dce")
 	)
 	(wire
 		(pts
@@ -38315,28 +38105,6 @@
 			)
 		)
 	)
-	(global_label "~{DISK_LED}"
-		(shape output)
-		(at 518.16 327.66 180)
-		(fields_autoplaced yes)
-		(effects
-			(font
-				(size 1.27 1.27)
-			)
-			(justify right)
-		)
-		(uuid "41e247df-b7fa-483a-a233-14c423756dd8")
-		(property "Intersheetrefs" "${INTERSHEET_REFS}"
-			(at 506.4058 327.66 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(justify right)
-				(hide yes)
-			)
-		)
-	)
 	(global_label "~{VG_RES}"
 		(shape input)
 		(at 400.05 165.1 180)
@@ -39296,28 +39064,6 @@
 		(uuid "4e94a3e9-ec23-4164-b24e-172cf723ac99")
 		(property "Intersheetrefs" "${INTERSHEET_REFS}"
 			(at 23.1405 243.84 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(justify right)
-				(hide yes)
-			)
-		)
-	)
-	(global_label "~{DISK_LED}"
-		(shape output)
-		(at 450.85 48.26 180)
-		(fields_autoplaced yes)
-		(effects
-			(font
-				(size 1.27 1.27)
-			)
-			(justify right)
-		)
-		(uuid "4ebdb564-eeb6-49a4-b05b-5d7ac4783ccb")
-		(property "Intersheetrefs" "${INTERSHEET_REFS}"
-			(at 439.0958 48.26 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -40330,28 +40076,6 @@
 		(uuid "5ccb74bc-a5b1-4909-b1de-72adb5b7e969")
 		(property "Intersheetrefs" "${INTERSHEET_REFS}"
 			(at 23.9872 157.48 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(justify right)
-				(hide yes)
-			)
-		)
-	)
-	(global_label "~{SDCS}"
-		(shape input)
-		(at 445.77 53.34 180)
-		(fields_autoplaced yes)
-		(effects
-			(font
-				(size 1.27 1.27)
-			)
-			(justify right)
-		)
-		(uuid "5d4cb37e-76c5-4fe5-beac-625f02a3ae5c")
-		(property "Intersheetrefs" "${INTERSHEET_REFS}"
-			(at 437.8258 53.34 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -43057,6 +42781,28 @@
 		(uuid "810f2113-96aa-4837-9f24-e6b66e1d8213")
 		(property "Intersheetrefs" "${INTERSHEET_REFS}"
 			(at 181.0044 236.22 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left)
+				(hide yes)
+			)
+		)
+	)
+	(global_label "~{DASP}"
+		(shape output)
+		(at 508 332.74 0)
+		(fields_autoplaced yes)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify left)
+		)
+		(uuid "8132d844-7f9c-4601-9263-38b9c3719b7d")
+		(property "Intersheetrefs" "${INTERSHEET_REFS}"
+			(at 515.8233 332.74 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -55505,74 +55251,6 @@
 		)
 	)
 	(symbol
-		(lib_id "power:GND")
-		(at 453.39 58.42 0)
-		(mirror y)
-		(unit 1)
-		(exclude_from_sim no)
-		(in_bom yes)
-		(on_board yes)
-		(dnp no)
-		(fields_autoplaced yes)
-		(uuid "25b274be-6936-4d51-9de7-76ed2e6670d3")
-		(property "Reference" "#PWR75"
-			(at 453.39 64.77 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(hide yes)
-			)
-		)
-		(property "Value" "GND"
-			(at 453.39 63.5 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(hide yes)
-			)
-		)
-		(property "Footprint" ""
-			(at 453.39 58.42 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(hide yes)
-			)
-		)
-		(property "Datasheet" ""
-			(at 453.39 58.42 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(hide yes)
-			)
-		)
-		(property "Description" "Power symbol creates a global label with name \"GND\" , ground"
-			(at 453.39 58.42 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(hide yes)
-			)
-		)
-		(pin "1"
-			(uuid "1e618841-1b3f-4ce9-bd15-05bdc9019e1b")
-		)
-		(instances
-			(project "eva"
-				(path "/ab605654-a730-497b-9e09-9b351f74b935/df95af23-acf0-4751-87c3-fbc71e0508c6"
-					(reference "#PWR75")
-					(unit 1)
-				)
-			)
-		)
-	)
-	(symbol
 		(lib_id "eva-altium-import:Sheet1_3_CAPCHIP")
 		(at 118.11 368.3 0)
 		(unit 1)
@@ -57552,82 +57230,6 @@
 			(project ""
 				(path "/ab605654-a730-497b-9e09-9b351f74b935/df95af23-acf0-4751-87c3-fbc71e0508c6"
 					(reference "R66")
-					(unit 1)
-				)
-			)
-		)
-	)
-	(symbol
-		(lib_id "Transistor_BJT:BC857")
-		(at 450.85 53.34 0)
-		(mirror x)
-		(unit 1)
-		(exclude_from_sim no)
-		(in_bom yes)
-		(on_board yes)
-		(dnp no)
-		(uuid "4de200e4-c5b7-47bb-acb9-4600f10b0984")
-		(property "Reference" "VT7"
-			(at 444.5 51.054 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(justify left)
-			)
-		)
-		(property "Value" "BC857"
-			(at 443.23 56.134 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(justify left)
-			)
-		)
-		(property "Footprint" "Package_TO_SOT_SMD:SOT-23_Handsoldering"
-			(at 455.93 51.435 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-					(italic yes)
-				)
-				(justify left)
-				(hide yes)
-			)
-		)
-		(property "Datasheet" "https://www.onsemi.com/pub/Collateral/BC860-D.pdf"
-			(at 450.85 53.34 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(justify left)
-				(hide yes)
-			)
-		)
-		(property "Description" "0.1A Ic, 45V Vce, PNP Transistor, SOT-23"
-			(at 450.85 53.34 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(hide yes)
-			)
-		)
-		(pin "1"
-			(uuid "1cacf7e9-d2cf-41f5-83a7-9f7913327de9")
-		)
-		(pin "2"
-			(uuid "d14a2aee-fd2e-4e20-9f34-63955dc571f3")
-		)
-		(pin "3"
-			(uuid "175cac66-d74f-4e69-b387-80f06950d447")
-		)
-		(instances
-			(project "eva"
-				(path "/ab605654-a730-497b-9e09-9b351f74b935/df95af23-acf0-4751-87c3-fbc71e0508c6"
-					(reference "VT7")
 					(unit 1)
 				)
 			)
@@ -60931,82 +60533,6 @@
 		)
 	)
 	(symbol
-		(lib_id "Transistor_BJT:BC857")
-		(at 518.16 332.74 0)
-		(mirror x)
-		(unit 1)
-		(exclude_from_sim no)
-		(in_bom yes)
-		(on_board yes)
-		(dnp no)
-		(uuid "a70bc785-b81f-412a-bee6-a994881f1d7f")
-		(property "Reference" "VT6"
-			(at 511.81 330.454 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(justify left)
-			)
-		)
-		(property "Value" "BC857"
-			(at 510.032 334.264 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(justify left)
-			)
-		)
-		(property "Footprint" "Package_TO_SOT_SMD:SOT-23_Handsoldering"
-			(at 523.24 330.835 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-					(italic yes)
-				)
-				(justify left)
-				(hide yes)
-			)
-		)
-		(property "Datasheet" "https://www.onsemi.com/pub/Collateral/BC860-D.pdf"
-			(at 518.16 332.74 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(justify left)
-				(hide yes)
-			)
-		)
-		(property "Description" "0.1A Ic, 45V Vce, PNP Transistor, SOT-23"
-			(at 518.16 332.74 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(hide yes)
-			)
-		)
-		(pin "1"
-			(uuid "a5e70b4f-0b2c-4e01-ad23-1e22ece0e7b3")
-		)
-		(pin "2"
-			(uuid "7cdb37d7-2ed4-4054-b03f-398ed5a9fcbd")
-		)
-		(pin "3"
-			(uuid "30ad22a1-73bf-4984-9795-bb011aba9d23")
-		)
-		(instances
-			(project "eva"
-				(path "/ab605654-a730-497b-9e09-9b351f74b935/df95af23-acf0-4751-87c3-fbc71e0508c6"
-					(reference "VT6")
-					(unit 1)
-				)
-			)
-		)
-	)
-	(symbol
 		(lib_id "eva-altium-import:Sheet1_0_ZXSLOT")
 		(at 73.66 299.72 0)
 		(unit 2)
@@ -61262,74 +60788,6 @@
 				(path "/ab605654-a730-497b-9e09-9b351f74b935/df95af23-acf0-4751-87c3-fbc71e0508c6"
 					(reference "XS2")
 					(unit 2)
-				)
-			)
-		)
-	)
-	(symbol
-		(lib_id "power:GND")
-		(at 520.7 337.82 0)
-		(mirror y)
-		(unit 1)
-		(exclude_from_sim no)
-		(in_bom yes)
-		(on_board yes)
-		(dnp no)
-		(fields_autoplaced yes)
-		(uuid "ac5cf7ea-be43-45d3-a9de-fe8b7f7a9ca7")
-		(property "Reference" "#PWR74"
-			(at 520.7 344.17 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(hide yes)
-			)
-		)
-		(property "Value" "GND"
-			(at 520.7 342.9 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(hide yes)
-			)
-		)
-		(property "Footprint" ""
-			(at 520.7 337.82 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(hide yes)
-			)
-		)
-		(property "Datasheet" ""
-			(at 520.7 337.82 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(hide yes)
-			)
-		)
-		(property "Description" "Power symbol creates a global label with name \"GND\" , ground"
-			(at 520.7 337.82 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(hide yes)
-			)
-		)
-		(pin "1"
-			(uuid "d47d1907-5133-4a62-8be7-d18c35b5f095")
-		)
-		(instances
-			(project "eva"
-				(path "/ab605654-a730-497b-9e09-9b351f74b935/df95af23-acf0-4751-87c3-fbc71e0508c6"
-					(reference "#PWR74")
-					(unit 1)
 				)
 			)
 		)
