@@ -68194,7 +68194,7 @@
 		(dnp no)
 		(uuid "adbed4eb-ae7c-47ab-9b5b-a293992b4bff")
 		(property "Reference" "R210"
-			(at 219.202 300.482 90)
+			(at 222.504 305.562 90)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -68228,13 +68228,12 @@
 				(hide yes)
 			)
 		)
-		(property "Description" "RESCHIP"
-			(at 214.63 302.26 0)
+		(property "Description" "close to source pin"
+			(at 216.662 306.832 90)
 			(effects
 				(font
 					(size 1.27 1.27)
 				)
-				(hide yes)
 			)
 		)
 		(pin "2"
@@ -75302,7 +75301,7 @@
 			)
 		)
 		(property "Value" "74HC125"
-			(at 226.06 305.308 0)
+			(at 239.268 298.958 0)
 			(effects
 				(font
 					(size 1.27 1.27)
