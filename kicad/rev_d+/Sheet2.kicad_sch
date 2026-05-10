@@ -8111,6 +8111,198 @@
 				)
 			)
 		)
+		(symbol "Jumper:SolderJumper_2_Bridged"
+			(pin_numbers hide)
+			(pin_names
+				(offset 0) hide)
+			(exclude_from_sim yes)
+			(in_bom no)
+			(on_board yes)
+			(property "Reference" "JP"
+				(at 0 2.032 0)
+				(effects
+					(font
+						(size 1.27 1.27)
+					)
+				)
+			)
+			(property "Value" "SolderJumper_2_Bridged"
+				(at 0 -2.54 0)
+				(effects
+					(font
+						(size 1.27 1.27)
+					)
+				)
+			)
+			(property "Footprint" ""
+				(at 0 0 0)
+				(effects
+					(font
+						(size 1.27 1.27)
+					)
+					(hide yes)
+				)
+			)
+			(property "Datasheet" "~"
+				(at 0 0 0)
+				(effects
+					(font
+						(size 1.27 1.27)
+					)
+					(hide yes)
+				)
+			)
+			(property "Description" "Solder Jumper, 2-pole, closed/bridged"
+				(at 0 0 0)
+				(effects
+					(font
+						(size 1.27 1.27)
+					)
+					(hide yes)
+				)
+			)
+			(property "ki_keywords" "solder jumper SPST"
+				(at 0 0 0)
+				(effects
+					(font
+						(size 1.27 1.27)
+					)
+					(hide yes)
+				)
+			)
+			(property "ki_fp_filters" "SolderJumper*Bridged*"
+				(at 0 0 0)
+				(effects
+					(font
+						(size 1.27 1.27)
+					)
+					(hide yes)
+				)
+			)
+			(symbol "SolderJumper_2_Bridged_0_1"
+				(rectangle
+					(start -0.508 0.508)
+					(end 0.508 -0.508)
+					(stroke
+						(width 0)
+						(type default)
+					)
+					(fill
+						(type outline)
+					)
+				)
+				(arc
+					(start -0.254 1.016)
+					(mid -1.2656 0)
+					(end -0.254 -1.016)
+					(stroke
+						(width 0)
+						(type default)
+					)
+					(fill
+						(type none)
+					)
+				)
+				(arc
+					(start -0.254 1.016)
+					(mid -1.2656 0)
+					(end -0.254 -1.016)
+					(stroke
+						(width 0)
+						(type default)
+					)
+					(fill
+						(type outline)
+					)
+				)
+				(polyline
+					(pts
+						(xy -0.254 1.016) (xy -0.254 -1.016)
+					)
+					(stroke
+						(width 0)
+						(type default)
+					)
+					(fill
+						(type none)
+					)
+				)
+				(polyline
+					(pts
+						(xy 0.254 1.016) (xy 0.254 -1.016)
+					)
+					(stroke
+						(width 0)
+						(type default)
+					)
+					(fill
+						(type none)
+					)
+				)
+				(arc
+					(start 0.254 -1.016)
+					(mid 1.2656 0)
+					(end 0.254 1.016)
+					(stroke
+						(width 0)
+						(type default)
+					)
+					(fill
+						(type none)
+					)
+				)
+				(arc
+					(start 0.254 -1.016)
+					(mid 1.2656 0)
+					(end 0.254 1.016)
+					(stroke
+						(width 0)
+						(type default)
+					)
+					(fill
+						(type outline)
+					)
+				)
+			)
+			(symbol "SolderJumper_2_Bridged_1_1"
+				(pin passive line
+					(at -3.81 0 0)
+					(length 2.54)
+					(name "A"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+					(number "1"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+				)
+				(pin passive line
+					(at 3.81 0 180)
+					(length 2.54)
+					(name "B"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+					(number "2"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+				)
+			)
+		)
 		(symbol "Jumper:SolderJumper_2_Open"
 			(pin_numbers hide)
 			(pin_names
@@ -34207,6 +34399,16 @@
 	)
 	(wire
 		(pts
+			(xy 400.05 369.57) (xy 393.7 369.57)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "71622e10-7d13-4726-8d41-eb130528687d")
+	)
+	(wire
+		(pts
 			(xy 311.15 200.66) (xy 314.96 200.66)
 		)
 		(stroke
@@ -36368,6 +36570,16 @@
 			(type default)
 		)
 		(uuid "a2aeb6be-0e97-4b98-9ac8-5a57810d7901")
+	)
+	(wire
+		(pts
+			(xy 400.05 379.73) (xy 400.05 377.19)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "a2bc4014-edfd-49ab-81dc-44b78c5f1a8d")
 	)
 	(wire
 		(pts
@@ -40859,7 +41071,7 @@
 		)
 		(uuid "8d502a8f-009f-4769-81ca-8d3c5279c686")
 	)
-	(text "Place only VD1 and solder bridge J10 for no switch.\nPlace nothing for MB9987 (no 12v)"
+	(text "Place only VD1 and solder bridge J10 for no switch.\nPlace nothing and cut J16 for MB9987 (no 12v)"
 		(exclude_from_sim no)
 		(at 345.313 406.654 0)
 		(effects
@@ -42959,22 +43171,22 @@
 	)
 	(global_label "VDD_VG"
 		(shape bidirectional)
-		(at 393.7 369.57 0)
+		(at 400.05 379.73 270)
 		(fields_autoplaced yes)
 		(effects
 			(font
 				(size 1.27 1.27)
 			)
-			(justify left)
+			(justify right)
 		)
 		(uuid "3dcc38bd-1dea-47b4-8579-c3a90ec0d818")
 		(property "Intersheetrefs" "${INTERSHEET_REFS}"
-			(at 404.7513 369.57 0)
+			(at 400.05 390.7813 90)
 			(effects
 				(font
 					(size 1.27 1.27)
 				)
-				(justify left)
+				(justify right)
 				(hide yes)
 			)
 		)
@@ -47269,7 +47481,7 @@
 			)
 		)
 	)
-	(global_label "VCC5_MCU"
+	(global_label "VCC5"
 		(shape passive)
 		(at 500.38 201.93 180)
 		(fields_autoplaced yes)
@@ -47281,7 +47493,7 @@
 		)
 		(uuid "e7fe13d9-4c08-4ec7-b378-175a25948f08")
 		(property "Intersheetrefs" "${INTERSHEET_REFS}"
-			(at 488.6485 201.93 0)
+			(at 493.668 201.93 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -58102,15 +58314,15 @@
 				)
 			)
 		)
-		(property "Value" "vg_old"
-			(at 371.348 355.346 0)
+		(property "Value" "vg old 12v"
+			(at 372.618 354.076 0)
 			(effects
 				(font
 					(size 1.27 1.27)
 				)
 			)
 		)
-		(property "Footprint" ""
+		(property "Footprint" "Jumper:SolderJumper-2_P1.3mm_Open_RoundedPad1.0x1.5mm"
 			(at 367.03 356.87 0)
 			(effects
 				(font
@@ -58689,6 +58901,75 @@
 			(project "eva"
 				(path "/ab605654-a730-497b-9e09-9b351f74b935/31d5864f-06ec-4c73-9256-780a6880087d"
 					(reference "VD21")
+					(unit 1)
+				)
+			)
+		)
+	)
+	(symbol
+		(lib_id "Jumper:SolderJumper_2_Bridged")
+		(at 400.05 373.38 90)
+		(unit 1)
+		(exclude_from_sim yes)
+		(in_bom no)
+		(on_board yes)
+		(dnp no)
+		(uuid "5988694c-3cc9-47d5-afcd-34951f78af4d")
+		(property "Reference" "J16"
+			(at 394.97 371.602 90)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify right)
+			)
+		)
+		(property "Value" "vg 12v"
+			(at 392.684 377.444 90)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify right)
+			)
+		)
+		(property "Footprint" "Jumper:SolderJumper-2_P1.3mm_Bridged_RoundedPad1.0x1.5mm"
+			(at 400.05 373.38 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Datasheet" "~"
+			(at 400.05 373.38 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Description" "Solder Jumper, 2-pole, closed/bridged"
+			(at 400.05 373.38 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(pin "1"
+			(uuid "ed6e56f4-a0f0-42b2-99bf-39e9008927cb")
+		)
+		(pin "2"
+			(uuid "a0c54e03-81ea-4656-8bcd-141499d96302")
+		)
+		(instances
+			(project "eva"
+				(path "/ab605654-a730-497b-9e09-9b351f74b935/31d5864f-06ec-4c73-9256-780a6880087d"
+					(reference "J16")
 					(unit 1)
 				)
 			)
