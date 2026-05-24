@@ -19,4 +19,3 @@ I2C addresses for atmega-controlled I2C bus
          |         | $4c..$4d (A[2:0]=6)
          |         | $4e..$4f (A[2:0]=7)
 ---------+---------+---------------------
-
