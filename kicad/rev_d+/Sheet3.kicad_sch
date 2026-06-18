@@ -1322,6 +1322,147 @@
 			)
 			(embedded_fonts no)
 		)
+		(symbol "Regulator_Linear:L78L05_SOT89"
+			(pin_names
+				(offset 0.254)
+			)
+			(exclude_from_sim no)
+			(in_bom yes)
+			(on_board yes)
+			(property "Reference" "U"
+				(at -3.81 3.175 0)
+				(effects
+					(font
+						(size 1.27 1.27)
+					)
+				)
+			)
+			(property "Value" "L78L05_SOT89"
+				(at -0.635 3.175 0)
+				(effects
+					(font
+						(size 1.27 1.27)
+					)
+					(justify left)
+				)
+			)
+			(property "Footprint" "Package_TO_SOT_SMD:SOT-89-3"
+				(at 0 5.08 0)
+				(effects
+					(font
+						(size 1.27 1.27)
+						(italic yes)
+					)
+					(hide yes)
+				)
+			)
+			(property "Datasheet" "http://www.st.com/content/ccc/resource/technical/document/datasheet/15/55/e5/aa/23/5b/43/fd/CD00000446.pdf/files/CD00000446.pdf/jcr:content/translations/en.CD00000446.pdf"
+				(at 0 -1.27 0)
+				(effects
+					(font
+						(size 1.27 1.27)
+					)
+					(hide yes)
+				)
+			)
+			(property "Description" "Positive 100mA 30V Linear Regulator, Fixed Output 5V, SOT-89"
+				(at 0 0 0)
+				(effects
+					(font
+						(size 1.27 1.27)
+					)
+					(hide yes)
+				)
+			)
+			(property "ki_keywords" "Voltage Regulator 100mA Positive"
+				(at 0 0 0)
+				(effects
+					(font
+						(size 1.27 1.27)
+					)
+					(hide yes)
+				)
+			)
+			(property "ki_fp_filters" "SOT?89*"
+				(at 0 0 0)
+				(effects
+					(font
+						(size 1.27 1.27)
+					)
+					(hide yes)
+				)
+			)
+			(symbol "L78L05_SOT89_0_1"
+				(rectangle
+					(start -5.08 1.905)
+					(end 5.08 -5.08)
+					(stroke
+						(width 0.254)
+						(type default)
+					)
+					(fill
+						(type background)
+					)
+				)
+			)
+			(symbol "L78L05_SOT89_1_1"
+				(pin power_in line
+					(at -7.62 0 0)
+					(length 2.54)
+					(name "IN"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+					(number "3"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+				)
+				(pin power_in line
+					(at 0 -7.62 90)
+					(length 2.54)
+					(name "GND"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+					(number "2"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+				)
+				(pin power_out line
+					(at 7.62 0 180)
+					(length 2.54)
+					(name "OUT"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+					(number "1"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+				)
+			)
+			(embedded_fonts no)
+		)
 		(symbol "eva-altium-import:Sheet2_0_CAPCHIP"
 			(exclude_from_sim no)
 			(in_bom yes)
@@ -4860,12 +5001,6 @@
 		(uuid "0daa1c88-a754-44ca-a3ba-8289fb1abfe2")
 	)
 	(junction
-		(at 49.53 137.16)
-		(diameter 0)
-		(color 0 0 0 0)
-		(uuid "13b70bda-925d-4f62-bce9-93d57522dca0")
-	)
-	(junction
 		(at 185.42 130.81)
 		(diameter 0)
 		(color 0 0 0 0)
@@ -4968,12 +5103,6 @@
 		(uuid "3a8e347a-665a-4d22-8f5d-551df9f3fd27")
 	)
 	(junction
-		(at 62.23 133.35)
-		(diameter 0)
-		(color 0 0 0 0)
-		(uuid "3d1842ae-2d3e-4d63-b7a6-ca4c70bca3b3")
-	)
-	(junction
 		(at 34.29 102.87)
 		(diameter 0)
 		(color 0 0 0 0)
@@ -5074,12 +5203,6 @@
 		(diameter 0)
 		(color 0 0 0 0)
 		(uuid "6787f195-c75c-4e99-8a5f-8ce8f940f166")
-	)
-	(junction
-		(at 43.18 152.4)
-		(diameter 0)
-		(color 0 0 0 0)
-		(uuid "69185c1f-d75a-41ba-be0b-6420fd4a7487")
 	)
 	(junction
 		(at 184.15 77.47)
@@ -5268,6 +5391,12 @@
 		(uuid "b5f9fa32-68da-410a-9903-5ab987cf5ddb")
 	)
 	(junction
+		(at 69.85 139.7)
+		(diameter 0)
+		(color 0 0 0 0)
+		(uuid "b6054a2c-2a4b-4adc-98ea-43b7167891f0")
+	)
+	(junction
 		(at 215.9 215.9)
 		(diameter 0)
 		(color 0 0 0 0)
@@ -5278,12 +5407,6 @@
 		(diameter 0)
 		(color 0 0 0 0)
 		(uuid "bee13268-96ae-4553-895a-cb703615324f")
-	)
-	(junction
-		(at 74.93 137.16)
-		(diameter 0)
-		(color 0 0 0 0)
-		(uuid "bffc3f51-4f71-414b-a781-35ff00f82307")
 	)
 	(junction
 		(at 81.28 73.66)
@@ -5310,10 +5433,10 @@
 		(uuid "c70b0359-1f5b-4b26-b9ff-a09d360a4897")
 	)
 	(junction
-		(at 55.88 152.4)
+		(at 52.07 139.7)
 		(diameter 0)
 		(color 0 0 0 0)
-		(uuid "c92b5850-4bf6-40fa-973f-4607c88cb5a8")
+		(uuid "c81f1944-2e85-4385-9f6a-54aab68935ef")
 	)
 	(junction
 		(at 166.37 179.07)
@@ -5332,6 +5455,12 @@
 		(diameter 0)
 		(color 0 0 0 0)
 		(uuid "ce99ed04-5d64-4cab-a0bb-a3e266bf3556")
+	)
+	(junction
+		(at 60.96 152.4)
+		(diameter 0)
+		(color 0 0 0 0)
+		(uuid "d0026047-e7f9-4513-b97c-26a3b450731f")
 	)
 	(junction
 		(at 96.52 73.66)
@@ -5404,12 +5533,6 @@
 		(diameter 0)
 		(color 0 0 0 0)
 		(uuid "e3de4376-8976-4032-913a-ee65d7308335")
-	)
-	(junction
-		(at 43.18 146.05)
-		(diameter 0)
-		(color 0 0 0 0)
-		(uuid "e3eadb78-b143-44c0-92fb-7c8a38327f59")
 	)
 	(junction
 		(at 170.18 153.67)
@@ -5717,6 +5840,16 @@
 	)
 	(wire
 		(pts
+			(xy 43.18 139.7) (xy 52.07 139.7)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "097adac1-4927-4eb5-8835-7fe490b35228")
+	)
+	(wire
+		(pts
 			(xy 168.91 153.67) (xy 170.18 153.67)
 		)
 		(stroke
@@ -5797,16 +5930,6 @@
 	)
 	(wire
 		(pts
-			(xy 43.18 146.05) (xy 43.18 152.4)
-		)
-		(stroke
-			(width 0)
-			(type default)
-		)
-		(uuid "0df452ed-2124-44e8-86f9-99fd49368cda")
-	)
-	(wire
-		(pts
 			(xy 59.69 104.14) (xy 59.69 102.87)
 		)
 		(stroke
@@ -5827,13 +5950,13 @@
 	)
 	(wire
 		(pts
-			(xy 49.53 137.16) (xy 59.69 137.16)
+			(xy 69.85 139.7) (xy 68.58 139.7)
 		)
 		(stroke
 			(width 0)
 			(type default)
 		)
-		(uuid "11d836a9-aab2-4d78-b252-d70ae06d215d")
+		(uuid "0f3afbe5-5197-4c07-93ce-60d77a440ad7")
 	)
 	(wire
 		(pts
@@ -6106,6 +6229,16 @@
 			(type default)
 		)
 		(uuid "25de7029-d0fd-4cdc-9209-8297fa8ab4fe")
+	)
+	(wire
+		(pts
+			(xy 60.96 153.67) (xy 60.96 152.4)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "263b2b66-823f-488a-b423-5b8eefae85ce")
 	)
 	(wire
 		(pts
@@ -6869,16 +7002,6 @@
 	)
 	(wire
 		(pts
-			(xy 49.53 133.35) (xy 49.53 137.16)
-		)
-		(stroke
-			(width 0)
-			(type default)
-		)
-		(uuid "584148e8-9d0d-4c38-9278-724d1f1eca9d")
-	)
-	(wire
-		(pts
 			(xy 106.68 236.22) (xy 106.68 233.68)
 		)
 		(stroke
@@ -6936,16 +7059,6 @@
 			(type default)
 		)
 		(uuid "5e73e401-d3eb-4f1c-a36e-a3c7d5be7a98")
-	)
-	(wire
-		(pts
-			(xy 62.23 133.35) (xy 62.23 134.62)
-		)
-		(stroke
-			(width 0)
-			(type default)
-		)
-		(uuid "5fd149fa-1439-4ac5-97c2-f5dc6df58cdc")
 	)
 	(wire
 		(pts
@@ -7018,16 +7131,6 @@
 			(type default)
 		)
 		(uuid "635254c2-a18e-4801-a22d-9f9ad92c35a2")
-	)
-	(wire
-		(pts
-			(xy 55.88 146.05) (xy 55.88 152.4)
-		)
-		(stroke
-			(width 0)
-			(type default)
-		)
-		(uuid "648eb16f-6cdf-4f96-86de-c3f0ab0759f7")
 	)
 	(wire
 		(pts
@@ -7473,16 +7576,6 @@
 		)
 		(uuid "7fa87232-eaf7-4338-a49e-ad3fe58a014d")
 	)
-	(wire
-		(pts
-			(xy 74.93 137.16) (xy 76.2 137.16)
-		)
-		(stroke
-			(width 0)
-			(type default)
-		)
-		(uuid "8046d8e0-6099-487c-bf83-ea46b138dc86")
-	)
 	(polyline
 		(pts
 			(xy 22.86 33.02) (xy 53.34 33.02)
@@ -7523,16 +7616,6 @@
 			(type default)
 		)
 		(uuid "815dadc1-5c03-4ee4-9312-1aea549fed77")
-	)
-	(wire
-		(pts
-			(xy 64.77 137.16) (xy 74.93 137.16)
-		)
-		(stroke
-			(width 0)
-			(type default)
-		)
-		(uuid "8172aee8-19a0-4181-8ef8-ea01b9a330f2")
 	)
 	(wire
 		(pts
@@ -7614,16 +7697,6 @@
 			(type default)
 		)
 		(uuid "8c250069-5aea-4eb3-990a-774324469de3")
-	)
-	(wire
-		(pts
-			(xy 43.18 142.24) (xy 49.53 142.24)
-		)
-		(stroke
-			(width 0)
-			(type default)
-		)
-		(uuid "8c7a5680-ad10-4b1b-a3bb-7f1629f77be2")
 	)
 	(polyline
 		(pts
@@ -7798,16 +7871,6 @@
 	)
 	(wire
 		(pts
-			(xy 74.93 133.35) (xy 74.93 137.16)
-		)
-		(stroke
-			(width 0)
-			(type default)
-		)
-		(uuid "95c21780-c410-43ba-9e2e-e03808f1f140")
-	)
-	(wire
-		(pts
 			(xy 171.45 105.41) (xy 172.72 105.41)
 		)
 		(stroke
@@ -7925,6 +7988,16 @@
 			(type default)
 		)
 		(uuid "9b379265-301e-4b54-b142-bee39c39baeb")
+	)
+	(wire
+		(pts
+			(xy 43.18 152.4) (xy 43.18 139.7)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "9b6ba7b6-1261-44e7-af0d-ee3bfaa33139")
 	)
 	(wire
 		(pts
@@ -8304,16 +8377,6 @@
 	)
 	(wire
 		(pts
-			(xy 49.53 137.16) (xy 49.53 142.24)
-		)
-		(stroke
-			(width 0)
-			(type default)
-		)
-		(uuid "b8f1da0d-301c-4eb5-a8f5-893f940224dd")
-	)
-	(wire
-		(pts
 			(xy 182.88 156.21) (xy 182.88 153.67)
 		)
 		(stroke
@@ -8452,16 +8515,6 @@
 			(type default)
 		)
 		(uuid "c41ae299-9309-47af-b0e5-c22007c2749c")
-	)
-	(wire
-		(pts
-			(xy 58.42 152.4) (xy 55.88 152.4)
-		)
-		(stroke
-			(width 0)
-			(type default)
-		)
-		(uuid "c489a624-f51b-4fab-887a-4bd7e6298164")
 	)
 	(wire
 		(pts
@@ -8605,6 +8658,16 @@
 	)
 	(wire
 		(pts
+			(xy 52.07 139.7) (xy 53.34 139.7)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "cc024634-ae17-4c24-8bbd-37b2919ddee7")
+	)
+	(wire
+		(pts
 			(xy 106.68 233.68) (xy 121.92 233.68)
 		)
 		(stroke
@@ -8715,13 +8778,13 @@
 	)
 	(wire
 		(pts
-			(xy 43.18 146.05) (xy 43.18 142.24)
+			(xy 72.39 139.7) (xy 69.85 139.7)
 		)
 		(stroke
 			(width 0)
 			(type default)
 		)
-		(uuid "d4ef601e-23a9-499c-8ad7-2a370146754d")
+		(uuid "d323d0d5-4ad4-43bb-8e58-3fe000503266")
 	)
 	(wire
 		(pts
@@ -8886,6 +8949,16 @@
 	)
 	(wire
 		(pts
+			(xy 69.85 152.4) (xy 60.96 152.4)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "dea5281a-c0f9-42f8-b348-6081c6ed9524")
+	)
+	(wire
+		(pts
 			(xy 182.88 130.81) (xy 185.42 130.81)
 		)
 		(stroke
@@ -8914,6 +8987,16 @@
 			(color 0 0 0 1)
 		)
 		(uuid "e18a94fa-4e3d-48f4-8059-ca37f81b1b92")
+	)
+	(wire
+		(pts
+			(xy 60.96 152.4) (xy 60.96 147.32)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "e1e45e94-6a6f-46b0-89a9-63d7a8eace59")
 	)
 	(wire
 		(pts
@@ -9046,6 +9129,16 @@
 			(type default)
 		)
 		(uuid "edd88218-c32d-4a18-a79f-c96fd0c22930")
+	)
+	(wire
+		(pts
+			(xy 60.96 152.4) (xy 52.07 152.4)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "ee35efde-3d77-49df-a24c-c700028c2fd0")
 	)
 	(wire
 		(pts
@@ -9557,22 +9650,22 @@
 	)
 	(global_label "GND"
 		(shape passive)
-		(at 76.2 137.16 0)
+		(at 60.96 153.67 270)
 		(fields_autoplaced yes)
 		(effects
 			(font
 				(size 1.27 1.27)
 			)
-			(justify left)
+			(justify right)
 		)
 		(uuid "1d9d5caf-c9dd-4e5a-930b-8e9239b59c34")
 		(property "Intersheetrefs" "${INTERSHEET_REFS}"
-			(at 81.9444 137.16 0)
+			(at 60.96 159.4144 90)
 			(effects
 				(font
 					(size 1.27 1.27)
 				)
-				(justify left)
+				(justify right)
 				(hide yes)
 			)
 		)
@@ -10723,28 +10816,6 @@
 	)
 	(global_label "GND"
 		(shape passive)
-		(at 58.42 152.4 0)
-		(fields_autoplaced yes)
-		(effects
-			(font
-				(size 1.27 1.27)
-			)
-			(justify left)
-		)
-		(uuid "b6a9493f-94c6-42cf-b8a5-d3cb2fd3b0de")
-		(property "Intersheetrefs" "${INTERSHEET_REFS}"
-			(at 64.1644 152.4 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(justify left)
-				(hide yes)
-			)
-		)
-	)
-	(global_label "GND"
-		(shape passive)
 		(at 276.86 62.23 90)
 		(fields_autoplaced yes)
 		(effects
@@ -10921,22 +10992,22 @@
 	)
 	(global_label "AVCC12"
 		(shape passive)
-		(at 36.83 137.16 180)
+		(at 72.39 139.7 0)
 		(fields_autoplaced yes)
 		(effects
 			(font
 				(size 1.27 1.27)
 			)
-			(justify right)
+			(justify left)
 		)
 		(uuid "d3e8ef5a-ada0-485a-b1f4-725513043d99")
 		(property "Intersheetrefs" "${INTERSHEET_REFS}"
-			(at 27.8199 137.16 0)
+			(at 81.4001 139.7 0)
 			(effects
 				(font
 					(size 1.27 1.27)
 				)
-				(justify right)
+				(justify left)
 				(hide yes)
 			)
 		)
@@ -11688,74 +11759,6 @@
 			(project "eva"
 				(path "/ab605654-a730-497b-9e09-9b351f74b935/d12fc3f7-914a-41f9-b933-632d1b3e89f3"
 					(reference "C66")
-					(unit 1)
-				)
-			)
-		)
-	)
-	(symbol
-		(lib_id "eva-altium-import:Sheet2_0_RESCHIP")
-		(at 74.93 133.35 180)
-		(unit 1)
-		(exclude_from_sim no)
-		(in_bom yes)
-		(on_board yes)
-		(dnp no)
-		(uuid "0ae54330-a4fa-4a00-9a93-43e3e58ce4c2")
-		(property "Reference" "R224"
-			(at 66.294 135.128 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(justify right bottom)
-			)
-		)
-		(property "Value" "10K"
-			(at 68.58 133.35 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
-		(property "Footprint" "R-CHIP"
-			(at 74.93 133.35 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(hide yes)
-			)
-		)
-		(property "Datasheet" ""
-			(at 74.93 133.35 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(hide yes)
-			)
-		)
-		(property "Description" "RESCHIP"
-			(at 74.93 133.35 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(hide yes)
-			)
-		)
-		(pin "2"
-			(uuid "4f340d78-fb38-4e2c-8642-80fc18498694")
-		)
-		(pin "1"
-			(uuid "9d4b3c74-9082-4e8b-bfd5-a734bff970c2")
-		)
-		(instances
-			(project "eva"
-				(path "/ab605654-a730-497b-9e09-9b351f74b935/d12fc3f7-914a-41f9-b933-632d1b3e89f3"
-					(reference "R224")
 					(unit 1)
 				)
 			)
@@ -13519,6 +13522,79 @@
 		)
 	)
 	(symbol
+		(lib_id "Regulator_Linear:L78L05_SOT89")
+		(at 60.96 139.7 0)
+		(mirror y)
+		(unit 1)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(dnp no)
+		(fields_autoplaced yes)
+		(uuid "4538334c-888e-4b16-80d1-020031bff63b")
+		(property "Reference" "DA16"
+			(at 60.96 133.35 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Value" "78L05"
+			(at 60.96 135.89 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Footprint" "Package_TO_SOT_SMD:SOT-89-3"
+			(at 60.96 134.62 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+					(italic yes)
+				)
+				(hide yes)
+			)
+		)
+		(property "Datasheet" "http://www.st.com/content/ccc/resource/technical/document/datasheet/15/55/e5/aa/23/5b/43/fd/CD00000446.pdf/files/CD00000446.pdf/jcr:content/translations/en.CD00000446.pdf"
+			(at 60.96 140.97 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Description" "Positive 100mA 30V Linear Regulator, Fixed Output 5V, SOT-89"
+			(at 60.96 139.7 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(pin "3"
+			(uuid "e16a592f-99d4-4e30-b352-263c16089bc1")
+		)
+		(pin "2"
+			(uuid "39c53510-2673-4df8-8bc3-edbad3ff0bae")
+		)
+		(pin "1"
+			(uuid "f85288b4-23bb-4ebc-b7ab-78621a39c98b")
+		)
+		(instances
+			(project "eva"
+				(path "/ab605654-a730-497b-9e09-9b351f74b935/d12fc3f7-914a-41f9-b933-632d1b3e89f3"
+					(reference "DA16")
+					(unit 1)
+				)
+			)
+		)
+	)
+	(symbol
 		(lib_id "eva-altium-import:Sheet2_3_CAPCHIP")
 		(at 184.15 36.83 270)
 		(unit 1)
@@ -14011,75 +14087,6 @@
 			(project "eva"
 				(path "/ab605654-a730-497b-9e09-9b351f74b935/d12fc3f7-914a-41f9-b933-632d1b3e89f3"
 					(reference "R141")
-					(unit 1)
-				)
-			)
-		)
-	)
-	(symbol
-		(lib_id "eva-altium-import:Sheet2_0_ECAPCHIP")
-		(at 43.18 146.05 0)
-		(unit 1)
-		(exclude_from_sim no)
-		(in_bom yes)
-		(on_board yes)
-		(dnp no)
-		(uuid "4d9136ec-1b1b-4338-a220-08e3ad356e51")
-		(property "Reference" "C165"
-			(at 48.26 145.415 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(justify right bottom)
-			)
-		)
-		(property "Value" "10uF"
-			(at 50.8 146.685 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(justify left top)
-			)
-		)
-		(property "Footprint" "EC-CHIP"
-			(at 43.18 146.05 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(hide yes)
-			)
-		)
-		(property "Datasheet" ""
-			(at 43.18 146.05 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(hide yes)
-			)
-		)
-		(property "Description" "ECAPCHIP"
-			(at 43.18 146.05 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(hide yes)
-			)
-		)
-		(pin "2"
-			(uuid "8e2cdd25-098b-40c9-8281-5abcbcdf7f29")
-		)
-		(pin "1"
-			(uuid "3e56fcaf-d2cc-4566-8a29-c6c2eb34f3f3")
-		)
-		(instances
-			(project "eva"
-				(path "/ab605654-a730-497b-9e09-9b351f74b935/d12fc3f7-914a-41f9-b933-632d1b3e89f3"
-					(reference "C165")
 					(unit 1)
 				)
 			)
@@ -14741,74 +14748,6 @@
 				(path "/ab605654-a730-497b-9e09-9b351f74b935/d12fc3f7-914a-41f9-b933-632d1b3e89f3"
 					(reference "DA10")
 					(unit 2)
-				)
-			)
-		)
-	)
-	(symbol
-		(lib_id "eva-altium-import:Sheet2_0_RESCHIP")
-		(at 49.53 137.16 180)
-		(unit 1)
-		(exclude_from_sim no)
-		(in_bom yes)
-		(on_board yes)
-		(dnp no)
-		(uuid "5aec508a-fd43-4821-8050-67867c672a5b")
-		(property "Reference" "R227"
-			(at 40.894 138.938 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(justify right bottom)
-			)
-		)
-		(property "Value" "2K"
-			(at 43.18 137.16 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
-		(property "Footprint" "R-CHIP"
-			(at 49.53 137.16 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(hide yes)
-			)
-		)
-		(property "Datasheet" ""
-			(at 49.53 137.16 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(hide yes)
-			)
-		)
-		(property "Description" "RESCHIP"
-			(at 49.53 137.16 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(hide yes)
-			)
-		)
-		(pin "2"
-			(uuid "0eba5c64-b4db-466e-805e-935045f610fd")
-		)
-		(pin "1"
-			(uuid "96f850b2-f1a4-4b5d-b9f5-a14ed9b067e9")
-		)
-		(instances
-			(project "eva"
-				(path "/ab605654-a730-497b-9e09-9b351f74b935/d12fc3f7-914a-41f9-b933-632d1b3e89f3"
-					(reference "R227")
-					(unit 1)
 				)
 			)
 		)
@@ -15839,6 +15778,75 @@
 		)
 	)
 	(symbol
+		(lib_id "eva-altium-import:Sheet2_0_CAPCHIP")
+		(at 69.85 139.7 270)
+		(unit 1)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(dnp no)
+		(uuid "6b83ee22-4abc-4fa6-82de-a7d0d086cf12")
+		(property "Reference" "C165"
+			(at 70.612 145.288 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify right bottom)
+			)
+		)
+		(property "Value" "0.1uF"
+			(at 69.342 147.066 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left top)
+			)
+		)
+		(property "Footprint" "C-CHIP"
+			(at 69.85 139.7 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Datasheet" ""
+			(at 69.85 139.7 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Description" "CAPCHIP"
+			(at 69.85 139.7 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(pin "2"
+			(uuid "69ba591d-9516-461e-82f5-a0c7f4508902")
+		)
+		(pin "1"
+			(uuid "4d3d1e2f-8817-4458-ba9e-2a35b15bcd32")
+		)
+		(instances
+			(project "eva"
+				(path "/ab605654-a730-497b-9e09-9b351f74b935/d12fc3f7-914a-41f9-b933-632d1b3e89f3"
+					(reference "C165")
+					(unit 1)
+				)
+			)
+		)
+	)
+	(symbol
 		(lib_id "eva-altium-import:Sheet2_0_RESCHIP")
 		(at 119.38 259.08 0)
 		(mirror y)
@@ -16764,81 +16772,6 @@
 			(project "eva"
 				(path "/ab605654-a730-497b-9e09-9b351f74b935/d12fc3f7-914a-41f9-b933-632d1b3e89f3"
 					(reference "D31")
-					(unit 1)
-				)
-			)
-		)
-	)
-	(symbol
-		(lib_id "Reference_Voltage:TL431DBZ")
-		(at 62.23 137.16 0)
-		(mirror y)
-		(unit 1)
-		(exclude_from_sim no)
-		(in_bom yes)
-		(on_board yes)
-		(dnp no)
-		(uuid "99a1942e-a198-443a-81f3-c6fc30145b42")
-		(property "Reference" "DA16"
-			(at 55.372 138.684 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(justify right)
-			)
-		)
-		(property "Value" "TL431"
-			(at 64.008 138.684 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(justify right)
-			)
-		)
-		(property "Footprint" "Package_TO_SOT_SMD:SOT-23_Handsoldering"
-			(at 62.23 141.986 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-					(italic yes)
-				)
-				(hide yes)
-			)
-		)
-		(property "Datasheet" "http://www.ti.com/lit/ds/symlink/tl431.pdf"
-			(at 60.452 146.304 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-					(italic yes)
-				)
-				(hide yes)
-			)
-		)
-		(property "Description" "Shunt Regulator, SOT-23"
-			(at 62.23 144.272 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(hide yes)
-			)
-		)
-		(pin "1"
-			(uuid "da9ab02e-6480-4e50-987a-e745fffec962")
-		)
-		(pin "2"
-			(uuid "03ab336b-9058-4341-8a29-e36d296c0af8")
-		)
-		(pin "3"
-			(uuid "0cd085f0-9a4f-4c4a-9078-e397702e7a96")
-		)
-		(instances
-			(project "eva"
-				(path "/ab605654-a730-497b-9e09-9b351f74b935/d12fc3f7-914a-41f9-b933-632d1b3e89f3"
-					(reference "DA16")
 					(unit 1)
 				)
 			)
@@ -17896,7 +17829,8 @@
 	)
 	(symbol
 		(lib_id "eva-altium-import:Sheet2_0_CAPCHIP")
-		(at 55.88 152.4 180)
+		(at 52.07 139.7 90)
+		(mirror x)
 		(unit 1)
 		(exclude_from_sim no)
 		(in_bom yes)
@@ -17904,7 +17838,7 @@
 		(dnp no)
 		(uuid "c3cb3b9b-0c7b-46c9-8945-dafd6debf688")
 		(property "Reference" "C12"
-			(at 50.292 153.162 0)
+			(at 51.308 145.288 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -17913,7 +17847,7 @@
 			)
 		)
 		(property "Value" "0.1uF"
-			(at 48.514 151.892 0)
+			(at 52.578 147.066 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -17922,7 +17856,7 @@
 			)
 		)
 		(property "Footprint" "C-CHIP"
-			(at 55.88 152.4 0)
+			(at 52.07 139.7 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -17931,7 +17865,7 @@
 			)
 		)
 		(property "Datasheet" ""
-			(at 55.88 152.4 0)
+			(at 52.07 139.7 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -17940,7 +17874,7 @@
 			)
 		)
 		(property "Description" "CAPCHIP"
-			(at 55.88 152.4 0)
+			(at 52.07 139.7 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -18661,74 +18595,6 @@
 			(project "eva"
 				(path "/ab605654-a730-497b-9e09-9b351f74b935/d12fc3f7-914a-41f9-b933-632d1b3e89f3"
 					(reference "R108")
-					(unit 1)
-				)
-			)
-		)
-	)
-	(symbol
-		(lib_id "eva-altium-import:Sheet2_0_RESCHIP")
-		(at 62.23 133.35 180)
-		(unit 1)
-		(exclude_from_sim no)
-		(in_bom yes)
-		(on_board yes)
-		(dnp no)
-		(uuid "d7e4abb7-9d51-4f06-96fd-b9992c944e9d")
-		(property "Reference" "R225"
-			(at 53.594 135.128 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(justify right bottom)
-			)
-		)
-		(property "Value" "10K"
-			(at 55.88 133.35 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
-		(property "Footprint" "R-CHIP"
-			(at 62.23 133.35 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(hide yes)
-			)
-		)
-		(property "Datasheet" ""
-			(at 62.23 133.35 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(hide yes)
-			)
-		)
-		(property "Description" "RESCHIP"
-			(at 62.23 133.35 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(hide yes)
-			)
-		)
-		(pin "2"
-			(uuid "6d0a0edc-7b54-418c-8366-918124c8c90e")
-		)
-		(pin "1"
-			(uuid "7d5f7b56-efdb-4795-ad12-ca19f39f583e")
-		)
-		(instances
-			(project "eva"
-				(path "/ab605654-a730-497b-9e09-9b351f74b935/d12fc3f7-914a-41f9-b933-632d1b3e89f3"
-					(reference "R225")
 					(unit 1)
 				)
 			)
