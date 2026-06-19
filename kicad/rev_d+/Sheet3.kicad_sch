@@ -1322,7 +1322,7 @@
 			)
 			(embedded_fonts no)
 		)
-		(symbol "Regulator_Linear:L78L05_SOT89"
+		(symbol "Regulator_Linear:KA78M05_TO252"
 			(pin_names
 				(offset 0.254)
 			)
@@ -1337,8 +1337,8 @@
 					)
 				)
 			)
-			(property "Value" "L78L05_SOT89"
-				(at -0.635 3.175 0)
+			(property "Value" "KA78M05_TO252"
+				(at 0 3.175 0)
 				(effects
 					(font
 						(size 1.27 1.27)
@@ -1346,8 +1346,8 @@
 					(justify left)
 				)
 			)
-			(property "Footprint" "Package_TO_SOT_SMD:SOT-89-3"
-				(at 0 5.08 0)
+			(property "Footprint" "Package_TO_SOT_SMD:TO-252-2"
+				(at 0 5.715 0)
 				(effects
 					(font
 						(size 1.27 1.27)
@@ -1356,7 +1356,7 @@
 					(hide yes)
 				)
 			)
-			(property "Datasheet" "http://www.st.com/content/ccc/resource/technical/document/datasheet/15/55/e5/aa/23/5b/43/fd/CD00000446.pdf/files/CD00000446.pdf/jcr:content/translations/en.CD00000446.pdf"
+			(property "Datasheet" "https://www.onsemi.com/pub/Collateral/MC78M00-D.PDF"
 				(at 0 -1.27 0)
 				(effects
 					(font
@@ -1365,7 +1365,7 @@
 					(hide yes)
 				)
 			)
-			(property "Description" "Positive 100mA 30V Linear Regulator, Fixed Output 5V, SOT-89"
+			(property "Description" "Positive 500mA 35V Linear Regulator, Fixed Output 5V, TO-252 (D-PAK)"
 				(at 0 0 0)
 				(effects
 					(font
@@ -1374,7 +1374,7 @@
 					(hide yes)
 				)
 			)
-			(property "ki_keywords" "Voltage Regulator 100mA Positive"
+			(property "ki_keywords" "Voltage Regulator 500mA Positive"
 				(at 0 0 0)
 				(effects
 					(font
@@ -1383,7 +1383,7 @@
 					(hide yes)
 				)
 			)
-			(property "ki_fp_filters" "SOT?89*"
+			(property "ki_fp_filters" "TO?252*"
 				(at 0 0 0)
 				(effects
 					(font
@@ -1392,7 +1392,7 @@
 					(hide yes)
 				)
 			)
-			(symbol "L78L05_SOT89_0_1"
+			(symbol "KA78M05_TO252_0_1"
 				(rectangle
 					(start -5.08 1.905)
 					(end 5.08 -5.08)
@@ -1405,18 +1405,18 @@
 					)
 				)
 			)
-			(symbol "L78L05_SOT89_1_1"
+			(symbol "KA78M05_TO252_1_1"
 				(pin power_in line
 					(at -7.62 0 0)
 					(length 2.54)
-					(name "IN"
+					(name "VI"
 						(effects
 							(font
 								(size 1.27 1.27)
 							)
 						)
 					)
-					(number "3"
+					(number "1"
 						(effects
 							(font
 								(size 1.27 1.27)
@@ -1445,14 +1445,14 @@
 				(pin power_out line
 					(at 7.62 0 180)
 					(length 2.54)
-					(name "OUT"
+					(name "VO"
 						(effects
 							(font
 								(size 1.27 1.27)
 							)
 						)
 					)
-					(number "1"
+					(number "3"
 						(effects
 							(font
 								(size 1.27 1.27)
@@ -4887,7 +4887,7 @@
 		)
 		(uuid "d1ed2124-12ea-4995-9e7d-84847a67b603")
 	)
-	(text "DA1, DA10, DA12, DA13:\nTLV9162\nOPA2192"
+	(text "DA1, DA10, DA12, DA13:\nOPA1688\nTLV9162\nOPA2192"
 		(exclude_from_sim no)
 		(at 62.865 35.56 0)
 		(effects
@@ -6182,6 +6182,16 @@
 	)
 	(wire
 		(pts
+			(xy 69.85 129.54) (xy 69.85 139.7)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "225d1dd9-f445-420b-a54e-ca4a370d1045")
+	)
+	(wire
+		(pts
 			(xy 121.92 259.08) (xy 121.92 261.62)
 		)
 		(stroke
@@ -6908,6 +6918,16 @@
 			(color 0 0 0 1)
 		)
 		(uuid "4e09afc1-c171-4bb9-99fe-3976f410eacb")
+	)
+	(wire
+		(pts
+			(xy 52.07 129.54) (xy 52.07 139.7)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "4fb459b3-9b31-431c-a7e0-83f71c8a2341")
 	)
 	(wire
 		(pts
@@ -8287,6 +8307,16 @@
 	)
 	(wire
 		(pts
+			(xy 64.77 129.54) (xy 69.85 129.54)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "b15e3cc3-a91b-4bb0-af69-2894ec326c18")
+	)
+	(wire
+		(pts
 			(xy 171.45 53.34) (xy 171.45 54.61)
 		)
 		(stroke
@@ -9129,6 +9159,16 @@
 			(type default)
 		)
 		(uuid "edd88218-c32d-4a18-a79f-c96fd0c22930")
+	)
+	(wire
+		(pts
+			(xy 57.15 129.54) (xy 52.07 129.54)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "ee0277dd-a876-4199-882a-0a038d8a75e5")
 	)
 	(wire
 		(pts
@@ -11294,7 +11334,7 @@
 				(justify left)
 			)
 		)
-		(property "Value" "TLV9162"
+		(property "Value" "OPA1688"
 			(at 48.768 120.142 0)
 			(effects
 				(font
@@ -12039,6 +12079,91 @@
 		)
 	)
 	(symbol
+		(lib_id "Diode:US1A")
+		(at 60.96 129.54 180)
+		(unit 1)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(dnp no)
+		(uuid "12803d1d-f3bd-4d04-94fb-6bb218e77086")
+		(property "Reference" "VD30"
+			(at 56.134 130.81 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Value" "S1A"
+			(at 65.786 130.81 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Footprint" "Diode_SMD:D_SMA"
+			(at 60.96 125.095 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Datasheet" "https://www.diodes.com/assets/Datasheets/ds16008.pdf"
+			(at 60.96 129.54 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Description" "50V, 1A, General Purpose Rectifier Diode, SMA(DO-214AC)"
+			(at 60.96 129.54 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Sim.Device" "D"
+			(at 60.96 129.54 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Sim.Pins" "1=K 2=A"
+			(at 60.96 129.54 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(pin "1"
+			(uuid "8b1fbfa3-d437-407e-ae9a-cd0889527644")
+		)
+		(pin "2"
+			(uuid "c3cddf11-f510-494c-9d25-7a4feb6e1348")
+		)
+		(instances
+			(project "eva"
+				(path "/ab605654-a730-497b-9e09-9b351f74b935/d12fc3f7-914a-41f9-b933-632d1b3e89f3"
+					(reference "VD30")
+					(unit 1)
+				)
+			)
+		)
+	)
+	(symbol
 		(lib_id "eva-altium-import:Sheet2_3_RESCHIP")
 		(at 262.89 220.98 0)
 		(unit 1)
@@ -12262,7 +12387,7 @@
 				)
 			)
 		)
-		(property "Value" "TLV9162"
+		(property "Value" "OPA1688"
 			(at 251.46 83.058 0)
 			(effects
 				(font
@@ -12759,7 +12884,7 @@
 				)
 			)
 		)
-		(property "Value" "TLV9162"
+		(property "Value" "OPA1688"
 			(at 119.126 66.802 0)
 			(effects
 				(font
@@ -13024,7 +13149,7 @@
 				)
 			)
 		)
-		(property "Value" "TLV9162"
+		(property "Value" "OPA1688"
 			(at 251.714 79.502 0)
 			(effects
 				(font
@@ -13109,7 +13234,7 @@
 				)
 			)
 		)
-		(property "Value" "TLV9162"
+		(property "Value" "OPA1688"
 			(at 212.09 164.338 0)
 			(effects
 				(font
@@ -13516,79 +13641,6 @@
 			(project "eva"
 				(path "/ab605654-a730-497b-9e09-9b351f74b935/d12fc3f7-914a-41f9-b933-632d1b3e89f3"
 					(reference "R119")
-					(unit 1)
-				)
-			)
-		)
-	)
-	(symbol
-		(lib_id "Regulator_Linear:L78L05_SOT89")
-		(at 60.96 139.7 0)
-		(mirror y)
-		(unit 1)
-		(exclude_from_sim no)
-		(in_bom yes)
-		(on_board yes)
-		(dnp no)
-		(fields_autoplaced yes)
-		(uuid "4538334c-888e-4b16-80d1-020031bff63b")
-		(property "Reference" "DA16"
-			(at 60.96 133.35 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
-		(property "Value" "78L05"
-			(at 60.96 135.89 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
-		(property "Footprint" "Package_TO_SOT_SMD:SOT-89-3"
-			(at 60.96 134.62 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-					(italic yes)
-				)
-				(hide yes)
-			)
-		)
-		(property "Datasheet" "http://www.st.com/content/ccc/resource/technical/document/datasheet/15/55/e5/aa/23/5b/43/fd/CD00000446.pdf/files/CD00000446.pdf/jcr:content/translations/en.CD00000446.pdf"
-			(at 60.96 140.97 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(hide yes)
-			)
-		)
-		(property "Description" "Positive 100mA 30V Linear Regulator, Fixed Output 5V, SOT-89"
-			(at 60.96 139.7 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(hide yes)
-			)
-		)
-		(pin "3"
-			(uuid "e16a592f-99d4-4e30-b352-263c16089bc1")
-		)
-		(pin "2"
-			(uuid "39c53510-2673-4df8-8bc3-edbad3ff0bae")
-		)
-		(pin "1"
-			(uuid "f85288b4-23bb-4ebc-b7ab-78621a39c98b")
-		)
-		(instances
-			(project "eva"
-				(path "/ab605654-a730-497b-9e09-9b351f74b935/d12fc3f7-914a-41f9-b933-632d1b3e89f3"
-					(reference "DA16")
 					(unit 1)
 				)
 			)
@@ -14598,7 +14650,7 @@
 				(justify left)
 			)
 		)
-		(property "Value" "TLV9162"
+		(property "Value" "OPA1688"
 			(at 88.9 111.7599 0)
 			(effects
 				(font
@@ -14684,7 +14736,7 @@
 				)
 			)
 		)
-		(property "Value" "TLV9162"
+		(property "Value" "OPA1688"
 			(at 124.206 102.362 0)
 			(effects
 				(font
@@ -15709,7 +15761,7 @@
 				)
 			)
 		)
-		(property "Value" "TLV9162"
+		(property "Value" "OPA1688"
 			(at 118.872 54.102 0)
 			(effects
 				(font
@@ -16225,7 +16277,7 @@
 				)
 			)
 		)
-		(property "Value" "TLV9162"
+		(property "Value" "OPA1688"
 			(at 121.412 155.702 0)
 			(effects
 				(font
@@ -17691,6 +17743,79 @@
 		)
 	)
 	(symbol
+		(lib_id "Regulator_Linear:KA78M05_TO252")
+		(at 60.96 139.7 0)
+		(mirror y)
+		(unit 1)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(dnp no)
+		(fields_autoplaced yes)
+		(uuid "c1a925fb-b223-48af-aaf5-393f5b37b7b6")
+		(property "Reference" "DA16"
+			(at 60.96 133.35 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Value" "78M05_TO252"
+			(at 60.96 135.89 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Footprint" "Package_TO_SOT_SMD:TO-252-2"
+			(at 60.96 133.985 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+					(italic yes)
+				)
+				(hide yes)
+			)
+		)
+		(property "Datasheet" "https://www.onsemi.com/pub/Collateral/MC78M00-D.PDF"
+			(at 60.96 140.97 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Description" "Positive 500mA 35V Linear Regulator, Fixed Output 5V, TO-252 (D-PAK)"
+			(at 60.96 139.7 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(pin "2"
+			(uuid "76310f4f-8398-4c2c-b22f-ee1f70da505c")
+		)
+		(pin "1"
+			(uuid "730bc3db-393c-4118-890b-205332ea5d28")
+		)
+		(pin "3"
+			(uuid "efdc7c16-a7dc-43ff-bf33-3d9864726707")
+		)
+		(instances
+			(project "eva"
+				(path "/ab605654-a730-497b-9e09-9b351f74b935/d12fc3f7-914a-41f9-b933-632d1b3e89f3"
+					(reference "DA16")
+					(unit 1)
+				)
+			)
+		)
+	)
+	(symbol
 		(lib_id "eva-altium-import:Sheet2_3_RESCHIP")
 		(at 182.88 166.37 270)
 		(unit 1)
@@ -18464,7 +18589,7 @@
 				)
 			)
 		)
-		(property "Value" "TLV9162"
+		(property "Value" "OPA1688"
 			(at 210.058 211.328 0)
 			(effects
 				(font
@@ -19684,7 +19809,7 @@
 				(justify left)
 			)
 		)
-		(property "Value" "TLV9162"
+		(property "Value" "OPA1688"
 			(at 30.48 119.888 0)
 			(effects
 				(font
@@ -19839,7 +19964,7 @@
 				(justify left)
 			)
 		)
-		(property "Value" "TLV9162"
+		(property "Value" "OPA1688"
 			(at 60.96 119.888 0)
 			(effects
 				(font
