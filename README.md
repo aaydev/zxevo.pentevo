@@ -8,7 +8,13 @@
 
 - - -
 
-[![zxevo rev.C](%D0%9A%D0%BE%D0%BC%D0%BF%D1%8C%D1%8E%D1%82%D0%B5%D1%80-%D0%BA%D0%BE%D0%BD%D1%81%D1%82%D1%80%D1%83%D0%BA%D1%82%D0%BE%D1%80%20ZX%20Evolution_files/zxevo_sm_top_c.jpg)](http://nedopc.com/zxevo/zxevo_top_c.jpg) [![zxevo rev.C](%D0%9A%D0%BE%D0%BC%D0%BF%D1%8C%D1%8E%D1%82%D0%B5%D1%80-%D0%BA%D0%BE%D0%BD%D1%81%D1%82%D1%80%D1%83%D0%BA%D1%82%D0%BE%D1%80%20ZX%20Evolution_files/zxevo_sm_bot_c.jpg)](http://nedopc.com/zxevo/zxevo_bot_c.jpg) [![zxevo rev.C](%D0%9A%D0%BE%D0%BC%D0%BF%D1%8C%D1%8E%D1%82%D0%B5%D1%80-%D0%BA%D0%BE%D0%BD%D1%81%D1%82%D1%80%D1%83%D0%BA%D1%82%D0%BE%D1%80%20ZX%20Evolution_files/zxevo_sm_mnt_c.jpg)](http://nedopc.com/zxevo/zxevo_mnt_c.jpg) [![zxevo rev.C](%D0%9A%D0%BE%D0%BC%D0%BF%D1%8C%D1%8E%D1%82%D0%B5%D1%80-%D0%BA%D0%BE%D0%BD%D1%81%D1%82%D1%80%D1%83%D0%BA%D1%82%D0%BE%D1%80%20ZX%20Evolution_files/zxevo_sm_front_c.jpg)](http://nedopc.com/zxevo/zxevo_front_c.jpg)  
+[![zxevo rev.C](https://raw.githubusercontent.com/aaydev/zxevo.pentevo/main/photos/zxevo_top_c.jpg)](http://nedopc.com/zxevo/zxevo_top_c.jpg)
+
+[![zxevo rev.C](https://raw.githubusercontent.com/aaydev/zxevo.pentevo/main/photos/zxevo_bot_c.jpg)](http://nedopc.com/zxevo/zxevo_bot_c.jpg)
+
+[![zxevo rev.C](https://raw.githubusercontent.com/aaydev/zxevo.pentevo/main/photos/zxevo_mnt_c.jpg)](http://nedopc.com/zxevo/zxevo_mnt_c.jpg)
+
+[![zxevo rev.C](https://raw.githubusercontent.com/aaydev/zxevo.pentevo/main/photos/zxevo_front_c.jpg)](http://nedopc.com/zxevo/zxevo_front_c.jpg)
 
 Компьютер конструктор **ZX Evolution** является развитием Spectrum-совместимых компьютеров, но собран на современной элементной базе и под современную периферию.
 
