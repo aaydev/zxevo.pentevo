@@ -16,6 +16,7 @@
 #include <ctype.h>
 #include <string.h>
 #include <math.h>
+#include <float.h>
 #include <assert.h>
 
 #include "bpemu.h"
@@ -31,6 +32,7 @@
 #include "chartrans.h"
 #include "asmcode.h"
 #include "errmsg.h"
+#include "as_float.h"
 #include "aplfloat.h"
 
 #include "motpseudo.h"
@@ -77,18 +79,35 @@ static Boolean CutRep(tStrComp *pDest, const tStrComp *pSrc, LongInt *pErg, tSym
   }
 }
 
-static void PutByte(Byte Value, Boolean big_endian)
+static void PutByte(Byte Value, tSymbolFlags flags, Boolean big_endian)
 {
+  Word u = mFirstPassUnknownOrQuestionable(flags) ? 0xff : 0x00;
+
   if ((ListGran() == 1) || (!(CodeLen & 1)))
+  {
     BAsmCode[CodeLen] = Value;
-  else if (big_endian)
-    WAsmCode[CodeLen >> 1] = (((Word)BAsmCode[CodeLen -1]) << 8) | Value;
+    set_basmcode_guessed(CodeLen, 1, u);
+  }
   else
-    WAsmCode[CodeLen >> 1] = (((Word)Value) << 8) | BAsmCode[CodeLen -1];
+  {
+    Word last_value = BAsmCode[CodeLen - 1],
+         last_u = get_basmcode_guessed(CodeLen - 1);
+
+    if (big_endian)
+    {
+      WAsmCode[CodeLen >> 1] = (last_value << 8) | Value;
+      set_wasmcode_guessed(CodeLen >> 1, 1, (last_u << 8) | u);
+    }
+    else
+    {
+      WAsmCode[CodeLen >> 1] = (((Word)Value) << 8) | last_value;
+      set_wasmcode_guessed(CodeLen >> 1, 1, (u << 8) | last_u);
+    }
+  }
   CodeLen++;
 }
 
-void DecodeMotoBYT(Word big_endian)
+void DecodeMotoBYT(Word flags)
 {
   if (ChkArgCnt(1, ArgCntMax))
   {
@@ -155,7 +174,7 @@ void DecodeMotoBYT(Word big_endian)
               LongInt z2;
 
               for (z2 = 0; z2 < Rep; z2++)
-                PutByte(t.Contents.Int, big_endian);
+                PutByte(t.Contents.Int, t.Flags, !!(flags & e_moto_pseudo_flags_be));
             }
             break;
 
@@ -189,7 +208,7 @@ void DecodeMotoBYT(Word big_endian)
 
                 for (z2 = 0; z2 < Rep; z2++)
                   for (z3 = 0; z3 < l; z3++)
-                    PutByte(t.Contents.str.p_str[z3], big_endian);
+                    PutByte(t.Contents.str.p_str[z3], t.Flags, !!(flags & e_moto_pseudo_flags_be));
               }
             }
             break;
@@ -215,8 +234,9 @@ void DecodeMotoBYT(Word big_endian)
   }
 }
 
-static void PutADR(Word Value, Boolean big_endian)
+static void PutADR(Word Value, tSymbolFlags flags, Boolean big_endian)
 {
+  set_b_guessed(flags, CodeLen, 2, 0xff);
   if (ListGran() > 1)
   {
     WAsmCode[CodeLen >> 1] = Value;
@@ -234,7 +254,7 @@ static void PutADR(Word Value, Boolean big_endian)
   }
 }
 
-void DecodeMotoADR(Word big_endian)
+void DecodeMotoADR(Word flags)
 {
   if (ChkArgCnt(1, ArgCntMax))
   {
@@ -300,13 +320,13 @@ void DecodeMotoADR(Word big_endian)
             if (MultiCharToInt(&Res, 2))
               goto ToInt;
             if (as_chartrans_xlate_nonz_dynstr(CurrTransTable->p_table, &Res.Contents.str, &Arg))
-              Res.Typ = TempNone;
-            else
-              Cnt = Res.Contents.str.len;
+              goto none;
+            Cnt = Res.Contents.str.len;
             break;
           case TempFloat:
             WrStrErrorPos(ErrNum_StringOrIntButFloat, &Arg);
             /* fall-through */
+          none:
           default:
             Res.Typ = TempNone;
             Cnt = 0;
@@ -329,14 +349,14 @@ void DecodeMotoADR(Word big_endian)
           switch (Res.Typ)
           {
             case TempInt:
-              PutADR(Res.Contents.Int, big_endian);
+              PutADR(Res.Contents.Int, Res.Flags, !!(flags & e_moto_pseudo_flags_be));
               break;
             case TempString:
             {
               unsigned z3;
 
               for (z3 = 0; z3 < Res.Contents.str.len; z3++)
-                PutADR(Res.Contents.str.p_str[z3], big_endian);
+                PutADR(Res.Contents.str.p_str[z3], Res.Flags, !!(flags & e_moto_pseudo_flags_be));
               break;
             }
             default:
@@ -358,7 +378,7 @@ void DecodeMotoADR(Word big_endian)
   }
 }
 
-void DecodeMotoDCM(Word big_endian)
+void DecodeMotoDCM(Word flags)
 {
   if (ChkArgCnt(1, ArgCntMax))
   {
@@ -436,8 +456,8 @@ void DecodeMotoDCM(Word big_endian)
           break;
         }
 
-        ret = Double_2_apl4(Res.Contents.Float, buf);
-        if (!check_apl_fp_dispose_result(ret, &Arg))
+        ret = as_float_2_apl4(Res.Contents.Float, buf);
+        if (!asmerr_check_fp_dispose_result(ret, &Arg))
         {
           OK = False;
           break;
@@ -445,8 +465,8 @@ void DecodeMotoDCM(Word big_endian)
 
         for (z2 = 0; z2 < Rep; z2++)
         {
-          PutADR(buf[0], big_endian);
-          PutADR(buf[1], big_endian);
+          PutADR(buf[0], Res.Flags, !!(flags & e_moto_pseudo_flags_be));
+          PutADR(buf[1], Res.Flags, !!(flags & e_moto_pseudo_flags_be));
         }
         as_tempres_free(&Res);
       }
@@ -464,7 +484,7 @@ void DecodeMotoDCM(Word big_endian)
   }
 }
 
-static void DecodeFCC(Word big_endian)
+static void DecodeFCC(Word flags)
 {
   if (ChkArgCnt(1, ArgCntMax))
   {
@@ -512,7 +532,7 @@ static void DecodeFCC(Word big_endian)
 
               for (z2 = 0; z2 < Rep; z2++)
                 for (z3 = 0; z3 < l; z3++)
-                  PutByte(t.Contents.str.p_str[z3], big_endian);
+                  PutByte(t.Contents.str.p_str[z3], t.Flags, !!(flags & e_moto_pseudo_flags_be));
             }
           }
           break;
@@ -564,40 +584,28 @@ void DecodeMotoDFS(Word Index)
  * Global Functions
  *****************************************************************************/
 
-static PInstTable inst_table_moto8 = NULL;
+/*!------------------------------------------------------------------------
+ * \fn     add_moto8_pseudo(PInstTable p_inst_table, moto_pseudo_flags_t flags)
+ * \brief  merge Motorola-style 8 bit pseudo ops into instruction hash table
+ * \param  p_inst_table table to augment
+ * \param  flags controls which instructions to add, and endianess
+ * ------------------------------------------------------------------------ */
 
-void init_moto8_pseudo(PInstTable p_inst_table, unsigned flags)
+void add_moto8_pseudo(PInstTable p_inst_table, moto_pseudo_flags_t flags)
 {
-  if (!p_inst_table)
-    p_inst_table = inst_table_moto8 = CreateInstTable(23);
-  AddInstTable(p_inst_table, "BYT", !!(flags & e_moto_8_be), DecodeMotoBYT);
-  AddInstTable(p_inst_table, "FCB", !!(flags & e_moto_8_be), DecodeMotoBYT);
-  if (flags & e_moto_8_db)
-    AddInstTable(p_inst_table, "DB", !!(flags & e_moto_8_be), DecodeMotoBYT);
-  AddInstTable(p_inst_table, "ADR", !!(flags & e_moto_8_be), DecodeMotoADR);
-  AddInstTable(p_inst_table, "FDB", !!(flags & e_moto_8_be), DecodeMotoADR);
-  if (flags & e_moto_8_dw)
-    AddInstTable(p_inst_table, "DW", !!(flags & e_moto_8_be), DecodeMotoADR);
-  if (flags & e_moto_8_ddb)
-    AddInstTable(p_inst_table, "DDB", True, DecodeMotoADR);
-  if (flags & e_moto_8_dcm)
-    AddInstTable(p_inst_table, "DCM", True, DecodeMotoDCM);
-  AddInstTable(p_inst_table, "FCC", !!(flags & e_moto_8_be), DecodeFCC);
-  AddInstTable(p_inst_table, "DFS", 0, DecodeMotoDFS);
-  AddInstTable(p_inst_table, "RMB", 0, DecodeMotoDFS);
-  if (flags & e_moto_8_ds)
-    AddInstTable(p_inst_table, "DS", 0, DecodeMotoDFS);
-}
-
-Boolean decode_moto8_pseudo(void)
-{
-  return LookupInstTable(inst_table_moto8, OpPart.str.p_str);
-}
-
-void deinit_moto8_pseudo(void)
-{
-  DestroyInstTable(inst_table_moto8);
-  inst_table_moto8 = NULL;
+  AddInstTable(p_inst_table, "BYT", flags & e_moto_pseudo_flags_be, DecodeMotoBYT);
+  AddInstTable(p_inst_table, "FCB", flags & e_moto_pseudo_flags_be, DecodeMotoBYT);
+  AddInstTable(p_inst_table, "ADR", flags & e_moto_pseudo_flags_be, DecodeMotoADR);
+  AddInstTable(p_inst_table, "FDB", flags & e_moto_pseudo_flags_be, DecodeMotoADR);
+  if (flags & e_moto_pseudo_flags_ddb)
+    AddInstTable(p_inst_table, "DDB", e_moto_pseudo_flags_be, DecodeMotoADR);
+  if (flags & e_moto_pseudo_flags_dcm)
+    AddInstTable(p_inst_table, "DCM", e_moto_pseudo_flags_be, DecodeMotoDCM);
+  AddInstTable(p_inst_table, "FCC", flags & e_moto_pseudo_flags_be, DecodeFCC);
+  AddInstTable(p_inst_table, "DFS", e_moto_pseudo_flags_none, DecodeMotoDFS);
+  AddInstTable(p_inst_table, "RMB", e_moto_pseudo_flags_none, DecodeMotoDFS);
+  if (flags & e_moto_pseudo_flags_ds)
+    AddInstTable(p_inst_table, "DS", e_moto_pseudo_flags_none, DecodeMotoDFS);
 }
 
 static void DigIns(char Ch, int Pos, Byte *pDest)
@@ -608,88 +616,106 @@ static void DigIns(char Ch, int Pos, Byte *pDest)
   pDest[bytepos] |= (dig << bitpos);
 }
 
-void ConvertMotoFloatDec(Double F, Byte *pDest, Boolean NeedsBig)
+int ConvertMotoFloatDec(as_float_t F, Byte *pDest, Boolean NeedsBig)
 {
-  char s[30], Man[30], Exp[30];
-  char *pSplit;
-  int z, ManLen, ExpLen;
-  Byte epos;
+  as_float_dissect_t dissect;
 
   UNUSED(NeedsBig);
-
-  /* convert to ASCII, split mantissa & exponent */
-
-  as_snprintf(s, sizeof(s), "%0.16e", F);
-  pSplit = strchr(s, HexStartCharacter + ('e' - 'a'));
-  if (!pSplit)
-  {
-    strcpy(Man, s);
-    strcpy(Exp, "+0000");
-  }
-  else
-  {
-    *pSplit = '\0';
-    strcpy(Man, s);
-    strcpy(Exp, pSplit + 1);
-  }
-
   memset(pDest, 0, 12);
 
-  /* handle mantissa sign */
-
-  if (*Man == '-')
+  as_float_dissect(&dissect, F);
+  switch (dissect.fp_class)
   {
-    pDest[11] |= 0x80; strmov(Man, Man + 1);
-  }
-  else if (*Man == '+')
-    strmov(Man, Man + 1);
+    case AS_FP_NAN:
+      pDest[7] = 0x80;
+      /* FALL-THRU */
+    case AS_FP_INFINITE:
+      pDest[11] = dissect.negative ? 0xff : 0x7f;
+      pDest[10] = 0xff;
+      break;
+    default:
+    {
+      char s[30], Man[30], Exp[30];
+      char *pSplit;
+      int z, ManLen, ExpLen;
+      Byte epos;
 
-  /* handle exponent sign */
+      /* TODO: as_fabs(F) <= 9.22e18; */
+      /* convert to ASCII, split mantissa & exponent */
 
-  if (*Exp == '-')
-  {
-    pDest[11] |= 0x40;
-    strmov(Exp, Exp + 1);
-  }
-  else if (*Exp == '+')
-    strmov(Exp, Exp + 1);
+      as_snprintf(s, sizeof(s), "%0.*lllle", AS_FLOAT_DIG + 1, F);
+      pSplit = strchr(s, HexStartCharacter + ('e' - 'a'));
+      if (!pSplit)
+      {
+        strcpy(Man, s);
+        strcpy(Exp, "+0000");
+      }
+      else
+      {
+        *pSplit = '\0';
+        strcpy(Man, s);
+        strcpy(Exp, pSplit + 1);
+      }
 
-  /* integral part of mantissa (one digit) */
+      /* handle mantissa sign */
 
-  DigIns(*Man, 16, pDest);
-  strmov(Man, Man + 2);
+      if (*Man == '-')
+      {
+        pDest[11] |= 0x80; strmov(Man, Man + 1);
+      }
+      else if (*Man == '+')
+        strmov(Man, Man + 1);
 
-  /* truncate mantissa if we have more digits than we can represent */
+      /* handle exponent sign */
 
-  if (strlen(Man) > 16)
-    Man[16] = '\0';
+      if (*Exp == '-')
+      {
+        pDest[11] |= 0x40;
+        strmov(Exp, Exp + 1);
+      }
+      else if (*Exp == '+')
+        strmov(Exp, Exp + 1);
 
-  /* insert mantissa digits */
+      /* integral part of mantissa (one digit) */
 
-  ManLen = strlen(Man);
-  for (z = 0; z < ManLen; z++)
-    DigIns(Man[z], 15 - z, pDest);
+      DigIns(*Man, 16, pDest);
+      strmov(Man, Man + 2);
 
-  /* truncate exponent if we have more digits than we can represent - this should
-     never occur since an IEEE double is limited to ~1E308 and we have for digits */
+      /* truncate mantissa if we have more digits than we can represent */
 
-  if (strlen(Exp) > 4)
-    strmov(Exp, Exp + strlen(Exp) - 4);
+      if (strlen(Man) > 16)
+        Man[16] = '\0';
 
-  /* insert exponent bits */
+      /* insert mantissa digits */
 
-  ExpLen = strlen(Exp);
-  for (z = ExpLen - 1; z >= 0; z--)
-  {
-    epos = ExpLen - 1 - z;
-    if (epos == 3)
-      DigIns(Exp[z], 19, pDest);
-    else
-      DigIns(Exp[z], epos + 20, pDest);
+      ManLen = strlen(Man);
+      for (z = 0; z < ManLen; z++)
+        DigIns(Man[z], 15 - z, pDest);
+
+      /* truncate exponent if we have more digits than we can represent - this should
+         never occur since an extended float is limited to ~1E4932 and we have four digits */
+
+      if (strlen(Exp) > 4)
+        strmov(Exp, Exp + strlen(Exp) - 4);
+
+      /* insert exponent bits */
+
+      ExpLen = strlen(Exp);
+      for (z = ExpLen - 1; z >= 0; z--)
+      {
+        epos = ExpLen - 1 - z;
+        if (epos == 3)
+          DigIns(Exp[z], 19, pDest);
+        else
+          DigIns(Exp[z], epos + 20, pDest);
+      }
+      break;
+    }
   }
 
   if (HostBigEndian)
     WSwap(pDest, 12);
+  return 12;
 }
 
 static void EnterByte(LargeWord b, Boolean BigEndian)
@@ -770,62 +796,33 @@ static void EnterLWord(LargeWord l, Boolean BigEndian)
   CodeLen += 4;
 }
 
+void mot_64_to_16(Word *p_dest, LargeWord src, Boolean big_endian)
+{
+  unsigned swap_mask = big_endian ? 3 : 0, z;
+  Word highest_src = 0;
+
+  for (z = 0; z < min(4, (LARGEBITS / 16)); z++, src >>= 16)
+    p_dest[z ^ swap_mask] = highest_src = src & 0xffffu;
+  /* TempResult is LargeInt, so sign-extend if size is less than 64 bits */
+  for (; z < 4; z++)
+    p_dest[z ^ swap_mask] = (highest_src & 0x8000) ? 0xffff : 0x0000;
+}
+
 static void EnterQWord(LargeWord q, Boolean BigEndian)
 {
   if (ListGran() == 1)
   {
-    if (BigEndian)
-    {
-#ifdef HAS64
-      BAsmCode[CodeLen    ] = (q >> 56) & 0xff;
-      BAsmCode[CodeLen + 1] = (q >> 48) & 0xff;
-      BAsmCode[CodeLen + 2] = (q >> 40) & 0xff;
-      BAsmCode[CodeLen + 3] = (q >> 32) & 0xff;
-#else
-      /* TempResult is LargeInt, so sign-extend */
-      BAsmCode[CodeLen    ] =
-      BAsmCode[CodeLen + 1] =
-      BAsmCode[CodeLen + 2] =
-      BAsmCode[CodeLen + 3] = (q & 0x80000000ul) ? 0xff : 0x00;
-#endif
-      BAsmCode[CodeLen + 4] = (q >> 24) & 0xff;
-      BAsmCode[CodeLen + 5] = (q >> 16) & 0xff;
-      BAsmCode[CodeLen + 6] = (q >>  8) & 0xff;
-      BAsmCode[CodeLen + 7] = (q      ) & 0xff;
-    }
-    else
-    {
-      BAsmCode[CodeLen    ] = (q      ) & 0xff;
-      BAsmCode[CodeLen + 1] = (q >>  8) & 0xff;
-      BAsmCode[CodeLen + 2] = (q >> 16) & 0xff;
-      BAsmCode[CodeLen + 3] = (q >> 24) & 0xff;
-#ifdef HAS64
-      BAsmCode[CodeLen + 4] = (q >> 32) & 0xff;
-      BAsmCode[CodeLen + 5] = (q >> 40) & 0xff;
-      BAsmCode[CodeLen + 6] = (q >> 48) & 0xff;
-      BAsmCode[CodeLen + 7] = (q >> 56) & 0xff;
-#else
-      /* TempResult is LargeInt, so sign-extend */
-      BAsmCode[CodeLen + 4] =
-      BAsmCode[CodeLen + 5] =
-      BAsmCode[CodeLen + 6] =
-      BAsmCode[CodeLen + 7] = (q & 0x80000000ul) ? 0xff : 0x00;
-#endif
-    }
+    unsigned swap_mask = BigEndian ? 7 : 0, z;
+    Byte highest_src = 0;
+
+    for (z = 0; z < min(8, (LARGEBITS / 8)); z++, q >>= 8)
+      BAsmCode[CodeLen + (z ^ swap_mask)] = highest_src = q & 0xff;
+    /* TempResult is LargeInt, so sign-extend */
+    for (; z < 8; z++)
+      BAsmCode[CodeLen + (z ^ swap_mask)] = (highest_src & 0x80) ? 0xff : 0x00;
   }
   else
-  {
-#ifdef HAS64
-    WAsmCode[(CodeLen >> 1)    ] = (q >> 48) & 0xffff;
-    WAsmCode[(CodeLen >> 1) + 1] = (q >> 32) & 0xffff;
-#else
-    /* TempResult is LargeInt, so sign-extend */
-    WAsmCode[(CodeLen >> 1)    ] =
-    WAsmCode[(CodeLen >> 1) + 1] = (q & 0x80000000ul) ? 0xffff : 0x00;
-#endif
-    WAsmCode[(CodeLen >> 1) + 2] = (q >> 16) & 0xffff;
-    WAsmCode[(CodeLen >> 1) + 3] = (q      ) & 0xffff;
-  }
+    mot_64_to_16(&WAsmCode[CodeLen >> 1], q, BigEndian);
   CodeLen += 8;
 }
 
@@ -999,19 +996,26 @@ static void EnterMotoFloatDec(Word *pField, Boolean BigEndian)
   }
   else
   {
-    WAsmCode[(CodeLen >> 1)    ] = pField[5];
-    WAsmCode[(CodeLen >> 1) + 1] = pField[4];
-    WAsmCode[(CodeLen >> 1) + 2] = pField[3];
-    WAsmCode[(CodeLen >> 1) + 3] = pField[2];
-    WAsmCode[(CodeLen >> 1) + 4] = pField[1];
-    WAsmCode[(CodeLen >> 1) + 5] = pField[0];
+    if (BigEndian)
+    {
+      WAsmCode[(CodeLen >> 1)    ] = pField[5];
+      WAsmCode[(CodeLen >> 1) + 1] = pField[4];
+      WAsmCode[(CodeLen >> 1) + 2] = pField[3];
+      WAsmCode[(CodeLen >> 1) + 3] = pField[2];
+      WAsmCode[(CodeLen >> 1) + 4] = pField[1];
+      WAsmCode[(CodeLen >> 1) + 5] = pField[0];
+    }
+    else
+    {
+      WAsmCode[(CodeLen >> 1)    ] = pField[0];
+      WAsmCode[(CodeLen >> 1) + 1] = pField[1];
+      WAsmCode[(CodeLen >> 1) + 2] = pField[2];
+      WAsmCode[(CodeLen >> 1) + 3] = pField[3];
+      WAsmCode[(CodeLen >> 1) + 4] = pField[4];
+      WAsmCode[(CodeLen >> 1) + 5] = pField[5];
+    }
   }
   CodeLen += 12;
-}
-
-static void Double_2_ieee2_wrap(Double Inp, Byte *pDest, Boolean BigEndian)
-{
-  (void)Double_2_ieee2(Inp, pDest, BigEndian);
 }
 
 void AddMoto16PseudoONOFF(Boolean default_padding_value)
@@ -1046,7 +1050,7 @@ static Word GetWSize(tSymbolSize OpSize)
     case eSymbolSizeFloat64Bit:
       return 8;
 
-    /* NOTE: Double_2_ieee10() creates 10 bytes, but WSize is set to 12 (two
+    /* NOTE: as_float_2_ieee10() creates 10 bytes, but WSize is set to 12 (two
        padding bytes in binary representation).  This means that WSwap() will
        swap 12 instead of 10 bytes, which doesn't hurt, since TurnField is
        large enough and the two (garbage) bytes at the end will not be used
@@ -1064,12 +1068,15 @@ static Word GetWSize(tSymbolSize OpSize)
 }
 
 /*!------------------------------------------------------------------------
- * \fn     DecodeMotoDC(void)
+ * \fn     DecodeMotoDC(Word flags)
  * \brief  decode DC.x instruction
+ * \param  flags control flags
  * ------------------------------------------------------------------------ */
 
-void DecodeMotoDC(tSymbolSize OpSize, Boolean BigEndian)
+void DecodeMotoDC(Word flags)
 {
+  tSymbolSize OpSize = (AttrPartOpSize[0] == eSymbolSizeUnknown) ? eSymbolSize16Bit : AttrPartOpSize[0];
+  Boolean BigEndian = !!(flags & e_moto_pseudo_flags_be);
   ShortInt SpaceFlag;
   tStrComp *pArg, Arg;
   LongInt z2, WSize, Rep = 0;
@@ -1078,11 +1085,10 @@ void DecodeMotoDC(tSymbolSize OpSize, Boolean BigEndian)
   TempResult t;
   tSymbolFlags Flags;
   void (*EnterInt)(LargeWord, Boolean) = NULL;
-  void (*ConvertFloat)(Double, Byte*, Boolean) = NULL;
+  int (*ConvertFloat)(as_float_t, Byte*, Boolean) = NULL;
   void (*EnterFloat)(Word*, Boolean) = NULL;
   void (*Swap)(void*, int) = NULL;
   IntType IntTypeEnum = UInt1;
-  FloatType FloatTypeEnum = Float32;
   Boolean PadBeforeStart = Odd(EProgCounter()) && DoPadding && (OpSize != eSymbolSize8Bit);
 
   as_tempres_ini(&t);
@@ -1116,47 +1122,38 @@ void DecodeMotoDC(tSymbolSize OpSize, Boolean BigEndian)
       break;
     case eSymbolSize64Bit:
       EnterInt = EnterQWord;
-#ifdef HAS64
       IntTypeEnum = Int64;
-#else
-      IntTypeEnum = Int32;
-#endif
       break;
     case eSymbolSizeFloat16Bit:
-      ConvertFloat = Double_2_ieee2_wrap;
+      ConvertFloat = as_float_2_ieee2;
       EnterFloat = EnterIEEE2;
-      FloatTypeEnum = Float16;
       Swap = NULL;
       break;
     case eSymbolSizeFloat32Bit:
-      ConvertFloat = Double_2_ieee4;
+      ConvertFloat = as_float_2_ieee4;
       EnterFloat = EnterIEEE4;
-      FloatTypeEnum = Float32;
       Swap = DWSwap;
       break;
     case eSymbolSizeFloat64Bit:
-      ConvertFloat = Double_2_ieee8;
+      ConvertFloat = as_float_2_ieee8;
       EnterFloat = EnterIEEE8;
-      FloatTypeEnum = Float64;
       Swap = QWSwap;
       break;
 
-    /* NOTE: Double_2_ieee10() creates 10 bytes, but WSize is set to 12 (two
+    /* NOTE: as_float_2_ieee10() creates 10 bytes, but WSize is set to 12 (two
        padding bytes in binary representation).  This means that WSwap() will
        swap 12 instead of 10 bytes, which doesn't hurt, since TurnField is
        large enough and the two (garbage) bytes at the end will not be used
        by EnterIEEE10() anyway: */
 
     case eSymbolSizeFloat96Bit:
-      ConvertFloat = Double_2_ieee10;
+      ConvertFloat = as_float_2_ieee10;
       EnterFloat = EnterIEEE10;
-      FloatTypeEnum = Float80;
       Swap = TWSwap;
       break;
     case eSymbolSizeFloatDec96Bit:
       ConvertFloat = ConvertMotoFloatDec;
       EnterFloat = EnterMotoFloatDec;
-      FloatTypeEnum = FloatDec;
       break;
     default:
       break;
@@ -1258,11 +1255,6 @@ void DecodeMotoDC(tSymbolSize OpSize, Boolean BigEndian)
             WrStrErrorPos(ErrNum_StringOrIntButFloat, pArg);
             OK = False;
           }
-          else if (!FloatRangeCheck(t.Contents.Float, FloatTypeEnum))
-          {
-            WrError(ErrNum_OverRange);
-            OK = False;
-          }
           else if (SetMaxCodeLen(CodeLen + (Rep * WSize)))
           {
             WrError(ErrNum_CodeOverflow);
@@ -1271,12 +1263,20 @@ void DecodeMotoDC(tSymbolSize OpSize, Boolean BigEndian)
           else
           {
             Word TurnField[8];
+            int ret;
 
-            ConvertFloat(t.Contents.Float, (Byte *) TurnField, HostBigEndian);
-            if (HostBigEndian && Swap)
-              Swap((void*) TurnField, WSize);
-            for (z2 = 0; z2 < Rep; z2++)
-              EnterFloat(TurnField, BigEndian);
+            if ((ret = ConvertFloat(t.Contents.Float, (Byte *) TurnField, HostBigEndian)) < 0)
+            {
+              asmerr_check_fp_dispose_result(ret, pArg);
+              OK = False;
+            }
+            else
+            {
+              if (HostBigEndian && Swap)
+                Swap((void*) TurnField, WSize);
+              for (z2 = 0; z2 < Rep; z2++)
+                EnterFloat(TurnField, BigEndian);
+            }
           }
           break;
         case TempString:
@@ -1344,73 +1344,69 @@ func_exit:
   as_tempres_free(&t);
 }
 
-Boolean DecodeMoto16Pseudo(tSymbolSize OpSize, Boolean BigEndian)
+void DecodeMotoDS(Word flags)
 {
-  LongInt HVal;
-  Boolean ValOK;
-  tSymbolFlags Flags;
-  Boolean PadBeforeStart;
+  tSymbolSize OpSize = (AttrPartOpSize[0] == eSymbolSizeUnknown) ? eSymbolSize16Bit : AttrPartOpSize[0];
+  Word WSize = GetWSize(OpSize);
+  Boolean PadBeforeStart = Odd(EProgCounter()) && DoPadding && (OpSize != eSymbolSize8Bit);
 
-  if (OpSize < 0)
-    OpSize = eSymbolSize16Bit;
+  UNUSED(flags);
 
-  PadBeforeStart = Odd(EProgCounter()) && DoPadding && (OpSize != eSymbolSize8Bit);
-  if (*OpPart.str.p_str != 'D')
-    return False;
-
-  if (Memo("DC"))
+  if (ChkArgCnt(1, 1))
   {
-    DecodeMotoDC(OpSize, BigEndian);
-    return True;
-  }
+    Boolean ValOK;
+    tSymbolFlags Flags;
+    LongInt HVal = EvalStrIntExpressionWithFlags(&ArgStr[1], Int32, &ValOK, &Flags);
 
-  if (Memo("DS"))
-  {
-    Word WSize = GetWSize(OpSize);
-
-    if (ChkArgCnt(1, 1))
+    if (mFirstPassUnknown(Flags))
+      WrError(ErrNum_FirstPassCalc);
+    if (ValOK && !mFirstPassUnknown(Flags))
     {
-      HVal = EvalStrIntExpressionWithFlags(&ArgStr[1], Int32, &ValOK, &Flags);
-      if (mFirstPassUnknown(Flags))
-        WrError(ErrNum_FirstPassCalc);
-      if (ValOK && !mFirstPassUnknown(Flags))
+      Boolean OddSize = (eSymbolSize8Bit == OpSize) || (eSymbolSize24Bit == OpSize);
+
+      if (PadBeforeStart)
       {
-        Boolean OddSize = (eSymbolSize8Bit == OpSize) || (eSymbolSize24Bit == OpSize);
-
-        if (PadBeforeStart)
-        {
-          InsertPadding(1, True);
-          PadBeforeStart = False;
-        }
-
-        DontPrint = True;
-
-        /* value of 0 means aligning the PC.  Doesn't make sense for bytes and 24 bit values */
-
-        if ((HVal == 0) && !OddSize)
-        {
-          LongWord NewPC = EProgCounter() + WSize - 1;
-          NewPC -= NewPC % WSize;
-          CodeLen = NewPC - EProgCounter();
-          if (CodeLen == 0)
-          {
-            DontPrint = False;
-            if (WSize == 1)
-              WrError(ErrNum_NullResMem);
-          }
-        }
-        else
-          CodeLen = HVal * WSize;
-        if (DontPrint)
-          BookKeeping();
+        InsertPadding(1, True);
+        PadBeforeStart = False;
       }
-    }
-    if (*LabPart.str.p_str)
-      SetSymbolOrStructElemSize(&LabPart, OpSize);
-    return True;
-  }
 
-  return False;
+      DontPrint = True;
+
+      /* value of 0 means aligning the PC.  Doesn't make sense for bytes and 24 bit values */
+
+      if ((HVal == 0) && !OddSize)
+      {
+        LongWord NewPC = EProgCounter() + WSize - 1;
+        NewPC -= NewPC % WSize;
+        CodeLen = NewPC - EProgCounter();
+        if (CodeLen == 0)
+        {
+          DontPrint = False;
+          if (WSize == 1)
+            WrError(ErrNum_NullResMem);
+        }
+      }
+      else
+        CodeLen = HVal * WSize;
+      if (DontPrint)
+        BookKeeping();
+    }
+  }
+  if (*LabPart.str.p_str)
+    SetSymbolOrStructElemSize(&LabPart, OpSize);
+}
+
+/*!------------------------------------------------------------------------
+ * \fn     AddMoto16Pseudo(struct sInstTable *p_inst_table, moto_pseudo_flags_t flags)
+ * \brief  add 16 bit Motorola style pseudo instructions to hash table
+ * \param  p_inst_table instruction table to augment
+ * \param  flags BE/LE flag 
+ * ------------------------------------------------------------------------ */
+
+void AddMoto16Pseudo(struct sInstTable *p_inst_table, moto_pseudo_flags_t flags)
+{
+  AddInstTable(p_inst_table, "DC", flags, DecodeMotoDC);
+  AddInstTable(p_inst_table, "DS", flags, DecodeMotoDS);
 }
 
 static Boolean DecodeMoto16AttrSizeCore(char SizeSpec, tSymbolSize *pResult, Boolean Allow24)

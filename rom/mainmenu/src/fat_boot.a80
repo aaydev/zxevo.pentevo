@@ -1,5 +1,5 @@
 
-; LAST UPDATE: 24.02.2023 savelij
+; LAST UPDATE: 16.02.2025 savelij
 
 ; загрузка выбранного шрифта
 LOAD_FONT	LD HL,FONTS
@@ -93,7 +93,7 @@ FATBOOT1	EXX
 		RRCA
 		RRCA
 		AND 0x1F
-		ADD A,"E"			; буква найденного устройства
+		ADD A,'E'			; буква найденного устройства
 		LD (DE),A
 		INC DE
 		LDIR				; перенос текста из выбранной таблицы
@@ -120,7 +120,7 @@ FATBOOT1	EXX
 		DEC B
 		DEC B
 		LD C,B
-		LD A,"E"
+		LD A,'E'
 		LD (IX+_ADR_HOTKEY_L),L
 		LD (IX+_ADR_HOTKEY_H),H		; адрес таблицы горячих клавиш выбора FAT устройства
 		LD (HL),B
@@ -143,9 +143,11 @@ FATBOOT2	LD (HL),LOW (SEL_FAT)		; формирование таблицы адресов вызывов
 	RST8 _WINW
 		JP _RULILKA			; возвращаемся к общему управлению
 
-FILES_BROWSE	LD HL,SUPPORT_EXT
+FILE_BROWSER	DI
+		LD A,1
+	RST8 _NMI_FB_BLOCK			; блокировка File Browser на NMI
+		LD HL,SUPPORT_EXT
 		LD DE,CMP4TAPES
-		DI
 		LD (GDE_EXT_FILES),HL
 		LD (CMP_FOUNDED),DE
 		LD HL,ERS_FLAGS
@@ -200,18 +202,18 @@ RUN_HOB1	LD DE,ADR_CAT_FAT
 	RST8 _COM_FAT,_POS_FILES		; установка внутреннего указателя FAT драйвера
 		LD HL,BUF_FILEITEM
 	RST8 _COM_FAT,_READ_DIR			; получили описатель по установленному номеру
-		LD DE,0x0B			; нужен байт по смещению
+		LD DE,_DIR_Attr			; нужен байт по смещению
 		ADD HL,DE			; для определения файл или директория
 		LD A,(HL)			; из этого байта нужен один бит
 		SBC HL,DE
-		AND 0x10			; проверили
+		AND M_DIR_Directory		; проверили
 		JP Z,GO_RUN_HOB			; если это файл, то запускаем кодовый блок
 	RST8 _COM_FAT,_ENTER_DIR		; входим в выбранную директорию
 		PUSH HL				; сохранили адрес где описатель выбранного файла лежит
 		LD HL,BUF_RDPATH
 	RST8 _COM_FAT,_GET_PATH			; получить путь к файлу после входа в директорию
 		LD A,(HL)			; взяли букву устройства текущего пути
-		SUB "E"				; преобразовали в номер устройства
+		SUB 'E'				; преобразовали в номер устройства
 		LD D,A
 		LD E,0
 		LD HL,BUF_LEVDIR
@@ -223,7 +225,7 @@ RUN_HOB1	LD DE,ADR_CAT_FAT
 		EX (SP),HL			; сохранили адрес описателя FAT устройства, восстановили адрес описателя файла
 		LD A,(HL)			; будем проверять первый символ имени предыдущего описателя
 		POP HL				; восстановили адрес описателя FAT устройства 
-		CP "."				; если первый символ имени не ".", то сохраняем текущие значения окошка и  
+		CP '.'				; если первый символ имени не ".", то сохраняем текущие значения окошка и  
 		JR NZ,SNYT0			; входим в диру
 		LD C,(HL)			; при выходе из директории восстанавливаем позиции в окне
 		INC HL
@@ -429,16 +431,16 @@ GO_RUN_HOB
 		POP HL
 		JP Z,SELMOUNT			; перехода на загрузку TRD образа
 		LD A,(HL)
-		CP "$"
+		CP '$'
 		JR Z,GORUNHOB1			; переход на загрузку HOBETA
-		CP "S"
+		CP 'S'
 		JP NZ,LOAD_IMAGE		; переход на загрузку SCL образа
 		INC HL
 		LD A,(HL)
 		DEC HL
-		CP "P"
+		CP 'P'
 		JR Z,GORUNHOB1			; переход на загрузку SPG
-		CP "N"
+		CP 'N'
 		LD A,(HL)
 		JP NZ,LOAD_IMAGE		; переход на загрузку образа
 GORUNHOB1
@@ -489,7 +491,7 @@ LOAD_FNT1	LD A,4
 
 ; загрузка FDI образа
 LOAD_FDI	LD A,E
-		CP "N"
+		CP 'N'
 		JR Z,LOAD_FNT			; переход на загрузку фонта
 		LD HL,ERS_FLAGS
 		SET B_LOAD_IMG,(HL)
@@ -730,9 +732,9 @@ ELT1		INC C
 ELOAD_IMAGE	LD A,RAM_RAMDISK
 		CALL SET4MBPAGE
 		LD HL,0x7FFF
-		LD (HL),"R"
+		LD (HL),'R'
 		DEC H
-		LD (HL),"D"
+		LD (HL),'D'
 		CALL SET_RAMD_NAME
 		LD A,ZXSTD_CPU1
 		CALL SET4MBPAGE
@@ -745,7 +747,7 @@ LD_FILE_SP	EQU $-2
 		RET Z
 		RES B_VIEW_IMG,(HL)
 ; загрузка каталога TR-DOS и поиск выбранного и запуск выбранного BASIC файла
-START_IMG	LD H,VIRT_REAL_DRIVE
+START_IMG	LD H,CMOS.VIRT_REAL_DRIVE
 		CALL READCMOS
 		AND 3
 		LD C,A
@@ -771,7 +773,7 @@ RUNMOUNT	PUSH AF
 		LD DE,0x10
 NEXT_BAS	LD A,(IX+8)
 		ADD IX,DE
-		CP "B"
+		CP 'B'
 		JR NZ,NEXT_BAS
 		DJNZ NEXT_BAS
 		PUSH IX
@@ -864,12 +866,12 @@ END_LOAD_TAP	XOR A
 		LD SP,(LD_FILE_SP)
 		POP IY
 		POP IX
-		LD H,CMOS_BYTE_00
+		LD H,CMOS.BYTE_00
 		CALL READCMOS
-		OR M_EMUL_TAPE
+		OR CMOS_ED.M_EMUL_TAPE
 		LD L,A
 		CALL WRITECMOS
-		AND M_AUTO_TAPE
+		AND CMOS_ED.M_AUTO_TAPE
 		JP Z,RESTART
 		JP TAPELOAD1
 
@@ -877,18 +879,18 @@ LOAD_IMAGE	DI
 		LD D,A				; первый символ расширения
 		INC HL
 		LD E,(HL)			; второй символ расширения
-		CP "B"
+		CP 'B'
 		JR NZ,LOADIMAGE1_
 		LD A,E
-		CP "M"
+		CP 'M'
 		JR Z,LOADIMAGE2			; BMP
-LOADIMAGE1_	CP "T"				; TAP или TRD ?
+LOADIMAGE1_	CP 'T'				; TAP или TRD ?
 		JR NZ,LOADIMAGE1
 		LD A,E
-		CP "A"
+		CP 'A'
 		JP Z,LOADIMAGE4			; TAP
 LOADIMAGE1	LD A,D
-		CP "R"
+		CP 'R'
 		LD HL,FLASHER
 		JR Z,LOAD_IMAGE8		; TRD
 LOADIMAGE2	LD HL,RESTART
@@ -898,13 +900,13 @@ LOAD_IMAGE8	PUSH HL
 		LD (LD_FILE_SP),SP
 		LD SP,ADR_CAT
 		LD A,D
-		CP "S"				; это SCL файл?
+		CP 'S'				; это SCL файл?
 		JR Z,LOAD_IMAGE2
-		CP "F"				; это FDI файл?
+		CP 'F'				; это FDI файл?
 		JP Z,LOAD_FDI
-		CP "B"				; это BMP файл?
+		CP 'B'				; это BMP файл?
 		JP Z,BMPVIEW
-		CP "T"				; это TRD файл?
+		CP 'T'				; это TRD файл?
 		JR NZ,LOAD_ROM
 		LD HL,ERS_FLAGS
 		SET B_LOAD_IMG,(HL)
@@ -920,7 +922,7 @@ LOAD_IMAGE1	PUSH AF
 		INC A
 		JR LOAD_IMAGE1
 
-LOAD_ROM	CP "R"				; это ROM файл?
+LOAD_ROM	CP 'R'				; это ROM файл?
 		JP NZ,ELOAD_IMAGE
 		LD A,RAM_FLASHER
 		CALL LOAD_IN_PAGE
@@ -1113,7 +1115,7 @@ OST_HWOST	EQU $-2				; сколько переносить в конец страницы
 CMP4HOBETA	SUB 1
 		RET NZ
 		LD A,(BUF_RDSEC+8)
-		CP "C"				; проверка что это кодовый блок, а не что-то другое
+		CP 'C'				; проверка что это кодовый блок, а не что-то другое
 		SCF
 		RET NZ
 		PUSH DE				; сохранили адрес складирования для дальнейшей проверки
@@ -1201,17 +1203,17 @@ CMP4ROMS1	AND A
 CMP4FDI		EXX
 		LD HL,BUF_RDSEC
 		LD A,(HL)
-		CP "F"
+		CP 'F'
 		SCF
 		RET NZ
 		INC HL
 		LD A,(HL)
-		CP "D"
+		CP 'D'
 		SCF
 		RET NZ
 		INC HL
 		LD A,(HL)
-		CP "I"
+		CP 'I'
 		SCF
 		RET NZ
 		INC HL
@@ -1266,12 +1268,12 @@ CMP4TAPES	RET
 
 CMP4BMP		EXX
 		LD HL,BUF_RDSEC
-		LD A,"B"
+		LD A,'B'
 		SUB (HL)
 		SCF
 		RET NZ
 		INC HL
-		LD A,"M"
+		LD A,'M'
 		SUB (HL)
 		SCF
 		RET NZ
@@ -1419,7 +1421,7 @@ COMPARF		PUSH DE
 		POP DE
 		LD B,3
 .L1		LD A,(DE)
-		CP "A"
+		CP 'A'
 		JR C,.L2
 		AND %11011111
 .L2		CP (HL)
@@ -1498,13 +1500,13 @@ FLASHER3	CALL FLASH_64KB			; прошивание одной 64КБ страницы
 		JR Z,FLASHER3
 EFLASHER	LD BC,WIN_P3
 		XOR A
-		OUT (C),A			; включение RAM в окне 3
+		OUT (C),A			; включение 0 паги RAM в окне 3
 		LD A,(CPU3+0x20)
 		XOR B
 		LD (CPU3+0x20),A		; меняем байт для нарушения CRC контроля и полного реинита
-		LD A,(CPU1+BUF_TABLVOL+0xFE)
+		LD A,(((BUF_VOLUMES + 0xFE) & 0x3FFF) | CPU3)
 		XOR B
-		LD (CPU1+BUF_TABLVOL+0xFE),A	; аналогично для DEVICE MANAGER
+		LD (((BUF_VOLUMES + 0xFE) & 0x3FFF) | CPU3),A	; аналогично для DEVICE MANAGER
 	PEC_OFF M_FLASH_BF
 		LD HL,0x79ED			; OUT (C),A
 		LD (0xFFFE),HL			; укладка команды OUT (C),A

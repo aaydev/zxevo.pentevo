@@ -372,7 +372,7 @@ static void AppendScale(tStrComp *pArg, Byte Scale)
 
 static Boolean DecodeRegCore(const char *pArg, Byte *pResult, Byte *pPrefix)
 {
-  Boolean OK;
+  char *p_end;
 
   if (!as_strcasecmp(pArg, "SP"))
   {
@@ -395,8 +395,8 @@ static Boolean DecodeRegCore(const char *pArg, Byte *pResult, Byte *pPrefix)
   else
     return False;
 
-  *pResult = ConstLongInt(pArg + 1 + !!*pPrefix, &OK, 10);
-  return (OK && (*pResult <= 15));
+  *pResult = strtoul(pArg + 1 + !!*pPrefix, &p_end, 10);
+  return (!*p_end && (*pResult <= 15));
 }
 
 /*!------------------------------------------------------------------------
@@ -2973,6 +2973,8 @@ static void InitFields(void)
   InstTable = CreateInstTable(307);
   SetDynamicInstTable(InstTable);
 
+  add_null_pseudo(InstTable);
+
   AddInstTable(InstTable, "MOV", 0x0c, DecodeMOV_ADD_SUB_CMP);
   AddInstTable(InstTable, "ADD", 0x00, DecodeMOV_ADD_SUB_CMP);
   AddInstTable(InstTable, "SUB", 0x04, DecodeMOV_ADD_SUB_CMP);
@@ -3091,6 +3093,7 @@ static void InitFields(void)
 
   AddInstTable(InstTable, "BIT", 0, DecodeBIT);
   AddInstTable(InstTable, "REG", 0, CodeREG);
+  AddMoto16Pseudo(InstTable, e_moto_pseudo_flags_be);
 }
 
 /*!------------------------------------------------------------------------
@@ -3158,16 +3161,7 @@ static Boolean DecodeAttrPart_H16(void)
 
 static void MakeCode_H16(void)
 {
-  CodeLen = 0; DontPrint = False;
-
-  /* zu ignorierendes */
-
-  if (Memo("")) return;
-
   OpSize = AttrPartOpSize[0];
-  if (DecodeMoto16Pseudo(OpSize, True))
-    return;
-
   if (!LookupInstTable(InstTable, OpPart.str.p_str))
     WrStrErrorPos(ErrNum_UnknownInstruction, &OpPart);
 }

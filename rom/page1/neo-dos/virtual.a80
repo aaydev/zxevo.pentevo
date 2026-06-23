@@ -1,13 +1,13 @@
 
-; LAST UPDATE: 20.08.2022 savelij
+; LAST UPDATE: 13.02.2025 savelij
 
 		TITLE "virtual.a80"
 
-		DB 0XFF				;DCU
+		DB 0xFF				;DCU
 
 CP_TYPEDRIVE	PUSH BC
 		PUSH HL
-		LD H,VIRT_REAL_DRIVE
+		LD H,CMOS.VIRT_REAL_DRIVE
 		CALL READCMOS
 		POP HL
 		AND 3
@@ -18,14 +18,14 @@ CP_TYPEDRIVE	PUSH BC
 		RET
 
 ; установка переменных текущего привода
-SET_DRIVENAME	LD H,VIRT_REAL_DRIVE
+SET_DRIVENAME	LD H,CMOS.VIRT_REAL_DRIVE
 		CALL READCMOS
 		RRCA
 		RRCA
 		AND 3
 		LD (TRD_5D19),A
 		LD (TRD_5CF6),A
-		OR 0X3C
+		OR 0x3C
 		LD (TRD_5D16),A
 		RET
 
@@ -49,12 +49,12 @@ FORMAT_RAM	LD A,(TRD_5CF6)
 
 FORMAT_RAM3	LD HL,TRD_5D25
 		LD DE,TRD_5D26
-		LD BC,0XFF
+		LD BC,0xFF
 		LD (HL),B
 		LDIR
 		LD D,B
 		LD E,B
-		LD B,0X10
+		LD B,0x10
 FORMAT_RAM1	PUSH BC
 		PUSH DE
 		LD B,1
@@ -72,7 +72,7 @@ CMP_RAM_DISK	CALL READ_WCPU12
 		LD BC,WIN_P1
 		LD A,RAM_RAMDISK
 		OUT (C),A
-		LD HL,CPU1+0X3FFF
+		LD HL,CPU1+0x3FFF
 		LD D,(HL)
 		DEC H
 		LD E,(HL)			; взяли байты для проверки маркера
@@ -88,14 +88,14 @@ CREATE_TRDTABL	LD BC,WIN_P1
 		LD HL,CPU1
 		PUSH HL
 		LD DE,CPU1+1
-		LD BC,0X3FFF
+		LD BC,0x3FFF
 		LD (HL),L
 		LDIR				; очистили страницу
 		POP DE				; адрес начала
 		LD HL,0				; смещение в блоках и страницах
-		LD A,0XA0
+		LD A,0xA0
 ELT2		PUSH AF
-		LD BC,0X1000			; счетчик номеров секторов и их номера
+		LD BC,0x1000			; счетчик номеров секторов и их номера
 		LD A,L
 		RRCA
 		RRCA
@@ -114,12 +114,12 @@ ELT1		INC C
 		DJNZ ELT1			; вносим в таблицу все номера секторов с размерами
 		LD D,HIGH (CPU1)		; вернули указатель в начало
 		INC E				; для следующей дорожки
-		LD BC,0X40
+		LD BC,0x40
 		ADD HL,BC			; переход к следующей дорожке
 		POP AF
 		DEC A
 		JR NZ,ELT2			; повторяем для всех дорожек
-		LD HL,CPU1+0X3FFF
+		LD HL,CPU1+0x3FFF
 		LD (HL),"R"			; вносим маркер рамдиска
 		DEC H
 		LD (HL),"D"
@@ -128,15 +128,15 @@ ELT1		INC C
 		OUT (C),A
 		LD HL,CPU1
 		LD DE,CPU1+1
-		LD BC,0X0FFF
+		LD BC,0x0FFF
 		LD (HL),L
 		LDIR
 		LD HL,DSKINFO
-		LD DE,CPU1+0X8E1
+		LD DE,CPU1+0x8E1
 		LD BC,DSK_END-DSKINFO
 		LDIR
 		LD BC,WIN_A1
-		LD A,0X7A
+		LD A,0x7A
 		OUT (C),A
 		RET
 
@@ -161,7 +161,7 @@ READ_WCPU12	LD BC,RD_RAMNROM
 		ADD HL,HL
 		LD B,HIGH (RD_1WINA1)
 		IN A,(C)
-		CP 0XC0
+		CP 0xC0
 		JR NC,RST30_01
 		LD E,A
 		LD D,HIGH (WIN_P1)
@@ -178,7 +178,7 @@ RST30_01	RLCA
 RST30_02	LD (BB_CPU1),DE
 		INC B
 		IN A,(C)
-		CP 0XC0
+		CP 0xC0
 		JR NC,RST30_03
 		LD E,A
 		LD D,HIGH (WIN_P2)
@@ -199,12 +199,12 @@ DISK_NONE	PUSH HL
 		PUSH BC
 		CALL READ_WCPU12
 		LD BC,WIN_A1
-		LD A,0X40
+		LD A,0x40
 		OUT (C),A
 		LD B,HIGH (WIN_P1)
 		LD A,RAM_RAMDISK
 		OUT (C),A
-		LD HL,CPU1+0X3FFF
+		LD HL,CPU1+0x3FFF
 		LD A,(HL)
 		DEC H
 		CP "R"
@@ -222,6 +222,6 @@ DISK_NONE1	PUSH AF
 		POP HL
 		RET
 
-TEXT4VIRTDRV	DB 0X16,ZASTV_Y+2,1
+TEXT4VIRTDRV	DB 0x16,ZASTV_Y+2,1
 TXT4VIRTDRV	DC "Virtual Drive: "
 ETXT4VIRTDRV

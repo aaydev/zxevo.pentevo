@@ -64,7 +64,7 @@ static void DecodePORT(Word Opcode)
 {
   UNUSED(Opcode);
 
-  CodeEquate(SegIO, 1, 0x7);
+  code_equate_range(SegIO, 1, 0x7);
 }
 
 static void DecodeFixed(Word Index)
@@ -494,6 +494,8 @@ static void InitFields(void)
   InstrZ = 0;
   AddIO("OUT"  , 0x0060, CPU1802);
   AddIO("INP"  , 0x0068, CPU1802);
+
+  AddIntelPseudo(InstTable, eIntPseudoFlag_BigEndian);
 }
 
 static void DeinitFields(void)
@@ -516,15 +518,9 @@ static void DeinitFields(void)
 
 static void MakeCode_1802(void)
 {
-  CodeLen = 0; DontPrint = False;
-
   /* to be ignored */
 
   if (*OpPart.str.p_str == '\0') return;
-
-  /* Pseudo Instructions */
-
-  if (DecodeIntelPseudo(True)) return;
 
   /* search */
 

@@ -29,6 +29,9 @@
 #include "asmitree.h"
 #include "codepseudo.h"
 #include "codevars.h"
+#include "headids.h"
+
+#include "codemsp.h"
 
 typedef struct
 {
@@ -142,10 +145,10 @@ static Boolean DecodeRegCore(const char *pArg, Word *pResult)
   }
   if ((as_toupper(*pArg) == 'R') && (strlen(pArg) >= 2) && (strlen(pArg) <= 3))
   {
-    Boolean OK;
+    char *p_end;
 
-    *pResult = ConstLongInt(pArg + 1, &OK, 10);
-    return OK && (*pResult < 16);
+    *pResult = strtoul(pArg + 1, &p_end, 10);
+    return !*p_end && (*pResult < 16);
   }
 
   return False;
@@ -1354,6 +1357,24 @@ static void DecodeRPT(Word Code)
   }
 }
 
+/*!------------------------------------------------------------------------
+ * \fn     make_pc_even(Word index)
+ * \brief  assure machine instructions start on even address
+ * ------------------------------------------------------------------------ */
+
+static void make_pc_even(Word index)
+{
+  UNUSED(index);
+
+  if (Odd(EProgCounter()))
+  {
+    if (DoPadding)
+      InsertPadding(1, False);
+    else
+      WrError(ErrNum_AddrNotAligned);
+  }
+}
+
 /*-------------------------------------------------------------------------*/
 
 #define AddFixed(NName, NCode) \
@@ -1404,6 +1425,10 @@ static void InitFields(void)
 {
   InstTable = CreateInstTable(207);
   SetDynamicInstTable(InstTable);
+
+  add_null_pseudo(InstTable);
+
+  inst_table_set_prefix_proc(InstTable, make_pc_even, 0);
 
   AddFixed("RETI", 0x1300);
   AddFixed("CLRC", 0xc312);
@@ -1497,7 +1522,12 @@ static void InitFields(void)
 
   AddInstTable(InstTable, "WORD", 0, DecodeWORD);
 
+  /* insns not requiring word alignment */
+
+  inst_table_set_prefix_proc(InstTable, NULL, 0);
   AddInstTable(InstTable, "REG", 0, CodeREG);
+  AddInstTable(InstTable, "BYTE", 0, DecodeBYTE);
+  AddInstTable(InstTable, "BSS", 0, DecodeBSS);
 }
 
 static void DeinitFields(void)
@@ -1563,11 +1593,7 @@ static Boolean DecodeAttrPart_MSP(void)
 
 static void MakeCode_MSP(void)
 {
-  CodeLen = 0; DontPrint = False; PCDist = 0;
-
-  /* to be ignored: */
-
-  if (Memo("")) return;
+  PCDist = 0;
 
   /* process attribute */
 
@@ -1587,29 +1613,6 @@ static void MakeCode_MSP(void)
       break;
   }
 
-  /* insns not requiring word alignment */
-
-  if (Memo("BYTE"))
-  {
-    DecodeBYTE(0);
-    return;
-  }
-  if (Memo("BSS"))
-  {
-    DecodeBSS(0);
-    return;
-  }
-
-  /* For all other (pseudo) instructions, optionally pad to even */
-
-  if (Odd(EProgCounter()))
-  {
-    if (DoPadding)
-      InsertPadding(1, False);
-    else
-      WrError(ErrNum_AddrNotAligned);
-  }
-
   /* all the rest from table */
 
   if (!LookupInstTable(InstTable, OpPart.str.p_str))
@@ -1623,10 +1626,17 @@ static Boolean IsDef_MSP(void)
 
 static void SwitchTo_MSP(void)
 {
-  TurnWords = False; SetIntConstMode(eIntConstModeIntel);
+  const TFamilyDescr *p_descr = FindFamilyByName("MSP430");
 
-  PCSymbol = "$"; HeaderID = 0x4a; NOPCode = 0x4303; /* = MOV #0,#0 */
-  DivideChars = ","; HasAttrs = True; AttrChars = ".";
+  TurnWords = False;
+  SetIntConstMode(eIntConstModeIntel);
+
+  PCSymbol = "$";
+  HeaderID = p_descr->Id;
+  NOPCode = 0x4303; /* = MOV #0,#0 */
+  DivideChars = ",";
+  HasAttrs = True;
+  AttrChars = ".";
 
   ValidSegs = 1 << SegCode;
   Grans[SegCode] = 1; ListGrans[SegCode] = 2; SegInits[SegCode] = 0;

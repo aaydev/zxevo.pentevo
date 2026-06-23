@@ -25,7 +25,10 @@
 #include "asmitree.h"
 #include "codepseudo.h"
 #include "motpseudo.h"
+#include "intpseudo.h"
 #include "codevars.h"
+#include "assume.h"
+#include "headids.h"
 
 #include "code6816.h"
 
@@ -65,7 +68,6 @@ enum
 #define MModDisp20 MModDisp16
 #define MModAbs20 MModAbs
 
-static tSymbolSize OpSize;
 static ShortInt AdrMode;
 static Byte AdrPart;
 static Byte AdrVals[4];
@@ -121,7 +123,7 @@ static unsigned SplitSize(char *Asc, DispType *pErg)
   }
 }
 
-static void DecodeAdr(int Start, int Stop, Boolean LongAdr, Byte Mask)
+static void DecodeAdr(int Start, int Stop, tSymbolSize op_size, Boolean LongAdr, Byte Mask)
 {
   Integer V16;
   LongInt V32;
@@ -147,7 +149,7 @@ static void DecodeAdr(int Start, int Stop, Boolean LongAdr, Byte Mask)
   if (*ArgStr[Start].str.p_str == '#')
   {
     Offset = SplitSize(ArgStr[Start].str.p_str + 1, &Size);
-    switch (OpSize)
+    switch (op_size)
     {
       case eSymbolSizeUnknown:
         WrError(ErrNum_UndefOpSizes);
@@ -385,8 +387,7 @@ static void DecodeGen(Word Index)
 
   if (ChkArgCnt(1, 2))
   {
-    OpSize = pOrder->Size;
-    DecodeAdr(1, ArgCnt, False, pOrder->AdrMask);
+    DecodeAdr(1, ArgCnt, pOrder->Size, False, pOrder->AdrMask);
     switch (AdrMode)
     {
       case ModDisp8:
@@ -396,7 +397,7 @@ static void DecodeGen(Word Index)
         break;
       case ModDisp16:
         BAsmCode[0] = 0x17 + pOrder->ExtShift;
-        BAsmCode[1] = pOrder->Code + (OpSize << 6) + AdrPart;
+        BAsmCode[1] = pOrder->Code + (pOrder->Size << 6) + AdrPart;
         memcpy(BAsmCode + 2, AdrVals, AdrCnt);
         CodeLen = 2 + AdrCnt;
         break;
@@ -407,12 +408,12 @@ static void DecodeGen(Word Index)
         break;
       case ModAbs:
         BAsmCode[0] = 0x17 + pOrder->ExtShift;
-        BAsmCode[1] = pOrder->Code + (OpSize << 6) + 0x30;
+        BAsmCode[1] = pOrder->Code + (pOrder->Size << 6) + 0x30;
         memcpy(BAsmCode + 2, AdrVals, AdrCnt);
         CodeLen = 2 + AdrCnt;
         break;
       case ModImm:
-        if (OpSize == eSymbolSize8Bit)
+        if (pOrder->Size == eSymbolSize8Bit)
         {
           BAsmCode[0] = pOrder->Code + 0x30;
           BAsmCode[1] = AdrVals[0];
@@ -439,8 +440,7 @@ static void DecodeAux(Word Code)
 {
   if (ChkArgCnt(1, 2))
   {
-    OpSize = eSymbolSize16Bit;
-    DecodeAdr(1, ArgCnt, False, (*OpPart.str.p_str == 'S' ? 0 : MModImm) | MModDisp8 | MModDisp16 | MModAbs);
+    DecodeAdr(1, ArgCnt, eSymbolSize16Bit, False, (*OpPart.str.p_str == 'S' ? 0 : MModImm) | MModDisp8 | MModDisp16 | MModAbs);
     switch (AdrMode)
     {
       case ModDisp8:
@@ -475,8 +475,7 @@ static void DecodeImm(Word Code)
 {
   if (ChkArgCnt(1, 1))
   {
-    OpSize = eSymbolSize16Bit;
-    DecodeAdr(1, 1, False, MModImm | MModImmExt);
+    DecodeAdr(1, 1, eSymbolSize16Bit, False, MModImm | MModImmExt);
     switch (AdrMode)
     {
       case ModImm:
@@ -498,8 +497,7 @@ static void DecodeExt(Word Code)
 {
   if (ChkArgCnt(1, 1))
   {
-    OpSize = eSymbolSize16Bit;
-    DecodeAdr(1, 1, False, MModAbs);
+    DecodeAdr(1, 1, eSymbolSize16Bit, False, MModAbs);
     switch (AdrMode)
     {
       case ModAbs:
@@ -551,11 +549,11 @@ static void DecodeMov(Word Index)
 
   if (ArgCnt == 2)
   {
-    DecodeAdr(1, 1, False, MModAbs);
+    DecodeAdr(1, 1, eSymbolSizeUnknown, False, MModAbs);
     if (AdrMode == ModAbs)
     {
       memcpy(BAsmCode + 2, AdrVals, 2);
-      DecodeAdr(2, 2, False, MModAbs);
+      DecodeAdr(2, 2, eSymbolSizeUnknown, False, MModAbs);
       if (AdrMode == ModAbs)
       {
         memcpy(BAsmCode + 4, AdrVals, 2);
@@ -571,7 +569,7 @@ static void DecodeMov(Word Index)
     BAsmCode[1] = EvalStrIntExpression(&ArgStr[1], SInt8, &OK);
     if (OK)
     {
-      DecodeAdr(3, 3, False, MModAbs);
+      DecodeAdr(3, 3, eSymbolSizeUnknown, False, MModAbs);
       if (AdrMode == ModAbs)
       {
         memcpy(BAsmCode + 2, AdrVals, 2);
@@ -582,13 +580,13 @@ static void DecodeMov(Word Index)
   }
   else if (!as_strcasecmp(ArgStr[3].str.p_str, "X"))
   {
-    BAsmCode[3] = EvalStrIntExpression(&ArgStr[2], SInt8, &OK);
+    BAsmCode[1] = EvalStrIntExpression(&ArgStr[2], SInt8, &OK);
     if (OK)
     {
-      DecodeAdr(1, 1, False, MModAbs);
+      DecodeAdr(1, 1, eSymbolSizeUnknown, False, MModAbs);
       if (AdrMode == ModAbs)
       {
-        memcpy(BAsmCode + 1, AdrVals, 2);
+        memcpy(BAsmCode + 2, AdrVals, 2);
         BAsmCode[0] = 0x32 | Index;
         CodeLen = 4;
       }
@@ -601,7 +599,7 @@ static void DecodeLogp(Word Index)
 {
   if (ChkArgCnt(1, 1))
   {
-    OpSize = eSymbolSize16Bit; DecodeAdr(1, 1, False, MModImm);
+    DecodeAdr(1, 1, eSymbolSize16Bit, False, MModImm);
     switch (AdrMode)
     {
       case ModImm:
@@ -621,10 +619,10 @@ static void DecodeMac(Word Index)
 
   if (ChkArgCnt(2, 2))
   {
-    Val = EvalStrIntExpression(&ArgStr[1], UInt4, &OK);
+    Val = EvalStrIntExpression(&ArgStr[1], SInt4, &OK) & 0x0f;
     if (OK)
     {
-      BAsmCode[1] = EvalStrIntExpression(&ArgStr[2], UInt4, &OK);
+      BAsmCode[1] = EvalStrIntExpression(&ArgStr[2], SInt4, &OK) & 0x0f;
       if (OK)
       {
         BAsmCode[1] |= (Val << 4);
@@ -641,13 +639,12 @@ static void DecodeBit8(Word Index)
 
   if (ChkArgCnt(2, 3))
   {
-    OpSize = eSymbolSize8Bit;
-    DecodeAdr(ArgCnt, ArgCnt, False, MModImm);
+    DecodeAdr(ArgCnt, ArgCnt, eSymbolSize8Bit, False, MModImm);
     switch (AdrMode)
     {
       case ModImm:
         Mask = AdrVals[0];
-        DecodeAdr(1, ArgCnt - 1, False, MModDisp8 | MModDisp16 | MModAbs);
+        DecodeAdr(1, ArgCnt - 1, eSymbolSizeUnknown, False, MModDisp8 | MModDisp16 | MModAbs);
         switch (AdrMode)
         {
           case ModDisp8:
@@ -679,25 +676,24 @@ static void DecodeBit16(Word Index)
 {
   if (ChkArgCnt(2, 3))
   {
-    OpSize = eSymbolSize16Bit;
-    DecodeAdr(ArgCnt, ArgCnt, False, MModImm);
+    DecodeAdr(ArgCnt, ArgCnt, eSymbolSize16Bit, False, MModImm);
     switch (AdrMode)
     {
       case ModImm:
-        memcpy(BAsmCode + 2, AdrVals, AdrCnt);
-        DecodeAdr(1, ArgCnt - 1, False, MModDisp16 | MModAbs);
+        memcpy(BAsmCode + 4, AdrVals, AdrCnt);
+        DecodeAdr(1, ArgCnt - 1, eSymbolSizeUnknown, False, MModDisp16 | MModAbs);
         switch (AdrMode)
         {
           case ModDisp16:
             BAsmCode[0] = 0x27;
             BAsmCode[1] = 0x08 | Index | AdrPart;
-            memcpy(BAsmCode + 4, AdrVals, AdrCnt);
+            memcpy(BAsmCode + 2, AdrVals, AdrCnt);
             CodeLen = 4 + AdrCnt;
             break;
           case ModAbs:
             BAsmCode[0] = 0x27;
             BAsmCode[1] = 0x38 | Index;
-            memcpy(BAsmCode + 4, AdrVals, AdrCnt);
+            memcpy(BAsmCode + 2, AdrVals, AdrCnt);
             CodeLen = 4 + AdrCnt;
             break;
         }
@@ -713,14 +709,14 @@ static void DecodeBrBit(Word Index)
 
   if (ChkArgCnt(3, 4))
   {
-    OpSize = eSymbolSize8Bit; DecodeAdr(ArgCnt - 1, ArgCnt - 1, False, MModImm);
+    DecodeAdr(ArgCnt - 1, ArgCnt - 1, eSymbolSize8Bit, False, MModImm);
     if (AdrMode == ModImm)
     {
       BAsmCode[1] = AdrVals[0];
       AdrLong = EvalStrIntExpressionWithFlags(&ArgStr[ArgCnt], UInt20, &OK, &Flags) - EProgCounter() - 6;
       if (OK)
       {
-        DecodeAdr(1, ArgCnt - 2, False, MModDisp8 | MModDisp16 | MModAbs);
+        DecodeAdr(1, ArgCnt - 2, eSymbolSizeUnknown, False, MModDisp8 | MModDisp16 | MModAbs);
         switch (AdrMode)
         {
           case ModDisp8:
@@ -774,8 +770,7 @@ static void DecodeJmpJsr(Word Index)
 {
   if (ChkArgCnt(1, 2))
   {
-    OpSize = eSymbolSize16Bit;
-    DecodeAdr(1, ArgCnt, True, MModAbs20 | MModDisp20);
+    DecodeAdr(1, ArgCnt, eSymbolSize16Bit, True, MModAbs20 | MModDisp20);
     switch (AdrMode)
     {
       case ModAbs20:
@@ -869,6 +864,8 @@ static void AddEmu(const char *NName, Word NCode1, Word NCode2)
 static void InitFields(void)
 {
   InstTable = CreateInstTable(405);
+
+  add_null_pseudo(InstTable);
 
   AddFixed("ABA"   , 0x370b); AddFixed("ABX"   , 0x374f);
   AddFixed("ABY"   , 0x375f); AddFixed("ABZ"   , 0x376f);
@@ -1061,10 +1058,10 @@ static void InitFields(void)
   AddInstTable(InstTable, "JSR", 1, DecodeJmpJsr);
   AddInstTable(InstTable, "BSR", 0, DecodeBsr);
 
-  AddInstTable(InstTable, "DB", 0, DecodeMotoBYT);
-  AddInstTable(InstTable, "DW", 0, DecodeMotoADR);
-
-  init_moto8_pseudo(InstTable, e_moto_8_be);
+  add_moto8_pseudo(InstTable, e_moto_pseudo_flags_be);
+  AddMoto16Pseudo(InstTable, e_moto_pseudo_flags_be);
+  AddInstTable(InstTable, "DB", eIntPseudoFlag_BigEndian | eIntPseudoFlag_AllowInt | eIntPseudoFlag_AllowString | eIntPseudoFlag_MotoRep, DecodeIntelDB);
+  AddInstTable(InstTable, "DW", eIntPseudoFlag_BigEndian | eIntPseudoFlag_AllowInt | eIntPseudoFlag_AllowString | eIntPseudoFlag_MotoRep, DecodeIntelDW);
 }
 
 static void DeinitFields(void)
@@ -1088,24 +1085,13 @@ static Boolean DecodeAttrPart_6816(void)
 
 static void MakeCode_6816(void)
 {
-  CodeLen = 0;
-  DontPrint = False;
   AdrCnt = 0;
 
   /* Operandengroesse festlegen. ACHTUNG! Das gilt nur fuer die folgenden
      Pseudobefehle! Die Maschinenbefehle ueberschreiben diesen Wert! */
 
-  OpSize = AttrPartOpSize[0];
-
-  /* zu ignorierendes */
-
-  if (Memo(""))
-    return;
-
-  /* Pseudoanweisungen */
-
-  if (DecodeMoto16Pseudo(OpSize, True))
-    return;
+  if (AttrPartOpSize[0] == eSymbolSizeUnknown)
+    AttrPartOpSize[0] = eSymbolSize8Bit;
 
   if (!LookupInstTable(InstTable, OpPart.str.p_str))
     WrStrErrorPos(ErrNum_UnknownInstruction, &OpPart);
@@ -1128,17 +1114,17 @@ static void SwitchFrom_6816(void)
 
 static void SwitchTo_6816(void)
 {
-#define ASSUME6816Count (sizeof(ASSUME6816s) / sizeof(*ASSUME6816s))
-  static ASSUMERec ASSUME6816s[11] =
+  static as_assume_rec_t ASSUME6816s[11] =
   {
     { "EK" , &Reg_EK , 0 , 0xff , 0x100, NULL }
   };
+  const TFamilyDescr *p_descr = FindFamilyByName("68HC16");
 
   TurnWords = False;
   SetIntConstMode(eIntConstModeMoto);
 
   PCSymbol = "*";
-  HeaderID = 0x65;
+  HeaderID = p_descr->Id;
   NOPCode = 0x274c;
   DivideChars = ",";
   HasAttrs = True;
@@ -1154,8 +1140,7 @@ static void SwitchTo_6816(void)
   SwitchFrom = SwitchFrom_6816;
   AddMoto16PseudoONOFF(False);
 
-  pASSUMERecs = ASSUME6816s;
-  ASSUMERecCnt = ASSUME6816Count;
+  assume_set(ASSUME6816s, as_array_size(ASSUME6816s));
 
   InitFields();
 }

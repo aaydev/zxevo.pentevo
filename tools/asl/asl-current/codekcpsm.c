@@ -21,6 +21,7 @@
 #include "asmpars.h"
 #include "asmitree.h"
 #include "asmallg.h"
+#include "codepseudo.h"
 #include "intpseudo.h"
 #include "codevars.h"
 #include "headids.h"
@@ -81,10 +82,10 @@ static Boolean IsWRegCore(const char *pArg, Word *pResult)
     retValue = False;
   else
   {
-    Boolean OK;
+    char *p_end;
 
-    *pResult = ConstLongInt(pArg + 1, &OK, 10);
-    if (!OK)
+    *pResult = strtoul(pArg + 1, &p_end, 10);
+    if (*p_end)
       retValue = False;
     else
       retValue = (*pResult <= 15);
@@ -188,7 +189,14 @@ static void DecodeAdr(const tStrComp *pArg, Byte Mask, int Segment)
       StrCompShorten(&RegComp, 1);
       if (IsWReg(&RegComp, &AdrMode, True) == eIsReg)
       {
-        AdrIndex = EvalStrIntExpressionWithResult(&DispComp, UInt8, &EvalResult);
+        if (DispComp.str.p_str[0])
+          AdrIndex = EvalStrIntExpressionWithResult(&DispComp, UInt8, &EvalResult);
+        else
+        {
+          AdrIndex = 0;
+          EvalResult.OK = True;
+          EvalResult.AddrSpaceMask = 0;
+        }
         if (EvalResult.OK)
         {
           AdrType = ModInd;
@@ -511,7 +519,7 @@ static void AddALU1(const char *NName, Word NCode)
   AddInstTable(InstTable, NName, NCode, DecodeALU1);
 }
 
-static void AddIOop(const Char *NName, Word NCode)
+static void AddIOop(const char *NName, Word NCode)
 {
   AddInstTable(InstTable, NName, NCode, DecodeIOop);
 }
@@ -526,6 +534,9 @@ static void AddCondition(const char *NName, Word NCode)
 static void InitFields(void)
 {
   InstTable = CreateInstTable(201);
+
+  add_null_pseudo(InstTable);
+
   AddInstTable(InstTable, "LOAD", 0, DecodeLOAD);
   AddInstTable(InstTable, "CALL", 0, DecodeCALL);
   AddInstTable(InstTable, "JUMP", 0, DecodeJUMP);
@@ -568,6 +579,8 @@ static void InitFields(void)
   AddCondition("C"  , 6); AddCondition("NC" , 7);
   AddCondition("Z"  , 4); AddCondition("NZ" , 5);
   AddCondition(NULL , 0);
+
+  AddIntelPseudo(InstTable, eIntPseudoFlag_BigEndian);
 }
 
 static void DeinitFields(void)
@@ -601,16 +614,6 @@ static void InternSymbol_KCPSM(char *pArg, TempResult *pResult)
 
 static void MakeCode_KCPSM(void)
 {
-  CodeLen = 0; DontPrint = False;
-
-  /* zu ignorierendes */
-
-  if (Memo("")) return;
-
-  /* Pseudoanweisungen */
-
-  if (DecodeIntelPseudo(True)) return;
-
   if (!LookupInstTable(InstTable, OpPart.str.p_str))
     WrStrErrorPos(ErrNum_UnknownInstruction, &OpPart);
 }

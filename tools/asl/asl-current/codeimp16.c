@@ -20,6 +20,7 @@
 #include "asmallg.h"
 #include "asmitree.h"
 #include "codevars.h"
+#include "assume.h"
 #include "codepseudo.h"
 #include "intpseudo.h"
 #include "headids.h"
@@ -198,6 +199,7 @@ static tRegEvalResult decode_reg(const tStrComp *p_arg, Word *p_result)
 static Boolean decode_mem_arg(const tStrComp *p_arg, Word *p_result, Boolean allow_indirect)
 {
   tStrComp arg;
+  String l_str;
   int split_pos, arg_len;
   LongInt disp;
   LongWord addr;
@@ -228,7 +230,6 @@ static Boolean decode_mem_arg(const tStrComp *p_arg, Word *p_result, Boolean all
     tEvalResult eval_result;
     Word value;
     Boolean critical;
-    String l_str;
 
     value = EvalStrIntExpressionOffsWithResult(&arg, 1, Int16, &eval_result);
     if (!eval_result.OK)
@@ -335,6 +336,7 @@ parse_abs:
 static Boolean decode_long_mem_arg(const tStrComp *p_arg, Word *p_result, Word *p_disp, IntType mem_type, Boolean allow_pcrel)
 {
   tStrComp arg;
+  String l_str;
   int split_pos, arg_len;
   LongWord addr;
   LongInt disp;
@@ -359,7 +361,6 @@ static Boolean decode_long_mem_arg(const tStrComp *p_arg, Word *p_result, Word *
     tEvalResult eval_result;
     Word value;
     Boolean critical;
-    String l_str;
 
     if (!allow_pcrel)
     {
@@ -1035,7 +1036,7 @@ static void decode_jmpp_jint(Word code)
 static void decode_port(Word code)
 {
   UNUSED(code);
-  CodeEquate(SegIO, 0, SegLimits[SegIO]);
+  code_equate_type(SegIO, UInt7);
 }
 
 /*!------------------------------------------------------------------------
@@ -1087,6 +1088,8 @@ static void add_status_flag(const char *p_name, Word code)
 static void init_fields(Boolean is_pace)
 {
   InstTable = CreateInstTable(103);
+
+  add_null_pseudo(InstTable);
 
   AddInstTable(InstTable, "HALT" , 0x0000, decode_none);
   AddInstTable(InstTable, "PUSHF", is_pace ? 0x0c00 : 0x0080, decode_none);
@@ -1174,11 +1177,12 @@ static void init_fields(Boolean is_pace)
   }
 
 
-  if (ValidSegs & (1 << SegCode))
+  if (ValidSegs & (1 << SegIO))
     AddInstTable(InstTable, "PORT" , 0, decode_port);
-  AddInstTable(InstTable, "ASCII" , eIntPseudoFlag_AllowInt | eIntPseudoFlag_AllowString | eIntPseudoFlag_BigEndian, DecodeIntelDB);
-  AddInstTable(InstTable, "WORD" , eIntPseudoFlag_AllowInt | eIntPseudoFlag_AllowString, DecodeIntelDW);
+  AddInstTable(InstTable, "ASCII" , eIntPseudoFlag_BigEndian | eIntPseudoFlag_AllowInt | eIntPseudoFlag_AllowString, DecodeIntelDB);
+  AddInstTable(InstTable, "WORD" , eIntPseudoFlag_LittleEndian | eIntPseudoFlag_AllowInt | eIntPseudoFlag_AllowString, DecodeIntelDW);
   AddInstTable(InstTable, "LTORG", 0, decode_ltorg);
+  AddIntelPseudo(InstTable, eIntPseudoFlag_LittleEndian);
 
   InstrZ = 0;
   add_condition("REQ0", 1);
@@ -1292,23 +1296,11 @@ static void intern_symbol_imp16(char *p_arg, TempResult *p_result)
 
 static void make_code_imp16(void)
 {
-  CodeLen = 0; DontPrint = False;
   this_was_skip = False;
-
-  /* to be ignored */
-
-  if (Memo(""))
-    goto func_exit;
-
-  /* pseudo instructions */
-
-  if (DecodeIntelPseudo(False))
-    goto func_exit;
 
   if (!LookupInstTable(InstTable, OpPart.str.p_str))
     WrStrErrorPos(ErrNum_UnknownInstruction, &OpPart);
 
-func_exit:
   last_was_skip = this_was_skip;
 }
 
@@ -1319,7 +1311,7 @@ func_exit:
 
 static Boolean is_def_imp16(void)
 {
-  return (ValidSegs & (1 << SegCode)) ? Memo("PORT") : False;
+  return (ValidSegs & (1 << SegIO)) ? Memo("PORT") : False;
 }
 
 /*!------------------------------------------------------------------------
@@ -1353,15 +1345,14 @@ static void switch_to_imp16(void *p_user)
   SegLimits[SegCode] = 0xffff;
   if (is_pace)
   {
-    static ASSUMERec assume_pace = { "BPS", &bps_val, 0, 1, 0, NULL };
+    static as_assume_rec_t assume_pace = { "BPS", &bps_val, 0, 1, 0, NULL };
 
-    pASSUMERecs = &assume_pace;
-    ASSUMERecCnt = 1;
+    assume_set(&assume_pace, 1);
   }
   else
   {
     ValidSegs |= 1 << SegIO;
-    Grans[SegIO] = 2; ListGrans[SegIO] = 2; SegInits[SegCode] = 0;
+    Grans[SegIO] = 2; ListGrans[SegIO] = 2; SegInits[SegIO] = 0;
     SegLimits[SegIO] = 0x7f;
   }
 

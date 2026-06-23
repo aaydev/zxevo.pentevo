@@ -1,5 +1,5 @@
 
-; LAST UPDATE: 01.11.2023 savelij
+; LAST UPDATE: 06.02.2025 savelij
 
 ; 07.07.2021 перед вызовом LD_FILE в реги BCDE загружается номер кластера откуда читать
 
@@ -257,11 +257,11 @@ LOADING		PUSH IX
 		ADD A,A
 		ADD A,A
 		LD IYL,A
-		LD DE,(AFILCLS)
-		LD BC,(AFILCLS + 2)
+		LD DE,(FATVAR.AFILCLS)
+		LD BC,(FATVAR.AFILCLS + 2)
 		CALL LOAD_FILE
-		LD (AFILCLS),DE
-		LD (AFILCLS + 2),BC
+		LD (FATVAR.AFILCLS),DE
+		LD (FATVAR.AFILCLS + 2),BC
 		POP IX
 		RET
 

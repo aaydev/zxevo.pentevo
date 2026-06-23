@@ -27,8 +27,6 @@
 
 /*--------------------------------------------------------------------------*/
 
-#define TOKLEN 350
-
 static char *TableName,
             *BiblioName,
             *ContentsName,
@@ -36,26 +34,10 @@ static char *TableName,
 #define ErrorEntryCnt 3
             *ErrorEntryNames[ErrorEntryCnt];
 
-typedef enum
-{
-  EnvNone, EnvDocument, EnvItemize, EnvEnumerate, EnvDescription, EnvTable,
-  EnvTabular, EnvRaggedLeft, EnvRaggedRight, EnvCenter, EnvVerbatim,
-  EnvQuote, EnvTabbing, EnvBiblio, EnvMarginPar, EnvCaption, EnvHeading, EnvCount
-} EnvType;
-
 static char *FontNames[FontCnt] =
 {
   "", "EM", "B", "TT", "I", "SUP"
 };
-
-typedef struct sEnvSave
-{
-  struct sEnvSave *Next;
-  EnvType SaveEnv;
-  int ListDepth, ActLeftMargin, LeftMargin, RightMargin;
-  int EnumCounter, FontNest;
-  Boolean InListItem;
-} TEnvSave, *PEnvSave;
 
 typedef enum
 {
@@ -83,37 +65,22 @@ typedef struct sIndexSave
   int RefCnt;
 } TIndexSave, *PIndexSave;
 
-static char *EnvNames[EnvCount] =
-{
-  "___NONE___", "document", "itemize", "enumerate", "description", "table", "tabular",
-  "raggedleft", "raggedright", "center", "verbatim", "quote", "tabbing",
-  "thebibliography", "___MARGINPAR___", "___CAPTION___", "___HEADING___"
-};
-
-static int IncludeNest;
-static FILE *infiles[50], *outfile;
-static char *outfilename;
 static char TocName[200];
 
 #define CHAPMAX 6
 static int Chapters[CHAPMAX];
-static int TableNum, ErrState, FracState, BibIndent, BibCounter;
+static int TableNum, FracState, BibIndent, BibCounter;
 #define TABMAX 100
 static int TabStops[TABMAX], TabStopCnt, CurrTabStop;
-static Boolean InAppendix, InMathMode, InListItem;
+static Boolean InAppendix, InMathMode;
 static TTable *pThisTable;
 static int CurrRow, CurrCol;
-static char SrcDir[TOKLEN + 1], asname[TOKLEN];
+static char SrcDir[TOKLEN + 1];
 static Boolean GermanMode;
 
 static int Structured;
 
-static EnvType CurrEnv;
-static int CurrListDepth;
-static int EnumCounter;
-static int ActLeftMargin, LeftMargin, RightMargin;
 static int CurrPass;
-static PEnvSave EnvStack;
 static PIndexSave FirstIndex;
 
 static PInstTable TeXTable;
@@ -146,16 +113,6 @@ static void SetSrcDir(const char *pSrcFile)
     memcpy(SrcDir, pSrcFile, l);
     SrcDir[l] = '\0';
   }
-}
-
-static void error(char *Msg)
-{
-  int z;
-
-  fprintf(stderr, "%s:%d.%d: %s\n", pInFileName, CurrLine, CurrColumn, Msg);
-  for (z = 0; z < IncludeNest; fclose(infiles[z++]));
-  fclose(outfile);
-  exit(2);
 }
 
 static void SetLang(Boolean IsGerman)
@@ -239,212 +196,6 @@ static void ReadAuxFile(char *Name)
 
 /*--------------------------------------------------------------------------*/
 
-static Boolean issep(char inp)
-{
-  return ((inp == ' ') || (inp == '\t') || (inp == '\n'));
-}
-
-static Boolean isalphanum(char inp)
-{
-  return ((inp >= 'A') && (inp <= 'Z'))
-      || ((inp >= 'a') && (inp <= 'z'))
-      || ((inp >= '0') && (inp <= '9'))
-      || (inp == '.');
-}
-
-static char LastChar = '\0';
-static char SaveSep = '\0', SepString[TOKLEN] = "";
-static Boolean DidEOF;
-static char BufferLine[TOKLEN] = "", *BufferPtr = BufferLine;
-typedef struct
-{
-  char Token[TOKLEN], Sep[TOKLEN];
-} PushedToken;
-static int PushedTokenCnt = 0;
-static PushedToken PushedTokens[16];
-
-static int GetChar(void)
-{
-  Boolean Comment;
-  static Boolean DidPar = False;
-  char *Result;
-
-  if (*BufferPtr == '\0')
-  {
-    do
-    {
-      if (IncludeNest <= 0)
-        return EOF;
-      do
-      {
-        Result = fgets(BufferLine, TOKLEN, infiles[IncludeNest - 1]);
-        if (Result)
-          break;
-        fclose(infiles[--IncludeNest]);
-        if (IncludeNest <= 0)
-          return EOF;
-      }
-      while (True);
-      CurrLine++;
-      BufferPtr = BufferLine;
-      Comment = (strlen(BufferLine) >= 2) && (!strncmp(BufferLine, "%%", 2));
-      if ((*BufferLine == '\0') || (*BufferLine == '\n'))
-      {
-        if ((CurrEnv == EnvDocument) && (!DidPar))
-        {
-          strcpy(BufferLine, "\\par\n");
-          DidPar = True;
-          Comment = False;
-        }
-      }
-      else if (Comment)
-      {
-        if ((*BufferLine) && (BufferLine[strlen(BufferLine) - 1] == '\n'))
-          BufferLine[strlen(BufferLine) - 1] = '\0';
-        if (!strncmp(BufferLine + 2, "TITLE ", 6))
-          fprintf(outfile, "<TITLE>%s</TITLE>\n", BufferLine + 8);
-      }
-      else
-        DidPar = False;
-    }
-    while (Comment);
-  }
-  return *(BufferPtr++);
-}
-
-static Boolean ReadToken(char *Dest)
-{
-  int ch, z;
-  Boolean Good;
-  char *run;
-
-  if (PushedTokenCnt > 0)
-  {
-    strcpy(Dest, PushedTokens[0].Token);
-    strcpy(SepString, PushedTokens[0].Sep);
-    for (z = 0; z < PushedTokenCnt - 1; z++)
-      PushedTokens[z] = PushedTokens[z + 1];
-    PushedTokenCnt--;
-    return True;
-  }
-
-  if (DidEOF)
-    return FALSE;
-
-  CurrColumn = BufferPtr - BufferLine + 1;
-
-  /* falls kein Zeichen gespeichert, fuehrende Blanks ueberspringen */
-
-  *Dest = '\0';
-  *SepString = SaveSep;
-  run = SepString + ((SaveSep == '\0') ? 0 : 1);
-  if (LastChar == '\0')
-  {
-    do
-    {
-      ch = GetChar();
-      if (ch == '\r')
-        ch = GetChar();
-      if (issep(ch))
-        *(run++) = ' ';
-    }
-    while ((issep(ch)) && (ch != EOF));
-    *run = '\0';
-    if (ch == EOF)
-    {
-      DidEOF = TRUE;
-      return FALSE;
-    }
-  }
-  else
-  {
-    ch = LastChar;
-    LastChar = '\0';
-  }
-
-  /* jetzt Zeichen kopieren, bis Leerzeichen */
-
-  run = Dest;
-  SaveSep = '\0';
-  if (isalphanum(*(run++) = ch))
-  {
-    do
-    {
-      ch = GetChar();
-      Good = (!issep(ch)) && (isalphanum(ch)) && (ch != EOF);
-      if (Good)
-        *(run++) = ch;
-    }
-    while (Good);
-
-    /* Dateiende ? */
-
-    if (ch == EOF)
-      DidEOF = TRUE;
-
-    /* Zeichen speichern ? */
-
-    else if ((!issep(ch)) && (!isalphanum(ch)))
-      LastChar = ch;
-
-    /* Separator speichern ? */
-
-    else if (issep(ch))
-      SaveSep = ' ';
-  }
-
-  /* Ende */
-
-  *run = '\0';
-  return True;
-}
-
-static void BackToken(char *Token)
-{
-  if (PushedTokenCnt >= 16)
-    return;
-  strcpy(PushedTokens[PushedTokenCnt].Token, Token);
-  strcpy(PushedTokens[PushedTokenCnt].Sep, SepString);
-  PushedTokenCnt++;
-}
-
-/*--------------------------------------------------------------------------*/
-
-static void assert_token(char *ref)
-{
-  char token[TOKLEN];
-
-  ReadToken(token);
-  if (strcmp(ref, token))
-  {
-    as_snprintf(token, sizeof(token), "\"%s\" expected", ref);
-    error(token);
-  }
-}
-
-static void collect_token(char *dest, char *term)
-{
-  char Comp[TOKLEN];
-  Boolean first = TRUE, done;
-
-  *dest = '\0';
-  do
-  {
-    ReadToken(Comp);
-    done = (!strcmp(Comp, term));
-    if (!done)
-    {
-      if (!first)
-        strcat(dest, SepString);
-      strcat(dest, Comp);
-    }
-    first = False;
-  }
-  while (!done);
-}
-
-/*--------------------------------------------------------------------------*/
-
 static char OutLineBuffer[TOKLEN] = "", SideMargin[TOKLEN];
 
 static void PutLine(Boolean DoBlock)
@@ -453,16 +204,16 @@ static void PutLine(Boolean DoBlock)
   char *chz, *ptrs[50];
   Boolean SkipFirst, IsFirst;
 
-  fputs(Blanks(LeftMargin - 1), outfile);
-  if ((CurrEnv == EnvRaggedRight) || (!DoBlock))
+  fputs(Blanks(curr_tex_env_data.LeftMargin - 1), p_outfile);
+  if ((curr_tex_env == EnvRaggedRight) || (!DoBlock))
   {
-    fprintf(outfile, "%s", OutLineBuffer);
+    fprintf(p_outfile, "%s", OutLineBuffer);
     l = strlen(OutLineBuffer);
   }
   else
   {
-    SkipFirst = ((CurrEnv == EnvItemize) || (CurrEnv == EnvEnumerate) || (CurrEnv == EnvDescription) || (CurrEnv == EnvBiblio));
-    if (LeftMargin == ActLeftMargin)
+    SkipFirst = ((curr_tex_env == EnvItemize) || (curr_tex_env == EnvEnumerate) || (curr_tex_env == EnvDescription) || (curr_tex_env == EnvBiblio));
+    if (curr_tex_env_data.LeftMargin == curr_tex_env_data.ActLeftMargin)
       SkipFirst = False;
     l = ptrcnt = 0;
     IsFirst = SkipFirst;
@@ -477,7 +228,7 @@ static void PutLine(Boolean DoBlock)
       l++;
     }
     (void)ptrs;
-    diff = RightMargin - LeftMargin + 1 - l;
+    diff = curr_tex_env_data.RightMargin - curr_tex_env_data.LeftMargin + 1 - l;
     div = (ptrcnt > 0) ? diff / ptrcnt : 0;
     mod = diff - (ptrcnt * div);
     divmod = (mod > 0) ? ptrcnt / mod : ptrcnt + 1;
@@ -485,7 +236,7 @@ static void PutLine(Boolean DoBlock)
     ptrcnt = 0;
     for (chz = OutLineBuffer; *chz != '\0'; chz++)
     {
-      fputc(*chz, outfile);
+      fputc(*chz, p_outfile);
       if ((chz > OutLineBuffer) && (*(chz - 1) != ' ') && (*chz == ' '))
       {
         if (!IsFirst)
@@ -497,29 +248,29 @@ static void PutLine(Boolean DoBlock)
             n++;
           }
           if (n > 0)
-            fputs(Blanks(n), outfile);
+            fputs(Blanks(n), p_outfile);
           ptrcnt++;
         }
         IsFirst = False;
       }
     }
-    l = RightMargin - LeftMargin + 1;
+    l = curr_tex_env_data.RightMargin - curr_tex_env_data.LeftMargin + 1;
   }
   if (*SideMargin != '\0')
   {
-    fputs(Blanks(RightMargin - LeftMargin + 4 - l), outfile);
+    fputs(Blanks(curr_tex_env_data.RightMargin - curr_tex_env_data.LeftMargin + 4 - l), p_outfile);
 #if 0
-    fprintf(outfile, "%s", SideMargin);
+    fprintf(p_outfile, "%s", SideMargin);
 #endif
     *SideMargin = '\0';
   }
-  fputc('\n', outfile);
-  LeftMargin = ActLeftMargin;
+  fputc('\n', p_outfile);
+  curr_tex_env_data.LeftMargin = curr_tex_env_data.ActLeftMargin;
 }
 
 static void AddLine(const char *Part, char *Sep)
 {
-  int mlen = RightMargin - LeftMargin + 1;
+  int mlen = curr_tex_env_data.RightMargin - curr_tex_env_data.LeftMargin + 1;
   char *search, save;
 
   if (strlen(Sep) > 1)
@@ -558,7 +309,7 @@ static void AddSideMargin(const char *Part, char *Sep)
   if (strlen(Sep) > 1)
     Sep[1] = '\0';
   if (*Sep != '\0')
-    if ((*SideMargin != '\0') || (!issep(*Sep)))
+    if ((*SideMargin != '\0') || (!tex_issep(*Sep)))
       strcat(SideMargin, Sep);
   strcat(SideMargin, Part);
 }
@@ -608,6 +359,15 @@ static void AddTableEntry(const char *Part, char *Sep)
 
 static void DoAddNormal(const char *Part, char *Sep)
 {
+  while (p_current_tex_output_consumer)
+  {
+    p_current_tex_output_consumer->consume(p_current_tex_output_consumer, (const char**)&Sep);
+    if (p_current_tex_output_consumer)
+      p_current_tex_output_consumer->consume(p_current_tex_output_consumer, &Part);
+    if (!*Part && !*Sep)
+      return;
+  }
+
   if (!strcmp(Part, "<"))
     Part = "&lt;";
   else if (!strcmp(Part, ">"))
@@ -615,7 +375,7 @@ static void DoAddNormal(const char *Part, char *Sep)
   else if (!strcmp(Part, "&"))
     Part = "&amp;";
 
-  switch (CurrEnv)
+  switch (curr_tex_env)
   {
     case EnvMarginPar:
       AddSideMargin(Part, Sep);
@@ -673,42 +433,6 @@ void PrFontSize(tFontSize Type, Boolean On)
     DoAddNormal(erg, "");
 }
 
-static void SaveEnv(EnvType NewEnv)
-{
-  PEnvSave NewSave;
-
-  NewSave = (PEnvSave) malloc(sizeof(TEnvSave));
-  NewSave->Next = EnvStack;
-  NewSave->ListDepth = CurrListDepth;
-  NewSave->LeftMargin = LeftMargin;
-  NewSave->ActLeftMargin = ActLeftMargin;
-  NewSave->RightMargin = RightMargin;
-  NewSave->EnumCounter = EnumCounter;
-  NewSave->SaveEnv = CurrEnv;
-  NewSave->FontNest = FontNest;
-  NewSave->InListItem = InListItem;
-  EnvStack = NewSave;
-  CurrEnv = NewEnv;
-  FontNest = 0;
-}
-
-static void RestoreEnv(void)
-{
-  PEnvSave OldSave;
-
-  OldSave = EnvStack;
-  EnvStack = OldSave->Next;
-  CurrListDepth = OldSave->ListDepth;
-  LeftMargin = OldSave->LeftMargin;
-  ActLeftMargin = OldSave->ActLeftMargin;
-  RightMargin = OldSave->RightMargin;
-  EnumCounter = OldSave->EnumCounter;
-  FontNest = OldSave->FontNest;
-  InListItem = OldSave->InListItem;
-  CurrEnv = OldSave->SaveEnv;
-  free(OldSave);
-}
-
 static void InitTableRow(int Index)
 {
   int z;
@@ -720,12 +444,15 @@ static void InitTableRow(int Index)
 
 static void NextTableColumn(void)
 {
-  if (CurrEnv != EnvTabular)
-    error("table separation char not within tabular environment");
+  if (!tex_if_query())
+    return;
+
+  if (curr_tex_env != EnvTabular)
+    tex_error("table separation char not within tabular environment");
 
   if ((pThisTable->MultiFlags[CurrRow])
    || (CurrCol >= pThisTable->TColumnCount))
-    error("too many columns within row");
+    tex_error("too many columns within row");
 
   CurrCol++;
 }
@@ -767,7 +494,7 @@ static void DumpTable(void)
   /* get total width */
 
   for (colz = sumlen = 0; colz < pThisTable->ColumnCount; sumlen += pThisTable->ColLens[colz++]);
-  indent = (RightMargin - LeftMargin + 1 - sumlen) / 2;
+  indent = (curr_tex_env_data.RightMargin - curr_tex_env_data.LeftMargin + 1 - sumlen) / 2;
   if (indent < 0)
     indent = 0;
 
@@ -789,7 +516,7 @@ static void DumpTable(void)
 
   /* tell browser to switch to table mode */
 
-  fprintf(outfile, "<P><CENTER><TABLE SUMMARY=\"No Summary\" BORDER=1 CELLPADDING=5>\n");
+  fprintf(p_outfile, "<P><CENTER><TABLE SUMMARY=\"No Summary\" BORDER=1 CELLPADDING=5>\n");
 
   /* print rows */
 
@@ -820,7 +547,7 @@ static void DumpTable(void)
 
       /* start a row */
 
-      fprintf(outfile, "<TR ALIGN=LEFT>\n");
+      fprintf(p_outfile, "<TR ALIGN=LEFT>\n");
 
       /* over all columns... */
 
@@ -830,19 +557,19 @@ static void DumpTable(void)
         {
           /* start a column */
 
-          fprintf(outfile, "<%s VALIGN=TOP NOWRAP", ColTag);
+          fprintf(p_outfile, "<%s VALIGN=TOP NOWRAP", ColTag);
           if (pThisTable->MultiFlags[rowz])
-            fprintf(outfile, " COLSPAN=%d", TextCnt);
+            fprintf(p_outfile, " COLSPAN=%d", TextCnt);
           switch (pThisTable->ColTypes[colz])
           {
             case ColLeft:
-              fputs(" ALIGN=LEFT>", outfile);
+              fputs(" ALIGN=LEFT>", p_outfile);
               break;
             case ColCenter:
-              fputs(" ALIGN=CENTER>", outfile);
+              fputs(" ALIGN=CENTER>", p_outfile);
               break;
             case ColRight:
-              fputs(" ALIGN=RIGHT>", outfile);
+              fputs(" ALIGN=RIGHT>", p_outfile);
               break;
             default:
               break;
@@ -853,21 +580,21 @@ static void DumpTable(void)
           for (rowz3 = rowz; rowz3 <= rowz2; rowz3++)
           {
             if (pThisTable->Lines[rowz3][colptr])
-              fputs(pThisTable->Lines[rowz3][colptr], outfile);
+              fputs(pThisTable->Lines[rowz3][colptr], p_outfile);
             if (rowz3 != rowz2)
-              fputs("<BR>\n", outfile);
+              fputs("<BR>\n", p_outfile);
           }
 
           /* end column */
 
-          fprintf(outfile, "</%s>\n", ColTag);
+          fprintf(p_outfile, "</%s>\n", ColTag);
 
           colptr++;
         }
 
       /* end row */
 
-      fprintf(outfile, "</TR>\n");
+      fprintf(p_outfile, "</TR>\n");
 
       for (rowz3 = rowz; rowz3 <= rowz2; rowz3++)
         for (colz = 0; colz < pThisTable->ColumnCount; colz++)
@@ -883,12 +610,12 @@ static void DumpTable(void)
 
   /* end table mode */
 
-  fprintf(outfile, "</TABLE></CENTER>\n");
+  fprintf(p_outfile, "</TABLE></CENTER>\n");
 }
 
 static void GetTableName(char *Dest, size_t DestSize)
 {
-  int ThisTableNum = (CurrEnv == EnvTabular) ? TableNum + 1 : TableNum;
+  int ThisTableNum = (curr_tex_env == EnvTabular) ? TableNum + 1 : TableNum;
 
   if (InAppendix)
     as_snprintf(Dest, DestSize, "%c.%d", Chapters[0] + 'A', ThisTableNum);
@@ -914,22 +641,23 @@ static void GetSectionName(char *Dest, size_t DestSize)
 
 /*--------------------------------------------------------------------------*/
 
-static char BackSepString[TOKLEN];
-
 static void TeXFlushLine(Word Index)
 {
   UNUSED(Index);
 
-  if (CurrEnv == EnvTabular)
+  if (!tex_if_query())
+    return;
+
+  if (curr_tex_env == EnvTabular)
   {
     for (CurrCol++; CurrCol < pThisTable->TColumnCount; pThisTable->Lines[CurrRow][CurrCol++] = as_strdup(""));
     CurrRow++;
     if (CurrRow == MAXROWS)
-      error("too many rows in table");
+      tex_error("too many rows in table");
     InitTableRow(CurrRow);
     CurrCol = 0;
   }
-  else if (CurrEnv == EnvTabbing)
+  else if (curr_tex_env == EnvTabbing)
   {
     CurrTabStop = 0;
     PrFontDiff(CurrFontFlags, 0);
@@ -952,7 +680,7 @@ static void TeXKillLine(Word Index)
   UNUSED(Index);
 
   ResetLine();
-  if (CurrEnv == EnvTabbing)
+  if (curr_tex_env == EnvTabbing)
   {
     AddLine("<TR><TD NOWRAP>", "");
     PrFontDiff(0, CurrFontFlags);
@@ -969,8 +697,8 @@ static void TeXDummyEqual(Word Index)
   char Token[TOKLEN];
   UNUSED(Index);
 
-  assert_token("=");
-  ReadToken(Token);
+  tex_assert_token("=");
+  tex_read_token(Token);
 }
 
 static void TeXDummyNoBrack(Word Index)
@@ -978,7 +706,7 @@ static void TeXDummyNoBrack(Word Index)
   char Token[TOKLEN];
   UNUSED(Index);
 
-  ReadToken(Token);
+  tex_read_token(Token);
 }
 
 static void TeXDummyInCurl(Word Index)
@@ -986,47 +714,9 @@ static void TeXDummyInCurl(Word Index)
   char Token[TOKLEN];
   UNUSED(Index);
 
-  assert_token("{");
-  ReadToken(Token);
-  assert_token("}");
-}
-
-static void TeXNewCommand(Word Index)
-{
-  char token[TOKLEN], command[TOKLEN], sum_token[TOKLEN], arg_cnt[TOKLEN];
-  int level;
-  UNUSED(Index);
-
-  assert_token("{");
-  assert_token("\\");
-  ReadToken(command);
-  assert_token("}");
-  ReadToken(token);
-
-  if (!strcmp(token, "["))
-  {
-    ReadToken(arg_cnt);
-    assert_token("]");
-    ReadToken(token);
-  }
-  if (strcmp(token, "{"))
-    error("\"{\" expected");
-
-  level = 1;
-  *sum_token = '\0';
-  do
-  {
-    ReadToken(token);
-    if (!strcmp(token, "{"))
-      level++;
-    else if (!strcmp(token, "}"))
-      level--;
-    if (level != 0)
-      strmaxcat(sum_token, token, sizeof(sum_token));
-  }
-  while (level != 0);
-  if (!strcmp(command, "asname"))
-    strmaxcpy(asname, sum_token, sizeof(asname));
+  tex_assert_token("{");
+  tex_read_token(Token);
+  tex_assert_token("}");
 }
 
 static void TeXDef(Word Index)
@@ -1035,13 +725,13 @@ static void TeXDef(Word Index)
   int level;
   UNUSED(Index);
 
-  assert_token("\\");
-  ReadToken(Token);
-  assert_token("{");
+  tex_assert_token("\\");
+  tex_read_token(Token);
+  tex_assert_token("{");
   level = 1;
   do
   {
-    ReadToken(Token);
+    tex_read_token(Token);
     if (!strcmp(Token, "{"))
       level++;
     else if (!strcmp(Token, "}"))
@@ -1055,13 +745,13 @@ static void TeXFont(Word Index)
   char Token[TOKLEN];
   UNUSED(Index);
 
-  assert_token("\\");
-  ReadToken(Token);
-  assert_token("=");
-  ReadToken(Token);
-  ReadToken(Token);
-  assert_token("\\");
-  ReadToken(Token);
+  tex_assert_token("\\");
+  tex_read_token(Token);
+  tex_assert_token("=");
+  tex_read_token(Token);
+  tex_read_token(Token);
+  tex_assert_token("\\");
+  tex_read_token(Token);
 }
 
 static void TeXAppendix(Word Index)
@@ -1084,12 +774,12 @@ static void TeXNewSection(Word Level)
     return;
 
   FlushLine();
-  fputc('\n', outfile);
+  fputc('\n', p_outfile);
 
-  assert_token("{");
+  tex_assert_token("{");
   LastLevel = Level;
-  SaveEnv(EnvHeading);
-  RightMargin = 200;
+  tex_save_env(EnvHeading, NULL);
+  curr_tex_env_data.RightMargin = 200;
 
   Chapters[Level]++;
   for (z = Level + 1; z < CHAPMAX; Chapters[z++] = 0);
@@ -1105,45 +795,31 @@ static void EndSectionHeading(void)
   strcpy(Title, OutLineBuffer);
   *OutLineBuffer = '\0';
 
-  fprintf(outfile, "<H%d>", Level + 1);
+  fprintf(p_outfile, "<H%d>", Level + 1);
 
   *Line = '\0';
   if (Level < 3)
   {
     GetSectionName(Line, sizeof(Line));
-    fprintf(outfile, "<A NAME=\"sect_");
+    fprintf(p_outfile, "<A NAME=\"sect_");
     for (rep = Line; *rep; rep++)
-      fputc((*rep == '.') ? '_' : *rep, outfile);
-    fprintf(outfile, "\">");
+      fputc((*rep == '.') ? '_' : *rep, p_outfile);
+    fprintf(p_outfile, "\">");
     as_snprcatf(Line, sizeof(Line), " ");
   }
   as_snprcatf(Line, sizeof(Line), "%s", Title);
 
-  fprintf(outfile, "%s", Line);
+  fprintf(p_outfile, "%s", Line);
 
   if (Level < 3)
   {
-    fputs("</A>", outfile);
+    fputs("</A>", p_outfile);
     GetSectionName(Line, sizeof(Line));
     as_snprcatf(Line, sizeof(Line), " %s", Title);
     AddToc(Line, 0);
   }
 
-  fprintf(outfile, "</H%d>\n", Level + 1);
-}
-
-static EnvType GetEnvType(char *Name)
-{
-  EnvType z;
-
-  if (!strcmp(Name, "longtable"))
-    return EnvTabular;
-  for (z = EnvNone + 1; z < EnvCount; z++)
-    if (!strcmp(Name, EnvNames[z]))
-      return z;
-
-  error("unknown environment");
-  return EnvNone;
+  fprintf(p_outfile, "</H%d>\n", Level + 1);
 }
 
 static void TeXBeginEnv(Word Index)
@@ -1152,81 +828,82 @@ static void TeXBeginEnv(Word Index)
   EnvType NEnv;
   Boolean done;
   TColumn NCol;
+  const tex_environment_t *p_user_env;
   UNUSED(Index);
 
-  assert_token("{");
-  ReadToken(EnvName);
-  if ((NEnv = GetEnvType(EnvName)) == EnvTable)
+  tex_assert_token("{");
+  tex_read_token(EnvName);
+  if ((NEnv = tex_get_env_type(EnvName, &p_user_env)) == EnvTable)
   {
-    ReadToken(Add);
+    tex_read_token(Add);
     if (!strcmp(Add, "*"))
-      assert_token("}");
+      tex_assert_token("}");
     else if (strcmp(Add, "}"))
-      error("unknown table environment");
+      tex_error("unknown table environment");
   }
   else
-    assert_token("}");
+    tex_assert_token("}");
 
-  if (NEnv != EnvVerbatim)
-    SaveEnv(NEnv);
+  if ((NEnv != EnvVerbatim) && (NEnv != EnvUser))
+    tex_save_env(NEnv, EnvName);
 
   switch (NEnv)
   {
     case EnvDocument:
-      fputs("</HEAD>\n", outfile);
-      fputs("<BODY>\n", outfile);
+      fputs("</HEAD>\n", p_outfile);
+      fputs("<BODY>\n", p_outfile);
       break;
     case EnvItemize:
       FlushLine();
-      fprintf(outfile, "<UL>\n");
-      ++CurrListDepth;
-      ActLeftMargin = LeftMargin = (CurrListDepth * 4) + 1;
-      RightMargin = 70;
-      EnumCounter = 0;
-      InListItem = False;
+      fprintf(p_outfile, "<UL>\n");
+      ++curr_tex_env_data.ListDepth;
+      curr_tex_env_data.ActLeftMargin = curr_tex_env_data.LeftMargin = (curr_tex_env_data.ListDepth * 4) + 1;
+      curr_tex_env_data.RightMargin = 70;
+      curr_tex_env_data.EnumCounter = 0;
+      curr_tex_env_data.InListItem = False;
       break;
     case EnvDescription:
       FlushLine();
-      fprintf(outfile, "<DL COMPACT>\n");
-      ++CurrListDepth;
-      ActLeftMargin = LeftMargin = (CurrListDepth * 4) + 1;
-      RightMargin = 70;
-      EnumCounter = 0;
-      InListItem = False;
+      fprintf(p_outfile, "<DL COMPACT>\n");
+      ++curr_tex_env_data.ListDepth;
+      curr_tex_env_data.ActLeftMargin = curr_tex_env_data.LeftMargin = (curr_tex_env_data.ListDepth * 4) + 1;
+      curr_tex_env_data.RightMargin = 70;
+      curr_tex_env_data.EnumCounter = 0;
+      curr_tex_env_data.InListItem = False;
       break;
     case EnvEnumerate:
       FlushLine();
-      fprintf(outfile, "<OL>\n");
-      ++CurrListDepth;
-      ActLeftMargin = LeftMargin = (CurrListDepth * 4) + 1;
-      RightMargin = 70;
-      EnumCounter = 0;
-      InListItem = False;
+      fprintf(p_outfile, "<OL>\n");
+      ++curr_tex_env_data.ListDepth;
+      curr_tex_env_data.ActLeftMargin = curr_tex_env_data.LeftMargin = (curr_tex_env_data.ListDepth * 4) + 1;
+      curr_tex_env_data.RightMargin = 70;
+      curr_tex_env_data.EnumCounter = 0;
+      curr_tex_env_data.InListItem = False;
       break;
     case EnvBiblio:
       FlushLine();
-      fprintf(outfile, "<P>\n");
-      fprintf(outfile, "<H1><A NAME=\"sect_bib\">%s</A></H1>\n<DL COMPACT>\n", BiblioName);
-      assert_token("{");
-      ReadToken(Add);
-      assert_token("}");
-      ActLeftMargin = LeftMargin = 4 + (BibIndent = strlen(Add));
+      fprintf(p_outfile, "<P>\n");
+      fprintf(p_outfile, "<H1><A NAME=\"sect_bib\">%s</A></H1>\n<DL COMPACT>\n", BiblioName);
+      tex_assert_token("{");
+      tex_read_token(Add);
+      tex_assert_token("}");
+      curr_tex_env_data.ActLeftMargin = curr_tex_env_data.LeftMargin = 4 + (BibIndent = strlen(Add));
       AddToc(BiblioName, 0);
       break;
     case EnvVerbatim:
       FlushLine();
-      fprintf(outfile, "<PRE>\n");
-      if ((*BufferLine != '\0') && (*BufferPtr != '\0'))
+      fprintf(p_outfile, "<PRE>\n");
+      if ((*buffer_line != '\0') && (*p_buffer_line_ptr != '\0'))
       {
-        fprintf(outfile, "%s", BufferPtr);
-        *BufferLine = '\0';
-        BufferPtr = BufferLine;
+        fprintf(p_outfile, "%s", p_buffer_line_ptr);
+        *buffer_line = '\0';
+        p_buffer_line_ptr = buffer_line;
       }
       do
       {
-        if (!fgets(Add, TOKLEN - 1, infiles[IncludeNest - 1]))
+        if (!tex_infile_gets(Add, TOKLEN - 1, p_curr_tex_infile))
           break;
-        CurrLine++;
+        p_curr_tex_infile->curr_line++;
         done = strstr(Add, "\\end{verbatim}") != NULL;
         if (!done)
         {
@@ -1245,67 +922,67 @@ static void TeXBeginEnv(Word Index)
             }
             else
               p++;
-          fprintf(outfile, "%s", Add);
+          fprintf(p_outfile, "%s", Add);
         }
       }
       while (!done);
-      fprintf(outfile, "\n</PRE>\n");
+      fprintf(p_outfile, "\n</PRE>\n");
       break;
     case EnvQuote:
       FlushLine();
-      fprintf(outfile, "<BLOCKQUOTE>\n");
-      ActLeftMargin = LeftMargin = 5;
-      RightMargin = 70;
+      fprintf(p_outfile, "<BLOCKQUOTE>\n");
+      curr_tex_env_data.ActLeftMargin = curr_tex_env_data.LeftMargin = 5;
+      curr_tex_env_data.RightMargin = 70;
       break;
     case EnvTabbing:
       FlushLine();
-      fputs("<TABLE SUMMARY=\"No Summary\" CELLPADDING=2>\n", outfile);
+      fputs("<TABLE SUMMARY=\"No Summary\" CELLPADDING=2>\n", p_outfile);
       TabStopCnt = 0;
       CurrTabStop = 0;
-      RightMargin = TOKLEN - 1;
+      curr_tex_env_data.RightMargin = TOKLEN - 1;
       AddLine("<TR><TD NOWRAP>", "");
       PrFontDiff(0, CurrFontFlags);
       break;
     case EnvTable:
-      ReadToken(Add);
+      tex_read_token(Add);
       if (strcmp(Add, "["))
-        BackToken(Add);
+        tex_push_back_token(Add);
       else
       {
         do
         {
-          ReadToken(Add);
+          tex_read_token(Add);
         }
         while (strcmp(Add, "]"));
       }
       FlushLine();
-      fputc('\n', outfile);
+      fputc('\n', p_outfile);
       ++TableNum;
       break;
     case EnvCenter:
       FlushLine();
-      fputs("<CENTER>\n", outfile);
+      fputs("<CENTER>\n", p_outfile);
       break;
     case EnvRaggedRight:
       FlushLine();
-      fputs("<DIV ALIGN=LEFT>\n", outfile);
+      fputs("<DIV ALIGN=LEFT>\n", p_outfile);
       break;
     case EnvRaggedLeft:
       FlushLine();
-      fputs("<DIV ALIGN=RIGHT>\n", outfile);
+      fputs("<DIV ALIGN=RIGHT>\n", p_outfile);
       break;
     case EnvTabular:
       FlushLine();
-      assert_token("{");
+      tex_assert_token("{");
       pThisTable->ColumnCount = pThisTable->TColumnCount = 0;
       do
       {
-        ReadToken(Add);
+        tex_read_token(Add);
         done = !strcmp(Add, "}");
         if (!done)
         {
           if (pThisTable->ColumnCount >= MAXCOLS)
-            error("too many columns in table");
+            tex_error("too many columns in table");
           NCol = ColLeft;
           if (!strcmp(Add, "|"))
             NCol = ColBar;
@@ -1316,7 +993,7 @@ static void TeXBeginEnv(Word Index)
           else if (!strcmp(Add, "c"))
             NCol = ColCenter;
           else
-            error("unknown table column descriptor");
+            tex_error("unknown table column descriptor");
           if ((pThisTable->ColTypes[pThisTable->ColumnCount++] = NCol) != ColBar)
             pThisTable->TColumnCount++;
         }
@@ -1324,6 +1001,9 @@ static void TeXBeginEnv(Word Index)
       while (!done);
       InitTableRow(CurrRow = 0);
       CurrCol = 0;
+      break;
+    case EnvUser:
+      tex_infile_push_line(EnvName, p_user_env->p_begin_commands, False);
       break;
     default:
       break;
@@ -1334,84 +1014,96 @@ static void TeXEndEnv(Word Index)
 {
   char EnvName[TOKLEN], Add[TOKLEN];
   EnvType NEnv;
+  const tex_environment_t *p_user_env;
   UNUSED(Index);
 
-  assert_token("{");
-  ReadToken(EnvName);
-  if ((NEnv = GetEnvType(EnvName)) == EnvTable)
+  tex_assert_token("{");
+  tex_read_token(EnvName);
+  if ((NEnv = tex_get_env_type(EnvName, &p_user_env)) == EnvTable)
   {
-    ReadToken(Add);
+    tex_read_token(Add);
     if (!strcmp(Add, "*"))
-      assert_token("}");
+      tex_assert_token("}");
     else if (strcmp(Add, "}"))
-      error("unknown table environment");
+      tex_error("unknown table environment");
   }
   else
-    assert_token("}");
+    tex_assert_token("}");
 
-  if (!EnvStack)
-    error("end without begin");
-  if (CurrEnv != NEnv)
-    error("begin and end of environment do not match");
+  if (!p_env_stack)
+    tex_error("end without begin");
+  if ((curr_tex_env != NEnv) && (NEnv != EnvUser))
+    tex_error("begin (%s) and end (%s) of environment do not match",
+              tex_env_names[curr_tex_env], tex_env_names[NEnv]);
+  if (curr_tex_env == EnvUser)
+  {
+    if (as_strcasecmp(EnvName, p_curr_tex_user_env_name))
+      tex_error("begin (%s) and end (%s) of environment do not match",
+               EnvName, p_curr_tex_user_env_name);
+  }
 
-  switch (CurrEnv)
+  switch (NEnv)
   {
     case EnvDocument:
       FlushLine();
-      fputs("</BODY>\n", outfile);
+      fputs("</BODY>\n", p_outfile);
       break;
     case EnvItemize:
-      if (InListItem)
+      if (curr_tex_env_data.InListItem)
         AddLine("</LI>", "");
       FlushLine();
-      fprintf(outfile, "</UL>\n");
+      fprintf(p_outfile, "</UL>\n");
       break;
     case EnvDescription:
-      if (InListItem)
+      if (curr_tex_env_data.InListItem)
         AddLine("</DD>", "");
       FlushLine();
-      fprintf(outfile, "</DL>\n");
+      fprintf(p_outfile, "</DL>\n");
       break;
     case EnvEnumerate:
-      if (InListItem)
+      if (curr_tex_env_data.InListItem)
         AddLine("</LI>", "");
       FlushLine();
-      fprintf(outfile, "</OL>\n");
+      fprintf(p_outfile, "</OL>\n");
       break;
     case EnvQuote:
       FlushLine();
-      fprintf(outfile, "</BLOCKQUOTE>\n");
+      fprintf(p_outfile, "</BLOCKQUOTE>\n");
       break;
     case EnvBiblio:
       FlushLine();
-      fprintf(outfile, "</DL>\n");
+      fprintf(p_outfile, "</DL>\n");
       break;
     case EnvTabbing:
       PrFontDiff(CurrFontFlags, 0);
       AddLine("</TD></TR>", "");
       FlushLine();
-      fputs("</TABLE>", outfile);
+      fputs("</TABLE>", p_outfile);
       break;
     case EnvCenter:
       FlushLine();
-      fputs("</CENTER>\n", outfile);
+      fputs("</CENTER>\n", p_outfile);
       break;
     case EnvRaggedRight:
     case EnvRaggedLeft:
       FlushLine();
-      fputs("</DIV>\n", outfile);
+      fputs("</DIV>\n", p_outfile);
       break;
     case EnvTabular:
       DumpTable();
       break;
     case EnvTable:
-      FlushLine(); fputc('\n', outfile);
+      FlushLine(); fputc('\n', p_outfile);
+      break;
+    case EnvUser:
+      tex_infile_push_line(EnvName, p_user_env->p_end_commands, False);
       break;
     default:
       break;
   }
 
-  RestoreEnv();
+  if (NEnv != EnvUser)
+    tex_restore_env();
 }
 
 static void TeXItem(Word Index)
@@ -1419,34 +1111,34 @@ static void TeXItem(Word Index)
   char Token[TOKLEN], Acc[TOKLEN];
   UNUSED(Index);
 
-  if (InListItem)
-    AddLine((CurrEnv == EnvDescription) ? "</DD>" : "</LI>", "");
+  if (curr_tex_env_data.InListItem)
+    AddLine((curr_tex_env == EnvDescription) ? "</DD>" : "</LI>", "");
   FlushLine();
-  InListItem = True;
-  switch(CurrEnv)
+  curr_tex_env_data.InListItem = True;
+  switch(curr_tex_env)
   {
     case EnvItemize:
-      fprintf(outfile, "<LI>");
-      LeftMargin = ActLeftMargin - 3;
+      fprintf(p_outfile, "<LI>");
+      curr_tex_env_data.LeftMargin = curr_tex_env_data.ActLeftMargin - 3;
       break;
     case EnvEnumerate:
-      fprintf(outfile, "<LI>");
-      LeftMargin = ActLeftMargin - 4;
+      fprintf(p_outfile, "<LI>");
+      curr_tex_env_data.LeftMargin = curr_tex_env_data.ActLeftMargin - 4;
       break;
     case EnvDescription:
-      ReadToken(Token);
+      tex_read_token(Token);
       if (strcmp(Token, "["))
-        BackToken(Token);
+        tex_push_back_token(Token);
       else
       {
-        collect_token(Acc, "]");
-        LeftMargin = ActLeftMargin - 4;
-        fprintf(outfile, "<DT>%s", Acc);
+        tex_collect_token(Acc, "]");
+        curr_tex_env_data.LeftMargin = curr_tex_env_data.ActLeftMargin - 4;
+        fprintf(p_outfile, "<DT>%s", Acc);
       }
-      fprintf(outfile, "<DD>");
+      fprintf(p_outfile, "<DD>");
       break;
     default:
-      error("\\item not in a list environment");
+      tex_error("\\item not in a list environment");
   }
 }
 
@@ -1455,40 +1147,40 @@ static void TeXBibItem(Word Index)
   char NumString[20], Token[TOKLEN], Name[TOKLEN], Value[TOKLEN];
   UNUSED(Index);
 
-  if (CurrEnv != EnvBiblio)
-    error("\\bibitem not in bibliography environment");
+  if (curr_tex_env != EnvBiblio)
+    tex_error("\\bibitem not in bibliography environment");
 
-  assert_token("{");
-  collect_token(Name, "}");
+  tex_assert_token("{");
+  tex_collect_token(Name, "}");
 
   FlushLine();
   AddLine("<DT>", "");
   ++BibCounter;
 
-  LeftMargin = ActLeftMargin - BibIndent - 3;
+  curr_tex_env_data.LeftMargin = curr_tex_env_data.ActLeftMargin - BibIndent - 3;
   as_snprintf(Value, sizeof(Value), "<A NAME=\"cite_%s\">", Name);
   DoAddNormal(Value, "");
   as_snprintf(NumString, sizeof(NumString), "[%*d] </A><DD>", BibIndent, BibCounter);
   AddLine(NumString, "");
   as_snprintf(NumString, sizeof(NumString), "%d", BibCounter);
   AddCite(Name, NumString);
-  ReadToken(Token);
-  *SepString = '\0';
-  BackToken(Token);
+  tex_read_token(Token);
+  *tex_token_sep_string = '\0';
+  tex_push_back_token(Token);
 }
 
 static void TeXAddDollar(Word Index)
 {
   UNUSED(Index);
 
-  DoAddNormal("$", BackSepString);
+  DoAddNormal("$", tex_backslash_token_sep_string);
 }
 
 static void TeXAddUnderbar(Word Index)
 {
   UNUSED(Index);
 
-  DoAddNormal("_", BackSepString);
+  DoAddNormal("_", tex_backslash_token_sep_string);
 }
 
 #if 0
@@ -1496,7 +1188,7 @@ static void TeXAddPot(Word Index)
 {
   UNUSED(Index);
 
-  DoAddNormal("^", BackSepString);
+  DoAddNormal("^", tex_backslash_token_sep_string);
 }
 #endif
 
@@ -1504,181 +1196,170 @@ static void TeXAddAmpersand(Word Index)
 {
   UNUSED(Index);
 
-  DoAddNormal("&", BackSepString);
+  DoAddNormal("&", tex_backslash_token_sep_string);
 }
 
 static void TeXAddAt(Word Index)
 {
   UNUSED(Index);
 
-  DoAddNormal("@", BackSepString);
+  DoAddNormal("@", tex_backslash_token_sep_string);
 }
 
 static void TeXAddImm(Word Index)
 {
   UNUSED(Index);
 
-  DoAddNormal("#", BackSepString);
+  DoAddNormal("#", tex_backslash_token_sep_string);
 }
 
 static void TeXAddPercent(Word Index)
 {
   UNUSED(Index);
 
-  DoAddNormal("%", BackSepString);
+  DoAddNormal("%", tex_backslash_token_sep_string);
 }
 
 static void TeXAddAsterisk(Word Index)
 {
   UNUSED(Index);
 
-  DoAddNormal("*", BackSepString);
+  DoAddNormal("*", tex_backslash_token_sep_string);
 }
 
 static void TeXAddSSharp(Word Index)
 {
   UNUSED(Index);
 
-  DoAddNormal("&szlig;", BackSepString);
+  DoAddNormal("&szlig;", tex_backslash_token_sep_string);
 }
 
 static void TeXAddIn(Word Index)
 {
   UNUSED(Index);
 
-  DoAddNormal("in", BackSepString);
+  DoAddNormal("in", tex_backslash_token_sep_string);
 }
 
 static void TeXAddReal(Word Index)
 {
   UNUSED(Index);
 
-  DoAddNormal("R", BackSepString);
+  DoAddNormal("R", tex_backslash_token_sep_string);
 }
 
 static void TeXAddGreekMu(Word Index)
 {
   UNUSED(Index);
 
-  DoAddNormal("&micro;", BackSepString);
+  DoAddNormal("&micro;", tex_backslash_token_sep_string);
 }
 
 static void TeXAddGreekPi(Word Index)
 {
   UNUSED(Index);
 
-  DoAddNormal("&pi;", BackSepString);
+  DoAddNormal("&pi;", tex_backslash_token_sep_string);
 }
 
 static void TeXAddLessEq(Word Index)
 {
   UNUSED(Index);
 
-  DoAddNormal("&le;", BackSepString);
+  DoAddNormal("&le;", tex_backslash_token_sep_string);
 }
 
 static void TeXAddGreaterEq(Word Index)
 {
   UNUSED(Index);
 
-  DoAddNormal("&ge;", BackSepString);
+  DoAddNormal("&ge;", tex_backslash_token_sep_string);
 }
 
 static void TeXAddNotEq(Word Index)
 {
   UNUSED(Index);
 
-  DoAddNormal("&ne;", BackSepString);
+  DoAddNormal("&ne;", tex_backslash_token_sep_string);
 }
 
 static void TeXAddMid(Word Index)
 {
   UNUSED(Index);
 
-  DoAddNormal("|", BackSepString);
-}
-
-static void TeXASName(Word Index)
-{
-  char arg[TOKLEN];
-
-  UNUSED(Index);
-
-  assert_token("{");
-  collect_token(arg, "}");
-  DoAddNormal(asname, BackSepString);
+  DoAddNormal("|", tex_backslash_token_sep_string);
 }
 
 static void TeXAddLAnd(Word Index)
 {
   UNUSED(Index);
 
-  DoAddNormal("&and;", BackSepString);
+  DoAddNormal("&and;", tex_backslash_token_sep_string);
 }
 
 static void TeXAddLOr(Word Index)
 {
   UNUSED(Index);
 
-  DoAddNormal("&or;", BackSepString);
+  DoAddNormal("&or;", tex_backslash_token_sep_string);
 }
 
 static void TeXAddOPlus(Word Index)
 {
   UNUSED(Index);
 
-  DoAddNormal("&veebar;", BackSepString);
+  DoAddNormal("&veebar;", tex_backslash_token_sep_string);
 }
 
 static void TeXAddRightArrow(Word Index)
 {
   UNUSED(Index);
 
-  DoAddNormal("&RightArrow;", BackSepString);
+  DoAddNormal("&rarr;", tex_backslash_token_sep_string);
 }
 
 static void TeXAddLongRightArrow(Word Index)
 {
   UNUSED(Index);
 
-  DoAddNormal("&LongRightArrow;", BackSepString);
+  DoAddNormal("&#10230;", tex_backslash_token_sep_string);
 }
 
 static void TeXAddLeftArrow(Word Index)
 {
   UNUSED(Index);
 
-  DoAddNormal("&LeftArrow;", BackSepString);
+  DoAddNormal("&larr;", tex_backslash_token_sep_string);
 }
 
 static void TeXAddGets(Word Index)
 {
   UNUSED(Index);
 
-  DoAddNormal("&LeftArrow;", BackSepString);
+  DoAddNormal("&larr;", tex_backslash_token_sep_string);
 }
 
 static void TeXAddLongLeftArrow(Word Index)
 {
   UNUSED(Index);
 
-  DoAddNormal("&LongLeftArrow;", BackSepString);
+  DoAddNormal("&#10229;", tex_backslash_token_sep_string);
 }
 
 static void TeXAddLeftRightArrow(Word Index)
 {
   UNUSED(Index);
 
-  DoAddNormal("&LeftRightArrow;", BackSepString);
+  DoAddNormal("&harr;", tex_backslash_token_sep_string);
 }
 
 static void TeXDoFrac(Word Index)
 {
   UNUSED(Index);
 
-  assert_token("{");
-  *SepString = '\0';
-  BackToken("(");
+  tex_assert_token("{");
+  *tex_token_sep_string = '\0';
+  tex_push_back_token("(");
   FracState = 0;
 }
 
@@ -1686,16 +1367,16 @@ static void NextFracState(void)
 {
   if (FracState == 0)
   {
-    assert_token("{");
-    *SepString = '\0';
-    BackToken(")");
-    BackToken("/");
-    BackToken("(");
+    tex_assert_token("{");
+    *tex_token_sep_string = '\0';
+    tex_push_back_token(")");
+    tex_push_back_token("/");
+    tex_push_back_token("(");
   }
   else if (FracState == 1)
   {
-    *SepString = '\0';
-    BackToken(")");
+    *tex_token_sep_string = '\0';
+    tex_push_back_token(")");
   }
   if ((++FracState) == 2)
     FracState = -1;
@@ -1716,10 +1397,10 @@ static void TeXEnvNewFontType(Word Index)
 
   SaveFont();
   TeXNewFontType(Index);
-  assert_token("{");
-  ReadToken(NToken);
-  strcpy(SepString, BackSepString);
-  BackToken(NToken);
+  tex_assert_token("{");
+  tex_read_token(NToken);
+  strcpy(tex_token_sep_string, tex_backslash_token_sep_string);
+  tex_push_back_token(NToken);
 }
 
 static void TeXNewFontSize(Word Index)
@@ -1733,18 +1414,18 @@ static void TeXEnvNewFontSize(Word Index)
 
   SaveFont();
   TeXNewFontSize(Index);
-  assert_token("{");
-  ReadToken(NToken);
-  strcpy(SepString, BackSepString);
-  BackToken(NToken);
+  tex_assert_token("{");
+  tex_read_token(NToken);
+  strcpy(tex_token_sep_string, tex_backslash_token_sep_string);
+  tex_push_back_token(NToken);
 }
 
 static void TeXAddMarginPar(Word Index)
 {
   UNUSED(Index);
 
-  assert_token("{");
-  SaveEnv(EnvMarginPar);
+  tex_assert_token("{");
+  tex_save_env(EnvMarginPar, NULL);
 }
 
 static void TeXEndHead(Word Index)
@@ -1758,29 +1439,32 @@ static void TeXAddCaption(Word Index)
   int cnt;
   UNUSED(Index);
 
-  assert_token("{");
-  if ((CurrEnv != EnvTable) && (CurrEnv != EnvTabular))
-    error("caption outside of a table");
+  tex_assert_token("{");
+  if ((curr_tex_env != EnvTable) && (curr_tex_env != EnvTabular))
+    tex_error("caption outside of a table");
   FlushLine();
-  fputs("<P><CENTER>", outfile);
+  fputs("<P><CENTER>", p_outfile);
   GetTableName(tmp, sizeof(tmp));
-  SaveEnv(EnvCaption);
+  tex_save_env(EnvCaption, NULL);
   AddLine(TableName, "");
   cnt = strlen(TableName);
   strcat(tmp, ": ");
   AddLine(tmp, " ");
   cnt += 1 + strlen(tmp);
-  LeftMargin = 1;
-  ActLeftMargin = cnt + 1;
-  RightMargin = 70;
+  curr_tex_env_data.LeftMargin = 1;
+  curr_tex_env_data.ActLeftMargin = cnt + 1;
+  curr_tex_env_data.RightMargin = 70;
 }
 
 static void TeXHorLine(Word Index)
 {
   UNUSED(Index);
 
-  if (CurrEnv != EnvTabular)
-    error("\\hline outside of a table");
+  if (!tex_if_query())
+    return;
+
+  if (curr_tex_env != EnvTabular)
+    tex_error("\\hline outside of a table");
 
   if (pThisTable->Lines[CurrRow][0])
     InitTableRow(++CurrRow);
@@ -1794,23 +1478,23 @@ static void TeXMultiColumn(Word Index)
   int cnt;
   UNUSED(Index);
 
-  if (CurrEnv != EnvTabular)
-    error("\\hline outside of a table");
+  if (curr_tex_env != EnvTabular)
+    tex_error("\\hline outside of a table");
   if (CurrCol != 0)
-    error("\\multicolumn must be in first column");
+    tex_error("\\multicolumn must be in first column");
 
-  assert_token("{");
-  ReadToken(Token);
-  assert_token("}");
+  tex_assert_token("{");
+  tex_read_token(Token);
+  tex_assert_token("}");
   cnt = strtol(Token, &endptr, 10);
   if (*endptr != '\0')
-    error("invalid numeric format to \\multicolumn");
+    tex_error("invalid numeric format to \\multicolumn");
   if (cnt != pThisTable->TColumnCount)
-    error("\\multicolumn must span entire table");
-  assert_token("{");
+    tex_error("\\multicolumn must span entire table");
+  tex_assert_token("{");
   do
   {
-    ReadToken(Token);
+    tex_read_token(Token);
   }
   while (strcmp(Token, "}"));
   pThisTable->MultiFlags[CurrRow] = True;
@@ -1822,8 +1506,8 @@ static void TeXIndex(Word Index)
   PIndexSave run, prev, neu;
   UNUSED(Index);
 
-  assert_token("{");
-  collect_token(Token, "}");
+  tex_assert_token("{");
+  tex_collect_token(Token, "}");
   run = FirstIndex;
   prev = NULL;
   while ((run) && (strcmp(Token, run->Name) > 0))
@@ -1861,28 +1545,28 @@ static void FreeIndex(void)
   }
 }
 
-static int GetDim(Double *Factors)
+static int GetDim(double *Factors)
 {
   char Acc[TOKLEN];
   static char *UnitNames[] = {"cm", "mm", ""}, **run, *endptr;
-  Double Value;
+  double Value;
 
-  assert_token("{");
-  collect_token(Acc, "}");
+  tex_assert_token("{");
+  tex_collect_token(Acc, "}");
   for (run = UnitNames; **run != '\0'; run++)
     if (!strcmp(*run, Acc + strlen(Acc) - strlen(*run)))
       break;
   if (**run == '\0')
-    error("unknown unit for dimension");
+    tex_error("unknown unit for dimension");
   Acc[strlen(Acc) - strlen(*run)] = '\0';
   Value = strtod(Acc, &endptr);
   if (*endptr != '\0')
-    error("invalid numeric format for dimension");
+    tex_error("invalid numeric format for dimension");
   return (int)(Value * Factors[run - UnitNames]);
 }
 
-static Double HFactors[] = { 4.666666, 0.4666666, 0 };
-static Double VFactors[] = { 3.111111, 0.3111111, 0 };
+static double HFactors[] = { 4.666666, 0.4666666, 0 };
+static double VFactors[] = { 3.111111, 0.3111111, 0 };
 
 static void TeXHSpace(Word Index)
 {
@@ -1899,7 +1583,7 @@ static void TeXVSpace(Word Index)
   erg = GetDim(VFactors);
   FlushLine();
   for (z = 0; z < erg; z++)
-    fputc('\n', outfile);
+    fputc('\n', p_outfile);
 }
 
 static void TeXRule(Word Index)
@@ -1910,7 +1594,7 @@ static void TeXRule(Word Index)
 
   GetDim(VFactors);
   as_snprintf(Rule, sizeof(Rule), "<HR WIDTH=\"%d%%\" ALIGN=LEFT>", (h * 100) / 70);
-  DoAddNormal(Rule, BackSepString);
+  DoAddNormal(Rule, tex_backslash_token_sep_string);
 }
 
 static void TeXAddTabStop(Word Index)
@@ -1918,10 +1602,10 @@ static void TeXAddTabStop(Word Index)
   int z, n, p;
   UNUSED(Index);
 
-  if (CurrEnv != EnvTabbing)
-    error("tab marker outside of tabbing environment");
+  if (curr_tex_env != EnvTabbing)
+    tex_error("tab marker outside of tabbing environment");
   if (TabStopCnt >= TABMAX)
-    error("too many tab stops");
+    tex_error("too many tab stops");
 
   n = strlen(OutLineBuffer);
   for (p = 0; p < TabStopCnt; p++)
@@ -1941,10 +1625,10 @@ static void TeXJmpTabStop(Word Index)
 {
   UNUSED(Index);
 
-  if (CurrEnv != EnvTabbing)
-    error("tab trigger outside of tabbing environment");
+  if (curr_tex_env != EnvTabbing)
+    tex_error("tab trigger outside of tabbing environment");
   if (CurrTabStop >= TabStopCnt)
-    error("not enough tab stops");
+    tex_error("not enough tab stops");
 
   PrFontDiff(CurrFontFlags, 0);
   DoAddNormal("</TD><TD NOWRAP>", "");
@@ -1957,91 +1641,31 @@ static void TeXDoVerb(Word Index)
   char Token[TOKLEN], *pos, Marker;
   UNUSED(Index);
 
-  ReadToken(Token);
-  if (*SepString != '\0')
-    error("invalid control character for \\verb");
+  tex_read_token(Token);
+  if (*tex_token_sep_string != '\0')
+    tex_error("invalid control character for \\verb");
   Marker = (*Token);
   strmov(Token, Token + 1);
-  strcpy(SepString, BackSepString);
+  strcpy(tex_token_sep_string, tex_backslash_token_sep_string);
   do
   {
-    DoAddNormal(SepString, "");
+    DoAddNormal(tex_token_sep_string, "");
     pos = strchr(Token, Marker);
     if (pos)
     {
       *pos = '\0';
       DoAddNormal(Token, "");
-      *SepString = '\0';
-      BackToken(pos + 1);
+      *tex_token_sep_string = '\0';
+      tex_push_back_token(pos + 1);
       break;
     }
     else
     {
       DoAddNormal(Token, "");
-      ReadToken(Token);
+      tex_read_token(Token);
     }
   }
   while (True);
-}
-
-static void TeXErrEntry(Word Index)
-{
-  char Token[TOKLEN];
-  UNUSED(Index);
-
-  assert_token("{");
-  ReadToken(Token);
-  assert_token("}");
-  assert_token("{");
-  *SepString = '\0';
-  BackToken("\\");
-  BackToken("item");
-  BackToken("[");
-  BackToken(Token);
-  BackToken("]");
-  ErrState = 0;
-}
-
-static void NextErrState(void)
-{
-  if (ErrState < 3)
-    assert_token("{");
-  if (ErrState == 0)
-  {
-    *SepString = '\0';
-    BackToken("\\");
-    BackToken("begin");
-    BackToken("{");
-    BackToken("description");
-    BackToken("}");
-  }
-  if ((ErrState >= 0) && (ErrState <= 2))
-  {
-    *SepString = '\0';
-    BackToken("\\");
-    BackToken("item");
-    BackToken("[");
-    BackToken(ErrorEntryNames[ErrState]);
-    BackToken(":");
-    BackToken("]");
-    BackToken("\\");
-    BackToken("\\");
-  }
-  if (ErrState == 3)
-  {
-    *SepString = '\0';
-    BackToken("\\");
-    BackToken("\\");
-    BackToken(" ");
-    BackToken("\\");
-    BackToken("end");
-    BackToken("{");
-    BackToken("description");
-    BackToken("}");
-    ErrState = -1;
-  }
-  else
-    ErrState++;
 }
 
 static void TeXWriteLabel(Word Index)
@@ -2049,10 +1673,10 @@ static void TeXWriteLabel(Word Index)
   char Name[TOKLEN], Value[TOKLEN];
   UNUSED(Index);
 
-  assert_token("{");
-  collect_token(Name, "}");
+  tex_assert_token("{");
+  tex_collect_token(Name, "}");
 
-  if ((CurrEnv == EnvCaption) || (CurrEnv == EnvTabular))
+  if ((curr_tex_env == EnvCaption) || (curr_tex_env == EnvTabular))
     GetTableName(Value, sizeof(Value));
   else
   {
@@ -2071,11 +1695,11 @@ static void TeXWriteRef(Word Index)
   char Name[TOKLEN], Value[TOKLEN], HRef[TOKLEN];
   UNUSED(Index);
 
-  assert_token("{");
-  collect_token(Name, "}");
+  tex_assert_token("{");
+  tex_collect_token(Name, "}");
   GetLabel(Name, Value);
   as_snprintf(HRef, sizeof(HRef), "<A HREF=\"#ref_%s\">", Name);
-  DoAddNormal(HRef, BackSepString);
+  DoAddNormal(HRef, tex_backslash_token_sep_string);
   DoAddNormal(Value, "");
   DoAddNormal("</A>", "");
 }
@@ -2085,11 +1709,11 @@ static void TeXWriteCitation(Word Index)
   char Name[TOKLEN], Value[TOKLEN], HRef[TOKLEN];
   UNUSED(Index);
 
-  assert_token("{");
-  collect_token(Name, "}");
+  tex_assert_token("{");
+  tex_collect_token(Name, "}");
   GetCite(Name, Value);
   as_snprintf(HRef, sizeof(HRef), "<A HREF=\"#cite_%s\">", Name);
-  DoAddNormal(HRef, BackSepString);
+  DoAddNormal(HRef, tex_backslash_token_sep_string);
   as_snprintf(Name, sizeof(Name), "[%s]", Value);
   DoAddNormal(Name, "");
   DoAddNormal("</A>", "");
@@ -2100,7 +1724,7 @@ static void TeXNewParagraph(Word Index)
   UNUSED(Index);
 
   FlushLine();
-  fprintf(outfile, "<P>\n");
+  fprintf(p_outfile, "<P>\n");
 }
 
 static void TeXContents(Word Index)
@@ -2112,13 +1736,13 @@ static void TeXContents(Word Index)
 
   if (!file)
   {
-    Warning("contents file not found.");
+    tex_warning("contents file not found.");
     DoRepass = True;
     return;
   }
 
   FlushLine();
-  fprintf(outfile, "<P>\n<H1>%s</H1><P>\n", ContentsName);
+  fprintf(p_outfile, "<P>\n<H1>%s</H1><P>\n", ContentsName);
   while (!feof(file))
   {
     if (!fgets(Line, 199, file))
@@ -2158,13 +1782,13 @@ static void TeXContents(Word Index)
             *(ptr++) = (*run);
         *ptr = '\0';
       }
-      fprintf(outfile, "<P><H%d>", Level);
+      fprintf(p_outfile, "<P><H%d>", Level);
       if (*Ref != '\0')
-        fprintf(outfile, "<A HREF=\"#sect_%s\">", Ref);
-      fputs(Line, outfile);
+        fprintf(p_outfile, "<A HREF=\"#sect_%s\">", Ref);
+      fputs(Line, p_outfile);
       if (*Ref != '\0')
-        fprintf(outfile, "</A></H%d>", Level);
-      fputc('\n', outfile);
+        fprintf(p_outfile, "</A></H%d>", Level);
+      fputc('\n', p_outfile);
     }
   }
 
@@ -2178,27 +1802,27 @@ static void TeXPrintIndex(Word Index)
   UNUSED(Index);
 
   FlushLine();
-  fprintf(outfile, "<H1><A NAME=\"sect_index\">%s</A></H1>\n", IndexName);
+  fprintf(p_outfile, "<H1><A NAME=\"sect_index\">%s</A></H1>\n", IndexName);
   AddToc(IndexName, 0);
 
-  fputs("<TABLE SUMMARY=\"Index\" BORDER=0 CELLPADDING=5>\n", outfile);
+  fputs("<TABLE SUMMARY=\"Index\" BORDER=0 CELLPADDING=5>\n", p_outfile);
   rz = 0;
   for (run = FirstIndex; run; run = run->Next)
   {
     if ((rz % 5) == 0)
-      fputs("<TR ALIGN=LEFT>\n", outfile);
-    fputs("<TD VALIGN=TOP NOWRAP>", outfile);
-    fputs(run->Name, outfile);
+      fputs("<TR ALIGN=LEFT>\n", p_outfile);
+    fputs("<TD VALIGN=TOP NOWRAP>", p_outfile);
+    fputs(run->Name, p_outfile);
     for (i = 0; i < run->RefCnt; i++)
-      fprintf(outfile, " <A HREF=\"#index_%s_%d\">%d</A>", run->Name, i + 1, i + 1);
-    fputs("</TD>\n", outfile);
+      fprintf(p_outfile, " <A HREF=\"#index_%s_%d\">%d</A>", run->Name, i + 1, i + 1);
+    fputs("</TD>\n", p_outfile);
     if ((rz % 5) == 4)
-      fputs("</TR>\n", outfile);
+      fputs("</TR>\n", p_outfile);
     rz++;
   }
   if ((rz % 5) != 0)
-    fputs("</TR>\n", outfile);
-  fputs("</TABLE>\n", outfile);
+    fputs("</TR>\n", p_outfile);
+  fputs("</TABLE>\n", p_outfile);
 }
 
 static void TeXParSkip(Word Index)
@@ -2206,16 +1830,16 @@ static void TeXParSkip(Word Index)
   char Token[TOKLEN];
   UNUSED(Index);
 
-  ReadToken(Token);
+  tex_read_token(Token);
   do
   {
-    ReadToken(Token);
+    tex_read_token(Token);
     if ((!strncmp(Token, "plus", 4)) || (!strncmp(Token, "minus", 5)))
     {
     }
     else
     {
-      BackToken(Token);
+      tex_push_back_token(Token);
       return;
     }
   }
@@ -2229,8 +1853,8 @@ static void TeXNLS(Word Index)
   UNUSED(Index);
 
   *Token = '\0';
-  ReadToken(Token);
-  if (*SepString == '\0')
+  tex_read_token(Token);
+  if (*tex_token_sep_string == '\0')
     switch (*Token)
     {
       case 'a':
@@ -2277,12 +1901,12 @@ static void TeXNLS(Word Index)
     if (strlen(Repl) > 1)
       memmove(Token + strlen(Repl), Token + 1, strlen(Token));
     memcpy(Token, Repl, strlen(Repl));
-    strcpy(SepString, BackSepString);
+    strcpy(tex_token_sep_string, tex_backslash_token_sep_string);
   }
   else
-    DoAddNormal("\"", BackSepString);
+    DoAddNormal("\"", tex_backslash_token_sep_string);
 
-  BackToken(Token);
+  tex_push_back_token(Token);
 }
 
 static void TeXNLSGrave(Word Index)
@@ -2292,8 +1916,8 @@ static void TeXNLSGrave(Word Index)
   UNUSED(Index);
 
   *Token = '\0';
-  ReadToken(Token);
-  if (*SepString == '\0')
+  tex_read_token(Token);
+  if (*tex_token_sep_string == '\0')
     switch (*Token)
     {
       case 'a':
@@ -2337,12 +1961,12 @@ static void TeXNLSGrave(Word Index)
     if (strlen(Repl) > 1)
       memmove(Token + strlen(Repl), Token + 1, strlen(Token));
     memcpy(Token, Repl, strlen(Repl));
-    strcpy(SepString, BackSepString);
+    strcpy(tex_token_sep_string, tex_backslash_token_sep_string);
   }
   else
-    DoAddNormal("\"", BackSepString);
+    DoAddNormal("\"", tex_backslash_token_sep_string);
 
-  BackToken(Token);
+  tex_push_back_token(Token);
 }
 
 static void TeXNLSAcute(Word Index)
@@ -2352,8 +1976,8 @@ static void TeXNLSAcute(Word Index)
   UNUSED(Index);
 
   *Token = '\0';
-  ReadToken(Token);
-  if (*SepString == '\0')
+  tex_read_token(Token);
+  if (*tex_token_sep_string == '\0')
     switch (*Token)
     {
       case 'a':
@@ -2397,12 +2021,12 @@ static void TeXNLSAcute(Word Index)
     if (strlen(Repl) > 1)
       memmove(Token + strlen(Repl), Token + 1, strlen(Token));
     memcpy(Token, Repl, strlen(Repl));
-    strcpy(SepString, BackSepString);
+    strcpy(tex_token_sep_string, tex_backslash_token_sep_string);
   }
   else
-    DoAddNormal("\"", BackSepString);
+    DoAddNormal("\"", tex_backslash_token_sep_string);
 
-  BackToken(Token);
+  tex_push_back_token(Token);
 }
 
 static void TeXNLSCirc(Word Index)
@@ -2412,8 +2036,8 @@ static void TeXNLSCirc(Word Index)
   UNUSED(Index);
 
   *Token = '\0';
-  ReadToken(Token);
-  if (*SepString == '\0')
+  tex_read_token(Token);
+  if (*tex_token_sep_string == '\0')
     switch (*Token)
     {
       case 'a':
@@ -2457,12 +2081,12 @@ static void TeXNLSCirc(Word Index)
     if (strlen(Repl) > 1)
       memmove(Token + strlen(Repl), Token + 1, strlen(Token));
     memcpy(Token, Repl, strlen(Repl));
-    strcpy(SepString, BackSepString);
+    strcpy(tex_token_sep_string, tex_backslash_token_sep_string);
   }
   else
-    DoAddNormal("\"", BackSepString);
+    DoAddNormal("\"", tex_backslash_token_sep_string);
 
-  BackToken(Token);
+  tex_push_back_token(Token);
 }
 
 static void TeXNLSTilde(Word Index)
@@ -2472,8 +2096,8 @@ static void TeXNLSTilde(Word Index)
   UNUSED(Index);
 
   *Token = '\0';
-  ReadToken(Token);
-  if (*SepString == '\0')
+  tex_read_token(Token);
+  if (*tex_token_sep_string == '\0')
     switch (*Token)
     {
       case 'n':
@@ -2493,11 +2117,11 @@ static void TeXNLSTilde(Word Index)
     if (strlen(Repl) > 1)
       memmove(Token + strlen(Repl), Token + 1, strlen(Token));
     memcpy(Token, Repl, strlen(Repl));
-    strcpy(SepString, BackSepString);
+    strcpy(tex_token_sep_string, tex_backslash_token_sep_string);
   }
-  else DoAddNormal("\"", BackSepString);
+  else DoAddNormal("\"", tex_backslash_token_sep_string);
 
-  BackToken(Token);
+  tex_push_back_token(Token);
 }
 
 static void TeXCedilla(Word Index)
@@ -2505,14 +2129,14 @@ static void TeXCedilla(Word Index)
   char Token[TOKLEN];
   UNUSED(Index);
 
-  assert_token("{");
-  collect_token(Token, "}");
+  tex_assert_token("{");
+  tex_collect_token(Token, "}");
   if (!strcmp(Token, "c"))
     strcpy(Token, "&ccedil;");
   if (!strcmp(Token, "C"))
     strcpy(Token, "&Ccedil;");
 
-  DoAddNormal(Token, BackSepString);
+  DoAddNormal(Token, tex_backslash_token_sep_string);
 }
 
 static Boolean TeXNLSSpec(char *Line)
@@ -2521,7 +2145,7 @@ static Boolean TeXNLSSpec(char *Line)
   char *Repl = NULL;
   int cnt = 0;
 
-  if (*SepString == '\0')
+  if (*tex_token_sep_string == '\0')
     switch (*Line)
     {
       case 'o':
@@ -2571,12 +2195,12 @@ static Boolean TeXNLSSpec(char *Line)
     if ((int)strlen(Repl) != cnt)
       memmove(Line + strlen(Repl), Line + cnt, strlen(Line) - cnt + 1);
     memcpy(Line, Repl, strlen(Repl));
-    strcpy(SepString, BackSepString);
+    strcpy(tex_token_sep_string, tex_backslash_token_sep_string);
   }
   else
-    DoAddNormal("\"", BackSepString);
+    DoAddNormal("\"", tex_backslash_token_sep_string);
 
-  BackToken(Line);
+  tex_push_back_token(Line);
   return Found;
 }
 
@@ -2585,58 +2209,51 @@ static void TeXHyphenation(Word Index)
   char Token[TOKLEN];
   UNUSED(Index);
 
-  assert_token("{");
-  collect_token(Token, "}");
+  tex_assert_token("{");
+  tex_collect_token(Token, "}");
 }
 
 static void TeXDoPot(void)
 {
   char Token[TOKLEN];
 
-  ReadToken(Token);
+  tex_read_token(Token);
   if (!strcmp(Token, "1"))
-    DoAddNormal("&sup1;", BackSepString);
+    DoAddNormal("&sup1;", tex_backslash_token_sep_string);
   else if (!strcmp(Token, "2"))
-    DoAddNormal("&sup2;", BackSepString);
+    DoAddNormal("&sup2;", tex_backslash_token_sep_string);
   else if (!strcmp(Token, "3"))
-    DoAddNormal("&sup3;", BackSepString);
+    DoAddNormal("&sup3;", tex_backslash_token_sep_string);
   else if (!strcmp(Token, "{"))
   {
     SaveFont();
     TeXNewFontType(FontSuper);
-    ReadToken(Token);
-    strcpy(SepString, BackSepString);
-    BackToken(Token);
+    tex_read_token(Token);
+    strcpy(tex_token_sep_string, tex_backslash_token_sep_string);
+    tex_push_back_token(Token);
   }
   else
   {
-    DoAddNormal("^", BackSepString);
+    DoAddNormal("^", tex_backslash_token_sep_string);
     AddLine(Token, "");
   }
 }
 
 static void TeXDoSpec(void)
 {
-  strcpy(BackSepString, SepString);
+  strcpy(tex_backslash_token_sep_string, tex_token_sep_string);
   TeXNLS(0);
 }
 
 static void TeXInclude(Word Index)
 {
-  char Token[2 * TOKLEN + 1], Msg[2 * TOKLEN + 1];
+  char Token[2 * TOKLEN + 1];
   UNUSED(Index);
 
-  assert_token("{");
+  tex_assert_token("{");
   strcpy(Token, SrcDir);
-  collect_token(Token + strlen(Token), "}");
-  infiles[IncludeNest] = fopen(Token, "r");
-  if (!infiles[IncludeNest])
-  {
-    as_snprintf(Msg, sizeof(Msg), "file %s not found", Token);
-    error(Msg);
-  }
-  else
-    IncludeNest++;
+  tex_collect_token(Token + strlen(Token), "}");
+  tex_infile_push_file(Token);
 }
 
 static void TeXDocumentStyle(Word Index)
@@ -2644,18 +2261,18 @@ static void TeXDocumentStyle(Word Index)
   char Token[TOKLEN];
   UNUSED(Index);
 
-  ReadToken(Token);
+  tex_read_token(Token);
   if (!strcmp(Token, "["))
   {
     do
     {
-      ReadToken(Token);
+      tex_read_token(Token);
       if (!strcmp(Token, "german"))
         SetLang(True);
     }
     while (strcmp(Token, "]"));
-    assert_token("{");
-    ReadToken(Token);
+    tex_assert_token("{");
+    tex_read_token(Token);
     if (CurrPass <= 1)
     {
       if (!as_strcasecmp(Token,  "article"))
@@ -2672,7 +2289,7 @@ static void TeXDocumentStyle(Word Index)
         AddInstTable(TeXTable, "subsubsection", 3, TeXNewSection);
       }
     }
-    assert_token("}");
+    tex_assert_token("}");
   }
 }
 
@@ -2683,19 +2300,19 @@ static void TeXDocumentStyle(Word Index)
 
 static void TeXUsePackage(Word Index)
 {
-  char Token[TOKLEN], Msg[2 * TOKLEN + 1];
+  char Token[TOKLEN];
   Boolean read_german_opt = False;
 
   UNUSED(Index);
 
   while (True)
   {
-    ReadToken(Token);
+    tex_read_token(Token);
     if (!strcmp(Token, "["))
     {
       do
       {
-        ReadToken(Token);
+        tex_read_token(Token);
         if (!strcmp(Token, "german"))
           read_german_opt = True;
       }
@@ -2703,7 +2320,7 @@ static void TeXUsePackage(Word Index)
     }
     else if (!strcmp(Token, "{"))
     {
-      ReadToken(Token);
+      tex_read_token(Token);
       if (!as_strcasecmp(Token, "german"))
         SetLang(True);
       else if (!as_strcasecmp(Token, "babel"))
@@ -2712,22 +2329,62 @@ static void TeXUsePackage(Word Index)
       else if (!as_strcasecmp(Token, "hyperref"));
       else if (!as_strcasecmp(Token, "longtable"));
       else
-      {
-        as_snprintf(Msg, sizeof(Msg), "unknown package '%s'", Token);
-        error(Msg);
-      }
-      assert_token("}");
+        tex_error("unknown package '%s'", Token);
+      tex_assert_token("}");
       break;
     }
     else
-    {
-      as_snprintf(Msg, sizeof(Msg), "expecting [ or { after \\usepackage");
-      error(Msg);
-    }
+      tex_error("expecting [ or { after \\usepackage");
   }
 }
 
-static void StartFile(char *Name)
+/*!------------------------------------------------------------------------
+ * \fn     TeXAlph(Word index)
+ * \brief  parse \alph command
+ * ------------------------------------------------------------------------ */
+
+static void TeXAlph(Word index)
+{
+  char counter_name[TOKLEN];
+  unsigned value;
+
+  UNUSED(index);
+
+  tex_assert_token("{");
+  tex_read_token(counter_name);
+  tex_assert_token("}");
+  value = tex_counter_get(counter_name);
+  if (value > 26)
+    tex_warning("'%s': counter out of range for \\alph", counter_name);
+  else if ((value > 0) && tex_if_query())
+  {
+    char str[2] = " ";
+    str[0] = (value - 1) + 'a';
+    DoAddNormal(str, tex_backslash_token_sep_string);
+  }
+}
+
+/*!------------------------------------------------------------------------
+ * \fn     TeXValue(Word index)
+ * \brief  parse \value command
+ * ------------------------------------------------------------------------ */
+
+static void TeXValue(Word index)
+{
+  char counter_name[TOKLEN], str[20];
+  unsigned value;
+
+  UNUSED(index);
+
+  tex_assert_token("{");
+  tex_read_token(counter_name);
+  tex_assert_token("}");
+  value = tex_counter_get(counter_name);
+  as_snprintf(str, sizeof(str), "%u", value);
+  DoAddNormal(str, tex_backslash_token_sep_string);
+}
+ 
+static void StartFile(const char *Name)
 {
   char comp[TOKLEN];
   struct stat st;
@@ -2736,37 +2393,37 @@ static void StartFile(char *Name)
 
   if (Structured)
   {
-    as_snprintf(comp, sizeof(comp), "%s.dir/%s", outfilename, Name);
+    as_snprintf(comp, sizeof(comp), "%s.dir/%s", p_outfile_name, Name);
     Name = comp;
   }
 
   /* open file */
 
-  if ((outfile = fopen(Name, "w")) == NULL)
+  if ((p_outfile = fopen(Name, "w")) == NULL)
   {
-    perror(Name);
+    tex_error(Name);
     exit(3);
   }
 
   /* write head */
 
-  fputs("<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 3.2 Final//EN\">\n", outfile);
-  fputs("<HTML>\n", outfile);
-  fputs("<HEAD>\n", outfile);
-  fprintf(outfile, "<META NAME=\"Author\" CONTENT=\"automatically generated by tex2html from %s\">\n", pInFileName);
-  if (stat(pInFileName, &st))
+  fputs("<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 3.2 Final//EN\">\n", p_outfile);
+  fputs("<HTML>\n", p_outfile);
+  fputs("<HEAD>\n", p_outfile);
+  fprintf(p_outfile, "<META NAME=\"Author\" CONTENT=\"automatically generated by tex2html from %s\">\n", p_infile_name);
+  if (stat(p_infile_name, &st))
     stat(Name, &st);
   strncpy(comp, ctime(&st.st_mtime), TOKLEN - 1);
   if ((*comp) && (comp[strlen(comp) - 1] == '\n'))
     comp[strlen(comp) - 1] = '\0';
-  fprintf(outfile, "<META NAME=\"Last-modified\" CONTENT=\"%s\">\n", comp);
+  fprintf(p_outfile, "<META NAME=\"Last-modified\" CONTENT=\"%s\">\n", comp);
 }
 
 /*--------------------------------------------------------------------------*/
 
 int main(int argc, char **argv)
 {
-  char Line[TOKLEN], Comp[TOKLEN], *p, AuxFile[200];
+  char Line[TOKLEN], *p, AuxFile[200];
   int z, ergc, NumPassesLeft;
 
   /* assume defaults for flags */
@@ -2798,8 +2455,8 @@ int main(int argc, char **argv)
 
   /* save file names */
 
-  pInFileName = argv[1];
-  outfilename = argv[2];
+  p_infile_name = argv[1];
+  p_outfile_name = argv[2];
 
   /* set up hash table */
 
@@ -2835,7 +2492,6 @@ int main(int argc, char **argv)
   AddInstTable(TeXTable, "end", 0, TeXEndEnv);
   AddInstTable(TeXTable, "item", 0, TeXItem);
   AddInstTable(TeXTable, "bibitem", 0, TeXBibItem);
-  AddInstTable(TeXTable, "errentry", 0, TeXErrEntry);
   AddInstTable(TeXTable, "$", 0, TeXAddDollar);
   AddInstTable(TeXTable, "_", 0, TeXAddUnderbar);
   AddInstTable(TeXTable, "&", 0, TeXAddAmpersand);
@@ -2852,7 +2508,6 @@ int main(int argc, char **argv)
   AddInstTable(TeXTable, "geq", 0, TeXAddGreaterEq);
   AddInstTable(TeXTable, "neq", 0, TeXAddNotEq);
   AddInstTable(TeXTable, "mid", 0, TeXAddMid);
-  AddInstTable(TeXTable, "asname", 0, TeXASName);
   AddInstTable(TeXTable, "land", 0, TeXAddLAnd);
   AddInstTable(TeXTable, "lor", 0, TeXAddLOr);
   AddInstTable(TeXTable, "oplus", 0, TeXAddOPlus);
@@ -2901,12 +2556,16 @@ int main(int argc, char **argv)
   AddInstTable(TeXTable, "^", 0, TeXNLSCirc);
   AddInstTable(TeXTable, "~", 0, TeXNLSTilde);
   AddInstTable(TeXTable, "c", 0, TeXCedilla);
-  AddInstTable(TeXTable, "newif", 0, TeXDummy);
-  AddInstTable(TeXTable, "fi", 0, TeXDummy);
-  AddInstTable(TeXTable, "ifelektor", 0, TeXDummy);
-  AddInstTable(TeXTable, "elektortrue", 0, TeXDummy);
-  AddInstTable(TeXTable, "elektorfalse", 0, TeXDummy);
+  AddInstTable(TeXTable, "newif", 0, TeXNewIf);
+  AddInstTable(TeXTable, "fi", 0, TeXFi);
   AddInstTable(TeXTable, "input", 0, TeXInclude);
+  AddInstTable(TeXTable, "newcounter", 0, TeXNewCounter);
+  AddInstTable(TeXTable, "stepcounter", 0, TeXStepCounter);
+  AddInstTable(TeXTable, "setcounter", 0, TeXSetCounter);
+  AddInstTable(TeXTable, "newenvironment", 0, TeXNewEnvironment);
+  AddInstTable(TeXTable, "value", 0, TeXValue);
+  AddInstTable(TeXTable, "alph", 0, TeXAlph);
+  AddInstTable(TeXTable, "ifnum", 0, TeXIfNum);
 
   CurrPass = 0;
   NumPassesLeft = 3;
@@ -2916,17 +2575,9 @@ int main(int argc, char **argv)
 
     /* set up inclusion stack */
 
-    DidEOF = False;
-    IncludeNest = 0;
-    *infiles = fopen(pInFileName, "r");
-    if (!*infiles)
-    {
-      perror(pInFileName);
-      exit(3);
-    }
-    else
-      IncludeNest++;
-    SetSrcDir(pInFileName);
+    tex_token_reset();
+    tex_infile_push_file(argv[1]);
+    SetSrcDir(p_infile_name);
 
     /* preset state variables */
 
@@ -2934,17 +2585,16 @@ int main(int argc, char **argv)
     TableNum = 0;
     TabStopCnt = 0;
     CurrTabStop = 0;
-    ErrState = FracState = -1;
+    FracState = -1;
     InAppendix = False;
-    EnvStack = NULL;
-    CurrEnv = EnvNone;
-    CurrListDepth = 0;
-    ActLeftMargin = LeftMargin = 1;
-    RightMargin = 70;
-    EnumCounter = 0;
-    InListItem = False;
+    p_env_stack = NULL;
+    curr_tex_env = EnvNone;
+    curr_tex_env_data.ListDepth = 0;
+    curr_tex_env_data.ActLeftMargin = curr_tex_env_data.LeftMargin = 1;
+    curr_tex_env_data.RightMargin = 70;
+    curr_tex_env_data.EnumCounter = 0;
+    curr_tex_env_data.InListItem = False;
     InitFont();
-    CurrLine = 0;
     InitLabels();
     InitCites();
     InitToc();
@@ -2957,20 +2607,20 @@ int main(int argc, char **argv)
 
     /* open help files */
 
-    strmaxcpy(TocName, pInFileName, sizeof(TocName));
+    strmaxcpy(TocName, p_infile_name, sizeof(TocName));
     p = strrchr(TocName, '.');
     if (p)
       *p = '\0';
     strcat(TocName, ".htoc");
 
-    strmaxcpy(AuxFile, pInFileName, sizeof(AuxFile));
+    strmaxcpy(AuxFile, p_infile_name, sizeof(AuxFile));
     p = strrchr(AuxFile, '.');
     if (p)
       *p = '\0';
     strcat(AuxFile, ".haux");
     ReadAuxFile(AuxFile);
 
-    if (!strcmp(outfilename, "-"))
+    if (!strcmp(p_outfile_name, "-"))
     {
       if (Structured)
       {
@@ -2978,14 +2628,14 @@ int main(int argc, char **argv)
         exit(1);
       }
       else
-        outfile = stdout;
+        p_outfile = stdout;
     }
 
     /* do we need to make a directory ? */
 
     else if (Structured)
     {
-      as_snprintf(Line, sizeof(Line), "%s.dir", outfilename);
+      as_snprintf(Line, sizeof(Line), "%s.dir", p_outfile_name);
 #if (defined _WIN32) && (!defined __CYGWIN32__)
       mkdir(Line);
 #elif (defined __MSDOS__)
@@ -2999,37 +2649,45 @@ int main(int argc, char **argv)
     /* otherwise open the single file */
 
     else
-      StartFile(outfilename);
+      StartFile(p_outfile_name);
 
     /* start to parse */
 
     while (1)
     {
-      if (!ReadToken(Line))
+      if (!tex_read_token(Line))
         break;
       if (!strcmp(Line, "\\"))
       {
-        strcpy(BackSepString, SepString);
-        if (!ReadToken(Line))
-          error("unexpected end of file");
-        if (*SepString != '\0')
-          BackToken(Line);
-        else if (!LookupInstTable(TeXTable, Line))
-          if (!TeXNLSSpec(Line))
+        strcpy(tex_backslash_token_sep_string, tex_token_sep_string);
+        if (!tex_read_token(Line))
+          tex_error("unexpected end of file");
+        if (*tex_token_sep_string != '\0')
+          tex_push_back_token(Line);
+        else if (LookupInstTable(TeXTable, Line));
+        else if (tex_newif_lookup(Line));
+        else
+        {
+          const tex_newcommand_t *p_cmd = tex_newcommand_lookup(Line);
+
+          if (p_cmd)
           {
-            as_snprintf(Comp, sizeof(Comp), "unknown TeX command %s", Line);
-            Warning(Comp);
+            DoAddNormal("", tex_backslash_token_sep_string);
+            tex_newcommand_expand_push(p_cmd);
           }
+          else if (!TeXNLSSpec(Line))
+            tex_warning("unknown TeX command %s", Line);
+        }
       }
       else if (!strcmp(Line, "$"))
       {
         InMathMode = !InMathMode;
         if (InMathMode)
         {
-          strcpy(BackSepString, SepString);
-          ReadToken(Line);
-          strcpy(SepString, BackSepString);
-          BackToken(Line);
+          strcpy(tex_backslash_token_sep_string, tex_token_sep_string);
+          tex_read_token(Line);
+          strcpy(tex_token_sep_string, tex_backslash_token_sep_string);
+          tex_push_back_token(Line);
         }
       }
       else if (!strcmp(Line, "&"))
@@ -3042,39 +2700,37 @@ int main(int argc, char **argv)
         SaveFont();
       else if (!strcmp(Line, "}"))
       {
-        if (FontNest > 0)
+        if (curr_tex_env_data.FontNest > 0)
           RestoreFont();
-        else if (ErrState >= 0)
-          NextErrState();
         else if (FracState >= 0)
           NextFracState();
-        else switch (CurrEnv)
+        else switch (curr_tex_env)
         {
           case EnvMarginPar:
-            RestoreEnv();
+            tex_restore_env();
             break;
           case EnvCaption:
             FlushLine();
-            fputs("</CENTER><P>\n", outfile);
-            RestoreEnv();
+            fputs("</CENTER><P>\n", p_outfile);
+            tex_restore_env();
             break;
           case EnvHeading:
             EndSectionHeading();
-            RestoreEnv();
+            tex_restore_env();
             break;
           default:
             RestoreFont();
         }
       }
       else
-        DoAddNormal(Line, SepString);
+        DoAddNormal(Line, tex_token_sep_string);
     }
     FlushLine();
 
-    fputs("</HTML>\n", outfile);
+    fputs("</HTML>\n", p_outfile);
 
-    for (z = 0; z < IncludeNest; fclose(infiles[z++]));
-    fclose(outfile);
+    tex_infile_pop_all();
+    fclose(p_outfile); p_outfile = NULL;
 
     unlink(AuxFile);
     PrintLabels(AuxFile);
@@ -3083,6 +2739,12 @@ int main(int argc, char **argv)
 
     FreeLabels();
     FreeCites();
+    tex_counters_free();
+    tex_newifs_free();
+    tex_environments_free();
+    tex_newcommands_free();
+    tex_output_consumer_pop_all();
+    tex_if_pop_all();
     FreeToc();
     FreeIndex();
     FreeFontStack();

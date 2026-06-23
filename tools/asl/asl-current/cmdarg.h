@@ -22,7 +22,8 @@ typedef enum
   e_cmd_ok,
   e_cmd_err,
   e_cmd_file,
-  e_cmd_arg
+  e_cmd_arg,
+  e_cmd_unknown
 } as_cmd_result_t;
 
 typedef as_cmd_result_t (*as_cmd_callback_t)(
@@ -46,6 +47,8 @@ typedef struct
 } as_cmd_results_t;
 
 extern void as_cmd_register(const as_cmd_rec_t *p_new_recs, size_t new_rec_cnt);
+
+extern long as_cmd_strtol(const char *p_inp, const char **pp_end);
 
 extern as_cmd_result_t as_cmd_process(int argc, char **argv,
                                       const char *p_env_name,

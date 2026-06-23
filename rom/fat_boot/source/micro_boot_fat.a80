@@ -1,5 +1,5 @@
 
-; LAST UPDATE: 10.02.2024 savelij
+; LAST UPDATE: 07.01.2026 savelij
 
 		include macros.a80
 		include define.a80
@@ -12,7 +12,9 @@
 
  INIT_VAR DRV_VAR
  SETVAR BUF_512_,	0x200				; буфер сектора
-		include ../../fat_vars.a80
+FATVAR
+ _INIT_VAR INITVAR	; базовый адрес для переменых FAT
+		include fat_vars.a80
  SETVAR_ALIGN
  SUBVAR (WORD + WORD + BYTE + BYTE)
  SETVAR LENGHT,		WORD				; длина файла в байтах
@@ -51,29 +53,28 @@ SETLOADER	LD (LOADSCS1),HL			; установили адрес читалки секторов
 		JR Z,SETMASL
 		LD A,0xF0
 SETMASL		LD (MAS_SLA),A
-		LD BC,(FILE_SRC + _DIR_FstClusHI)
-		LD (AFILCLS+2),BC
-		LD DE,(FILE_SRC + _DIR_FstClusLO)
-		LD (AFILCLS),DE
-		LD A,(FILE_SRC + _DIR_Ext + 1)
-		CP "P"
+		LD BC,(FATVAR.FILE_SRC + _DIR_FstClusHI)
+		LD (FATVAR.AFILCLS+2),BC
+		LD DE,(FATVAR.FILE_SRC + _DIR_FstClusLO)
+		LD (FATVAR.AFILCLS),DE
+		LD HL,(FATVAR.FILE_SRC + _DIR_FileSize)
+		LD (LENGHT),HL				; установка длины файла в байтах
+		LD A,(FATVAR.FILE_SRC + _DIR_Ext + 1)
+		CP 'P'
 		JP Z,RUNSPG2				; переход на запуск SPG файла
-		CP "N"
+		CP 'N'
 		JP Z,RUNSNA				; переход на запуск SNA файла
 		CALL REALSEC				; преобразовали в номер сектора
 		CALL LOADLST				; загрузили в буфер
 		EXX
-		LD HL,(BUF_512_ + _DIR_Ext + 1)
+		LD HL,(BUF_512_ + 0x09)
 		LD (0x5D45),HL				; адрес старта кода
-		LD HL,(BUF_512_ + _DIR_Attr)
-		LD (LENGHT),HL				; установка длины файла в байтах
-		LD DE,0x11
-		ADD HL,DE				; пропуск HOBETA заголовка
+		LD HL,(LENGHT)
 		LD A,L
 		AND A
-		JR Z,READ01				; если младший байт не 0
+		JR Z,.L01				; если младший байт не 0
 		INC H					; старший +1
-READ01		LD A,H
+.L01		LD A,H
 		SRL A					; делим на 2 ибо на FAT сектор 512 байт
 		ADC A,0					; учитываем чет/нечет
 		DEC A					; первый сектор загружен, грузить на 1 меньше
@@ -81,7 +82,7 @@ READ01		LD A,H
 		JP Z,LDIRBUF				; если сектор 1 перенос и запуск
 		DEC A
 		LD IXL,A				; запомнили количество секторов - 1
-		JP Z,READ08				; если файл влез в 2 сектора
+		JP Z,.L08				; если файл влез в 2 сектора
 		EXX
 		CALL LD_ONES				; перенос остатков первого сектора
 		PUSH DE					; адрес куда далее грузить
@@ -89,26 +90,36 @@ READ01		LD A,H
 		LD HL,1					; один сектор уже загружен
 		ADD HL,DE				; далее грузить со следующего сектора 
 		EX DE,HL
-		JR NC,READ04
+		JR NC,.L04
 		INC BC					; BCDE = BCDE + 1
-READ04		POP HL					; в HL адрес для продолжения загрузки
-		LD IY,(SecPerClus)			; LY = количество секторов в кластере
+.L04		POP HL					; в HL адрес для продолжения загрузки
+		LD IY,(FATVAR.SecPerClus)		; LY = количество секторов в кластере
 		LD A,IXL
 		CP IYL					; секторов осталось меньше чем в кластере
-		JR C,READ02				; переход на дозагрузку остатка секторов
+		JR C,.L02				; переход на дозагрузку остатка секторов
 		INC IXL
-		LD A,IYL
+; проверка размера файла на кратность размеру сектора
+		PUSH HL
+		LD HL,(LENGHT)
+		LD A,H
+		AND 1
+		OR L
+		POP HL
+		JR Z,.L1
+		INC IXL					; если не 0, то грузить на 1 сектор больше
+.L1		LD A,IYL
 		CP 2
-		JR C,READ07
+		JR C,.L07
 		DEC A
-		JR READ05
+		JR .L05
 
-READ07		PUSH HL
-		LD DE,(AFILCLS)
-		LD BC,(AFILCLS + 2)
+; загрузка секторов по кластерно
+.L07		PUSH HL
+		LD DE,(FATVAR.AFILCLS)
+		LD BC,(FATVAR.AFILCLS + 2)
 		CALL RD_NEXT_CLUSTER			; получить номер следующего кластера
-		LD (AFILCLS),DE
-		LD (AFILCLS + 2),BC
+		LD (FATVAR.AFILCLS),DE
+		LD (FATVAR.AFILCLS + 2),BC
 		CALL CHECK_LAST_CLUSTER			; проверка на окончание FAT цепочки
 		POP HL
 		JR C,RUNLOAD				; если кластера закончились, то запуск загруженного
@@ -117,46 +128,40 @@ READ07		PUSH HL
 		POP HL
 		LD A,IXL				; сколько секторов осталось загрузить
 		CP IYL					; сравниваем с размером кластера
-		JR C,READ02				; если осталось загрузить секторов меньше чем в кластере, то дозагружаем остаток
+		JR C,.L02				; если осталось загрузить секторов меньше чем в кластере, то дозагружаем остаток
 		LD A,IYL				; сколько секторов загружать
-READ05		CALL LOADSCS				; загрузка секторов
+.L05		CALL LOADSCS				; загрузка секторов
 		LD A,IXL				; сколько секторов всего загружать
 		SUB IYL					; минус сколько секторов только что загрузили
 		JR Z,RUNLOAD				; сектора кончились, переходим на запуск
 		LD IXL,A				; сколько секторов осталось загрузить
-		JR READ07				; продолжаем загрузку
+		JR .L07					; продолжаем загрузку
 
 ; размер кода в Hobeta менее 2 секторов
 ; копируем хвост первого сектора и догружаем из второго с переносом
-READ08		EXX
+.L08		EXX
 		CALL LD_ONES
 		PUSH DE
 		EXX
 		POP HL
 		LD IXL,1
-		JR READ03
+		JR .L03
 
 ; загрузка количества секторов, если осталось менее размера кластера
-READ02		AND A
-		JR Z,READ03
+.L02		AND A
+		JR Z,.L03
 		CALL LOADSCS
-READ03		PUSH HL
+.L03		PUSH HL
 		LD A,IXL
 		LD L,A
 		LD H,0
 		ADD HL,DE
 		EX DE,HL
-		JR NC,READ06
+		JR NC,.L06
 		INC BC
-READ06		CALL LOADLST
-		LD BC,(LENGHT)
-		EX DE,HL
-		LD HL,0x11
-		ADD HL,BC
-		LD B,H
-		LD C,L
-		EX DE,HL
+.L06		CALL LOADLST
 		POP DE
+		LD BC,(LENGHT)
 		LD A,B
 		AND 1
 		LD B,A
@@ -207,7 +212,7 @@ LOAD_FILE	PUSH BC					; старшие 16 бит номера кластера
 		PUSH DE					; младшие 16 бит номера кластера
 		PUSH HL					; сохранили адрес загрузки
 		CALL REALSEC				; перевели номер кластера в номер сектора
-		LD IX,(SecPerClus)
+		LD IX,(FATVAR.SecPerClus)
 		LD A,IYH				; смещение в кластере
 		LD L,A
 		LD H,0
@@ -251,7 +256,7 @@ LOAD_FILE	PUSH BC					; старшие 16 бит номера кластера
 
 ; проверка номера кластера
 CHECK_LAST_CLUSTER
-		LD A,(FATType)
+		LD A,(FATVAR.FATType)
 		AND A
 		JR NZ,.L1
 		LD HL,0x0FF7
@@ -272,7 +277,7 @@ CHECK_LAST_CLUSTER
 		RET
 
 ; чтение следующего кластера
-RD_NEXT_CLUSTER	LD A,(FATType)
+RD_NEXT_CLUSTER	LD A,(FATVAR.FATType)
 		AND A
 		JR Z,.L1
 		DEC A
@@ -301,7 +306,7 @@ RD_NEXT_CLUSTER	LD A,(FATType)
 		LD D,C
 .L3		PUSH AF
 		PUSH BC
-		LD HL,NumSecFAT1
+		LD HL,FATVAR.NumSecFAT1
 		CALL BCDEHLP
 		CALL LOADLST
 		POP BC
@@ -329,8 +334,8 @@ RD_NEXT_CLUSTER	LD A,(FATType)
 		SRL E
 		PUSH AF
 		PUSH HL
-		LD DE,(NumSecFAT1)
-		LD BC,(NumSecFAT1 + 2)
+		LD DE,(FATVAR.NumSecFAT1)
+		LD BC,(FATVAR.NumSecFAT1 + 2)
 		CALL LOADLST
 		POP BC
 		LD A,B
@@ -340,7 +345,7 @@ RD_NEXT_CLUSTER	LD A,(FATType)
 		LD B,(HL)
 		INC HL
 		LD A,H
-		CP HIGH (BUF_512) + 2
+		CP HIGH (BUF_512_) + 2
 		JR NZ,.L4
 		PUSH BC
 		LD BC,0
@@ -371,8 +376,8 @@ REALSEC		LD A,B
 		OR D
 		OR E
 		JR NZ,REALSE1
-		LD DE,(NumSecRootDir)
-		LD BC,(NumSecRootDir + 2)
+		LD DE,(FATVAR.NumSecRootDir)
+		LD BC,(FATVAR.NumSecRootDir + 2)
 		RET
 
 REALSE1		LD HL,0xFFFE
@@ -381,7 +386,7 @@ REALSE1		LD HL,0xFFFE
 		EX DE,HL
 		INC HL
 		ADC HL,BC				; номер кластера - 2
-		LD A,(SecPerClus)
+		LD A,(FATVAR.SecPerClus)
 		JR REALSE2
 
 REALSE3		SLA E
@@ -392,7 +397,7 @@ REALSE2		RRCA
 		JR NC,REALSE3				; умножили на размер кластера
 		LD B,H
 		LD C,L
-		LD HL,FirstSecData
+		LD HL,FATVAR.FirstSecData
 		JP BCDEHLP				; прибавили смещение от начала раздела
 
 ; BCDE / 512

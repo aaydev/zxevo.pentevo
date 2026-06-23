@@ -1,24 +1,24 @@
 
-;LAST UPDATE: 31.07.2017 savelij
+; LAST UPDATE: 16.02.2025 savelij
 
-;LINIT  - initialization (hook on "P"-channel and printer init)
-;LPRINT - print ZX simbol (with token decode)
-;LBYTE  - print simbol (without token decode)
-;LCOPY  - print screen
+; LINIT  - initialization (hook on "P"-channel and printer init)
+; LPRINT - print ZX simbol (with token decode)
+; LBYTE  - print simbol (without token decode)
+; LCOPY  - print screen
 
-AY_PRN_SCR	LD H,CRCCMOSHIGH;0XEF
+AY_PRN_SCR	LD H,CMOS.CRCHIGH
 		CALL READCMOS
-		AND M_PRINTER_AY
+		AND CMOS_ED.M_PRINTER_AY
 		JR NZ,AY_PRN_SCR1
-		LD HL,0X0EAF
+		LD HL,0x0EAF
 		LD (RADRRET_L),HL
-		LD A,0XB0
+		LD A,0xB0
 		LD (RREG_B),A
 		RET
 
 AY_PRN_SCR1	LD HL,GRSET1
 		CALL OUTSTR
-		LD HL,0X4000
+		LD HL,0x4000
 		LD C,3
 LCOP5		LD B,8
 LCOP4		PUSH BC
@@ -28,7 +28,7 @@ LCOP4		PUSH BC
 		POP HL
 		LD D,H
 		LD E,L
-		LD B,0X20
+		LD B,0x20
 LCOP3		PUSH BC
 		LD C,8
 LCOP2		LD B,8
@@ -53,25 +53,25 @@ LCOP1		RLC (HL)
 		LD H,A
 		DEC C
 		JR NZ,LCOP5
-		LD HL,0X0EDE
+		LD HL,0x0EDE
 		LD (RADRRET_L),HL
 		LD HL,GRSET3
 OUTSTR		LD A,(HL)
-		CP 0XFF
+		CP 0xFF
 		RET Z
 		CALL AY_PRN_BYTE
 		INC HL
 		JR OUTSTR
 
-AY_PRN_A_	LD H,CRCCMOSHIGH;0XEF
+AY_PRN_A_	LD H,CMOS.CRCHIGH
 		CALL READCMOS
-		AND M_PRINTER_AY
+		AND CMOS_ED.M_PRINTER_AY
 		JR NZ,AY_PRN_A_1
 		LD A,(RREG_B)
 		CP 3
 		SBC A,A
 		LD (RREG_A),A
-		LD HL,0X0EF8
+		LD HL,0x0EF8
 		LD (RADRRET_L),HL
 		RET
 
@@ -83,70 +83,70 @@ AY_PRN_BYTE	PUSH BC
 		POP BC
 		RET
 
-AY_PRN_INIT	LD H,CRCCMOSHIGH;0XEF
+AY_PRN_INIT	LD H,CMOS.CRCHIGH
 		CALL READCMOS
-		AND M_PRINTER_AY
+		AND CMOS_ED.M_PRINTER_AY
 		JR NZ,AY_PRN_INIT1
-		LD HL,0X0EDF
+		LD HL,0x0EDF
 		LD (RADRRET_L),HL
 		RET
 
-AY_PRN_INIT1	LD DE,0XFFBF
-		LD C,0XFD
+AY_PRN_INIT1	LD DE,0xFFBF
+		LD C,0xFD
 		LD B,D		;FF
-		LD A,0XFE		;for TS or TSFM
+		LD A,0xFE		;for TS or TSFM
 		OUT (C),A		;select first chip
 		LD A,7
 		OUT (C),A
 		LD B,E		;BF
-		LD A,0X7F
+		LD A,0x7F
 		OUT (C),A
 		LD B,D		;FF
-		LD A,0X0F
+		LD A,0x0F
 		OUT (C),A
 		LD B,E		;BF
-		LD A,0XFE
+		LD A,0xFE
 		OUT (C),A
 		LD HL,INTX
 		JR OUTSTR
 
-EXIT_09F4	LD HL,0X09F4
+EXIT_09F4	LD HL,0x09F4
 		LD (RADRRET_L),HL
 		RET
 
-AY_PRN_TOKEN	LD H,CRCCMOSHIGH;0XEF
+AY_PRN_TOKEN	LD H,CMOS.CRCHIGH
 		CALL READCMOS
-		AND M_PRINTER_AY
+		AND CMOS_ED.M_PRINTER_AY
 		JR Z,EXIT_09F4
 		LD A,(RREG_A)
-		CP 0X0D
+		CP 0x0D
 		JR NZ,LP02
 		CALL LP01
-		LD A,0X0A
+		LD A,0x0A
 		JR LP01
 
-LP02		CP 0X20
+LP02		CP 0x20
 		RET C
-		CP 0X7F
+		CP 0x7F
 		JR C,LP01
-		CP 0XA5
+		CP 0xA5
 		JR NC,EXIT_09F4
-		CP 0X90
+		CP 0x90
 		JR C,LP03
-		SUB 0X4F
+		SUB 0x4F
 		JR LP01
 
-LP03		LD A,0X20
+LP03		LD A,0x20
 LP01		PUSH BC
 		PUSH AF
-		LD BC,0XFFFD
-		LD A,0X0E
+		LD BC,0xFFFD
+		LD A,0x0E
 		OUT (C),A
-		LD B,0XBF
+		LD B,0xBF
 		POP AF
 		OUT (C),A
-		LD B,0XFF
-		LD A,0X0F
+		LD B,0xFF
+		LD A,0x0F
 		OUT (C),A
 LP04		CALL BREAK_KEY
 		JR NC,LP05
@@ -155,37 +155,37 @@ LP04		CALL BREAK_KEY
 		JR NC,LP04
 		LD A,7
 		OUT (C),A
-		LD B,0XBF
-		LD A,0XFF
+		LD B,0xBF
+		LD A,0xFF
 		OUT (C),A
 		PUSH IX
 		POP IX
-		LD A,0X7F
+		LD A,0x7F
 		OUT (C),A
 		POP BC
 		RET
 
-LP05		LD HL,0X1B7B
+LP05		LD HL,0x1B7B
 		LD (RADRRET_L),HL
 		LD HL,REI_DI
 		SET 2,(HL)
 		RET
 
-;Command code for 9-pin EPSON-compatibility printers
-;Printer initialization
-INTX		DB 0X1B,0X40,0X07,0X07,0XFF
-;setup1 (before screen copy)
-GRSET1		DB 0X1B,0X41,0X08,0XFF
-;setup2 (every new line)
-GRSET2		DB 0X0D,0X0A,0X1B,0X2A,0X05,0X00,0X01,0XFF
-;setup2 (after complete screen copy)
-GRSET3		DB 0X0D,0X0A,0X1B,0X32,0X07,0X07,0X07,0XFF
+; Command code for 9-pin EPSON-compatibility printers
+; Printer initialization
+INTX		DB 0x1B,0x40,0x07,0x07,0xFF
+; setup1 (before screen copy)
+GRSET1		DB 0x1B,0x41,0x08,0xFF
+; setup2 (every new line)
+GRSET2		DB 0x0D,0x0A,0x1B,0x2A,0x05,0x00,0x01,0xFF
+; setup2 (after complete screen copy)
+GRSET3		DB 0x0D,0x0A,0x1B,0x32,0x07,0x07,0x07,0xFF
 
-BREAK_KEY	LD A,0X7F
-		IN A,(0XFE)
+BREAK_KEY	LD A,0x7F
+		IN A,(0xFE)
 		RRA
 		RET C
-		LD A,0XFE
-		IN A,(0XFE)
+		LD A,0xFE
+		IN A,(0xFE)
 		RRA
 		RET

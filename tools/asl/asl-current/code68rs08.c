@@ -20,9 +20,12 @@
 #include "asmpars.h"
 #include "asmsub.h"
 #include "asmitree.h"
+#include "codepseudo.h"
 #include "motpseudo.h"
+#include "intpseudo.h"
 #include "codevars.h"
 #include "errmsg.h"
+#include "headids.h"
 
 #include "code68rs08.h"
 
@@ -71,7 +74,6 @@ enum
 #define MModX (1 << ModX)
 
 static ShortInt AdrMode;
-static tSymbolSize OpSize;
 static Byte AdrVals[2];
 
 static IntType AdrIntType;
@@ -175,39 +177,39 @@ static void DecodeAdr(Byte Start, Byte Stop, Word Mask)
         {
           AdrCnt = 1;
           AdrVals[0] = Lo(AdrWord);
-	  AdrMode = ModDir;
-	  if (ZeroMode == 0)
-	  {
-	    if ((Mask & MModTny) && (AdrVals[0] <= 0x0f))
+          AdrMode = ModDir;
+          if (ZeroMode == 0)
+          {
+            if ((Mask & MModTny) && (AdrVals[0] <= 0x0f))
               AdrMode = ModTny;
-	    if ((Mask & MModSrt) && (AdrVals[0] <= 0x1f))
+            if ((Mask & MModSrt) && (AdrVals[0] <= 0x1f))
               AdrMode = ModSrt;
-	  }
-	  if (ZeroMode == 2)
-	  {
-	    if (Mask & MModTny)
-	    {
-	      if (AdrVals[0] <= 0x0f)
+          }
+          if (ZeroMode == 2)
+          {
+            if (Mask & MModTny)
+            {
+              if (AdrVals[0] <= 0x0f)
                 AdrMode = ModTny;
               else
                 WrError(ErrNum_ConfOpSizes);
-	      return;
-	    }
+              return;
+            }
             else if (Mask & MModSrt)
-	    {
-	      if (AdrVals[0] <= 0x1f)
+            {
+              if (AdrVals[0] <= 0x1f)
                 AdrMode = ModSrt;
               else
                 WrError(ErrNum_ConfOpSizes);
-	      return;
-	    }
-	    else
-	    {
-	      AdrMode = ModNone;
-	      WrError(ErrNum_NoShortAddr);
-	      return;
-	    }
-	  }
+              return;
+            }
+            else
+            {
+              AdrMode = ModNone;
+              WrError(ErrNum_NoShortAddr);
+              return;
+            }
+          }
         }
       }
       else
@@ -254,7 +256,6 @@ static void DecodeMOV(Word Index)
 
   if (ChkArgCnt(2, 2))
   {
-    OpSize = eSymbolSize8Bit;
     DecodeAdr(1, 1, MModImm | MModDir | MModIX);
     switch (AdrMode)
     {
@@ -262,17 +263,17 @@ static void DecodeMOV(Word Index)
         BAsmCode[1] = AdrVals[0];
         DecodeAdr(2, 2, MModDir | MModIX);
         switch (AdrMode)
-	{
-	  case ModDir:
+        {
+          case ModDir:
             BAsmCode[0] = 0x3e;
             BAsmCode[2] = AdrVals[0];
             CodeLen = 3;
-	    break;
-	  case ModIX:
+            break;
+          case ModIX:
             BAsmCode[0] = 0x3e;
             BAsmCode[2] = 0x0e;
             CodeLen = 3;
-	    break;
+            break;
         }
         break;
       case ModDir:
@@ -345,7 +346,6 @@ static void DecodeCBEQx(Word Index)
 
   if (ChkArgCnt(2, 2))
   {
-    OpSize = eSymbolSize8Bit;
     DecodeAdr(1, 1, MModImm);
     if (AdrMode == ModImm)
     {
@@ -809,6 +809,8 @@ static void InitFields(void)
   InstTable = CreateInstTable(177);
   SetDynamicInstTable(InstTable);
 
+  add_null_pseudo(InstTable);
+
   InstrZ = 0;
   AddFixed("SHA" , CPU68RS08, 0x45); AddFixed("SLA" , CPU68RS08, 0x42);
   AddFixed("RTS" , CPU68RS08, 0xbe); AddFixed("TAX" , CPU68RS08, 0xef);
@@ -873,7 +875,10 @@ static void InitFields(void)
   add_brset_brclr("BRCLR", 0x01);
   add_brset_brclr("BRSET", 0x00);
 
-  init_moto8_pseudo(InstTable, e_moto_8_be | e_moto_8_db | e_moto_8_dw);
+  add_moto8_pseudo(InstTable, e_moto_pseudo_flags_be);
+  AddMoto16Pseudo(InstTable, e_moto_pseudo_flags_be);
+  AddInstTable(InstTable, "DB", eIntPseudoFlag_BigEndian | eIntPseudoFlag_AllowInt | eIntPseudoFlag_AllowString | eIntPseudoFlag_MotoRep, DecodeIntelDB);
+  AddInstTable(InstTable, "DW", eIntPseudoFlag_BigEndian | eIntPseudoFlag_AllowInt | eIntPseudoFlag_AllowString | eIntPseudoFlag_MotoRep, DecodeIntelDW);
 }
 
 static void DeinitFields(void)
@@ -903,17 +908,8 @@ static Boolean DecodeAttrPart_68rs08(void)
 
 static void MakeCode_68rs08(void)
 {
-  CodeLen = 0; DontPrint = False; OpSize = AttrPartOpSize[0];
-
-  /* zu ignorierendes */
-
-  if (Memo(""))
-    return;
-
-  /* Pseudoanweisungen */
-
-  if (DecodeMoto16Pseudo(OpSize, True))
-    return;
+  if (AttrPartOpSize[0] == eSymbolSizeUnknown)
+    AttrPartOpSize[0] = eSymbolSize8Bit;
 
   if (!LookupInstTable(InstTable, OpPart.str.p_str))
     WrStrErrorPos(ErrNum_UnknownInstruction, &OpPart);
@@ -931,11 +927,13 @@ static void SwitchFrom_68rs08(void)
 
 static void SwitchTo_68rs08(void)
 {
+  const TFamilyDescr *p_descr = FindFamilyByName("68RS08");
+
   TurnWords = False;
   SetIntConstMode(eIntConstModeMoto);
 
   PCSymbol = "*";
-  HeaderID = 0x5e;
+  HeaderID = p_descr->Id;
   NOPCode = 0xac;
   DivideChars = ",";
   HasAttrs = True;

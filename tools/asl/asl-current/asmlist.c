@@ -12,6 +12,7 @@
 #include <string.h>
 #include <assert.h>
 #include "be_le.h"
+#include "cmdarg.h"
 #include "strutil.h"
 #include "dynstr.h"
 #include "asmdef.h"
@@ -26,11 +27,16 @@
 
 #define LISTLINE_PREFIX_TOTAL 40
 
-static unsigned SystemListLen8, SystemListLen16, SystemListLen32;
+#define system_list_len_max 32
+static unsigned *p_system_list_len;
 
 static as_dynstr_t list_buf;
 
 static int max_pc_len;
+
+static char *p_listline_prefix_format = NULL;
+static const char default_listline_prefix_format[] = "%i%n/%a";
+static Boolean list_unknown_values = True;
 
 /*!------------------------------------------------------------------------
  * \fn     as_list_set_max_pc(LargeWord max_pc)
@@ -40,6 +46,10 @@ static int max_pc_len;
 void as_list_set_max_pc(LargeWord max_pc)
 {
   String tmp;
+  unsigned num_bits = (ListGran() * 8) - list_gran_bits_unused();
+
+  if (num_bits > system_list_len_max)
+    fprintf(stderr, "define SystemListLen for %u bits\n", num_bits);
 
   as_snprintf(tmp, sizeof(tmp), "%1.*lllu", ListRadixBase, max_pc);
   max_pc_len = strlen(tmp);
@@ -52,11 +62,18 @@ void as_list_set_max_pc(LargeWord max_pc)
  * \brief  generate listing for one line, including generated code
  * ------------------------------------------------------------------------ */
 
+static void list_format_error(tErrorNum num, char fmt)
+{
+  char err_str[10];
+
+  as_snprintf(err_str, sizeof(err_str), "%%c", fmt);
+  WrXError(num, err_str);
+}
+
 void MakeList(const char *pSrcLine)
 {
-  String h2, Tmp;
   Word EffLen, Gran = Granularity();
-  Boolean ThisDoLst;
+  Boolean ThisDoLst, bitwise_segment = (Gran == 1) && (gran_bits_unused() == 7);
 
   EffLen = CodeLen * Gran;
 
@@ -77,177 +94,302 @@ void MakeList(const char *pSrcLine)
 
   if (!ListToNull && ThisDoLst && (ListMask & 1) && !IFListMask())
   {
-    LargeWord ListPC;
+    LargeWord ListPC = EProgCounter() - CodeLen;
     size_t sum_len;
-    int inc_and_line_length;
-    const char *p_pc_and_colon_format = ListPCZeroPad ? "%0*.*lllu %c" : "%*.*lllu %c";
+    int inc_column_len[3] = { -1, -1, -1 },
+        lnum_column_len[3] = { -1, -1, -1 };
+    Word Index = 0, CurrListGran, SystemListLen;
+    unsigned num_bits;
+    Boolean First = True;
 
-    /* Zeilennummer / Programmzaehleradresse: */
+    /* Not enough code to display even on 16/32 bit word?
+       Then start dumping bytes right away: */
 
-    as_sdprintf(&list_buf, "");
-    if (MaxIncDepth > 0)
+    CurrListGran = (EffLen < ActListGran) ? 1 : ActListGran;
+    num_bits = (CurrListGran * 8) - act_list_gran_bits_unused;
+    SystemListLen = p_system_list_len[min(num_bits, system_list_len_max)];
+
+    if (TurnWords && (Gran != ActListGran) && (1 == ActListGran))
+      as_code_swap_bytes();
+
+    do
     {
-      int digits = (MaxIncDepth > 99) ? 3 : ((MaxIncDepth > 9) ? 2 : 1);
+      /* Print list line header: First, the part configurable via format string: */
 
-      if (IncDepth > 0)
+      const char *p_format;
+      as_format_ctx_t format_context;
+      Boolean replace_space = False;
+      size_t num_inc_column = 0, num_lnum_column = 0;
+
+      if (list_buf.capacity > 0)
+        list_buf.p_str[0] = '\0';
+      as_format_context_reset(&format_context);
+      for (p_format = p_listline_prefix_format ? p_listline_prefix_format : default_listline_prefix_format;
+           *p_format; p_format++)
       {
-        as_snprintf(Tmp, sizeof(Tmp), IntegerFormat, IncDepth);
-        as_sdprcatf(&list_buf, "(%*s)", digits, Tmp);
-      }
-      else
-        as_sdprcatf(&list_buf, Blanks(2 + digits));
-    }
-    if (ListMask & ListMask_LineNums)
-    {
-      DecString(h2, sizeof(h2), CurrLine, 0);
-      as_sdprcatf(&list_buf, "%5s/", h2);
-    }
-    inc_and_line_length = strlen(list_buf.p_str);
-    ListPC = EProgCounter() - CodeLen;
-    as_sdprcatf(&list_buf, p_pc_and_colon_format,
-                max_pc_len, ListRadixBase, ListPC,
-                Retracted? 'R' : ':');
-    sum_len = strlen(list_buf.p_str);
-    assert(sum_len + 2 < LISTLINE_PREFIX_TOTAL);
+        Boolean next_replace_space = False;
 
-    /* Extrawurst in Listing ? */
-
-    if (*ListLine)
-    {
-      size_t rem_space = LISTLINE_PREFIX_TOTAL - sum_len - 2;
-      int num_pad = rem_space - strlen(ListLine);
-
-      /* If too long, truncate and add ..
-         If shorter than space, pad with spaces: */
-
-      if (num_pad < 0)
-        ListLine[rem_space - 2] = '\0';
-      as_sdprcatf(&list_buf, " %s%s %s", ListLine,
-                  (num_pad >= 0) ? Blanks(num_pad) : "..", pSrcLine);
-      WrLstLine(list_buf.p_str);
-      *ListLine = '\0';
-    }
-
-    /* Code ausgeben */
-
-    else
-    {
-      Word Index = 0, CurrListGran, SystemListLen;
-      Boolean First = True;
-      LargeInt ThisWord;
-
-      /* Not enough code to display even on 16/32 bit word?
-         Then start dumping bytes right away: */
-
-      if (EffLen < ActListGran)
-      {
-        CurrListGran = 1;
-        SystemListLen = SystemListLen8;
-      }
-      else
-      {
-        CurrListGran = ActListGran;
-        switch (CurrListGran)
+        if (as_format_context_consume(&format_context, *p_format));
+        else if (format_context.in_format)
         {
-          case 4:
-            SystemListLen = SystemListLen32;
-            break;
-          case 2:
-            SystemListLen = SystemListLen16;
-            break;
-          default:
-            SystemListLen = SystemListLen8;
-        }
-      }
+          char tmp_buf[40];
+          int pad = 0;
 
-      if (TurnWords && (Gran != ActListGran) && (1 == ActListGran))
-        DreheCodes();
-
-      do
-      {
-        /* If not the first code line, prepend blanks to fill up space below line number: */
-
-        if (!First)
-        {
-          if (inc_and_line_length > 0)
-            as_sdprintf(&list_buf, "%*s", inc_and_line_length, "");
-          else
-            as_sdprintf(&list_buf, "");
-          as_sdprcatf(&list_buf, p_pc_and_colon_format,
-                      max_pc_len, ListRadixBase, ListPC,
-                      Retracted? 'R' : ':');
-          sum_len = strlen(list_buf.p_str);
-        }
-        do
-        {
-          /* We checked initially there is at least one full word,
-             and we check after every word whether there is another
-             full one: */
-
-          if ((Index < EffLen) && !DontPrint)
+          switch (*p_format)
           {
-            switch (CurrListGran)
+            /* Include level is printed only on the first line: */
+
+            case 'i':
+              if (num_inc_column >= as_array_size(inc_column_len))
+                list_format_error(ErrNum_ListHeadFormatElemTooOften, *p_format);
+              if (First)
+              {
+                if ((MaxIncDepth > 0) || (format_context.arg[0] > 0))
+                {
+                  int inc_max_digits = (format_context.arg[0] > 0)
+                                     ? format_context.arg[0]
+                                     : ((MaxIncDepth > 99) ? 3 : ((MaxIncDepth > 9) ? 2 : 1));
+
+                  inc_column_len[num_inc_column] =
+                    (IncDepth > 0) ?
+                    as_snprintf(tmp_buf, sizeof(tmp_buf),
+                                format_context.lead_zero ? "(%0*u)" : "(%*u)",
+                                inc_max_digits, (unsigned)IncDepth) :
+                    as_snprintf(tmp_buf, sizeof(tmp_buf), "%*s", 2 + inc_max_digits, "");
+                  as_dynstr_append_c_str(&list_buf, tmp_buf);
+                }
+              }
+              else if (inc_column_len[num_inc_column] > 0)
+                as_dynstr_append_c_str(&list_buf, Blanks(inc_column_len[num_inc_column]));
+              num_inc_column++;
+              break;
+
+            /* Source line number is printed only on the first line: */
+
+            case 'n':
+              if (num_lnum_column >= as_array_size(lnum_column_len))
+                list_format_error(ErrNum_ListHeadFormatElemTooOften, *p_format);
+              if (First)
+              {
+                int line_max_digits = (format_context.arg[0] > 0) ? format_context.arg[0] : 5;
+
+                lnum_column_len[num_lnum_column] =
+                   DecString(tmp_buf, sizeof(tmp_buf), CurrLine,
+                             format_context.lead_zero ? line_max_digits : 0);
+                if (lnum_column_len[num_lnum_column] < line_max_digits)
+                  as_dynstr_append_c_str(&list_buf, Blanks(pad = line_max_digits - lnum_column_len[num_lnum_column]));
+                as_dynstr_append_c_str(&list_buf, tmp_buf);
+                lnum_column_len[num_lnum_column] += pad;
+              }
+              else if (lnum_column_len[num_lnum_column] > 0)
+              {
+                as_dynstr_append_c_str(&list_buf, Blanks(lnum_column_len[num_lnum_column]));
+                next_replace_space = True;
+              }
+              num_lnum_column++;
+              break;
+
+            /* Memory address is printed on all lines: */
+
+            case 'a':
             {
-              case 4:
-                ThisWord = DAsmCode[Index >> 2];
-                break;
-              case 2:
-                ThisWord = WAsmCode[Index >> 1];
-                break;
-              default:
-                ThisWord = BAsmCode[Index];
+              int pc_max_digits = (format_context.arg[0] > 0) ? format_context.arg[0] : max_pc_len;
+              char pc_buf[40];
+              int pc_len;
+
+              pc_len = SysString(pc_buf, sizeof(pc_buf), ListPC, ListRadixBase,
+                                 (format_context.lead_zero || ListPCZeroPad) ? pc_max_digits : 0,
+                                 False, HexStartCharacter, SplitByteCharacter);
+              if (pc_len < pc_max_digits)
+                as_dynstr_append_c_str(&list_buf, Blanks(pad = pc_max_digits - pc_len));
+              as_dynstr_append_c_str(&list_buf, pc_buf);
+              break;
             }
-            as_sdprcatf(&list_buf, " %0*.*lllu", (int)SystemListLen, (int)ListRadixBase, ThisWord);
+            default:
+              list_format_error(ErrNum_InvListHeadFormat, *p_format);
           }
-          else
-            as_sdprcatf(&list_buf, "%*s", (int)(1 + SystemListLen), "");
+          as_format_context_reset(&format_context);
+        }
+        else /* !format_context.in_format */
+          as_dynstr_append(&list_buf, replace_space ? " " : p_format, 1);
 
-          /* advance pointers & keep track of # of characters printed */
+        replace_space = next_replace_space;
+      }
 
-          ListPC += (Gran == CurrListGran) ? 1 : CurrListGran;
-          Index += CurrListGran;
-          sum_len += 1 + SystemListLen;
+      /* Separator resp. indicator for retracted code */
 
-          /* Less than one full word remaining? Then switch to dumping bytes. */
+      as_sdprcatf(&list_buf, Retracted ? " R" : " :");
+      sum_len = strlen(list_buf.p_str);
+      assert(sum_len + 2 < LISTLINE_PREFIX_TOTAL);
 
-          if (Index + CurrListGran > EffLen)
+      /* Extrawurst in Listing ? */
+
+      if (First && *ListLine)
+      {
+        size_t rem_space = LISTLINE_PREFIX_TOTAL - sum_len - 2;
+        int num_pad = rem_space - strlen(ListLine);
+
+        /* If too long, truncate and add ..
+           If shorter than space, pad with spaces: */
+
+        if (num_pad < 0)
+          ListLine[rem_space - 2] = '\0';
+        sum_len += as_sdprcatf(&list_buf, " %s%s", ListLine, (num_pad >= 0) ? Blanks(num_pad) : "..");
+      }
+
+      /* Actual code: */
+
+      else do
+      {
+        unsigned n_word_bits = (CurrListGran * 8) - act_list_gran_bits_unused;
+
+        /* We checked initially there is at least one full word,
+           and we check after every word whether there is another
+           full one: */
+
+        if ((Index >= EffLen) || DontPrint)
+          as_sdprcatf(&list_buf, "%*s", (int)(1 + SystemListLen), "");
+        else
+        {
+          LargeWord ThisWord, ThisWordGuessed;
+
+          if (bitwise_segment)
           {
-            CurrListGran = 1;
-            SystemListLen = SystemListLen8;
+            if ((int)n_word_bits > (EffLen - Index))
+              n_word_bits = EffLen - Index;
+            ThisWord = get_basmcode_bit_field_ve(Index, n_word_bits, last_basmcode_bit_field_set_be);
+            ThisWordGuessed = get_basmcode_guessed_bit_field_ve(Index, n_word_bits, last_basmcode_bit_field_set_be);
+          }
+          else switch (CurrListGran)
+          {
+            case 4:
+              ThisWord = DAsmCode[Index >> 2];
+              ThisWordGuessed = get_dasmcode_guessed(Index >> 2);
+              break;
+            case 2:
+              ThisWord = WAsmCode[Index >> 1];
+              ThisWordGuessed = get_wasmcode_guessed(Index >> 1);
+              break;
+            default:
+              ThisWord = BAsmCode[Index];
+              ThisWordGuessed = get_basmcode_guessed(Index);
+          }
+          as_sdprcatf(&list_buf, " %0*.*lllu", (int)SystemListLen, (int)ListRadixBase, ThisWord);
+          if (list_unknown_values && (ThisWordGuessed != 0))
+          {
+            char mask_buf[100];
+            char *p_val_end = list_buf.p_str + strlen(list_buf.p_str),
+                 *p_mask_end = mask_buf + as_snprintf(mask_buf, sizeof(mask_buf), "%0*.*lllu", (int)SystemListLen, (int)ListRadixBase, ThisWordGuessed);
+            while (p_mask_end > mask_buf)
+            {
+              p_val_end--;
+              if (*--p_mask_end != '0')
+                *p_val_end = '?';
+            }
           }
         }
-        while (sum_len + 1 + SystemListLen < LISTLINE_PREFIX_TOTAL);
 
-        /* If first line, pad to max length and append source line */
+        /* advance pointers & keep track of # of characters printed */
 
-        if (First)
-          as_sdprcatf(&list_buf, "%*s%s", (int)(LISTLINE_PREFIX_TOTAL - sum_len), "", pSrcLine);
-        WrLstLine(list_buf.p_str);
-        First = False;
+        ListPC += bitwise_segment ? n_word_bits : ((Gran == CurrListGran) ? 1 : CurrListGran);
+        Index += bitwise_segment ? n_word_bits : CurrListGran;
+        sum_len += 1 + SystemListLen;
+
+        /* Less than one full word remaining? Then switch to dumping bytes. */
+
+        if (Index + CurrListGran > EffLen)
+        {
+          CurrListGran = 1;
+          SystemListLen = p_system_list_len[8];
+        }
       }
-      while ((Index < EffLen) && !DontPrint);
+      while (sum_len + 1 + SystemListLen < LISTLINE_PREFIX_TOTAL);
 
-      if (TurnWords && (Gran != ActListGran) && (1 == ActListGran))
-        DreheCodes();
+      /* If first line, pad to max length and append source line */
+
+      if (First)
+        as_sdprcatf(&list_buf, "%*s%s", (int)(LISTLINE_PREFIX_TOTAL - sum_len), "", pSrcLine);
+      WrLstLine(list_buf.p_str);
+      if (First && *ListLine)
+      {
+        *ListLine = '\0';
+        break;
+      }
+      First = False;
     }
+    while ((Index < EffLen) && !DontPrint);
+
+    if (TurnWords && (Gran != ActListGran) && (1 == ActListGran))
+      as_code_swap_bytes();
+  } /* if (!ListToNull... */
+}
+
+/*!------------------------------------------------------------------------
+ *
+ * ------------------------------------------------------------------------ */
+
+static as_cmd_result_t cmd_listline_prefix(Boolean negate, const char *p_arg)
+{
+  if (p_listline_prefix_format)
+    free(p_listline_prefix_format);
+  p_listline_prefix_format = negate ? NULL : as_strdup(p_arg);
+  return negate ? e_cmd_ok : e_cmd_arg;
+}
+
+static as_cmd_result_t cmd_list_unknown_values(Boolean negate, const char *p_arg)
+{
+  UNUSED(p_arg);
+  if (negate)
+    return e_cmd_err;
+  list_unknown_values = True;
+  return e_cmd_ok;
+}
+
+static as_cmd_result_t cmd_no_list_unknown_values(Boolean negate, const char *p_arg)
+{
+  UNUSED(p_arg);
+  if (negate)
+    return e_cmd_err;
+  list_unknown_values = False;
+  return e_cmd_ok;
+}
+
+static const as_cmd_rec_t list_params[] =
+{
+  { "listline-prefix", cmd_listline_prefix },
+  { "list-unknown-values", cmd_list_unknown_values },
+  { "no-list-unknown-values", cmd_no_list_unknown_values }
+};
+
+/*!------------------------------------------------------------------------
+ * \fn     asmlist_setup(void)
+ * \brief  setup stuff after command line args have been read
+ * ------------------------------------------------------------------------ */
+
+void asmlist_setup(void)
+{
+  LargeWord l;
+  int z;
+  String Dummy;
+
+  p_system_list_len = (unsigned*)calloc(system_list_len_max + 1, sizeof(*p_system_list_len));
+  l = 0;
+  for (z = 0; z <= system_list_len_max; z++)
+  {
+    SysString(Dummy, sizeof(Dummy), l, ListRadixBase, 0, False, HexStartCharacter, SplitByteCharacter);
+    p_system_list_len[z] = strlen(Dummy);
+    l = (l << 1) | 1;
   }
 }
 
 /*!------------------------------------------------------------------------
  * \fn     asmlist_init(void)
- * \brief  setup stuff at program startup
+ * \brief  global setup at program start
  * ------------------------------------------------------------------------ */
 
 void asmlist_init(void)
 {
-  String Dummy;
-
   as_dynstr_ini(&list_buf, STRINGSIZE);
 
-  SysString(Dummy, sizeof(Dummy), 0xff, ListRadixBase, 0, False, HexStartCharacter, SplitByteCharacter);
-  SystemListLen8 = strlen(Dummy);
-  SysString(Dummy, sizeof(Dummy), 0xffffu, ListRadixBase, 0, False, HexStartCharacter, SplitByteCharacter);
-  SystemListLen16 = strlen(Dummy);
-  SysString(Dummy, sizeof(Dummy), 0xfffffffful, ListRadixBase, 0, False, HexStartCharacter, SplitByteCharacter);
-  SystemListLen32 = strlen(Dummy);
+  as_cmd_register(list_params, as_array_size(list_params));
 }

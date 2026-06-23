@@ -1,0 +1,10 @@
+Changes in ZX-Evolution Rev.CS2:
+
+1. Added HDAUDIO connector.
+2. Added MICRO-SD slot.
+3. X9 is KEMPSTON SEGA GAMEPAD connector, and second redefine GAMEPAD, not RS232 now.
+4. X19 is RS232 TTL-standard.
+5. BAT54C replaced by SS14.
+6. ATX connector is universal for 4.2/5.5 pins step.
+7. Added EXT_VGA connector for External video source, like VDAC2 or etc.
+8. Replaced FT232 to CP2102.

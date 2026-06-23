@@ -21,6 +21,7 @@
 #include "asmpars.h"
 #include "asmallg.h"
 #include "asmitree.h"
+#include "assume.h"
 #include "literals.h"
 #include "codevars.h"
 #include "codepseudo.h"
@@ -64,7 +65,7 @@ static LongInt IBVal;
 static Boolean PanelMode;
 static unsigned int mregistered = 0;
 
-static ASSUMERec ASSUME6100[] =
+static as_assume_rec_t ASSUME6100[] =
 {
 	{"IB", &IBVal, 0, 7, 0xff, NULL},
 };
@@ -206,7 +207,7 @@ static void DecodeMR(Word Index)
 
 		if ((NCode == 04000 || NCode == 05000) && !Indirect)
 		{
-			if (IBVal == ASSUME6100[0].NothingVal)
+			if (IBVal == ASSUME6100[0].nothing_value)
 			{
 				if ((Adr & 070000) != (EProgCounter() & 070000))
 				{
@@ -673,9 +674,6 @@ static void DeinitFields(void)
 
 static void MakeCode_6100(void)
 {
-	CodeLen = 0;
-	DontPrint = False;
-
 	if (Memo("")) return;
 
 	BaseInst = True;
@@ -717,6 +715,7 @@ static void SwitchTo_6100(void)
 	ValidSegs = (1 << SegCode);
 	Grans[SegCode] = 2;
 	ListGrans[SegCode] = 2;
+  grans_bits_unused[SegCode] = list_grans_bits_unused[SegCode] = 4;
 	SegInits[SegCode] = 0x0000;
 	if (MomCPU >= CPU6120)
 		SegLimits[SegCode] = 0x7fff;
@@ -730,8 +729,7 @@ static void SwitchTo_6100(void)
 	}
 	AddONOFF("PANEL", &PanelMode, "INPANEL", False);
 
-	pASSUMERecs = ASSUME6100;
-	ASSUMERecCnt = as_array_size(ASSUME6100);
+	assume_set(ASSUME6100, as_array_size(ASSUME6100));
 
 	MakeCode = MakeCode_6100;
 	IsDef = IsDef_6100;

@@ -18,6 +18,7 @@
 #include "dynstr.h"
 #include "intformat.h"
 #include "strcomp.h"
+#include "striter.h"
 #include "lstmacroexp.h"
 #include "cpulist.h"
 #include "tempresult.h"
@@ -97,10 +98,12 @@ extern char SrcSuffix[],IncSuffix[],PrgSuffix[],LstSuffix[],
 #define FlagTrueName     "TRUE"	      /* Flagkonstanten */
 #define FlagFalseName    "FALSE"
 #define PiName           "CONSTPI"    /* Zahl Pi */
+#define FloatMaxName     "FLOATMAX"   /* largest floating point number */
 #define DateName         "DATE"       /* Datum & Zeit */
 #define TimeName         "TIME"
 #define VerName          "VERSION"    /* speichert Versionsnummer */
 #define CaseSensName     "CASESENSITIVE" /* zeigt Gross/Kleinunterscheidung an */
+#define IntWidthName     "INTWIDTH"   /* bit width of internal integer aritmetic */
 #define Has64Name        "HAS64"         /* arbeitet Parser mit 64-Bit-Integers ? */
 #define ArchName         "ARCHITECTURE"  /* Zielarchitektur von AS */
 #define AttrName         "ATTRIBUTE"  /* Attributansprache in Makros */
@@ -142,8 +145,6 @@ char *pDest, size_t DestSize, LargeWord Inp
 #endif
 );
 
-typedef Boolean (*tQualifyQuoteFnc)(const char *pStart, const char *pQuotePos);
-
 typedef Word WordField[6];          /* fuer Zahlenumwandlung */
 typedef struct _TTransTable
 {
@@ -167,18 +168,12 @@ typedef struct _TSaveState
   LongInt SaveEnumCurrentValue, SaveEnumIncrement;
 } TSaveState,*PSaveState;
 
-typedef struct _TForwardSymbol
-{
-  struct _TForwardSymbol *Next;
-  StringPtr Name;
-  LongInt DestSection;
-  StringPtr pErrorPos;
-} TForwardSymbol, *PForwardSymbol;
+struct as_fwd_sym;
 
 typedef struct _TSaveSection
 {
   struct _TSaveSection *Next;
-  PForwardSymbol LocSyms, GlobSyms, ExportSyms;
+  struct as_fwd_sym *LocSyms, *GlobSyms, *ExportSyms;
   LongInt Handle;
 } TSaveSection, *PSaveSection;
 
@@ -195,15 +190,6 @@ typedef struct _TDefinement
   Byte Compiled[256];
 } TDefinement, *PDefinement;
 
-typedef struct _ASSUMERec
-{
-  const char *Name;
-  LongInt *Dest;
-  LongInt Min,Max;
-  LongInt NothingVal;
-  void (*pPostProc)(void);
-} ASSUMERec;
-
 extern StringPtr SourceFile;
 
 extern StringPtr CursUp;
@@ -217,6 +203,8 @@ extern LargeWord *Phases;
 extern Word Grans[SegCountPlusStruct];
 extern Word ListGrans[SegCountPlusStruct];
 extern ChunkList SegChunks[SegCountPlusStruct];
+extern Boolean grans_bits_unused[SegCountPlusStruct],
+               list_grans_bits_unused[SegCountPlusStruct];
 extern as_addrspace_t ActPC;
 extern Boolean PCsUsed[SegCountPlusStruct];
 extern LargeWord *SegInits;
@@ -226,8 +214,6 @@ extern Boolean ENDOccured;
 extern Boolean Retracted;
 extern Boolean ListToStdout,ListToNull;
 
-extern unsigned ASSUMERecCnt;
-extern const ASSUMERec *pASSUMERecs;
 extern void (*pASSUMEOverride)(void);
 
 extern Integer PassNo;
@@ -246,7 +232,9 @@ extern Boolean MakeCrossList;
 extern Boolean MakeSectionList;
 extern Boolean MakeIncludeList;
 extern Boolean DefRelaxedMode;
+extern as_dynstr_t def_int_syntax;
 extern Word ListMask;
+extern Boolean list_macro_handles;
 extern ShortInt ExtendErrors;
 extern Integer EnumSegment;
 extern LongInt EnumIncrement, EnumCurrentValue;
@@ -263,7 +251,8 @@ extern Word *WAsmCode;
 extern LongWord *DAsmCode;
 
 extern Boolean DontPrint;
-extern Word ActListGran;
+extern Word ActListGran,
+            act_list_gran_bits_unused;
 
 extern Boolean NumericErrors;
 extern Boolean CodeOutput;
@@ -308,7 +297,7 @@ extern void (*SwitchFrom)(void);
 extern void (*InternSymbol)(char *Asc, TempResult *Erg);
 extern DissectBitProc DissectBit;
 extern DissectRegProc DissectReg;
-extern tQualifyQuoteFnc QualifyQuote;
+extern as_qualify_quote_fnc_t QualifyQuote;
 
 extern StringPtr IncludeList;
 extern Integer IncDepth, NextIncDepth, MaxIncDepth;
@@ -390,10 +379,7 @@ extern Boolean is_set_pseudo(void);
 extern Boolean is_save_pseudo(void);
 extern Boolean is_restore_pseudo(void);
 extern Boolean memo_switch_pseudo(void);
-extern Boolean memo_shift_pseudo(void);
 extern Boolean is_page_pseudo(void);
-
-extern void free_forward_symbol(PForwardSymbol p_symbol);
 
 extern void asmdef_init(void);
 #endif /* _ASMDEF_H */

@@ -356,7 +356,8 @@ UBYTE gluk_get_reg(UBYTE index)
 
 			//3 bit - SD card detect
 			//2 bit - SD WRP detect
-			tmp |= (((~SD_PIN)&((1<<SDWRP)|(1<<SDDET)))>>2);
+			//tmp |= (((~SD_PIN)&((1<<SDWRP)|(1<<SDDET)))>>2);
+			tmp |= (((~SD_PIN)&(_BV(SDWRP)|_BV(SDDET)))>>2);
 
 			//0 - bit numlock led status on read
 		    if ( (PS2KEYBOARD_LED_NUMLOCK&modes_register)!=0 )
@@ -446,12 +447,15 @@ void gluk_set_reg(UBYTE index, UBYTE data)
 				case GLUK_REG_SEC:
 					if( data <= 59 ) rtc_write(2, hex_to_bcd(data/*gluk_regs[GLUK_REG_SEC]*/));
 					break;
+					
 				case GLUK_REG_MIN:
 					if( data <= 59) rtc_write(3, hex_to_bcd(data/*gluk_regs[GLUK_REG_MIN]*/));
 					break;
+					
 				case GLUK_REG_HOUR:
 					if( data <= 23) rtc_write(4, 0x3F&hex_to_bcd(data/*gluk_regs[GLUK_REG_HOUR]*/));
 					break;
+					
 				case GLUK_REG_MONTH:
 				case GLUK_REG_DAY_WEEK:
 					if( ( gluk_regs[GLUK_REG_DAY_WEEK]-1 <= 6 ) &&
@@ -462,6 +466,7 @@ void gluk_set_reg(UBYTE index, UBYTE data)
 						rtc_write(6, ((gluk_regs[GLUK_REG_DAY_WEEK]-1)<<5)+(0x1F&hex_to_bcd(gluk_regs[GLUK_REG_MONTH])));
 					}
 					break;
+					
 				case GLUK_REG_YEAR:
 					rtc_write(RTC_YEAR_ADD_REG, gluk_regs[GLUK_REG_YEAR]);
 				case GLUK_REG_DAY_MONTH:

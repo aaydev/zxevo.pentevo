@@ -23,6 +23,7 @@
 #include "asmstructs.h"
 #include "codepseudo.h"
 #include "motpseudo.h"
+#include "intpseudo.h"
 #include "codevars.h"
 #include "errmsg.h"
 #include "headids.h"
@@ -2515,6 +2516,8 @@ static void InitFields(void)
   InstTable = CreateInstTable(405);
   SetDynamicInstTable(InstTable);
 
+  add_null_pseudo(InstTable);
+
   AddFixed("NOP",  NOPCode);
   AddFixed("BGND", 0x0000);
   AddFixed("CLC",  0xcefe);
@@ -2632,7 +2635,10 @@ static void InitFields(void)
   AddInstTable(InstTable, "DEFBIT", 0, DecodeDEFBIT);
   AddInstTable(InstTable, "DEFBITFIELD", 0, DecodeDEFBITFIELD);
 
-  init_moto8_pseudo(InstTable, e_moto_8_be | e_moto_8_db | e_moto_8_dw);
+  add_moto8_pseudo(InstTable, e_moto_pseudo_flags_be);
+  AddMoto16Pseudo(InstTable, e_moto_pseudo_flags_be);
+  AddInstTable(InstTable, "DB", eIntPseudoFlag_BigEndian | eIntPseudoFlag_AllowInt | eIntPseudoFlag_AllowString | eIntPseudoFlag_MotoRep, DecodeIntelDB);
+  AddInstTable(InstTable, "DW", eIntPseudoFlag_BigEndian | eIntPseudoFlag_AllowInt | eIntPseudoFlag_AllowString | eIntPseudoFlag_MotoRep, DecodeIntelDW);
 }
 
 static void DeinitFields(void)
@@ -2665,22 +2671,8 @@ static Boolean DecodeAttrPart_S12Z(void)
 
 static void MakeCode_S12Z(void)
 {
-  CodeLen = 0;
-  DontPrint = False;
-
   OpSize = (AttrPartOpSize[0] != eSymbolSizeUnknown) ? AttrPartOpSize[0] : eSymbolSizeUnknown;
   OpSize2 = (AttrPartOpSize[1] != eSymbolSizeUnknown) ? AttrPartOpSize[1] : eSymbolSizeUnknown;
-
-  /* zu ignorierendes */
-
-  if (Memo(""))
-    return;
-
-  /* Pseudoanweisungen */
-
-  /* TODO: handle eSymbolSize24Bit in DC/DS */
-
-  if (DecodeMoto16Pseudo(OpSize, True)) return;
 
   if (!LookupInstTable(InstTable, OpPart.str.p_str))
     WrStrErrorPos(ErrNum_UnknownInstruction, &OpPart);

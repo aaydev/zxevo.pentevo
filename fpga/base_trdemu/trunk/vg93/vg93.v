@@ -169,7 +169,7 @@ module vg93(
 
 	// input/output for TR-DOS port #FF
 
-	always @(posedge fclk, negedge rst_n) // CHANGE IF GO TO THE positive/negative strobes instead of zclk!
+	always @(posedge fclk, negedge rst_n)
 	begin
 		if( !rst_n )
 			vg_res_n <= 1'b0;

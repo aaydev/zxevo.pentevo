@@ -17,12 +17,14 @@
 #include "asmsub.h"
 #include "asmpars.h"
 #include "asmitree.h"
+#include "assume.h"
 #include "asmstructs.h"
 #include "codepseudo.h"
 #include "motpseudo.h"
 #include "codevars.h"
 #include "errmsg.h"
 #include "intformat.h"
+#include "headids.h"
 
 #include "codest6.h"
 
@@ -47,8 +49,7 @@ typedef struct
   IntType CodeAdrInt;
 } tCPUProps;
 
-#define ASSUMEST6Count 2
-static ASSUMERec ASSUMEST6s[ASSUMEST6Count] =
+static as_assume_rec_t ASSUMEST6s[] =
 {
   { "PRPR",    &PRPRVal  , 0, 0x03, 0x04, NULL },
   { "ROMBASE", &WinAssume, 0, 0x3f, 0x40, NULL },
@@ -618,7 +619,7 @@ static void DecodeJRR_JRS(Word Code)
 static void DecodeSFR(Word Code)
 {
   UNUSED(Code);
-  CodeEquate(SegData, 0, 0xff);
+  code_equate_type(SegData, UInt8);
 }
 
 /*!------------------------------------------------------------------------
@@ -751,6 +752,9 @@ static void AddAcc(const char *NName, Word NCode)
 static void InitFields(void)
 {
   InstTable = CreateInstTable(201);
+
+  add_null_pseudo(InstTable);
+
   AddInstTable(InstTable, "LD", 0, DecodeLD);
   AddInstTable(InstTable, "LDI", 0, DecodeLDI);
   AddInstTable(InstTable, "JP", 0x09, DecodeJP_CALL);
@@ -766,8 +770,8 @@ static void InitFields(void)
   AddInstTable(InstTable, "ASCII", 0, DecodeASCII_ASCIZ);
   AddInstTable(InstTable, "ASCIZ", 1, DecodeASCII_ASCIZ);
   AddInstTable(InstTable, "BYTE", 0, DecodeMotoBYT);
-  AddInstTable(InstTable, "WORD", 0, DecodeMotoADR);
-  AddInstTable(InstTable, "BLOCK", 0, DecodeMotoDFS);
+  AddInstTable(InstTable, "WORD", e_moto_pseudo_flags_le, DecodeMotoADR);
+  AddInstTable(InstTable, "BLOCK", e_moto_pseudo_flags_none, DecodeMotoDFS);
   AddInstTable(InstTable, "BIT", 0, DecodeBIT);
 
   AddFixed("NOP" , 0x04);
@@ -803,12 +807,6 @@ static void DeinitFields(void)
 
 static void MakeCode_ST6(void)
 {
-  CodeLen = 0; DontPrint = False;
-
-  /* zu ignorierendes */
-
-  if (Memo("")) return;
-
   if (!LookupInstTable(InstTable, OpPart.str.p_str))
     WrStrErrorPos(ErrNum_UnknownInstruction, &OpPart);
 }
@@ -879,6 +877,7 @@ static void InternSymbol_ST6(char *pArg, TempResult *pErg)
 
 static void SwitchTo_ST6(void *pUser)
 {
+  const TFamilyDescr *p_descr = FindFamilyByName("ST6");
   int ASSUMEOffset;
 
   pCurrCPUProps = (const tCPUProps*)pUser;
@@ -886,8 +885,11 @@ static void SwitchTo_ST6(void *pUser)
   SetIntConstMode(eIntConstModeIntel);
   SetIsOccupiedFnc = TrueFnc;
 
-  PCSymbol = "PC"; HeaderID = 0x78; NOPCode = 0x04;
-  DivideChars = ","; HasAttrs = False;
+  PCSymbol = "PC";
+  HeaderID = p_descr->Id;
+  NOPCode = 0x04;
+  DivideChars = ",";
+  HasAttrs = False;
 
   ValidSegs = (1 << SegCode) | (1 << SegData);
   Grans[SegCode] = 1; ListGrans[SegCode] = 1; SegInits[SegCode] = 0;
@@ -896,8 +898,7 @@ static void SwitchTo_ST6(void *pUser)
   SegLimits[SegData] = 0xff;
 
   ASSUMEOffset = (SegLimits[SegCode] > 0xfff) ? 0 : 1;
-  pASSUMERecs = ASSUMEST6s + ASSUMEOffset;
-  ASSUMERecCnt = ASSUMEST6Count - ASSUMEOffset;
+  assume_set(ASSUMEST6s + ASSUMEOffset, as_array_size(ASSUMEST6s) - ASSUMEOffset);
 
   MakeCode = MakeCode_ST6;
   IsDef = IsDef_ST6;

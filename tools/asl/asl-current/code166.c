@@ -24,7 +24,9 @@
 #include "codepseudo.h"
 #include "intpseudo.h"
 #include "codevars.h"
+#include "assume.h"
 #include "errmsg.h"
+#include "headids.h"
 
 #include "code166.h"
 
@@ -70,8 +72,7 @@ static enum
 static Word MemPage;
 static Boolean ExtSFRs;
 
-#define ASSUME166Count 4
-static ASSUMERec ASSUME166s[ASSUME166Count] =
+static as_assume_rec_t ASSUME166s[] =
 {
   { "DPP0", DPPAssumes + 0, 0, 15, -1, NULL },
   { "DPP1", DPPAssumes + 1, 0, 15, -1, NULL },
@@ -137,27 +138,27 @@ typedef struct
 static Boolean IsRegCore(const char *pArg, tRegInt *pValue, tSymbolSize *pSize)
 {
   int l = strlen(pArg);
-  Boolean OK;
+  char *p_end;
 
   if ((l < 2) || (as_toupper(*pArg) != 'R'))
     return False;
   else if ((l > 2) && (as_toupper(pArg[1]) == 'L'))
   {
-    *pValue = ConstLongInt(pArg + 2, &OK, 10) << 1;
+    *pValue = strtoul(pArg + 2, &p_end, 10) << 1;
     *pSize = eSymbolSize8Bit;
-    return (OK && (*pValue <= 15));
+    return (!*p_end && (*pValue <= 15));
   }
   else if ((l > 2) && (as_toupper(pArg[1]) == 'H'))
   {
-    *pValue = (ConstLongInt(pArg + 2, &OK, 10) << 1) + 1;
+    *pValue = (strtoul(pArg + 2, &p_end, 10) << 1) + 1;
     *pSize = eSymbolSize8Bit;
-    return (OK && (*pValue <= 15));
+    return (!*p_end && (*pValue <= 15));
   }
   else
   {
-    *pValue = ConstLongInt(pArg + 1, &OK, 10);
+    *pValue = strtoul(pArg + 1, &p_end, 10);
     *pSize = eSymbolSize16Bit;
-    return (OK && (*pValue <= 15));
+    return (!*p_end && (*pValue <= 15));
   }
 }
 
@@ -428,11 +429,40 @@ static int SplitForceSize(const char *pArg, tForceSize *pForceSize)
   }
 }
 
+typedef struct
+{
+  as_eval_cb_data_t cb_data;
+  tAdrResult *p_result;
+} s166_eval_cb_data_t;
+
+DECLARE_AS_EVAL_CB(s166_eval_cb)
+{
+  s166_eval_cb_data_t *p_s166_eval_cb_data = (s166_eval_cb_data_t*)p_data;
+  Byte reg;
+
+  switch (IsReg(p_arg, &reg, NULL, eSymbolSize16Bit, False))
+  {
+    case eIsNoReg:
+      return e_eval_none;
+    case eIsReg:
+      if ((p_s166_eval_cb_data->p_result->Mode != 0xff)
+       || !as_eval_cb_data_stack_plain_add(p_data->p_stack))
+      {
+        WrStrErrorPos(ErrNum_InvAddrMode, p_arg);
+        return e_eval_fail;
+      }
+      p_s166_eval_cb_data->p_result->Mode = reg;
+      as_tempres_set_int(p_res, 0);
+      return e_eval_ok;
+    default:
+      return e_eval_fail;
+  }
+}
+
 static ShortInt DecodeAdr(const tStrComp *pArg, Word Mask, tAdrResult *pResult)
 {
   LongInt HDisp, DispAcc;
-  Boolean OK, NegFlag, NNegFlag;
-  Byte HReg;
+  Boolean OK;
   int Offs;
   tRegEvalResult RegEvalResult;
 
@@ -520,42 +550,16 @@ static ShortInt DecodeAdr(const tStrComp *pArg, Word Mask, tAdrResult *pResult)
 
     else
     {
-      tStrComp Remainder;
-      char *pSplitPos;
+      s166_eval_cb_data_t s166_eval_cb_data;
+      tEvalResult eval_result;
 
-      NNegFlag = NegFlag = False;
-      DispAcc = 0;
+      as_eval_cb_data_ini(&s166_eval_cb_data.cb_data, s166_eval_cb);
       pResult->Mode = 0xff;
-      do
-      {
-        pSplitPos = indir_split_pos(Arg.str.p_str);
-        if (pSplitPos)
-        {
-          NNegFlag = *pSplitPos == '-';
-          StrCompSplitRef(&Arg, &Remainder, &Arg, pSplitPos);
-        }
-        if ((RegEvalResult = IsReg(&Arg, &HReg, NULL, eSymbolSize16Bit, False)) != eIsNoReg)
-        {
-          if (RegEvalResult == eRegAbort)
-            return pResult->Type;
-          if (NegFlag || (pResult->Mode != 0xff))
-            WrError(ErrNum_InvAddrMode);
-          else
-            pResult->Mode = HReg;
-        }
-        else
-        {
-          HDisp = EvalStrIntExpressionOffs(&Arg, !!(*Arg.str.p_str == '#'), Int32, &OK);
-          if (OK)
-            DispAcc = NegFlag ? DispAcc - HDisp : DispAcc + HDisp;
-        }
-        if (pSplitPos)
-        {
-          NegFlag = NNegFlag;
-          Arg = Remainder;
-        }
-      }
-      while (pSplitPos);
+      s166_eval_cb_data.p_result = pResult;
+      DispAcc = EvalStrIntExprWithResultAndCallback(&Arg, Int16, &eval_result, &s166_eval_cb_data.cb_data);
+      if (!eval_result.OK)
+        return pResult->Type;
+
       if (pResult->Mode == 0xff)
         DecideAbsolute(DispAcc, Mask, pResult);
       else if (DispAcc == 0)
@@ -1905,6 +1909,37 @@ static void DecodeBIT(Word Code)
  }
 }
 
+/*!------------------------------------------------------------------------
+ * \fn     update_prefixes(Word index)
+ * \brief  necessary operations prior to assembling machine instructions
+ * ------------------------------------------------------------------------ */
+
+static void update_prefixes(Word index)
+{
+  int z;
+
+  UNUSED(index);
+
+  /* Pipeline-Flags weiterschalten */
+
+  SPChanged = N_SPChanged; N_SPChanged = False;
+  CPChanged = N_CPChanged; N_CPChanged = False;
+  for (z = 0; z < DPPCount; z++)
+  {
+    DPPChanged[z] = N_DPPChanged[z];
+    N_DPPChanged[z] = False;
+  }
+
+  /* Praefixe herunterzaehlen */
+
+  if (ExtCounter >= 0)
+   if (--ExtCounter < 0)
+   {
+     MemMode = MemModeStd;
+     ExtSFRs = False;
+   }
+}
+
 /*-------------------------------------------------------------------------*/
 
 static void AddBInstTable(const char *NName, Word NCode, InstProc Proc)
@@ -1951,6 +1986,11 @@ static void InitFields(void)
 {
   InstTable = CreateInstTable(201);
   SetDynamicInstTable(InstTable);
+
+  add_null_pseudo(InstTable);
+
+  inst_table_set_prefix_proc(InstTable, update_prefixes, 0);
+
   AddBInstTable("MOV", 0, DecodeMOV);
   AddInstTable(InstTable, "MOVBS", 0x10, DecodeMOVBS_MOVBZ);
   AddInstTable(InstTable, "MOVBZ", 0x00, DecodeMOVBS_MOVBZ);
@@ -2046,8 +2086,11 @@ static void InitFields(void)
   AddInstTable(InstTable, "MULU" , InstrZ++, DecodeMul);
   AddInstTable(InstTable, "PRIOR", InstrZ++, DecodeMul);
 
+  inst_table_set_prefix_proc(InstTable, NULL, 0);
+
   AddInstTable(InstTable, "BIT" , 0, DecodeBIT);
   AddInstTable(InstTable, "REG" , 0, CodeREG);
+  AddIntelPseudo(InstTable, eIntPseudoFlag_LittleEndian);
 }
 
 static void DeinitFields(void)
@@ -2059,40 +2102,7 @@ static void DeinitFields(void)
 
 static void MakeCode_166(void)
 {
-  int z;
-
-  CodeLen = 0;
-  DontPrint = False;
   OpSize = eSymbolSize16Bit;
-
-  /* zu ignorierendes */
-
-  if (Memo(""))
-    return;
-
-  /* Pseudoanweisungen */
-
-  if (DecodeIntelPseudo(False))
-    return;
-
-  /* Pipeline-Flags weiterschalten */
-
-  SPChanged = N_SPChanged; N_SPChanged = False;
-  CPChanged = N_CPChanged; N_CPChanged = False;
-  for (z = 0; z < DPPCount; z++)
-  {
-    DPPChanged[z] = N_DPPChanged[z];
-    N_DPPChanged[z] = False;
-  }
-
-  /* Praefixe herunterzaehlen */
-
-  if (ExtCounter >= 0)
-   if (--ExtCounter < 0)
-   {
-     MemMode = MemModeStd;
-     ExtSFRs = False;
-   }
 
   if (!LookupInstTable(InstTable, OpPart.str.p_str))
     WrStrErrorPos(ErrNum_UnknownInstruction, &OpPart);
@@ -2149,6 +2159,7 @@ static void SwitchFrom_166(void)
 
 static void SwitchTo_166(void)
 {
+  const TFamilyDescr *p_descr = FindFamilyByName("80C166/167");
   Byte z;
 
   TurnWords = False;
@@ -2156,7 +2167,7 @@ static void SwitchTo_166(void)
   OpSize = eSymbolSize16Bit;
 
   PCSymbol = "$";
-  HeaderID = 0x4c;
+  HeaderID = p_descr->Id;
   NOPCode = 0xcc00;
   DivideChars = ",";
   HasAttrs = False;
@@ -2174,21 +2185,20 @@ static void SwitchTo_166(void)
   {
     MemInt = UInt18;
     MemInt2 = UInt2;
-    ASSUME166s[0].Max = 15;
+    ASSUME166s[0].max_value = 15;
     SegLimits[SegCode] = 0x3ffffl;
   }
   else
   {
     MemInt = UInt24;
     MemInt2 = UInt8;
-    ASSUME166s[0].Max = 1023;
+    ASSUME166s[0].max_value = 1023;
     SegLimits[SegCode] = 0xffffffl;
   }
   for (z = 1; z < 4; z++)
-    ASSUME166s[z].Max = ASSUME166s[0].Max;
+    ASSUME166s[z].max_value = ASSUME166s[0].max_value;
 
-  pASSUMERecs = ASSUME166s;
-  ASSUMERecCnt = ASSUME166Count;
+  assume_set(ASSUME166s, as_array_size(ASSUME166s));
 
   InitFields();
 }

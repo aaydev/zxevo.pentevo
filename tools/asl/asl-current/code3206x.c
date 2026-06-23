@@ -29,6 +29,9 @@
 #include "nlmessages.h"
 #include "chartrans.h"
 #include "as.rsc"
+#include "headids.h"
+
+#include "code3206x.h"
 
 /*---------------------------------------------------------------------------*/
 
@@ -641,14 +644,21 @@ static Boolean DecodePseudo(void)
       OK = True;
       forallargs(pArg, OK)
       {
-        double Float = EvalStrFloatExpression(pArg, Float32, &OK);
+        as_float_t Float = EvalStrFloatExpression(pArg, &OK);
 
         if (OK)
         {
+          int ret;
+
           dword_index = CodeLen >> 2;
-          Double_2_ieee4(Float, (Byte *) (DAsmCode + dword_index), HostBigEndian);
-          CodeLen += 4;
+          if ((ret = as_float_2_ieee4(Float, (Byte *) (DAsmCode + dword_index), HostBigEndian)) < 0)
+          {
+            asmerr_check_fp_dispose_result(ret, pArg);
+            OK = False;
+          }
         }
+        if (OK)
+          CodeLen += 4;
       }
       if (!OK) CodeLen = 0;
     }
@@ -659,21 +669,30 @@ static Boolean DecodePseudo(void)
   {
     if (ChkArgCnt(1, ArgCntMax))
     {
-      double Float;
-
       OK = True;
       forallargs(pArg, OK)
       {
-        Float = EvalStrFloatExpression(pArg, Float64, &OK);
+        as_float_t Float = EvalStrFloatExpression(pArg, &OK);
         if (OK)
         {
+          int ret;
+
           dword_index = CodeLen >> 2;
-          Double_2_ieee8(Float, (Byte *) (DAsmCode + dword_index), HostBigEndian);
+          if ((ret = as_float_2_ieee8(Float, (Byte *) (DAsmCode + dword_index), HostBigEndian)) < 0)
+          {
+            asmerr_check_fp_dispose_result(ret, pArg);
+            OK = False;
+          }
+        }
+        if (OK)
+        {
           if (!HostBigEndian)
           {
-            DAsmCode[dword_index + 2] = DAsmCode[dword_index + 0];
+            LongWord swap;
+
+            swap = DAsmCode[dword_index + 0];
             DAsmCode[dword_index + 0] = DAsmCode[dword_index + 1];
-            DAsmCode[dword_index + 1] = DAsmCode[dword_index + 2];
+            DAsmCode[dword_index + 1] = swap;
           }
           CodeLen += 8;
         }
@@ -723,28 +742,27 @@ static Boolean DecodePseudo(void)
           }
           case TempInt:
           ToInt:
-#ifdef HAS64
             if (!RangeCheck(t.Contents.Int, Int32))
             {
               OK = False;
               WrStrErrorPos(ErrNum_OverRange, pArg);
             }
             else
-#endif
               DAsmCode[cnt++] = t.Contents.Int;
             break;
           case TempFloat:
-            if (!FloatRangeCheck(t.Contents.Float, Float32))
+          {
+            int ret;
+
+            if ((ret = as_float_2_ieee4(t.Contents.Float, (Byte *) (DAsmCode + cnt), HostBigEndian)) < 0)
             {
+              asmerr_check_fp_dispose_result(ret, pArg);
               OK = False;
-              WrStrErrorPos(ErrNum_OverRange, pArg);
             }
             else
-            {
-              Double_2_ieee4(t.Contents.Float, (Byte *) (DAsmCode + cnt), HostBigEndian);
               cnt++;
-            }
             break;
+          }
           default:
             OK = False;
         }
@@ -2662,8 +2680,6 @@ static void ChkPacket(void)
 
 static void MakeCode_3206X(void)
 {
-  CodeLen = 0; DontPrint = False;
-
   /* zu ignorierendes */
 
   if ((*OpPart.str.p_str == '\0') && (*LabPart.str.p_str == '\0'))
@@ -2965,12 +2981,14 @@ static Boolean Chk34Arg(void)
 
 static void SwitchTo_3206X(void)
 {
+  const TFamilyDescr *p_descr = FindFamilyByName("TMS320C6x");
+
   TurnWords = False;
   SetIntConstMode(eIntConstModeIntel);
   SetIsOccupiedFnc = Chk34Arg;
 
   PCSymbol = "$";
-  HeaderID = 0x47;
+  HeaderID = p_descr->Id;
   NOPCode = 0x00000000;
   DivideChars = ",";
   HasAttrs = True;

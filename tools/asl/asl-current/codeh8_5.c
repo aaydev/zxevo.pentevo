@@ -26,6 +26,8 @@
 #include "motpseudo.h"
 #include "codevars.h"
 #include "errmsg.h"
+#include "assume.h"
+#include "headids.h"
 
 #include "codeh8_5.h"
 
@@ -88,8 +90,7 @@ static OneOrder *OneRegOrders;
 static OneOrder *RegEAOrders;
 static OneOrder *TwoRegOrders;
 
-#define ASSUMEH8_5Count 4
-static ASSUMERec ASSUMEH8_5s[ASSUMEH8_5Count] =
+static as_assume_rec_t ASSUMEH8_5s[] =
 {
   {"DP", &Reg_DP, 0, 0xff, -1, NULL},
   {"EP", &Reg_EP, 0, 0xff, -1, NULL},
@@ -1755,13 +1756,6 @@ static void DecodeTRAPA(Word Dummy)
   }
 }
 
-static void DecodeDATA(Word Dummy)
-{
-  UNUSED(Dummy);
-
-  DecodeMotoDC(OpSize, True);
-}
-
 static void DecodeBIT(Word Code)
 {
   UNUSED(Code);
@@ -1874,6 +1868,8 @@ static void InitFields(void)
 
   InstTable = CreateInstTable(302);
 
+  add_null_pseudo(InstTable);
+
   AddFixed("NOP"  , 0x0000); AddFixed("PRTS"   , 0x1119);
   AddFixed("RTE"  , 0x000a); AddFixed("RTS"    , 0x0019);
   AddFixed("SLEEP", 0x001a); AddFixed("TRAP/VS", 0x0009);
@@ -1941,8 +1937,9 @@ static void InitFields(void)
   AddBit("BSET", 0x40); AddBit("BTST", 0x70);
 
   AddInstTable(InstTable, "REG", 0, CodeREG);
-  AddInstTable(InstTable, "DATA", 0, DecodeDATA);
+  AddInstTable(InstTable, "DATA", e_moto_pseudo_flags_be, DecodeMotoDC);
   AddInstTable(InstTable, "BIT", 0, DecodeBIT);
+  AddMoto16Pseudo(InstTable, e_moto_pseudo_flags_be);
 }
 
 static void DeinitFields(void)
@@ -2030,19 +2027,11 @@ static Boolean DecodeAttrPart_H8_5(void)
 
 static void MakeCode_H8_5(void)
 {
-  CodeLen = 0; DontPrint = False; AbsBank = Reg_DP;
-
-  /* to be ignored */
-
-  if (Memo("")) return;
+  AbsBank = Reg_DP;
 
   OpSize = eSymbolSizeUnknown;
   if (*AttrPart.str.p_str)
     SetOpSize(AttrPartOpSize[0]);
-
-  if (DecodeMoto16Pseudo(OpSize, True)) return;
-
-  /* Sonderfaelle */
 
   if (!LookupInstTable(InstTable, OpPart.str.p_str))
     WrStrErrorPos(ErrNum_UnknownInstruction, &OpPart);
@@ -2072,11 +2061,17 @@ static void InitCode_H8_5(void)
 
 static void SwitchTo_H8_5(void)
 {
+  const TFamilyDescr *p_descr = FindFamilyByName("H8/500");
+
   TurnWords = True;
   SetIntConstMode(eIntConstModeMoto);
 
-  PCSymbol = "*"; HeaderID = 0x69; NOPCode = 0x00;
-  DivideChars = ","; HasAttrs = True; AttrChars = ".:";
+  PCSymbol = "*";
+  HeaderID = p_descr->Id;
+  NOPCode = 0x00;
+  DivideChars = ",";
+  HasAttrs = True;
+  AttrChars = ".:";
 
   ValidSegs = 1 << SegCode;
   Grans[SegCode] = 1; ListGrans[SegCode] = 1; SegInits[SegCode] = 0;
@@ -2096,8 +2091,7 @@ static void SwitchTo_H8_5(void)
   onoff_compmode_add();
   AddMoto16PseudoONOFF(False);
 
-  pASSUMERecs = ASSUMEH8_5s;
-  ASSUMERecCnt = ASSUMEH8_5Count;
+  assume_set(ASSUMEH8_5s, as_array_size(ASSUMEH8_5s));
 }
 
 void codeh8_5_init(void)

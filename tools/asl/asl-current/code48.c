@@ -21,9 +21,13 @@
 #include "asmpars.h"
 #include "asmallg.h"
 #include "asmitree.h"
+#include "asmcode.h"
+#include "assume.h"
+#include "codepseudo.h"
 #include "intpseudo.h"
 #include "codevars.h"
 #include "errmsg.h"
+#include "headids.h"
 
 #include "code48.h"
 
@@ -76,7 +80,7 @@ typedef enum
 
 typedef struct
 {
-  const char *pName;
+  const char Name[9];
   Word CodeSize;
   LongWord Flags;
 } tCPUProps;
@@ -87,9 +91,13 @@ typedef struct
   Byte code;
 } clr_cpl_t;
 
+typedef struct
+{
+  Byte value;
+  tSymbolFlags flags;
+} adr_vals_t;
+
 static const tCPUProps *pCurrCPUProps;
-static tAdrMode AdrMode;
-static Byte AdrVal;
 clr_cpl_t *clr_cpl_args;
 static SelOrder *SelOrders;
 static LongInt Reg_MB;
@@ -191,12 +199,23 @@ static Boolean IsSerialPort(const char *pArg, Word PortMask, Byte *pPortNum)
   return !!(PortMask & (1 << *pPortNum));
 }
 
-static tAdrMode DecodeAdr(const tStrComp *pArg, unsigned Mask)
+static void reset_adr_vals(adr_vals_t *p_vals)
 {
-  Boolean OK;
+  p_vals->value = 0;
+  p_vals->flags = eSymbolFlag_None;
+}
 
-  AdrMode = ModNone;
+static void append_adr_vals(const adr_vals_t *p_vals)
+{
+  set_b_guessed(p_vals->flags, CodeLen, 1, 0xff);
+  BAsmCode[CodeLen++] = p_vals->value;
+}
 
+static tAdrMode DecodeAdr(const tStrComp *pArg, adr_vals_t *p_vals, unsigned Mask)
+{
+  tAdrMode AdrMode = ModNone;
+
+  reset_adr_vals(p_vals);
   if (*pArg->str.p_str == '\0') return ModNone;
 
   if (!as_strcasecmp(pArg->str.p_str, "A"))
@@ -207,16 +226,17 @@ static tAdrMode DecodeAdr(const tStrComp *pArg, unsigned Mask)
 
   if (*pArg->str.p_str == '#')
   {
-    AdrVal = EvalStrIntExpressionOffs(pArg, 1, Int8, &OK);
+    Boolean OK;
+
+    p_vals->value = EvalStrIntExpressionOffsWithFlags(pArg, 1, Int8, &OK, &p_vals->flags);
     if (OK)
     {
       AdrMode = ModImm;
-      BAsmCode[1] = AdrVal;
       goto found;
     }
   }
 
-  switch (DecodeReg(pArg, &AdrVal, False))
+  switch (DecodeReg(pArg, &p_vals->value, False))
   {
     case eIsReg:
       AdrMode = ModReg;
@@ -232,9 +252,9 @@ static tAdrMode DecodeAdr(const tStrComp *pArg, unsigned Mask)
     tStrComp Arg;
 
     StrCompRefRight(&Arg, pArg, 1);
-    if (!DecodeReg(&Arg, &AdrVal, True))
+    if (!DecodeReg(&Arg, &p_vals->value, True))
       return ModNone;
-    if (AdrVal > 1)
+    if (p_vals->value > 1)
     {
       WrStrErrorPos(ErrNum_InvReg, &Arg);
       return ModNone;
@@ -249,7 +269,8 @@ found:
   if ((AdrMode != ModNone) && !(Mask & (1 << AdrMode)))
   {
     WrStrErrorPos(ErrNum_InvAddrMode, pArg);
-     AdrMode= ModNone;
+    reset_adr_vals(p_vals);
+    AdrMode = ModNone;
   }
   return AdrMode;
 }
@@ -305,19 +326,18 @@ static void DecodeADD_ADDC(Word Code)
   else if (as_strcasecmp(ArgStr[1].str.p_str, "A")) WrStrErrorPos(ErrNum_InvAddrMode, &ArgStr[1]);
   else
   {
-    switch (DecodeAdr(&ArgStr[2], MModImm | MModReg | MModInd))
+    adr_vals_t adr_vals;
+    switch (DecodeAdr(&ArgStr[2], &adr_vals, MModImm | MModReg | MModInd))
     {
       case ModImm:
-        CodeLen = 2;
-        BAsmCode[0] = Code + 0x03;
+        BAsmCode[CodeLen++] = Code + 0x03;
+        append_adr_vals(&adr_vals);
         break;
       case ModReg:
-        CodeLen = 1;
-        BAsmCode[0] = Code + 0x68 + AdrVal;
+        BAsmCode[CodeLen++] = Code + 0x68 + adr_vals.value;
         break;
       case ModInd:
-        CodeLen = 1;
-        BAsmCode[0] = Code + 0x60 + AdrVal;
+        BAsmCode[CodeLen++] = Code + 0x60 + adr_vals.value;
         break;
       default:
         break;
@@ -338,19 +358,18 @@ static void DecodeANL_ORL_XRL(Word Code)
   if (!ChkArgCnt(2, 2));
   else if (!as_strcasecmp(ArgStr[1].str.p_str, "A"))
   {
-    switch (DecodeAdr(&ArgStr[2], MModImm | MModReg | MModInd))
+    adr_vals_t adr_vals;
+    switch (DecodeAdr(&ArgStr[2], &adr_vals, MModImm | MModReg | MModInd))
     {
       case ModImm:
-        CodeLen = 2;
-        BAsmCode[0] = Code + 0x43;
+        BAsmCode[CodeLen++] = Code + 0x43;
+        append_adr_vals(&adr_vals);
         break;
       case ModReg:
-        CodeLen = 1;
-        BAsmCode[0] = Code + 0x48 + AdrVal;
+        BAsmCode[CodeLen++] = Code + 0x48 + adr_vals.value;
         break;
       case ModInd:
-        CodeLen = 1;
-        BAsmCode[0] = Code + 0x40 + AdrVal;
+        BAsmCode[CodeLen++] = Code + 0x40 + adr_vals.value;
         break;
       default:
         break;
@@ -361,10 +380,11 @@ static void DecodeANL_ORL_XRL(Word Code)
     if (Code == 0x90) WrStrErrorPos(ErrNum_InvAddrMode, &ArgStr[1]); /* no XRL to ports */
     else if (AChkCPUFlags(eCPUFlagLogToPort, &ArgStr[1]))
     {
-      if (DecodeAdr(&ArgStr[2], MModImm) == ModImm)
+      adr_vals_t adr_vals;
+      if (DecodeAdr(&ArgStr[2], &adr_vals, MModImm) == ModImm)
       {
-        CodeLen = 2;
-        BAsmCode[0] = Code + 0x88 + (PortNum & 3);
+        BAsmCode[CodeLen++] = Code + 0x88 + (PortNum & 3);
+        append_adr_vals(&adr_vals);
         if (PortNum)
           ChkPx(PortNum, &ArgStr[1]);
       }
@@ -381,7 +401,7 @@ static void DecodeCALL_JMP(Word Code)
   else
   {
     tEvalResult EvalResult;
-    Word AdrWord = EvalStrIntExpressionWithResult(&ArgStr[1], Int16, &EvalResult);
+    Word AdrWord = EvalStrIntExpressionWithResult(&ArgStr[1], UInt13, &EvalResult);
 
     if (EvalResult.OK)
     {
@@ -401,7 +421,9 @@ static void DecodeCALL_JMP(Word Code)
         }
         else if ((DestBank != Reg_MB) && !mFirstPassUnknownOrQuestionable(EvalResult.Flags))
           WrStrErrorPos(ErrNum_InAccPage, &ArgStr[1]);
+        set_b_guessed(EvalResult.Flags, CodeLen + 1, 1, 0xff);
         BAsmCode[CodeLen + 1] = AdrWord & 0xff;
+        set_b_guessed(EvalResult.Flags, CodeLen, 1, 0xe0);
         BAsmCode[CodeLen] = Code + ((AdrWord & 0x700) >> 3);
         CodeLen += 2;
         ChkSpace(SegCode, EvalResult.AddrSpaceMask);
@@ -459,25 +481,19 @@ static void DecodeDEC(Word Code)
   if (!ChkArgCnt(1, 1));
   else
   {
-    switch (DecodeAdr(&ArgStr[1], MModAcc | MModReg | MModInd))
+    adr_vals_t adr_vals;
+    switch (DecodeAdr(&ArgStr[1], &adr_vals, MModAcc | MModReg | MModInd))
     {
       case ModAcc:
-        CodeLen = 1;
-        BAsmCode[0] = 0x07;
+        BAsmCode[CodeLen++] = 0x07;
         break;
       case ModReg:
         if (AChkCPUFlags(eCPUFlagDEC_REG, &ArgStr[1]))
-        {
-          CodeLen = 1;
-          BAsmCode[0] = 0xc8 + AdrVal;
-        }
+          BAsmCode[CodeLen++] = 0xc8 + adr_vals.value;
         break;
       case ModInd:
         if (AChkCPUFlags(eCPUFlagDEC_DJNZ_IREG, &ArgStr[1]))
-        {
-          CodeLen = 1;
-          BAsmCode[0] = 0xc0 | AdrVal;
-        }
+          BAsmCode[CodeLen++] = 0xc0 | adr_vals.value;
         break;
       default:
         break;
@@ -514,19 +530,19 @@ static void DecodeDIS_EN(Word Code)
         BAsmCode[0] = Code + 0x85;
       }
     }
-    else if ((Memo("EN")) && (!strcmp(ArgStr[1].str.p_str, "DMA")))
+    else if (!Code && !strcmp(ArgStr[1].str.p_str, "DMA"))
     {
       if (AChkCPUFlags(eCPUFlagUPIPort, &ArgStr[1]))
       {
-        BAsmCode[0] = Code + 0xe5;
+        BAsmCode[0] = 0xe5;
         CodeLen = 1;
       }
     }
-    else if ((Memo("EN")) && (!strcmp(ArgStr[1].str.p_str, "FLAGS")))
+    else if (!Code && !strcmp(ArgStr[1].str.p_str, "FLAGS"))
     {
       if (AChkCPUFlags(eCPUFlagUPIPort, &ArgStr[1]))
       {
-        BAsmCode[0] = Code + 0xf5;
+        BAsmCode[0] = 0xf5;
         CodeLen = 1;
       }
     }
@@ -542,18 +558,15 @@ static void DecodeDJNZ(Word Code)
   if (!ChkArgCnt(2, 2));
   else
   {
-    switch (DecodeAdr(&ArgStr[1], MModReg | MModInd))
+    adr_vals_t adr_vals;
+    switch (DecodeAdr(&ArgStr[1], &adr_vals, MModReg | MModInd))
     {
       case ModReg:
-        CodeLen = 1;
-        BAsmCode[0] = 0xe8 + AdrVal;
+        BAsmCode[CodeLen++] = 0xe8 + adr_vals.value;
         break;
       case ModInd:
         if (AChkCPUFlags(eCPUFlagDEC_DJNZ_IREG, &ArgStr[1]))
-        {
-          CodeLen = 1;
-          BAsmCode[0] = 0xe0 + AdrVal;
-        }
+          BAsmCode[CodeLen++] = 0xe0 + adr_vals.value;
         break;
       default:
         break;
@@ -568,8 +581,13 @@ static void DecodeDJNZ(Word Code)
       if (OK)
       {
         if (ChkSamePage(EProgCounter() + CodeLen, AdrWord, 8, Flags))
+        {
+          set_b_guessed(Flags, CodeLen, 1, 0xff);
           BAsmCode[CodeLen++] = AdrWord & 0xff;
+        }
       }
+      else
+        CodeLen = 0;
     }
   }
 }
@@ -596,19 +614,17 @@ static void DecodeINC(Word Code)
   if (!ChkArgCnt(1, 1));
   else
   {
-    switch (DecodeAdr(&ArgStr[1], MModAcc | MModReg | MModInd))
+    adr_vals_t adr_vals;
+    switch (DecodeAdr(&ArgStr[1], &adr_vals, MModAcc | MModReg | MModInd))
     {
       case ModAcc:
-        CodeLen = 1;
-        BAsmCode[0] = 0x17;
+        BAsmCode[CodeLen++] = 0x17;
         break;
       case ModReg:
-        CodeLen = 1;
-        BAsmCode[0] = 0x18 + AdrVal;
+        BAsmCode[CodeLen++] = 0x18 + adr_vals.value;
         break;
       case ModInd:
-        CodeLen = 1;
-        BAsmCode[0] = 0x10 + AdrVal;
+        BAsmCode[CodeLen++] = 0x10 + adr_vals.value;
         break;
       default:
         break;
@@ -678,10 +694,10 @@ static void DecodeCond(Word Code)
     AdrWord = EvalStrIntExpressionWithResult(&ArgStr[1], UInt12, &EvalResult);
     if (EvalResult.OK && ChkSamePage(EProgCounter() + 1, AdrWord, 8, EvalResult.Flags))
     {
-      CodeLen = 2;
-      BAsmCode[0] = Code;
-      BAsmCode[1] = AdrWord & 0xff;
       ChkSpace(SegCode, EvalResult.AddrSpaceMask);
+      BAsmCode[CodeLen++] = Code;
+      set_b_guessed(EvalResult.Flags, CodeLen, 1, 0xff);
+      BAsmCode[CodeLen++] = AdrWord & 0xff;
     }
   }
 }
@@ -693,18 +709,22 @@ static void DecodeJB(Word Code)
   if (ChkArgCnt(2, 2) && ChkCPUFlags(eCPUFlagCondBitJmp))
   {
     Boolean OK;
-    AdrVal = EvalStrIntExpression(&ArgStr[1], UInt3, &OK);
+    tSymbolFlags bit_flags;
+    Byte bit_pos;
+
+    bit_pos = EvalStrIntExpressionWithFlags(&ArgStr[1], UInt3, &OK, &bit_flags);
     if (OK)
     {
       Word AdrWord;
-      tSymbolFlags Flags;
+      tSymbolFlags addr_flags;
 
-      AdrWord = EvalStrIntExpressionWithFlags(&ArgStr[2], UInt12, &OK, &Flags);
-      if (OK && ChkSamePage(EProgCounter() + 1, AdrWord, 8, Flags))
+      AdrWord = EvalStrIntExpressionWithFlags(&ArgStr[2], UInt12, &OK, &addr_flags);
+      if (OK && ChkSamePage(EProgCounter() + 1, AdrWord, 8, addr_flags))
       {
-        CodeLen = 2;
-        BAsmCode[0] = 0x12 + (AdrVal << 5);
-        BAsmCode[1] = AdrWord & 0xff;
+        set_b_guessed(bit_flags, CodeLen, 1, 0xe0);
+        BAsmCode[CodeLen++] = 0x12 + (bit_pos << 5);
+        set_b_guessed(addr_flags, CodeLen, 1, 0xff);
+        BAsmCode[CodeLen++] = AdrWord & 0xff;
       }
     }
   }
@@ -750,23 +770,22 @@ static void DecodeMOV(Word Code)
     }
     else
     {
-       switch (DecodeAdr(&ArgStr[2], MModReg | MModInd | MModImm))
-       {
-         case ModReg:
-           CodeLen = 1;
-           BAsmCode[0] = 0xf8 + AdrVal;
-           break;
-         case ModInd:
-           CodeLen = 1;
-           BAsmCode[0] = 0xf0 + AdrVal;
-           break;
-         case ModImm:
-           CodeLen = 2;
-           BAsmCode[0] = 0x23;
-           break;
-         default:
-           break;
-       }
+      adr_vals_t adr_vals;
+      switch (DecodeAdr(&ArgStr[2], &adr_vals, MModReg | MModInd | MModImm))
+      {
+        case ModReg:
+          BAsmCode[CodeLen++] = 0xf8 + adr_vals.value;
+          break;
+        case ModInd:
+          BAsmCode[CodeLen++] = 0xf0 + adr_vals.value;
+          break;
+        case ModImm:
+          BAsmCode[CodeLen++] = 0x23;
+          append_adr_vals(&adr_vals);
+          break;
+        default:
+          break;
+      }
     }
   }
   else if (IsPort(ArgStr[1].str.p_str, 0x02, &PortNum))
@@ -784,15 +803,15 @@ static void DecodeMOV(Word Code)
   {
     if (AChkCPUFlags(eCPUFlagSerial, &ArgStr[1]))
     {
-      switch (DecodeAdr(&ArgStr[2], MModAcc | MModImm))
+      adr_vals_t adr_vals;
+      switch (DecodeAdr(&ArgStr[2], &adr_vals, MModAcc | MModImm))
       {
         case ModAcc:
-          CodeLen = 1;
-          BAsmCode[0] = 0x3c + PortNum;
+          BAsmCode[CodeLen++] = 0x3c + PortNum;
           break;
         case ModImm:
-          CodeLen = 2;
-          BAsmCode[0] = 0x9c + PortNum;
+          BAsmCode[CodeLen++] = 0x9c + PortNum;
+          append_adr_vals(&adr_vals);
           break;
         default:
           break;
@@ -824,15 +843,14 @@ static void DecodeMOV(Word Code)
     }
     else
     {
-      switch (DecodeAdr(&ArgStr[1], MModReg | MModInd))
+      adr_vals_t adr_vals;
+      switch (DecodeAdr(&ArgStr[1], &adr_vals, MModReg | MModInd))
       {
         case ModReg:
-          CodeLen = 1;
-          BAsmCode[0] = 0xa8 + AdrVal;
+          BAsmCode[CodeLen++] = 0xa8 + adr_vals.value;
           break;
         case ModInd:
-          CodeLen = 1;
-          BAsmCode[0] = 0xa0 + AdrVal;
+          BAsmCode[CodeLen++] = 0xa0 + adr_vals.value;
           break;
         default:
           break;
@@ -842,20 +860,22 @@ static void DecodeMOV(Word Code)
   else if (*ArgStr[2].str.p_str == '#')
   {
     Boolean OK;
-    Word AdrWord = EvalStrIntExpressionOffs(&ArgStr[2], 1, Int8, &OK);
+    tSymbolFlags flags;
+    Word AdrWord = EvalStrIntExpressionOffsWithFlags(&ArgStr[2], 1, Int8, &OK, &flags);
     if (OK)
     {
-      switch (DecodeAdr(&ArgStr[1], MModReg | MModInd))
+      adr_vals_t adr_vals;
+      switch (DecodeAdr(&ArgStr[1], &adr_vals, MModReg | MModInd))
       {
         case ModReg:
-          CodeLen = 2;
-          BAsmCode[0] = 0xb8 + AdrVal;
-          BAsmCode[1] = AdrWord;
+          BAsmCode[CodeLen++] = 0xb8 + adr_vals.value;
+          set_b_guessed(flags, CodeLen, 1, 0xff);
+          BAsmCode[CodeLen++] = AdrWord;
           break;
         case ModInd:
-          CodeLen = 2;
-          BAsmCode[0] = 0xb0 + AdrVal;
-          BAsmCode[1] = AdrWord;
+          BAsmCode[CodeLen++] = 0xb0 + adr_vals.value;
+          set_b_guessed(flags, CodeLen, 1, 0xff);
+          BAsmCode[CodeLen++] = AdrWord;
           break;
         default:
           break;
@@ -943,11 +963,9 @@ static void DecodeMOVX(Word Code)
     if (as_strcasecmp(pArg1->str.p_str, "A")) WrStrErrorPos(ErrNum_InvAddrMode, pArg1);
     else
     {
-      if (DecodeAdr(pArg2, MModInd) == ModInd)
-      {
-        CodeLen = 1;
-        BAsmCode[0] = Code + AdrVal;
-      }
+      adr_vals_t adr_vals;
+      if (DecodeAdr(pArg2, &adr_vals, MModInd) == ModInd)
+        BAsmCode[CodeLen++] = Code + adr_vals.value;
     }
   }
 }
@@ -1111,15 +1129,14 @@ static void DecodeXCH(Word Code)
     if (as_strcasecmp(pArg1->str.p_str, "A")) WrStrErrorPos(ErrNum_InvAddrMode, pArg1);
     else
     {
-      switch (DecodeAdr(pArg2, MModReg | MModInd))
+      adr_vals_t adr_vals;
+      switch (DecodeAdr(pArg2, &adr_vals, MModReg | MModInd))
       {
         case ModReg:
-          CodeLen = 1;
-          BAsmCode[0] = 0x28 + AdrVal;
+          BAsmCode[CodeLen++] = 0x28 + adr_vals.value;
           break;
         case ModInd:
-          CodeLen = 1;
-          BAsmCode[0] = 0x20 + AdrVal;
+          BAsmCode[CodeLen++] = 0x20 + adr_vals.value;
           break;
         default:
           break;
@@ -1145,11 +1162,9 @@ static void DecodeXCHD(Word Code)
     if (as_strcasecmp(pArg1->str.p_str, "A")) WrStrErrorPos(ErrNum_InvAddrMode, pArg1);
     else
     {
-      if (DecodeAdr(pArg2, MModInd) == ModInd)
-      {
-        CodeLen = 1;
-        BAsmCode[0] = 0x30 + AdrVal;
-      }
+      adr_vals_t adr_vals;
+      if (DecodeAdr(pArg2, &adr_vals, MModInd) == ModInd)
+        BAsmCode[CodeLen++] = 0x30 + adr_vals.value;
     }
   }
 }
@@ -1228,6 +1243,9 @@ static void add_clr_cpl(const char *p_name, Byte code)
 static void InitFields(void)
 {
   InstTable = CreateInstTable(203);
+
+  add_null_pseudo(InstTable);
+
   AddInstTable(InstTable, "ADD", 0x00, DecodeADD_ADDC);
   AddInstTable(InstTable, "ADDC", 0x10, DecodeADD_ADDC);
   AddInstTable(InstTable, "ORL", 0x00, DecodeANL_ORL_XRL);
@@ -1339,6 +1357,7 @@ static void InitFields(void)
   AddSel(NULL  , 0);
 
   AddInstTable(InstTable, "REG", 0, CodeREG);
+  AddIntelPseudo(InstTable, eIntPseudoFlag_LittleEndian);
 }
 
 static void DeinitFields(void)
@@ -1350,19 +1369,6 @@ static void DeinitFields(void)
 
 static void MakeCode_48(void)
 {
-  CodeLen = 0;
-  DontPrint = False;
-
-  /* zu ignorierendes */
-
-  if (Memo(""))
-    return;
-
-  /* Pseudoanweisungen */
-
-  if (DecodeIntelPseudo(False))
-    return;
-
   if (!LookupInstTable(InstTable, OpPart.str.p_str))
     WrStrErrorPos(ErrNum_UnknownInstruction, &OpPart);
 }
@@ -1406,20 +1412,20 @@ static void InitCode_48(void)
 
 static void SwitchTo_48(void *pUser)
 {
-#define ASSUME48Count (sizeof(ASSUME48s) / sizeof(*ASSUME48s))
-  static ASSUMERec ASSUME48s[] =
+  static as_assume_rec_t ASSUME48s[] =
   {
     { "MB"   , &Reg_MB   , 0,  1, MB_NOTHING, NULL },
   };
+  const TFamilyDescr *p_descr = FindFamilyByName("MCS-48");
 
   pCurrCPUProps = (const tCPUProps*)pUser;
-  ASSUME48s[0].Max = (pCurrCPUProps->CodeSize >> 11) & 3;
+  ASSUME48s[0].max_value = (pCurrCPUProps->CodeSize >> 11) & 3;
 
   TurnWords = False;
   SetIntConstMode(eIntConstModeIntel);
 
   PCSymbol = "$";
-  HeaderID = 0x21;
+  HeaderID = p_descr->Id;
   NOPCode = 0x00;
   DivideChars = ",";
   HasAttrs = False;
@@ -1446,8 +1452,7 @@ static void SwitchTo_48(void *pUser)
   SwitchFrom = SwitchFrom_48;
   InitFields();
 
-  pASSUMERecs = ASSUME48s;
-  ASSUMERecCnt = ASSUME48Count;
+  assume_set(ASSUME48s, as_array_size(ASSUME48s));
 }
 
 /* Limit code segment size only for variants known to have no
@@ -1470,15 +1475,15 @@ static tCPUProps CPUProps[] =
   { "80C382"   , 0xfff, eCPUFlagCMOS | eCPUFlagSiemens | eCPUFlagDEC_DJNZ_IREG | eCPUFlagXMem | eCPUFlagPort1 | eCPUFlagIOExpander | eCPUFlagT0 | eCPUFlagCondBitJmp | eCPUFlagBUS | eCPUFlagRegBanks | eCPUFlagLogToPort | eCPUFlagDEC_REG | eCPUFlagMOVP3 | eCPUFlagINTLogic },
   { "MSM80C39" , 0xfff, eCPUFlagCMOS | eCPUFlagDEC_DJNZ_IREG | eCPUFlagXMem | eCPUFlagPort1 | eCPUFlagPort2 | eCPUFlagIOExpander | eCPUFlagUserFlags | eCPUFlagT0 | eCPUFlagT0CLK | eCPUFlagCondBitJmp | eCPUFlagTransferA_PSW | eCPUFlagRegBanks | eCPUFlagLogToPort | eCPUFlagDEC_REG | eCPUFlagMOVP3 | eCPUFlagINTLogic | eCPUFlagOKI },
   { "MSM80C48" , 0xfff, eCPUFlagCMOS | eCPUFlagDEC_DJNZ_IREG | eCPUFlagXMem | eCPUFlagPort1 | eCPUFlagPort2 | eCPUFlagIOExpander | eCPUFlagUserFlags | eCPUFlagT0 | eCPUFlagT0CLK | eCPUFlagCondBitJmp | eCPUFlagTransferA_PSW | eCPUFlagBUS | eCPUFlagRegBanks | eCPUFlagLogToPort | eCPUFlagDEC_REG | eCPUFlagMOVP3 | eCPUFlagINTLogic | eCPUFlagOKI },
-  { NULL, 0, 0 }
+  { "", 0, 0 }
 };
 
 void code48_init(void)
 {
   tCPUProps *pProp;
 
-  for (pProp = CPUProps; pProp->pName; pProp++)
-    (void)AddCPUUser(pProp->pName, SwitchTo_48, (void*)pProp, NULL);
+  for (pProp = CPUProps; pProp->Name[0]; pProp++)
+    (void)AddCPUUser(pProp->Name, SwitchTo_48, (void*)pProp, NULL);
 
   AddInitPassProc(InitCode_48);
 }

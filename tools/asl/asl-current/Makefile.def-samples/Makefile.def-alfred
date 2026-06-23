@@ -1,41 +1,65 @@
 # -------------------------------------------------------------------------
 # This is the Makefile.def I currently use on my own Debian systems.  It
 # provides cross build for Linux 32 bit, Windows, optional Valgrind testing
-# and PPC cross compiling/emulation to test on a big endian host:
+# and PPC/M68K cross compiling/emulation to test on a big endian host:
 # any additionally needed flags
+
+CFLAGS_COMMON = -g -O3 -fomit-frame-pointer -Wall -Wundef -Wextra -Werror -pedantic -Wshift-count-overflow
+CFLAGS_C = -Wstrict-prototypes
+CFLAGS_GCC_EXTRA = -Wshift-overflow=2
+CFLAGS_CLANG_EXTRA = -Wshift-overflow -Wno-string-plus-int
+CFLAGS_CLANGPP_EXTRA = -Wshift-overflow -Wno-deprecated -Wno-keyword-macro -Wno-string-plus-int
+CFLAGS_TCC_EXTRA = -Wshift-overflow=2
+# leave this out by default, because it prohibits use of long long and long double data types:
+#CFLAGS_CVER = -ansi -std=c89
+#CFLAGS_CPPVER = -ansi -std=c++98
+CFLAGS_GCC = $(CFLAGS_COMMON) $(CFLAGS_C) $(CFLAGS_GCC_EXTRA) $(CFLAGS_CVER)
+CFLAGS_CLANG = $(CFLAGS_COMMON) $(CFLAGS_C) $(CFLAGS_CLANG_EXTRA) $(CFLAGS_CVER)
+CFLAGS_GPP = $(CFLAGS_COMMON) $(CFLAGS_GCC_EXTRA) $(CFLAGS_CPPVER)
+CFLAGS_CLANGPP = $(CFLAGS_COMMON) $(CFLAGS_CLANGPP_EXTRA) $(CFLAGS_CPPVER)
+CFLAGS_TCC = $(CFLAGS_COMMON) $(CFLAGS_C) $(CFLAGS_TCC_EXTRA) $(CFLAGS_CVER)
+
+CFLAGS_ASAN = -fsanitize=address -static-libasan
+LDFLAGS_ASAN = $(CFLAGS_ASAN)
 
 # ...for host-side build tools:
 
 OBJDIR =
 CC = gcc
-CFLAGS = -g -O3 -fomit-frame-pointer -Wall -Wextra -Werror -ansi -std=c89 -pedantic -Wstrict-prototypes -Wshift-overflow=2 -Wshift-count-overflow
-#CFLAGS = -g -O3 -fomit-frame-pointer -Wall -Wextra -Werror -ansi -pedantic -Wstrict-prototypes -Wshift-overflow=2 -Wshift-count-overflow
+CFLAGS = $(CFLAGS_GCC)
 HOST_OBJEXTENSION = .o
 LDFLAGS =
 LD = $(CC)
 HOST_EXEXTENSION =
 
-# Here I select the target.  Object directories have to exist:
+# Here I select the target.  Object directories have to exist *before* build:
 
-TARG_OBJDIR = x86_64-linux/
-#TARG_OBJDIR = i686-linux/
-#TARG_OBJDIR = ppc-linux/
-#TARG_OBJDIR = i686-w32/
-#TARG_OBJDIR = x86_64-w64/
+TARG_OBJDIR ?= x86_64-linux/
+#TARG_OBJDIR ?= i686-linux/
+#TARG_OBJDIR ?= ppc-linux/
+#TARG_OBJDIR ?= m68k-linux/
+#TARG_OBJDIR ?= i686-w32/
+#TARG_OBJDIR ?= x86_64-w64/
 
 # ...for the actual build targets.  This is the simple case for no cross-build:
 
 ifeq ($(TARG_OBJDIR),x86_64-linux/)
- TARG_CC = $(CC)
- TARG_CFLAGS = $(CFLAGS)
- #TARG_CC = clang
- #TARG_CFLAGS = -g -O3 -fomit-frame-pointer -Wall -Wextra -Werror -ansi -std=c89 -pedantic -Wstrict-prototypes -Wshift-count-overflow
- #TARG_CC = g++
- #TARG_CFLAGS = -g -O3 -fomit-frame-pointer -Wall -Wextra -Werror -ansi -std=c++98 -pedantic -Wno-deprecated
- #TARG_CC = clang++
- #TARG_CFLAGS = -g -O3 -fomit-frame-pointer -Wall -Wextra -Werror -ansi -std=c++98 -pedantic -Wno-deprecated
- #TARG_CC = tcc
- #TARG_CFLAGS = -g -O3 -fomit-frame-pointer -Wall -Wextra -Werror -pedantic -Wno-deprecated
+ TARG_CC ?= gcc
+ ifeq ($(TARG_CC),gcc)
+  TARG_CFLAGS = $(CFLAGS_GCC)
+ endif
+ ifeq ($(TARG_CC),clang)
+  TARG_CFLAGS = $(CFLAGS_CLANG)
+ endif
+ ifeq ($(TARG_CC),g++)
+  TARG_CFLAGS = $(CFLAGS_GPP)
+ endif
+ ifeq ($(TARG_CC),clang++)
+  TARG_CFLAGS = $(CFLAGS_CLANGPP)
+ endif
+ ifeq ($(TARG_CC),tcc)
+  TARG_CFLAGS = $(CFLAGS_TCC)
+ endif
  TARG_OBJEXTENSION = $(HOST_OBJEXTENSION)
  TARG_LD = $(TARG_CC)
  TARG_LDFLAGS = $(LDFLAGS)
@@ -45,23 +69,66 @@ ifeq ($(TARG_OBJDIR),x86_64-linux/)
  endif
 endif
 
+# ASAN requires compilation & linking with different flags:
+
+ifeq ($(TARG_OBJDIR),x86_64-linux-asan/)
+ TARG_CC ?= gcc
+ ifeq ($(TARG_CC),gcc)
+  TARG_CFLAGS = $(CFLAGS_ASAN) $(CFLAGS_GCC)
+ endif
+ ifeq ($(TARG_CC),clang)
+  TARG_CFLAGS = $(CFLAGS_CLANG)
+ endif
+ ifeq ($(TARG_CC),g++)
+  TARG_CFLAGS = $(CFLAGS_ASAN) $(CFLAGS_GPP)
+ endif
+ ifeq ($(TARG_CC),clang++)
+  TARG_CFLAGS = $(CFLAGS_CLANGPP)
+ endif
+ ifeq ($(TARG_CC),tcc)
+  TARG_CFLAGS = $(CFLAGS_TCC)
+ endif
+ TARG_OBJEXTENSION = $(HOST_OBJEXTENSION)
+ TARG_LD = $(TARG_CC)
+ TARG_LDFLAGS = $(LDFLAGS_ASAN) $(LDFLAGS)
+ TARG_EXEXTENSION = $(HOST_EXEXTENSION)
+ ifeq ($(VALGRIND),1)
+  TARG_RUNCMD = "valgrind --leak-check=full"
+ endif
+endif
+
 # build 32 bit Linux binary on 64 bit system
+# gcc-multilib cannot be installed together with cross compilers.
+# In such case, install&use 32 bit GCC also as cross compiler
 
 ifeq ($(TARG_OBJDIR),i686-linux/)
- TARG_CC = gcc -m32
- TARG_CFLAGS = $(CFLAGS)
+ TARG_CC = i686-linux-gnu-gcc
+ #TARG_CC = gcc -m32
+ TARG_CFLAGS = $(CFLAGS_GCC)
  TARG_OBJEXTENSION = .o
  TARG_LD = $(TARG_CC)
  TARG_LDFLAGS = $(LDFLAGS)
  TARG_EXEXTENSION =
 endif
 
+# ASAN requires compilation & linking with different flags:
+
+ifeq ($(TARG_OBJDIR),i686-linux-asan/)
+ TARG_CC = i686-linux-gnu-gcc
+ #TARG_CC = gcc -m32
+ TARG_CFLAGS = $(CFLAGS_ASAN) $(CFLAGS_GCC)
+ TARG_OBJEXTENSION = .o
+ TARG_LD = $(TARG_CC)
+ TARG_LDFLAGS = $(LDFLAGS_ASAN) $(LDFLAGS)
+ TARG_EXEXTENSION =
+endif
+
 # PPC build to test big endian
-# install qemu-system-ppc, qemu-user-static, gcc-powerpc(64)-linux-gnu
+# install qemu-system-ppc, qemu-user-static, gcc-powerpc(64)-linux-gnu, libc6-dev-ppc64-powerpc-cross
 
 ifeq ($(TARG_OBJDIR),ppc-linux/)
  TARG_CC = powerpc-linux-gnu-gcc
- TARG_CFLAGS = $(CFLAGS)
+ TARG_CFLAGS = $(CFLAGS_GCC)
  TARG_OBJEXTENSION = .o
  TARG_LD = $(TARG_CC)
  TARG_LDFLAGS = $(LDFLAGS) -static
@@ -69,32 +136,46 @@ ifeq ($(TARG_OBJDIR),ppc-linux/)
  TARG_RUNCMD = qemu-ppc-static
 endif
 
+# Similar for M68K
+
+ifeq ($(TARG_OBJDIR),m68k-linux/)
+ TARG_CC = m68k-linux-gnu-gcc
+ TARG_CFLAGS = $(CFLAGS_GCC)
+ TARG_OBJEXTENSION = .o
+ TARG_LD = $(TARG_CC)
+ TARG_LDFLAGS = $(LDFLAGS) -static
+ TARG_EXEXTENSION =
+ TARG_RUNCMD = qemu-m68k-static
+endif
+
 # cross Build with MinGW32
-# do not use -stdc=89 since we otherwise get no 'long long' data type and therefore
-# no 64 bit support
 
 ifeq ($(TARG_OBJDIR),i686-w32/)
  TARG_CC = i686-w64-mingw32-gcc
- TARG_CFLAGS = -g -O3 -fomit-frame-pointer -Wall -Wextra -Werror -ansi -pedantic -Wno-deprecated
+ TARG_CFLAGS = $(CFLAGS_GCC)
  TARG_OBJEXTENSION = .o
  TARG_LD = $(TARG_CC)
  TARG_LDFLAGS = $(LDFLAGS)
  TARG_EXEXTENSION = .exe
  TARG_RUNCMD = wine
  TEX2DOC_FLAGS=-codepage 1252
+ RC_CC = i686-w64-mingw32-windres
+ MAKEDEFS_RC = makedefs.rc
 endif
 
 # cross Build with MinGW64
 
 ifeq ($(TARG_OBJDIR),x86_64-w64/)
  TARG_CC = x86_64-w64-mingw32-gcc
- TARG_CFLAGS = $(CFLAGS)
+ TARG_CFLAGS = $(CFLAGS_GCC)
  TARG_OBJEXTENSION = .o
  TARG_LD = $(TARG_CC)
  TARG_LDFLAGS = $(LDFLAGS)
  TARG_EXEXTENSION = .exe
  TARG_RUNCMD = wine
  TEX2DOC_FLAGS=-codepage 1252
+ RC_CC = x86_64-w64-mingw32-windres
+ MAKEDEFS_RC = makedefs.rc
 endif
 
 # -------------------------------------------------------------------------

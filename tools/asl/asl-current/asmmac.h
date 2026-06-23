@@ -76,6 +76,7 @@ typedef struct _TInputTag
 #endif
                                                     );
   PMacroRec Macro;
+  LongInt LocHandle;
 } TInputTag, *PInputTag;
 
 typedef struct _TOutputTag
@@ -94,6 +95,7 @@ typedef struct _TOutputTag
   Boolean DoExport, DoGlobCopy, UsesNumArgs, UsesAllArgs;
   String GName;
   tErrorNum OpenErrMsg;
+  tLstMacroExpMod LstMacroExpMod;
 } TOutputTag, *POutputTag;
 
 

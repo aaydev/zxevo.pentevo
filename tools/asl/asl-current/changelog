@@ -1,3 +1,318 @@
+2026-03-11  [1.42 Bld 301]
+
+- Addition    : Extend iso650 address space to 4096 bytes.
+- Addition    : Add National CR16A/B target.
+
+2026-02-14 [1.42 Bld 300]
+
+- Bugfix      : Re-add resources to Windows binaries
+- Addition    : Implement WE32200 CASWI, PACKB, and UNPACKB
+                instructions.
+- Bugfix      : Switch WE32200 HALF and WORD instruction to
+                big endian, since data storage is big endian,
+                opposed to operands within instructions (!)
+- Bugfix      : Correct PC-relative addressing on WE32xxx
+- Addition    : Support WE32xxx MAU instructions
+- Addition    : Add FPGA variant of uPD650 that supports
+                a 2048 byte address space.
+- Addition    : Add TMS340 target.
+- Change      : If MCS-51 BITDATA segment is organized in
+                bits, they will be stored in packed form
+                (eight bits per byte) in output file.
+
+2025-12-25 [1.42 Bld 299]
+
+- Addition    : MCS-51 BITDATA segment may optionally be organized
+                in bits instead of bytes.
+- Bugfix      : WE32xxx: Correct opcode of generic branches if
+                8 bit displacement was chosen.
+- Addition    : Implement WE32200 decrement-and-branch instructions.
+
+2025-12-07 [1.42 Bld 298]
+
+- Addition    : Internally use 128 bit integer arithmetic on
+                some platforms.
+- Bugfix      : TLCS-42: Correct range check of PORT instruction.
+- Change      : Allow both unsigned and signed 32 bit displacements
+                for 68020 and above.
+- Addition    : Add -maxsympass option to change pass # up to which
+                forward references are allowed.
+- Addition    : Add WE32xxx as target.
+
+2025-10-22 [1.42 Bld 297]
+
+- Addition    : Provide -o command line switch for PBIND,
+                P2HEX and P2BIN.
+- Bugfix      : VAX: add missing REG instruction.
+- Bugfix      : Z280: correct encoding of LDW (addr),nn .
+
+2025-10-19 [1.42 Bld 296]
+
+- Addition    : Display values unknown in first pass as
+                question marks for 68xxx/Coldfire, PowerPC,
+                and DSP56K.
+- Change      : Listing of DSP56K code shows words of
+                24 instead of 32 bits.
+- Bugfix      : Z280: Add missing instructions: ADD <HL/IX/IY>,A
+
+2025-09-12 [1.42 Bld 295]
+
+- Bugfix      : 6809: Correct range for 8 bit displacements
+- Bugfix      : 6809: Add missing error message for using
+                immediate addressing on read/modify/write
+                instructions.
+
+2025-09-15 [1.42 Bld 294]
+
+- Bugfix      : Correct attribute forwarding of ~ and ~~
+                operators.
+- Bugfix      : Correct NEC V60 IN instruction opcode.
+
+2025-08-31 [1.42 Bld 293]
+
+- Addition    : Display values unknown in first pass as
+                question marks for 6809 and 68HC12.
+- Change      : Improve usage bookeeping of symbols in case of
+                forward references.
+
+2025-08-09 [1.42 Bld 292]
+
+- Addition    : Add function SYMUSED(), which has similar
+                meaning as IF(N)USED.
+- Bugfix      : Correct MMU mapping for data accesses on Z180.
+- Change      : Remove address alignment checking for WORD on i960.
+- Addition    : Allow FORWARD declarations also outside of sections.
+
+2025-07-16 [1.42 Bld 291]
+
+- Addition    : Display values unknown in first pass as
+                question marks for MCS-96 and 6800/6805/68HC08/68HC11.
+- Bugfix      : Better differentiation of errors in command line
+                options and parameters
+- Addition    : Add HCF instruction for MC6800/6801/6809
+- Addition    : Add HALT instruction for SC61860
+- Addition    : Add Z280 as target
+
+2025-06-20 [1.42 Bld 290]
+
+- Bugfix      : Enable glob() wildcard expansion for Win32
+- Addition    : Add built-in function FSIZE() to determine
+                the size of a file.
+
+2025-06-10 [1.42 Bld 289]
+
+- Bugfix      : 68040: Add missing instructions FSNEG and FDNEG
+- Bugfix      : 68040: Add NC mode for cache operations
+- Bugfix      : TMS320C5x: Re-Allow multiple conditions for RETC and XC
+
+2025-05-25 [1.42 Bld 288]
+
+- Bugfix      : 68K: correct encoding of DIVS.L/DIVU.L
+                with 32-bit dest operand
+- Bugfix      : 68K: regard possible zero-length base
+                displacement for PC-relative addressing.
+- Bugfix      : 68K: preindexing must be used for indirect
+                addressing if index register is suppressed.
+- Addition    : Display values unknown in first pass as
+                question marks for 8048, 8051, TMDS370, AVR,
+                and 8086/V20...V55.
+
+2025-05-21 [1.42 Bld 287]
+
+- Bugfix      : Z380: correct encoding of 'add hl,(abs)'
+- Bugfix      : Z380: correct encoding of 'ld (sp+disp),r16'
+- Bugfix      : Z380: permit 24/32 bit operand for
+                'add/sub sp,nnnn'
+- Bugfix      : PALM: correct implementation of JMP
+                with absolute argument
+- Bugfix      : 68K: correct encoding of BFCHG/BFSET/BFCLR
+- Bugfix      : 68K: correct encoding of MULS.L/MULU.L
+- Bugfix      : 68K: correct list of addressing modes for PMOVE <reg>,<ea>
+- Bugfix      : 68K: correct PMMU condition encoding
+- Bugfix      : 68K: correct offset for PC-relative addressing of PRESTORE
+- Bugfix      : 68K: correct allowed addressing modes for PRESTORE
+- Bugfix      : 68K: correct operand size handling for PFLUSHR
+- Change      : Z380: make DDIR prefix handling more flexible
+
+2025-04-28 [1.42 Bld 286]
+
+- Bugfix      : Correct checksum computation for MOS Hex
+                format.
+- Bugfix      : Correct encoding of CPU16 BCLRW, BSETW,
+                MOVW, and MOVB instructions.
+- Bugfix      : Correct range of offsets for CPU16
+                MAC/RMAC instructions.
+
+2025-04-26 [1.42 Bld 285]
+
+- Addition    : Display values unknown in first pass as
+                question marks for MCS-48 and AVR.
+- Bugfix      : Revert RADIX and OUTRADIX to the documented
+                behaviour, i.e. expecting a plain number in
+                preferrably decimal, rather than an expression
+                in the current radix.
+- Bugfix      : Correct #off8(Rp) addressing mode parsing on
+                TMS370.
+
+2025-04-21 [1.42 Bld 284]
+
+- Change      : out-of-range displacement for (d16,PC)
+                and (d8,PC,Xn) on 68000 is now reported as
+                such
+- Bugfix      : correct encoding of LD (nnnn),SP on GBZ80
+- Addition    : Display values unknown in first pass as
+                question mark (may be disabled via command
+                line switch): implemented so far for 65xx,
+                Zx80, MCS-(2)51 and 8080/8085.
+
+2025-02-09 [1.42 Bld 283]
+
+- Addition    : new target TLCS-42
+- Addition    : add IFSYM(N)EXIST statements and SYMEXIST()
+                function
+
+2025-01-01 [1.42 Bld 282]
+
+- Addition    : new command line switch '-radix' to set
+                default number system
+- Addition    : implement built-in JS instruction macro
+                for SC/MP
+- Addition    : new command line switch '-intsyntax' to
+                change default syntax for integer constants
+
+2024-11-20 [1.42 Bld 281]
+
+- Bugfix      : DB/DW on 68xx are big endian again
+
+2024-11-15 [1.42 Bld 280]
+
+- Addition    : DB and DW on 65xx and 68xx targets allow
+                both Intel and Motorola style duplication
+                of values.
+- Addition    : Allow the {EXPAND}, {NOEXPAND}, {EXPIF},
+                {NOEXPIF}, {EXPMACRO}, {NOEXPMACRO},
+                {EXPREST}, and {NOEXPREST} directives
+                also for IRP, IRPC, REPT, and WHILE,
+
+2024-11-09 [1.42 Bld 279]
+
+- Bugfix      : Add missing error message about invalid
+                symbol name in some situations.
+- Change      : Differentiate negative/positive floating
+                point constant overflow.
+- Change      : Detect overflow on integer constants,
+                and try to treat them as float instead.
+- Bugfix      : LONG instruction did not test for 32 bit
+                value range.
+
+2024-10-20 [1.42 Bld 278]
+
+- Bugfix      : correct encoding of PDP-11 instructions
+                M(F|T)P(D|I)
+- Change      : uCOM-43: Issue warning when decision about
+                CZP's argument type is unclear
+- Change      : Introduce short circuit evaluation for
+                logical AND and OR.
+- Bugfix      : regard different arguments for LDS/LDD on
+                TMS99110 and TI990.
+
+2024-09-29 [1.42 Bld 277]
+
+- Change      : IFDEF, IFNDEF, and DEFINED() also accept an
+                expression as argument, not only a simple
+                symbol name.  They return true if the
+                expression does not contain any symbols
+                that are undefined up to now.
+- Bugfix      : Add missing PDP-11 instructions STCFD and STCDF.
+- Bugfix      : 68K: Assume default operand size of 8 bits also
+                for FScc and PScc, not only for Scc.
+- Bugfix      : 68K: Allow PC-relative addressing for FRESTORE
+                and PRESTORE.
+
+2024-09-15 [1.42 Bld 276]
+
+- Bugfix      : Regard infinities for DC.{SDP}, DD, and DQ
+- Bugfix      : ...as a consequence, do not allow 'INF' for
+                user-defined symbols
+- Bugfix      : ifdef ..., if defined(...), and ifused ...
+                did not check for valid symbol names
+- Bugfix      : correct entry address printout for PLIST
+
+2024-09-01 [1.42 Bld 275]
+
+- Addition    : P2BIN warns if checksum overwrites data from
+                source file(s)
+- Bugfix      : uCOM-43: correct behaviour of JCP on last
+                address in 64 byte page.
+
+2024-08-25 [1.42 Bld 274]
+
+- Addition    : pre-define variable FLOATMAX
+- Addition    : use 80 bit extended float on host platforms
+                supporting it
+
+2024-08-05 [1.42 Bld 273]
+
+- Addition    : support NEC uCOM 43/44/45
+
+2024-07-24 [1.42 Bld 272]
+
+- Change      : If the file name given as argument to INCLUDE
+                or BINCLUDE does not contain an extension, the
+                name extended by .INC and the plain name is
+                searched for (in this order).
+- Bugfix      : The message "Additional pass not started..."
+                is now also added to the summary written
+                to the console.
+- Change      : Allow MFPT and XOR on T-11 (architecture
+                handbook seems to be wrong on this)
+- Change      : The DT pseudo instruction stores integer
+                arguments in packed BCD format, instead
+                of converting integers to floats
+- Addition    : support Zilog eZ80
+
+2024-06-26 [1.42 Bld 271]
+
+- Bugfix      : warn about usage of MOV A,ACC on MCS-51
+- Bugfix      : disallow odd addresses for CALL #IA on Super8
+- Bugfix      : correct operand size of DIVD on 6309
+- Bugfix      : correct FMOVE FPcr<->An handling on 68K
+- Bugfix      : correct FMOVEM handling of dynamic register
+                lists on 68K
+- Addition    : add support for register symbols on x86
+
+2024-06-19 [1.42 Bld 270]
+
+- Bugfix      : allow .byte and .word on PDP-11 again.
+- Addition    : initial VAX support
+
+2024-04-13 [1.42 Bld 269]
+
+- Addition    : Make per-line header in listing configurable
+                via format string
+
+2024-04-03 [1.42 Bld 268]
+
+- Bugfix      : Z80: Do not warn about possible relative jump if
+                relative jumping is not allowed for the given
+                condition.
+- Bugfix      : Z80: Do not warn about possible relative jump if
+                the target address's value is questionable.  This
+                applies e.g. to forward references in the first
+                pass.
+
+2024-03-30 [1.42 Bld 267]
+
+- Addition    : Add new Z80 pseudo instruction 'J' that assembles
+                as JR or JP, depending on branch distance.
+- Bugfix      : Correct PHASE when handling addresses beyond 2 GByte.
+- Addition    : Add a command-line switch '-wrelative' to enable
+                warnings about possible relative jump.
+- Change      : Rework the indiredt address expression parser for
+                the following targets: 80C16x, uCOM78, 8086,
+                TLCS-870(C), TLCS-90(0(0)), XA, Z80, Z8000.
+                Behaviour *should* be the same as before.
+
 2024-03-25 [1.42 Bld 266]
 
 - Bugfix      : Add missing error message about invalid length

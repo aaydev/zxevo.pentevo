@@ -1,8 +1,8 @@
 
-; LAST UPDATE: 17.09.2022 savelij
+; LAST UPDATE: 14.02.2025 savelij
 
 ; номера функций RST 8
- INIT_VAR 0X40
+ INIT_VAR 0x40
  SETVAR _AY_PRN_INIT
  SETVAR _AY_PRN_A_
  SETVAR _AY_PRN_TOKEN
@@ -17,8 +17,9 @@
  SETVAR _SET_MODE
  SETVAR _MATH
  SETVAR _VERSION
-
- INIT_VAR 0X4F
+ SETVAR _FILE_BROWSER
+ SETVAR _NMI_FB_BLOCK
+ INIT_VAR 0x4F
  SETVAR _BIOS
  SETVAR _COM_DEV
  SETVAR _COM_FAT
@@ -122,6 +123,14 @@ _MEM_MODE_PENT	EQU %11000000			; MEMORY MODE PENT 1024 KB
  SETVAR _POSTF06				; установить номер "легальной" записи из "BC"
  SETVAR _POSTF07				; вернуть в "BC" текущий номер "легальной" записи
 
+; подфункции FILE_BROWSER
+FB
+ _INIT_VAR
+ _SETVAR .SELECT_FILE				; вывод окна для выбора файла
+ _SETVAR .GET_HABDLE				; получить описатель выбранного файла
+ _SETVAR .GET_FILETYPE				; получить тип выбранного файла
+ _SETVAR .SET_FILE_EXT				; установка расширений файлов
+
 ; номера поддерживаемых расширений для RST 8
 ; "TRDSCLFDITAPSPG$C FNTBMPROM"		;RST 8
 ; "TRDSCLFDITAPSPG$C BMPSNA"		;MAINMENU
@@ -147,7 +156,7 @@ _MEM_MODE_PENT	EQU %11000000			; MEMORY MODE PENT 1024 KB
  SETVAR _TRDOS					; 03 		TR-DOS диск
  SETVAR _UNKNOWN				;		файловая система еще не определена или неизвестна
 
-;описатели для рисования окна
+; описатели для рисования окна
  INIT_VAR
  SETVAR _X_COORD
  SETVAR _Y_COORD
@@ -170,9 +179,22 @@ _MEM_MODE_PENT	EQU %11000000			; MEMORY MODE PENT 1024 KB
  SETVAR _ADR_HOTKEY_L
  SETVAR _ADR_HOTKEY_H
 
+ BITMASK DOWN_HEADER,		7		; 1-есть нижний заголовок
+ BITMASK WINFRAME,		6		; 0-рамка окна есть
+ BITMASK UPHEADER,		5		; 1-есть верхний заголовок
+ BITMASK TEXT,			4		; 0-есть текст для окна
+ BITMASK MENU_FILE,		3		; 1-файлы, 0-меню
+; в байте текущего номера пункта _NUM_PKT
+;   BIT 7-0 => 8-9 текущий пункт,
+;         1 => 8-9 адрес хранения
+;       6-0 => A-B количество пунктов
+;         1 => A-B адрес хранения
+ BITMASK ADR_PUNKT,		7
+ BITMASK ADR_NUMS_PUNKT,	6
+
 JUMP_SIZE	EQU 3
 
- INIT_VAR 0X100
+ INIT_VAR 0x100
  SETVAR _NEMO_RD_ID,JUMP_SIZE			; чтение сектора идентификации HDD с определением его наличия
  SETVAR _NEMO_RD_SEC,JUMP_SIZE			; чтение секторов HDD
  SETVAR _NEMO_WR_SEC,JUMP_SIZE			; запись секторов HDD

@@ -11,6 +11,7 @@
 #include "stdinc.h"
 #include <ctype.h>
 #include <string.h>
+#include <stdarg.h>
 
 #include "version.h"
 #include "be_le.h"
@@ -126,10 +127,16 @@ static void GetCBlockName(char *pDest, size_t DestSize, unsigned Num)
     *pDest = '\0';
 }
 
-static void ParamError(Boolean InEnv, char *Arg)
+static void ParamError(Boolean InEnv, const char *Arg)
 {
-   fprintf(stderr, "%s%s\n", getmessage(InEnv ? Num_ErrMsgInvEnvParam : Num_ErrMsgInvParam), Arg);
-   fprintf(stderr, "%s\n", getmessage(Num_ErrMsgProgTerm));
+  fprintf(stderr, "%s%s\n", getmessage(InEnv ? Num_ErrMsgInvEnvParam : Num_ErrMsgInvParam), Arg);
+  fprintf(stderr, "%s\n", getmessage(Num_ErrMsgProgTerm));
+}
+
+static void UnknownError(Boolean InEnv, const char *Arg)
+{
+  fprintf(stderr, "%s%s\n", getmessage(InEnv ? Num_ErrMsgInvEnvOption : Num_ErrMsgInvOption), Arg);
+  fprintf(stderr, "%s\n", getmessage(Num_ErrMsgProgTerm));
 }
 
 static void OpenTarget(void)
@@ -141,9 +148,8 @@ static void OpenTarget(void)
 
 static void CloseTarget(void)
 {
-  errno = 0;
-  fclose(TargFile);
-  ChkIO(TargName);
+  if (EOF == fclose(TargFile))
+    ChkIO(TargName);
   if (Magic != 0)
     unlink(TargName);
 }
@@ -160,11 +166,9 @@ static void PrCData(FILE *pTargFile, char Ident, const char *pName,
   else
     return;
 
-  errno = 0;
-  fprintf(pTargFile, "#define %s%s_%s 0x%08lX%s\n",
-          pCTargName, pCBlockName, pName,
-          LoDWord(Value), pFormat);
-  ChkIO(TargName);
+  chkio_fprintf(pTargFile, TargName, "#define %s%s_%s 0x%08lX%s\n",
+                pCTargName, pCBlockName, pName,
+                LoDWord(Value), pFormat);
 }
 
 static void ProcessFile(const char *FileName, LongWord Offset)
@@ -174,17 +178,17 @@ static void ProcessFile(const char *FileName, LongWord Offset)
   Byte InpHeader, InpCPU, InpSegment, InpGran;
   LongWord InpStart, SumLen;
   Word InpLen, TransLen;
-  Boolean doit, FirstBank = 0;
+  Boolean doit, write_intel_bank_record = False;
   Boolean CDataLower = !!strchr(CFormat, 'd'),
           CDataUpper = !!strchr(CFormat, 'D');
   Byte Buffer[MaxLineLen];
   Word *WBuffer = (Word *) Buffer;
-  LongWord ErgStart,
-           ErgStop = 0xfffffffful,
-           IntOffset = 0, MaxAdr;
+  LongWord ErgStart, byte_erg_start,
+           ErgStop = 0xfffffffful, byte_erg_stop,
+           target_word_intel_offset = 0, byte_intel_offset = 0, MaxAdr;
   LongInt NextPos;
   LongWord ValidSegs;
-  Word ErgLen = 0, ChkSum = 0, RecCnt, Gran, HSeg;
+  Word ErgLen = 0, ChkSum, RecCnt, Gran, intel_segment;
   String CBlockName;
 
   LongInt z;
@@ -203,9 +207,7 @@ static void ProcessFile(const char *FileName, LongWord Offset)
     FormatError(FileName, getmessage(Num_FormatInvHeaderMsg));
 
   if (msg_level >= e_msg_level_normal)
-  {
-    errno = 0; printf("%s==>>%s", FileName, TargName); ChkIO(OutName);
-  }
+    chkio_printf(OutName, "%s==>>%s", FileName, TargName);
 
   SumLen = 0;
 
@@ -281,57 +283,53 @@ static void ProcessFile(const char *FileName, LongWord Offset)
       {
         InpStart += Offset;
         ErgStart = max(StartAdr[InpSegment], InpStart);
-        ErgStop = min(StopAdr[InpSegment], InpStart + (InpLen/Gran) - 1);
+        ErgStop = min(StopAdr[InpSegment], record_target_word_last_address(InpStart, InpLen, Gran));
         doit = (ErgStop >= ErgStart);
         if (doit)
         {
-          ErgLen = (ErgStop + 1 - ErgStart) * Gran;
+          ErgLen = record_byte_length(ErgStart, ErgStop, Gran);
           if (AddChunk(&UsedList, ErgStart, ErgStop - ErgStart + 1, True))
-          {
-            errno = 0; fprintf(stderr, " %s\n", getmessage(Num_ErrMsgOverlap)); ChkIO(OutName);
-          }
+            chkio_fprintf(stderr, OutName, " %s\n", getmessage(Num_ErrMsgOverlap));
         }
       }
 
       if (doit && (ErgStop > MaxAdr))
-      {
-        errno = 0; fprintf(stderr, " %s\n", getmessage(Num_ErrMsgAdrOverflow)); ChkIO(OutName);
-      }
+        chkio_fprintf(stderr, OutName, " %s\n", getmessage(Num_ErrMsgAdrOverflow));
 
       if (doit)
       {
         /* an Anfang interessierender Daten */
 
-        if (fseek(SrcFile, (ErgStart - InpStart) * Gran, SEEK_CUR) == -1)
+        if (fseek(SrcFile, record_byte_offset(ErgStart, InpStart, Gran), SEEK_CUR) == -1)
           ChkIO(FileName);
 
         /* Statistik, Anzahl Datenzeilen ausrechnen */
 
         RecCnt = ErgLen / LineLen;
-        if ((ErgLen % LineLen) !=0)
+        if ((ErgLen % LineLen) != 0)
           RecCnt++;
 
-        /* relative Angaben ? */
+        /* relative addresses? */
 
         if (RelAdr)
           ErgStart -= StartAdr[InpSegment];
 
-        /* Auf Zieladressbereich verschieben */
+        /* move to target address range */
 
         ErgStart += Relocate;
 
-        /* Kopf einer Datenzeilengruppe */
+        /* head of group of data lines */
 
         switch (ActFormat)
         {
           case eHexFormatMotoS:
-            if ((!(FormatOccured & eMotoOccured)) || (SepMoto))
-            {
-              errno = 0; fprintf(TargFile, "S0030000FC\n"); ChkIO(TargName);
-            }
-            if ((ErgStop >> 24) != 0)
+            byte_erg_start = record_byte_address(ErgStart, Gran);
+            byte_erg_stop = record_byte_address(ErgStop, Gran);
+            if ((!(FormatOccured & eMotoOccured)) || SepMoto)
+              chkio_fprintf(TargFile, TargName, "S0030000FC\n");
+            if (byte_erg_stop >> 24)
               MotRecType = 2;
-            else if ((ErgStop >> 16) !=0)
+            else if (byte_erg_stop >> 16)
               MotRecType = 1;
             else
               MotRecType = 0;
@@ -342,9 +340,7 @@ static void ProcessFile(const char *FileName, LongWord Offset)
             if (Rec5)
             {
               ChkSum = Lo(RecCnt) + Hi(RecCnt) + 3;
-              errno = 0;
-              fprintf(TargFile, "S503%04X%02X\n", LoWord(RecCnt), Lo(ChkSum ^ 0xff));
-              ChkIO(TargName);
+              chkio_fprintf(TargFile, TargName, "S503%04X%02X\n", LoWord(RecCnt), Lo(ChkSum ^ 0xff));
             }
             FormatOccured |= eMotoOccured;
             break;
@@ -353,30 +349,27 @@ static void ProcessFile(const char *FileName, LongWord Offset)
             break;
           case eHexFormatIntel:
             FormatOccured |= eIntelOccured;
-            IntOffset = 0;
+            byte_intel_offset = target_word_intel_offset = 0;
             break;
           case eHexFormatIntel16:
             FormatOccured |= eIntelOccured;
-            IntOffset = (ErgStart * Gran);
-            IntOffset -= IntOffset & 0x0f;
-            HSeg = IntOffset >> 4;
-            ChkSum = 4 + Lo(HSeg) + Hi(HSeg);
-            IntOffset /= Gran;
-            errno = 0; fprintf(TargFile, ":02000002%04X%02X\n", LoWord(HSeg), Lo(0x100 - ChkSum)); ChkIO(TargName);
+            byte_intel_offset = record_byte_offset(ErgStart, 0, Gran);
+            byte_intel_offset -= byte_intel_offset & 0x0f;
+            target_word_intel_offset = record_target_word_length(byte_intel_offset, Gran);
+            intel_segment = LoWord(byte_intel_offset >> 4);
+            ChkSum = 2 + Lo(intel_segment) + Hi(intel_segment) + 2;
+            chkio_fprintf(TargFile, TargName, ":02000002%04X%02X\n", intel_segment, Lo(0x100 - ChkSum));
             if (MaxIntel < 1)
               MaxIntel = 1;
             break;
           case eHexFormatIntel32:
             FormatOccured |= eIntelOccured;
-            IntOffset = (ErgStart * Gran);
-            IntOffset -= IntOffset & 0xffff;
-            HSeg = IntOffset >> 16;
-            ChkSum = 6 + Lo(HSeg) + Hi(HSeg);
-            IntOffset /= Gran;
-            errno = 0; fprintf(TargFile, ":02000004%04X%02X\n", LoWord(HSeg), Lo(0x100 - ChkSum)); ChkIO(TargName);
+            byte_intel_offset = record_byte_offset(ErgStart, 0, Gran);
+            byte_intel_offset -= byte_intel_offset & 0xffff;
+            target_word_intel_offset = record_target_word_length(byte_intel_offset, Gran);
+            write_intel_bank_record = True;
             if (MaxIntel < 2)
               MaxIntel = 2;
-            FirstBank = False;
             break;
           case eHexFormatTek:
             break;
@@ -388,41 +381,34 @@ static void ProcessFile(const char *FileName, LongWord Offset)
             if (!(FormatOccured & eDSKOccured))
             {
               FormatOccured |= eDSKOccured;
-              errno = 0; fprintf(TargFile, "%s%s\n", getmessage(Num_DSKHeaderLine), TargName); ChkIO(TargName);
+              chkio_fprintf(TargFile, TargName, "%s%s\n", getmessage(Num_DSKHeaderLine), TargName);
             }
             break;
           case eHexFormatC:
             GetCBlockName(CBlockName, sizeof(CBlockName), NumCBlocks);
             PrCData(TargFile, 's', "start", CTargName, CBlockName, ErgStart);
-            PrCData(TargFile, 'l', "len", CTargName, CBlockName, ErgLen);
-            PrCData(TargFile, 'e', "end", CTargName, CBlockName, ErgStart + ErgLen - 1);
+            PrCData(TargFile, 'l', "len  ", CTargName, CBlockName, ErgLen);
+            PrCData(TargFile, 'e', "end  ", CTargName, CBlockName, record_target_word_last_address(ErgStart, ErgLen, Gran));
             if (CDataLower || CDataUpper)
-            {
-              errno = 0;
-              fprintf(TargFile, "static const unsigned char %s%s_data[] =\n{\n",
-                      CTargName, CBlockName);
-              ChkIO(TargName);
-            }
+              chkio_fprintf(TargFile, TargName, "static const unsigned char %s%s_data[] =\n{\n",
+                            CTargName, CBlockName);
             break;
           default:
             break;
         }
 
-        /* Datenzeilen selber */
+        /* data lines themselves */
 
         while (ErgLen > 0)
         {
-          /* evtl. Folgebank fuer Intel32 ausgeben */
+          /* next bank for Intel32? */
 
-          if ((ActFormat == eHexFormatIntel32) && (FirstBank))
+          if ((ActFormat == eHexFormatIntel32) && write_intel_bank_record)
           {
-            IntOffset += (0x10000 / Gran);
-            HSeg = IntOffset >> 16;
-            ChkSum = 6 + Lo(HSeg) + Hi(HSeg);
-            errno = 0;
-            fprintf(TargFile, ":02000004%04X%02X\n", LoWord(HSeg), Lo(0x100 - ChkSum));
-            ChkIO(TargName);
-            FirstBank = False;
+            intel_segment = LoWord(byte_intel_offset >> 16);
+            ChkSum = 2 + Lo(intel_segment) + Hi(intel_segment) + 4;
+            chkio_fprintf(TargFile, TargName, ":02000004%04X%02X\n", intel_segment, Lo(0x100 - ChkSum));
+            write_intel_bank_record = False;
           }
 
           /* Recordlaenge ausrechnen, fuer Intel32 auf 64K-Grenze begrenzen
@@ -430,97 +416,95 @@ static void ProcessFile(const char *FileName, LongWord Offset)
              Bei Mico8 nur 4 Byte (davon ein Wort=18 Bit) pro Zeile! */
 
           TransLen = min(LineLen, ErgLen);
-          if ((ActFormat == eHexFormatIntel32) && ((ErgStart & 0xffff) + (TransLen/Gran) >= 0x10000))
+          if (ActFormat == eHexFormatIntel32)
           {
-            TransLen = Gran * (0x10000 - (ErgStart & 0xffff));
-            FirstBank = True;
+            byte_erg_start = record_byte_address(ErgStart, Gran);
+            if ((byte_erg_start & 0xffff) + TransLen >= 0x10000)
+            {
+              TransLen = (0x10000 - (byte_erg_start & 0xffff));
+              write_intel_bank_record = True;
+            }
           }
           else if (ActFormat == eHexFormatAtmel)
             TransLen = min(2, TransLen);
           else if (ActFormat == eHexFormatMico8)
             TransLen = min(4, TransLen);
 
-          /* Start der Datenzeile */
+          /* start of data line */
 
+          ChkSum = 0;
           switch (ActFormat)
           {
             case eHexFormatMotoS:
-              errno = 0;
-              fprintf(TargFile, "S%c%02X", '1' + MotRecType, Lo(TransLen + 3 + MotRecType));
-              ChkIO(TargName);
-              ChkSum = TransLen + 3 + MotRecType;
-              if (MotRecType >= 2)
+            {
+              int z;
+              chkio_fprintf(TargFile, TargName, "S%c%02X", '1' + MotRecType, Lo(TransLen + 3 + MotRecType));
+              ChkSum += TransLen + 3 + MotRecType;
+              byte_erg_start = record_byte_address(ErgStart, Gran);
+              for (z = MotRecType + 1; z >= 0; z--)
               {
-                errno = 0; fprintf(TargFile, "%02X", Lo(ErgStart >> 24)); ChkIO(TargName);
-                ChkSum += ((ErgStart >> 24) & 0xff);
+                Byte digit = (byte_erg_start >> (z * 8)) & 0xff;
+                chkio_fprintf(TargFile, TargName, "%02X", digit);
+                ChkSum += digit;
               }
-              if (MotRecType >= 1)
-              {
-                errno = 0; fprintf(TargFile, "%02X", Lo(ErgStart >> 16)); ChkIO(TargName);
-                ChkSum += ((ErgStart >> 16) & 0xff);
-              }
-              errno = 0; fprintf(TargFile, "%04X", LoWord(ErgStart)); ChkIO(TargName);
-              ChkSum += Hi(ErgStart) + Lo(ErgStart);
               break;
+            }
             case eHexFormatMOS:
-              errno = 0; fprintf(TargFile, ";%02X%04X", Lo(TransLen), LoWord(ErgStart)); ChkIO(TargName);
-              ChkSum += TransLen + Lo(ErgStart) + Hi(ErgStart);
+              byte_erg_start = record_byte_address(ErgStart, Gran);
+              chkio_fprintf(TargFile, TargName, ";%02X%04X", Lo(TransLen), LoWord(byte_erg_start));
+              ChkSum += TransLen + Lo(byte_erg_start) + Hi(byte_erg_start);
               break;
             case eHexFormatIntel:
             case eHexFormatIntel16:
             case eHexFormatIntel32:
             {
               Word WrTransLen;
-              LongWord WrErgStart;
 
-              WrTransLen = (MultiMode < 2) ? TransLen : (TransLen / Gran);
-              WrErgStart = (ErgStart - IntOffset) * ((MultiMode < 2) ? Gran : 1);
-              errno = 0;
-              fprintf(TargFile, ":%02X%04X00", Lo(WrTransLen), LoWord(WrErgStart));
-              ChkIO(TargName);
-              ChkSum = Lo(WrTransLen) + Hi(WrErgStart) + Lo(WrErgStart);
+              /* Intel Hex addresses are byte addresses.  Multi Mode is
+                 only relevant for granularities > 8 bit: */
+
+              if ((MultiMode < 2) || (record_gran_bits(Gran) <= 8))
+              {
+                WrTransLen = TransLen;
+                byte_erg_start = record_byte_address(ErgStart, Gran) - byte_intel_offset;
+              }
+              else
+              {
+                WrTransLen = TransLen / Gran;
+                byte_erg_start = ErgStart - byte_intel_offset;
+              }
+              chkio_fprintf(TargFile, TargName, ":%02X%04X00", Lo(WrTransLen), LoWord(byte_erg_start));
+              ChkSum += Lo(WrTransLen) + Hi(byte_erg_start) + Lo(byte_erg_start);
 
               break;
             }
             case eHexFormatTek:
-              errno = 0;
-              fprintf(TargFile, "/%04X%02X%02X", LoWord(ErgStart), Lo(TransLen),
-                                         Lo(Lo(ErgStart) + Hi(ErgStart) + TransLen));
-              ChkIO(TargName);
-              ChkSum = 0;
+              chkio_fprintf(TargFile, TargName, "/%04X%02X%02X", LoWord(ErgStart), Lo(TransLen),
+                            Lo(Lo(ErgStart) + Hi(ErgStart) + TransLen));
               break;
             case eHexFormatTiDSK:
-              errno = 0; fprintf(TargFile, "9%04X", LoWord(/*Gran**/ErgStart));
-              ChkIO(TargName);
-              ChkSum = 0;
+              chkio_fprintf(TargFile, TargName, "9%04X", LoWord(ErgStart));
               break;
             case eHexFormatAtmel:
               for (z = (AVRLen - 1) << 3; z >= 0; z -= 8)
-              {
-                errno = 0;
-                fprintf(TargFile, "%02X", Lo(ErgStart >> z));
+                chkio_fprintf(TargFile, TargName, "%02X", Lo(ErgStart >> z));
+              if (EOF == fputc(':', TargFile))
                 ChkIO(TargName);
-              }
-              errno = 0;
-              fputc(':', TargFile);
-              ChkIO(TargName);
               break;
             case eHexFormatMico8:
               break;
             case eHexFormatC:
-              errno = 0;
-              fprintf(TargFile, "  ");
-              ChkIO(TargName);
+              chkio_fprintf(TargFile, TargName, "  ");
               break;
             default:
               break;
           }
 
-          /* Daten selber */
+          /* data itself */
 
           if (fread(Buffer, 1, TransLen, SrcFile) !=TransLen)
             chk_wr_read_error(FileName);
-          if (MultiMode == 1)
+          if ((MultiMode == 1) && (record_gran_bits(Gran) <= 8))
             switch (Gran)
             {
               case 4:
@@ -529,7 +513,7 @@ static void ProcessFile(const char *FileName, LongWord Offset)
               case 2:
                 WSwap(Buffer, TransLen);
                 break;
-              case 1:
+              default:
                 break;
             }
           switch (ActFormat)
@@ -539,13 +523,11 @@ static void ProcessFile(const char *FileName, LongWord Offset)
                 WSwap(WBuffer, TransLen);
               for (z = 0; z < (TransLen / 2); z++)
               {
-                errno = 0;
                 if (((ErgStart + z >= StartAdr[SegData]) && (ErgStart + z <= StopAdr[SegData]))
                  || (InpSegment == SegData))
-                  fprintf(TargFile, "M%04X", LoWord(WBuffer[z]));
+                  chkio_fprintf(TargFile, TargName, "M%04X", LoWord(WBuffer[z]));
                 else
-                  fprintf(TargFile, "B%04X", LoWord(WBuffer[z]));
-                ChkIO(TargName);
+                  chkio_fprintf(TargFile, TargName, "B%04X", LoWord(WBuffer[z]));
                 ChkSum += WBuffer[z];
                 SumLen += Gran;
               }
@@ -553,81 +535,72 @@ static void ProcessFile(const char *FileName, LongWord Offset)
             case eHexFormatAtmel:
               if (TransLen >= 2)
               {
-                fprintf(TargFile, "%04X", LoWord(WBuffer[0]));
+                chkio_fprintf(TargFile, TargName, "%04X", LoWord(WBuffer[0]));
                 SumLen += 2;
               }
               else if (TransLen >= 1)
               {
-                fprintf(TargFile, "%04X", Lo(WBuffer[0]));
+                chkio_fprintf(TargFile, TargName, "%04X", Lo(WBuffer[0]));
                 SumLen++;
               }
               break;
             case eHexFormatMico8:
               if (TransLen >= 4)
               {
-                fprintf(TargFile, "%01X%02X%02X", Buffer[1] & 0x0f, Buffer[2] % 0xff, Buffer[3] & 0xff);
+                chkio_fprintf(TargFile, TargName, "%01X%02X%02X", Buffer[1] & 0x0f, Buffer[2] % 0xff, Buffer[3] & 0xff);
                 SumLen += 4;
               }
               break;
             case eHexFormatC:
               if (CDataLower || CDataUpper)
                 for (z = 0; z < (LongInt)TransLen; z++)
-                  if ((MultiMode < 2) || (z % Gran == MultiMode - 2))
+                  if ((MultiMode < 2)
+                   || (record_gran_bits(Gran) <= 8)
+                   || (z % Gran == MultiMode - 2))
                   {
-                    errno = 0;
-                    fprintf(TargFile, CDataLower ? "0x%02x%s" : "0x%02X%s", (unsigned)Buffer[z],
-                            (ErgLen - z > 1) ? "," : "");
-                    ChkIO(TargName);
+                    chkio_fprintf(TargFile, TargName, CDataLower ? "0x%02x%s" : "0x%02X%s", (unsigned)Buffer[z],
+                                  (ErgLen - z > 1) ? "," : "");
                     ChkSum += Buffer[z];
                     SumLen++;
                   }
               break;
             default:
               for (z = 0; z < (LongInt)TransLen; z++)
-                if ((MultiMode < 2) || (z % Gran == MultiMode - 2))
+                if ((MultiMode < 2)
+                 || (record_gran_bits(Gran) <= 8)
+                 || (z % Gran == MultiMode - 2))
                 {
-                  errno = 0; fprintf(TargFile, "%02X", Lo(Buffer[z])); ChkIO(TargName);
+                  chkio_fprintf(TargFile, TargName, "%02X", Lo(Buffer[z]));
                   ChkSum += Buffer[z];
                   SumLen++;
                 }
           }
 
-          /* Ende Datenzeile */
+          /* end of data line */
 
           switch (ActFormat)
           {
             case eHexFormatMotoS:
-              errno = 0;
-              fprintf(TargFile, "%02X\n", Lo(ChkSum ^ 0xff));
-              ChkIO(TargName);
+              chkio_fprintf(TargFile, TargName, "%02X\n", Lo(ChkSum ^ 0xff));
               break;
             case eHexFormatMOS:
-              errno = 0;
-              fprintf(TargFile, "%04X\n", LoWord(ChkSum));
+              chkio_fprintf(TargFile, TargName, "%04X\n", LoWord(ChkSum));
               break;
             case eHexFormatIntel:
             case eHexFormatIntel16:
             case eHexFormatIntel32:
-              errno = 0;
-              fprintf(TargFile, "%02X\n", Lo(1 + (ChkSum ^ 0xff)));
-              ChkIO(TargName);
+              chkio_fprintf(TargFile, TargName, "%02X\n", Lo(1 + (ChkSum ^ 0xff)));
               break;
             case eHexFormatTek:
-              errno = 0;
-              fprintf(TargFile, "%02X\n", Lo(ChkSum));
-              ChkIO(TargName);
+              chkio_fprintf(TargFile, TargName, "%02X\n", Lo(ChkSum));
               break;
             case eHexFormatTiDSK:
-              errno = 0;
-              fprintf(TargFile, "7%04XF\n", LoWord(ChkSum));
-              ChkIO(TargName);
+              chkio_fprintf(TargFile, TargName, "7%04XF\n", LoWord(ChkSum));
               break;
             case eHexFormatAtmel:
             case eHexFormatMico8:
             case eHexFormatC:
-              errno = 0;
-              fprintf(TargFile, "\n");
-              ChkIO(TargName);
+              chkio_fprintf(TargFile, TargName, "\n");
               break;
             default:
               break;
@@ -636,7 +609,17 @@ static void ProcessFile(const char *FileName, LongWord Offset)
           /* Zaehler rauf */
 
           ErgLen -= TransLen;
-          ErgStart += TransLen/Gran;
+          ErgStart += record_target_word_length(TransLen, Gran);
+
+          /* If we reached a 64K border, increase the Intel32 Offset by 64 KBytes.
+             The trigger to write the linear start address record before next data
+             record has already been set: */
+
+          if ((ActFormat == eHexFormatIntel32) && write_intel_bank_record)
+          {
+            byte_intel_offset += 0x10000;
+            target_word_intel_offset = record_target_word_length(byte_intel_offset, Gran);
+          }
         }
 
         /* Ende der Datenzeilengruppe */
@@ -646,16 +629,10 @@ static void ProcessFile(const char *FileName, LongWord Offset)
           case eHexFormatMotoS:
             if (SepMoto)
             {
-              errno = 0;
-              fprintf(TargFile, "S%c%02X", '9' - MotRecType, Lo(3 + MotRecType));
-              ChkIO(TargName);
+              chkio_fprintf(TargFile, TargName, "S%c%02X", '9' - MotRecType, Lo(3 + MotRecType));
               for (z = 1; z <= 2 + MotRecType; z++)
-              {
-                errno = 0; fprintf(TargFile, "%02X", 0); ChkIO(TargName);
-              }
-              errno = 0;
-              fprintf(TargFile, "%02X\n", Lo(0xff - 3 - MotRecType));
-              ChkIO(TargName);
+                chkio_fprintf(TargFile, TargName, "%02X", 0);
+              chkio_fprintf(TargFile, TargName, "%02X\n", Lo(0xff - 3 - MotRecType));
             }
             break;
           case eHexFormatMOS:
@@ -675,10 +652,8 @@ static void ProcessFile(const char *FileName, LongWord Offset)
           case eHexFormatC:
             if (CDataLower || CDataUpper)
             {
-              errno = 0;
-              fprintf(TargFile, "};\n\n");
+              chkio_fprintf(TargFile, TargName, "};\n\n");
               NumCBlocks++;
-              ChkIO(TargName);
             }
             break;
           default:
@@ -695,18 +670,17 @@ static void ProcessFile(const char *FileName, LongWord Offset)
 
   if (msg_level >= e_msg_level_normal)
   {
-    errno = 0; printf(" ("); ChkIO(OutName);
-    errno = 0; printf(Integ32Format, SumLen); ChkIO(OutName);
-    errno = 0; printf(" %s)\n", getmessage((SumLen == 1) ? Num_Byte : Num_Bytes)); ChkIO(OutName);
+    chkio_printf(OutName, " (");
+    chkio_printf(OutName, Integ32Format, SumLen);
+    chkio_printf(OutName, " %s)\n", getmessage((SumLen == 1) ? Num_Byte : Num_Bytes));
   }
   if (!SumLen)
   {
-    errno = 0; fputs(getmessage(Num_WarnEmptyFile), stderr); ChkIO(OutName);
+    if (fputs(getmessage(Num_WarnEmptyFile), stderr) == EOF) ChkIO(OutName);
   }
 
-  errno = 0;
-  fclose(SrcFile);
-  ChkIO(FileName);
+  if (EOF == fclose(SrcFile))
+    ChkIO(FileName);
 }
 
 static ProcessProc CurrProcessor;
@@ -778,7 +752,7 @@ static void MeasureFile(const char *FileName, LongWord Offset)
       if (doit)
       {
         Adr += Offset;
-        EndAdr = Adr + (Length/Gran) - 1;
+        EndAdr = record_target_word_last_address(Adr, Length, Gran);
         if (StartAuto)
           if (StartAdr[InpSegment] > Adr)
             StartAdr[InpSegment] = Adr;
@@ -821,9 +795,6 @@ static as_cmd_result_t CMD_RelAdr(Boolean Negate, const char *Arg)
 
 static as_cmd_result_t CMD_AdrRelocate(Boolean Negate, const char *Arg)
 {
-  Boolean ok;
-  UNUSED(Arg);
-
   if (Negate)
   {
     Relocate = 0;
@@ -831,10 +802,10 @@ static as_cmd_result_t CMD_AdrRelocate(Boolean Negate, const char *Arg)
   }
   else
   {
-    Relocate = ConstLongInt(Arg, &ok, 10);
-    if (!ok) return e_cmd_err;
+    const char *p_end;
 
-    return e_cmd_arg;
+    Relocate = as_cmd_strtol(Arg, &p_end);
+    return *p_end ? e_cmd_err : e_cmd_arg;
   }
 }
 
@@ -856,15 +827,14 @@ static as_cmd_result_t CMD_SepMoto(Boolean Negate, const char *Arg)
 
 static as_cmd_result_t CMD_IntelMode(Boolean Negate, const char *Arg)
 {
-  int Mode;
-  Boolean ok;
-
-  if (*Arg == '\0')
+  if (!*Arg)
     return e_cmd_err;
   else
   {
-    Mode = ConstLongInt(Arg, &ok, 10);
-    if ((!ok) || (Mode < 0) || (Mode > 2))
+    const char *p_end;
+    int Mode = as_cmd_strtol(Arg, &p_end);
+
+    if (*p_end || (Mode < 0) || (Mode > 2))
       return e_cmd_err;
     else
     {
@@ -879,15 +849,14 @@ static as_cmd_result_t CMD_IntelMode(Boolean Negate, const char *Arg)
 
 static as_cmd_result_t CMD_MultiMode(Boolean Negate, const char *Arg)
 {
-  int Mode;
-  Boolean ok;
-
   if (*Arg == '\0')
     return e_cmd_err;
   else
   {
-    Mode = ConstLongInt(Arg, &ok, 10);
-    if ((!ok) || (Mode < 0) || (Mode > 3))
+    const char *p_end;
+    int Mode = as_cmd_strtol(Arg, &p_end);
+
+    if (*p_end || (Mode < 0) || (Mode > 3))
       return e_cmd_err;
     else
     {
@@ -973,17 +942,18 @@ static as_cmd_result_t CMD_DataAdrRange(Boolean Negate,  const char *Arg)
 
 static as_cmd_result_t CMD_EntryAdr(Boolean Negate, const char *Arg)
 {
-  Boolean ok;
-
   if (Negate)
   {
     EntryAdrPresent = False;
     return e_cmd_ok;
   }
+  else if (!*Arg)
+    return e_cmd_err;
   else
   {
-    EntryAdr = ConstLongInt(Arg, &ok, 10);
-    if ((!ok) || (EntryAdr > 0xffff))
+    const char *p_end;
+    EntryAdr = as_cmd_strtol(Arg, &p_end);
+    if (*p_end || (EntryAdr > 0xffff))
       return e_cmd_err;
     EntryAdrPresent = True;
     return e_cmd_arg;
@@ -992,11 +962,9 @@ static as_cmd_result_t CMD_EntryAdr(Boolean Negate, const char *Arg)
 
 static as_cmd_result_t CMD_LineLen(Boolean Negate, const char *Arg)
 {
-  Boolean ok;
-
   if (Negate)
   {
-    if (*Arg !='\0')
+    if (*Arg)
       return e_cmd_err;
     else
     {
@@ -1004,12 +972,13 @@ static as_cmd_result_t CMD_LineLen(Boolean Negate, const char *Arg)
       return e_cmd_ok;
     }
   }
-  else if (*Arg == '\0')
+  else if (!*Arg)
     return e_cmd_err;
   else
   {
-    LineLen = ConstLongInt(Arg, &ok, 10);
-    if ((!ok) || (LineLen < 1) || (LineLen > MaxLineLen))
+    const char *p_end;
+    LineLen = as_cmd_strtol(Arg, &p_end);
+    if (*p_end || (LineLen < 1) || (LineLen > MaxLineLen))
       return e_cmd_err;
     else
     {
@@ -1021,11 +990,9 @@ static as_cmd_result_t CMD_LineLen(Boolean Negate, const char *Arg)
 
 static as_cmd_result_t CMD_MinMoto(Boolean Negate, const char *Arg)
 {
-  Boolean ok;
-
   if (Negate)
   {
-    if (*Arg != '\0')
+    if (*Arg)
       return e_cmd_err;
     else
     {
@@ -1033,12 +1000,13 @@ static as_cmd_result_t CMD_MinMoto(Boolean Negate, const char *Arg)
       return e_cmd_ok;
     }
   }
-  else if (*Arg == '\0')
+  else if (!*Arg)
     return e_cmd_err;
   else
   {
-    MinMoto = ConstLongInt(Arg, &ok, 10);
-    if ((!ok) || (MinMoto < 1) || (MinMoto > 3))
+    const char *p_end;
+    MinMoto = as_cmd_strtol(Arg, &p_end);
+    if (*p_end || (MinMoto < 1) || (MinMoto > 3))
       return e_cmd_err;
     else
       return e_cmd_arg;
@@ -1055,9 +1023,6 @@ static as_cmd_result_t CMD_AutoErase(Boolean Negate, const char *Arg)
 
 static as_cmd_result_t CMD_AVRLen(Boolean Negate, const char *Arg)
 {
-  Word Temp;
-  Boolean ok;
-
   if (Negate)
   {
     AVRLen = AVRLEN_DEFAULT;
@@ -1065,8 +1030,9 @@ static as_cmd_result_t CMD_AVRLen(Boolean Negate, const char *Arg)
   }
   else
   {
-    Temp = ConstLongInt(Arg, &ok, 10);
-    if ((!ok) || (Temp < 2) || (Temp > 3))
+    const char *p_end;
+    Word Temp = as_cmd_strtol(Arg, &p_end);
+    if (*p_end || (Temp < 2) || (Temp > 3))
       return e_cmd_err;
     else
     {
@@ -1122,14 +1088,14 @@ static const as_cmd_rec_t P2HEXParams[] =
   { "M"        , CMD_MinMoto },
   { "SEGMENT"  , CMD_ForceSegment },
   { "AVRLEN"   , CMD_AVRLen },
-  { "CFORMAT"  , CMD_CFormat }
+  { "CFORMAT"  , CMD_CFormat },
+  { "o"        , cmd_target_name }
 };
 
 static Word ChkSum;
 
 int main(int argc, char **argv)
 {
-  char *p_target_name;
   const char *p_src_name;
   as_cmd_results_t cmd_results;
   StringRecPtr p_src_run;
@@ -1171,12 +1137,19 @@ int main(int argc, char **argv)
   Relocate = 0;
   ForceSegment = SegNone;
   strcpy(CFormat, DefaultCFormat);
+  *target_name = '\0';
 
   as_cmd_register(P2HEXParams, as_array_size(P2HEXParams));
-  if (e_cmd_err == as_cmd_process(argc, argv, "P2HEXCMD", &cmd_results))
+  switch (as_cmd_process(argc, argv, "P2HEXCMD", &cmd_results))
   {
-    ParamError(cmd_results.error_arg_in_env, cmd_results.error_arg);
-    exit(1);
+    case e_cmd_err:
+      ParamError(cmd_results.error_arg_in_env, cmd_results.error_arg);
+      exit(1);
+    case e_cmd_unknown:
+      UnknownError(cmd_results.error_arg_in_env, cmd_results.error_arg);
+      exit(1);
+    default:
+      break;
   }
 
   if ((msg_level >= e_msg_level_verbose) || cmd_results.write_version_exit)
@@ -1190,12 +1163,16 @@ int main(int argc, char **argv)
   if (cmd_results.write_help_exit)
   {
     char *ph1, *ph2;
+    const char *p_usage_msg = getmessage(Num_InfoMessUsage);
+    int usage_msg_len = strlen(p_usage_msg);
 
-    errno = 0; printf("%s%s%s\n", getmessage(Num_InfoMessHead1), as_cmdarg_get_executable_name(), getmessage(Num_InfoMessHead2)); ChkIO(OutName);
+    chkio_printf(OutName, "%s%s %s\n", p_usage_msg, as_cmdarg_get_executable_name(), getmessage(Num_InfoMessUsage1));
+    chkio_printf(OutName, "%*.*s%s %s\n", usage_msg_len, usage_msg_len, "", as_cmdarg_get_executable_name(), getmessage(Num_InfoMessUsage2));
+    chkio_printf(OutName, "%*.*s%s %s\n", usage_msg_len, usage_msg_len, "", as_cmdarg_get_executable_name(), getmessage(Num_InfoMessUsage3));
     for (ph1 = getmessage(Num_InfoMessHelp), ph2 = strchr(ph1, '\n'); ph2; ph1 = ph2 + 1, ph2 = strchr(ph1, '\n'))
     {
       *ph2 = '\0';
-      printf("%s\n", ph1);
+      chkio_printf(OutName, "%s\n", ph1);
       *ph2 = '\n';
     }
   }
@@ -1209,20 +1186,24 @@ int main(int argc, char **argv)
     exit(1);
   }
 
-  p_target_name = MoveAndCutStringListLast(&cmd_results.file_arg_list);
-  if (!p_target_name || !*p_target_name)
+  if (!*target_name)
   {
-    errno = 0; fprintf(stderr, "%s\n", getmessage(Num_ErrMsgTargMissing)); ChkIO(OutName);
-    if (p_target_name) free(p_target_name);
-    p_target_name = NULL;
-    exit(1);
+    char *p_target_name = MoveAndCutStringListLast(&cmd_results.file_arg_list);
+    if (!p_target_name || !*p_target_name)
+    {
+      chkio_fprintf(stderr, OutName, "%s\n", getmessage(Num_ErrMsgTargMissing));
+      if (p_target_name) free(p_target_name);
+      p_target_name = NULL;
+      exit(1);
+    }
+    strmaxcpy(target_name, p_target_name, sizeof target_name);
+    free(p_target_name);
   }
 
-  strmaxcpy(TargName, p_target_name, STRINGSIZE);
+  strmaxcpy(TargName, target_name, STRINGSIZE);
   if (!RemoveOffset(TargName, &Dummy))
   {
-    strmaxcpy(TargName, p_target_name, STRINGSIZE);
-    free(p_target_name); p_target_name = NULL;
+    strmaxcpy(TargName, target_name, STRINGSIZE);
     ParamError(False, TargName);
   }
 
@@ -1230,10 +1211,9 @@ int main(int argc, char **argv)
 
   if (StringListEmpty(cmd_results.file_arg_list))
   {
-    AddStringListLast(&cmd_results.file_arg_list, p_target_name);
+    AddStringListLast(&cmd_results.file_arg_list, target_name);
     DelSuffix(TargName);
   }
-  free(p_target_name); p_target_name = NULL;
   AddSuffix(TargName, STRINGSIZE, HexSuffix);
   Filename2CName(CTargName, TargName);
   NumCBlocks = 0;
@@ -1257,9 +1237,7 @@ int main(int argc, char **argv)
 
     if (StartAdr[ChkSegment] > StopAdr[ChkSegment])
     {
-      errno = 0;
-      fprintf(stderr, "%s\n", getmessage(Num_ErrMsgAutoFailed));
-      ChkIO(OutName);
+      chkio_fprintf(stderr, OutName, "%s\n", getmessage(Num_ErrMsgAutoFailed));
       exit(1);
     }
     if (msg_level >= e_msg_level_normal)
@@ -1276,9 +1254,7 @@ int main(int argc, char **argv)
 
   if (DestFormat == eHexFormatC)
   {
-    errno = 0;
-    fprintf(TargFile, "#ifndef _%s_H\n#define _%s_H\n\n", CTargName, CTargName);
-    ChkIO(TargName);
+    chkio_fprintf(TargFile, TargName, "#ifndef _%s_H\n#define _%s_H\n\n", CTargName, CTargName);
     NumCBlocks = 0;
   }
 
@@ -1289,24 +1265,24 @@ int main(int argc, char **argv)
 
   if ((FormatOccured & eMotoOccured) && (!SepMoto))
   {
-    errno = 0; fprintf(TargFile, "S%c%02X", '9' - MaxMoto, Lo(3 + MaxMoto)); ChkIO(TargName);
+    chkio_fprintf(TargFile, TargName, "S%c%02X", '9' - MaxMoto, Lo(3 + MaxMoto));
     ChkSum = 3 + MaxMoto;
     if (!EntryAdrPresent)
       EntryAdr = 0;
     if (MaxMoto >= 2)
     {
-      errno = 0; fprintf(TargFile, "%02X", Lo(EntryAdr >> 24)); ChkIO(TargName);
+      chkio_fprintf(TargFile, TargName, "%02X", Lo(EntryAdr >> 24));
       ChkSum += (EntryAdr >> 24) & 0xff;
     }
     if (MaxMoto >= 1)
     {
-      errno = 0; fprintf(TargFile, "%02X", Lo(EntryAdr >> 16)); ChkIO(TargName);
+      chkio_fprintf(TargFile, TargName, "%02X", Lo(EntryAdr >> 16));
       ChkSum += (EntryAdr >> 16) & 0xff;
     }
-    errno = 0; fprintf(TargFile, "%04X", LoWord(EntryAdr & 0xffff)); ChkIO(TargName);
+    chkio_fprintf(TargFile, TargName, "%04X", LoWord(EntryAdr & 0xffff));
     ChkSum += (EntryAdr >> 8) & 0xff;
     ChkSum += EntryAdr & 0xff;
-    errno = 0; fprintf(TargFile, "%02X\n", Lo(0xff - (ChkSum & 0xff))); ChkIO(TargName);
+    chkio_fprintf(TargFile, TargName, "%02X\n", Lo(0xff - (ChkSum & 0xff)));
   }
 
   if (FormatOccured & eIntelOccured)
@@ -1318,9 +1294,9 @@ int main(int argc, char **argv)
       switch (MaxIntel)
       {
         case 2:
-          errno = 0; fprintf(TargFile, ":04000005"); ChkIO(TargName);
+          chkio_fprintf(TargFile, TargName, ":04000005");
           ChkSum = 4 + 5;
-          errno = 0; fprintf(TargFile, "%08lX", LoDWord(EntryAdr)); ChkIO(TargName);
+          chkio_fprintf(TargFile, TargName, "%08lX", LoDWord(EntryAdr));
           ChkSum += ((EntryAdr >> 24) & 0xff) +
                     ((EntryAdr >> 16) & 0xff) +
                     ((EntryAdr >>  8) & 0xff) +
@@ -1330,7 +1306,7 @@ int main(int argc, char **argv)
         case 1:
           Seg = (EntryAdr >> 4) & 0xffff;
           Ofs = EntryAdr & 0x000f;
-          errno = 0; fprintf(TargFile, ":04000003%04X%04X", LoWord(Seg), LoWord(Ofs)); ChkIO(TargName);
+          chkio_fprintf(TargFile, TargName, ":04000003%04X%04X", LoWord(Seg), LoWord(Ofs));
           ChkSum = 4 + 3 + Lo(Seg) + Hi(Seg) + Ofs;
           goto WrChkSum;
 
@@ -1339,7 +1315,7 @@ int main(int argc, char **argv)
           break;
 
         WrChkSum:
-          errno = 0; fprintf(TargFile, "%02X\n", Lo(0x100 - ChkSum)); ChkIO(TargName);
+          chkio_fprintf(TargFile, TargName, "%02X\n", Lo(0x100 - ChkSum));
       }
     }
     errno = 0;
@@ -1348,33 +1324,26 @@ int main(int argc, char **argv)
       case 0:
       {
         ChkSum = 1 + Hi(EndRecAddr) + Lo(EndRecAddr);
-        fprintf(TargFile, ":00%04X01%02X\n", LoWord(EndRecAddr), Lo(0x100 - ChkSum));
+        chkio_fprintf(TargFile, TargName, ":00%04X01%02X\n", LoWord(EndRecAddr), Lo(0x100 - ChkSum));
         break;
       }
       case 1:
-        fprintf(TargFile, ":00000001\n");
+        chkio_fprintf(TargFile, TargName, ":00000001\n");
         break;
       case 2:
-        fprintf(TargFile, ":0000000000\n");
+        chkio_fprintf(TargFile, TargName, ":0000000000\n");
         break;
     }
-    ChkIO(TargName);
   }
 
   if (FormatOccured & eMOSOccured)
-  {
-    errno = 0; fprintf(TargFile, ";0000040004\n"); ChkIO(TargName);
-  }
+    chkio_fprintf(TargFile, TargName, ";0000040004\n");
 
   if (FormatOccured & eDSKOccured)
   {
     if (EntryAdrPresent)
-    {
-      errno = 0;
-      fprintf(TargFile, "1%04X7%04XF\n", LoWord(EntryAdr), LoWord(EntryAdr));
-      ChkIO(TargName);
-    }
-    errno = 0; fprintf(TargFile, ":\n"); ChkIO(TargName);
+      chkio_fprintf(TargFile, TargName, "1%04X7%04XF\n", LoWord(EntryAdr), LoWord(EntryAdr));
+    chkio_fprintf(TargFile, TargName, ":\n");
   }
 
   if (DestFormat == eHexFormatC)
@@ -1392,19 +1361,19 @@ int main(int argc, char **argv)
       {
         case 'd':
         case 'D':
-          fprintf(TargFile, "  const char *data;\n"); break;
+          chkio_fprintf(TargFile, TargName, "  const char *data;\n"); break;
         case 's':
-          fprintf(TargFile, "  unsigned start;\n"); break;
+          chkio_fprintf(TargFile, TargName, "  unsigned start;\n"); break;
         case 'S':
-          fprintf(TargFile, "  unsigned long start;\n"); break;
+          chkio_fprintf(TargFile, TargName, "  unsigned long start;\n"); break;
         case 'l':
-          fprintf(TargFile, "  unsigned len;\n"); break;
+          chkio_fprintf(TargFile, TargName, "  unsigned len;\n"); break;
         case 'L':
-          fprintf(TargFile, "  unsigned long len;\n"); break;
+          chkio_fprintf(TargFile, TargName, "  unsigned long len;\n"); break;
         case 'e':
-          fprintf(TargFile, "  unsigned end;\n"); break;
+          chkio_fprintf(TargFile, TargName, "  unsigned end;\n"); break;
         case 'E':
-          fprintf(TargFile, "  unsigned long end;\n"); break;
+          chkio_fprintf(TargFile, TargName, "  unsigned long end;\n"); break;
         default:
           break;
       }
@@ -1416,34 +1385,33 @@ int main(int argc, char **argv)
     for (ThisCBlock = 0; ThisCBlock < NumCBlocks; ThisCBlock++)
     {
       GetCBlockName(CBlockName, sizeof(CBlockName), ThisCBlock);
-      fprintf(TargFile, "  {");
+      chkio_fprintf(TargFile, TargName, "  {");
       for (pFormat = CFormat; *pFormat; pFormat++)
       {
-        fprintf(TargFile, (pFormat != CFormat) ? ", " : " ");
+        chkio_fprintf(TargFile, TargName, (pFormat != CFormat) ? ", " : " ");
         switch (toupper(*pFormat))
         {
-          case 'D': fprintf(TargFile, "%s%s_data", CTargName, CBlockName); break;
-          case 'S': fprintf(TargFile, "%s%s_start", CTargName, CBlockName); break;
-          case 'L': fprintf(TargFile, "%s%s_len", CTargName, CBlockName); break;
-          case 'E': fprintf(TargFile, "%s%s_end", CTargName, CBlockName); break;
+          case 'D': chkio_fprintf(TargFile, TargName, "%s%s_data", CTargName, CBlockName); break;
+          case 'S': chkio_fprintf(TargFile, TargName, "%s%s_start", CTargName, CBlockName); break;
+          case 'L': chkio_fprintf(TargFile, TargName, "%s%s_len", CTargName, CBlockName); break;
+          case 'E': chkio_fprintf(TargFile, TargName, "%s%s_end", CTargName, CBlockName); break;
           default: break;
         }
       }
-      fprintf(TargFile, " },\n");
+      chkio_fprintf(TargFile, TargName, " },\n");
     }
-    fprintf(TargFile, "  {");
+    chkio_fprintf(TargFile, TargName, "  {");
     for (pFormat = CFormat; *pFormat; pFormat++)
-      fprintf(TargFile, (pFormat != CFormat) ? ", 0" : " 0");
-    fprintf(TargFile, " }\n"
+      chkio_fprintf(TargFile, TargName, (pFormat != CFormat) ? ", 0" : " 0");
+    chkio_fprintf(TargFile, TargName, " }\n"
                       "};\n\n");
 
     if (EntryAdrPresent)
-      fprintf(TargFile, "#define %s_entry 0x%08lXul\n\n",
-              CTargName, LoDWord(EntryAdr));
-    fprintf(TargFile,
-            "#endif /* _%s_H */\n",
-            CTargName);
-    ChkIO(TargName);
+      chkio_fprintf(TargFile, TargName, "#define %s_entry 0x%08lXul\n\n",
+                    CTargName, LoDWord(EntryAdr));
+    chkio_fprintf(TargFile, TargName,
+                  "#endif /* _%s_H */\n",
+                  CTargName);
   }
   CloseTarget();
 

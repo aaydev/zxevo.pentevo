@@ -12,6 +12,7 @@
 #include <string.h>
 #include <ctype.h>
 #include <setjmp.h>
+#include <float.h>
 #include <assert.h>
 
 #include "version.h"
@@ -35,6 +36,7 @@
 #include "chunks.h"
 #include "console.h"
 #include "asminclist.h"
+#include "asmitree.h"
 #include "asmfnums.h"
 #include "asmdef.h"
 #include "cpulist.h"
@@ -53,8 +55,10 @@
 #include "asmallg.h"
 #include "onoff_common.h"
 #include "codepseudo.h"
+#include "fwd_refs.h"
 #include "as.h"
 
+#include "codevars.h"
 #include "codenone.h"
 #include "code68k.h"
 #include "code56k.h"
@@ -108,6 +112,7 @@
 #include "code87c800.h"
 #include "code870c.h"
 #include "code47c00.h"
+#include "code42c00.h"
 #include "code97c241.h"
 #include "code9331.h"
 #include "code16c5x.h"
@@ -125,6 +130,7 @@
 #include "code3205x.h"
 #include "code3254x.h"
 #include "code3206x.h"
+#include "code340xx.h"
 #include "code9900.h"
 #include "codetms7.h"
 #include "code370.h"
@@ -137,6 +143,8 @@
 #include "codecop8.h"
 #include "codesc14xxx.h"
 #include "codens32k.h"
+#include "codecr16.h"
+#include "codewe32.h"
 #include "codeace.h"
 #include "codecp3f.h"
 #include "codef8.h"
@@ -150,6 +158,7 @@
 #include "code7720.h"
 #include "code77230.h"
 #include "codev60.h"
+#include "codeuc43.h"
 #include "code53c8xx.h"
 #include "codefmc8.h"
 #include "codefmc16.h"
@@ -171,7 +180,7 @@
 /**          Code21xx};**/
 
 static long StartTime, StopTime;
-static Boolean GlobErrFlag;
+static Boolean GlobErrFlag, ResetLastLabel;
 static unsigned MacroNestLevel = 0;
 
 /*=== Zeilen einlesen ======================================================*/
@@ -259,6 +268,7 @@ static POutputTag GenerateOUTProcessor(SimpProc Processor, tErrorNum OpenErrMsg)
   POut->DoGlobCopy= False;
   POut->UsesNumArgs =
   POut->UsesAllArgs = False;
+  POut->LstMacroExpMod = LstMacroExpModDefault;
   *POut->GName = '\0';
   POut->OpenErrMsg = OpenErrMsg;
 
@@ -275,21 +285,8 @@ static POutputTag GenerateOUTProcessor(SimpProc Processor, tErrorNum OpenErrMsg)
 /* werden gebraucht, um festzustellen, ob innerhalb eines Makrorumpfes weitere
    Makroschachtelungen auftreten */
 
-static Boolean MacroStart(void)
-{
-  return ((Memo("MACRO")) || (Memo("IRP")) || (Memo("IRPC")) || (Memo("REPT")) || (Memo("WHILE")));
-}
-
-static Boolean MacroEnd(void)
-{
-  if (Memo("ENDM"))
-  {
-    WasMACRO = True;
-    return True;
-  }
-  else
-    return False;
-}
+static Boolean MacroStart(void);
+static Boolean MacroEnd(void);
 
 typedef void (*tMacroArgCallback)(Boolean CtrlArg, const tStrComp *pArg, void *pUser);
 
@@ -343,6 +340,51 @@ static void AddWaitENDM_Processor(void)
   Neu = GenerateOUTProcessor(WaitENDM_Processor, ErrNum_OpenMacro);
   Neu->Next = FirstOutputTag;
   FirstOutputTag = Neu;
+}
+
+static Boolean SearchMacroArg(const char *pTest, const char *pComp, Boolean *pErg)
+{
+  if (!as_strcasecmp(pTest, pComp))
+  {
+    *pErg = True;
+    return True;
+  }
+  else if ((strlen(pTest) > 2) && !as_strncasecmp(pTest, "NO", 2) && !as_strcasecmp(pTest + 2, pComp))
+  {
+    *pErg = False;
+    return True;
+  }
+  else
+    return False;
+}
+
+/*!------------------------------------------------------------------------
+ * \fn     SearchLstMacroExpArg(const tStrComp *p_arg, tLstMacroExpMod *p_exp_mod)
+ * \brief  check macro control argument for listing expansion directives
+ * \param  p_arg argument to check
+ * \param  p_exp_mod destination to possibly update
+ * \return True if this was a listing expansion directive
+ * ------------------------------------------------------------------------ */
+
+static Boolean SearchLstMacroExpArg(const tStrComp *p_arg, tLstMacroExpMod *p_exp_mod)
+{
+  tLstMacroExp macro_exp;
+  Boolean do_mac_exp;
+
+  if (SearchMacroArg(p_arg->str.p_str, "EXPAND", &do_mac_exp))
+    macro_exp = eLstMacroExpAll;
+  else if (SearchMacroArg(p_arg->str.p_str, "EXPIF", &do_mac_exp))
+    macro_exp = eLstMacroExpIf;
+  else if (SearchMacroArg(p_arg->str.p_str, "EXPMACRO", &do_mac_exp))
+    macro_exp = eLstMacroExpMacro;
+  else if (SearchMacroArg(p_arg->str.p_str, "EXPREST", &do_mac_exp))
+    macro_exp = eLstMacroExpRest;
+  else
+    return False;
+
+  if (!AddLstMacroExpMod(p_exp_mod, do_mac_exp, macro_exp))
+    WrStrErrorPos(ErrNum_TooManyMacExpMod, p_arg);
+  return True;
 }
 
 /*-------------------------------------------------------------------------*/
@@ -518,7 +560,7 @@ Boolean MACRO_Processor(PInputTag PInp, as_dynstr_t *p_dest)
   /* before the first line, start a new local symbol space */
 
   if ((PInp->LineZ == 1) && (!PInp->GlobalSymbols))
-    PushLocHandle(GetLocHandle());
+    PushLocHandle(PInp->LocHandle);
 
   /* signal the end of the macro */
 
@@ -530,22 +572,6 @@ Boolean MACRO_Processor(PInputTag PInp, as_dynstr_t *p_dest)
 
 /* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 /* Initialisierung des Makro-Einleseprozesses */
-
-static Boolean ReadMacro_SearchArg(const char *pTest, const char *pComp, Boolean *pErg)
-{
-  if (!as_strcasecmp(pTest, pComp))
-  {
-    *pErg = True;
-    return True;
-  }
-  else if ((strlen(pTest) > 2) && (!as_strncasecmp(pTest, "NO", 2)) && (!as_strcasecmp(pTest + 2, pComp)))
-  {
-    *pErg = False;
-    return True;
-  }
-  else
-    return False;
-}
 
 static Boolean ReadMacro_SearchSect(char *Test_O, const char *Comp, Boolean *Erg, LongInt *Section)
 {
@@ -605,35 +631,13 @@ static void ProcessMACROArgs(Boolean CtrlArg, const tStrComp *pArg, void *pUser)
 
   if (CtrlArg)
   {
-    Boolean DoMacExp;
-
-    if (ReadMacro_SearchArg(pArg->str.p_str, "EXPORT", &(pContext->pOutputTag->DoExport)));
-    else if (ReadMacro_SearchArg(pArg->str.p_str, "GLOBALSYMBOLS", &pContext->GlobalSymbols));
-    else if (ReadMacro_SearchArg(pArg->str.p_str, "EXPAND", &DoMacExp))
+    if (SearchMacroArg(pArg->str.p_str, "EXPORT", &(pContext->pOutputTag->DoExport)));
+    else if (SearchMacroArg(pArg->str.p_str, "GLOBALSYMBOLS", &pContext->GlobalSymbols));
+    else if (SearchLstMacroExpArg(pArg, &pContext->LstMacroExpMod))
     {
-      if (!AddLstMacroExpMod(&pContext->LstMacroExpMod, DoMacExp, eLstMacroExpAll))
-        WrStrErrorPos(ErrNum_TooManyMacExpMod, pArg);
       ExpandPList(pContext->PList, pArg->str.p_str, CtrlArg);
     }
-    else if (ReadMacro_SearchArg(pArg->str.p_str, "EXPIF", &DoMacExp))
-    {
-      if (!AddLstMacroExpMod(&pContext->LstMacroExpMod, DoMacExp, eLstMacroExpIf))
-        WrStrErrorPos(ErrNum_TooManyMacExpMod, pArg);
-      ExpandPList(pContext->PList, pArg->str.p_str, CtrlArg);
-    }
-    else if (ReadMacro_SearchArg(pArg->str.p_str, "EXPMACRO", &DoMacExp))
-    {
-      if (!AddLstMacroExpMod(&pContext->LstMacroExpMod, DoMacExp, eLstMacroExpMacro))
-        WrStrErrorPos(ErrNum_TooManyMacExpMod, pArg);
-      ExpandPList(pContext->PList, pArg->str.p_str, CtrlArg);
-    }
-    else if (ReadMacro_SearchArg(pArg->str.p_str, "EXPREST", &DoMacExp))
-    {
-      if (!AddLstMacroExpMod(&pContext->LstMacroExpMod, DoMacExp, eLstMacroExpRest))
-        WrStrErrorPos(ErrNum_TooManyMacExpMod, pArg);
-      ExpandPList(pContext->PList, pArg->str.p_str, CtrlArg);
-    }
-    else if (ReadMacro_SearchArg(pArg->str.p_str, "INTLABEL", &pContext->DoIntLabel))
+    else if (SearchMacroArg(pArg->str.p_str, "INTLABEL", &pContext->DoIntLabel))
     {
       ExpandPList(pContext->PList, pArg->str.p_str, CtrlArg);
     }
@@ -673,7 +677,7 @@ static void ProcessMACROArgs(Boolean CtrlArg, const tStrComp *pArg, void *pUser)
   }
 }
 
-static void ReadMacro(void)
+static void ReadMacro(Word code)
 {
   PSaveSection RunSection;
   PMacroRec OneMacro;
@@ -683,9 +687,10 @@ static void ReadMacro(void)
   tStrComp macro_name;
   const tStrComp *p_macro_name;
 
+  UNUSED(code);
   WasMACRO = True;
 
-  CodeLen = 0;
+  code_len_reset();
   Context.ErrFlag = False;
 
   /* Makronamen pruefen */
@@ -832,7 +837,7 @@ static void MACRO_Restorer(PInputTag PInp)
 /* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 /* Dies initialisiert eine Makroexpansion */
 
-static void ExpandMacro(PMacroRec OneMacro)
+static Boolean ExpandMacro(PMacroRec OneMacro)
 {
   int z1, z2;
   StringRecPtr Lauf, pDefault, pParamName, pArg;
@@ -840,7 +845,7 @@ static void ExpandMacro(PMacroRec OneMacro)
   Boolean NamedArgs;
   char *p;
 
-  CodeLen = 0;
+  code_len_reset();
 
   if ((NestMax > 0) && (OneMacro->UseCounter > NestMax)) WrError(ErrNum_RekMacro);
   else
@@ -855,6 +860,7 @@ static void ExpandMacro(PMacroRec OneMacro)
     Tag->Cleanup   = MACRO_Cleanup;
     Tag->GetPos    = MACRO_GetPos;
     Tag->Macro     = OneMacro;
+    Tag->LocHandle = GetLocHandle();
     Tag->GlobalSymbols = OneMacro->GlobalSymbols;
     Tag->UsesNumArgs = OneMacro->UsesNumArgs;
     Tag->UsesAllArgs = OneMacro->UsesAllArgs;
@@ -993,24 +999,29 @@ static void ExpandMacro(PMacroRec OneMacro)
       Tag->Next = FirstInputTag;
       FirstInputTag = Tag;
       MacroNestLevel++;
+      return True;
     }
     else
     {
       ClearStringList(&(Tag->Params)); free(Tag);
+      return False;
     }
   }
+  else
+    return False;
 }
 
 /*-------------------------------------------------------------------------*/
 /* vorzeitiger Abbruch eines Makros */
 
-static void ExpandEXITM(void)
+static void ExpandEXITM(Word code)
 {
+  UNUSED(code);
   WasMACRO = True;
 
   if (!ChkArgCnt(0, 0));
-  else if (!FirstInputTag) WrError(ErrNum_EXITMOutsideMacro);
-  else if (!FirstInputTag->IsMacro) WrError(ErrNum_EXITMOutsideMacro);
+  else if (!FirstInputTag) WrStrErrorPos(ErrNum_EXITMOutsideMacro, &OpPart);
+  else if (!FirstInputTag->IsMacro) WrStrErrorPos(ErrNum_EXITMOutsideMacro, &OpPart);
   else if (IfAsm)
   {
     FirstInputTag->Cleanup(FirstInputTag);
@@ -1022,10 +1033,11 @@ static void ExpandEXITM(void)
 /*-------------------------------------------------------------------------*/
 /* discard first argument */
 
-static void ExpandSHIFT(void)
+static void ExpandSHIFT(Word code)
 {
   PInputTag RunTag;
 
+  UNUSED(code);
   WasMACRO = True;
 
   if (!ChkArgCnt(0, 0));
@@ -1177,8 +1189,6 @@ static Boolean IRP_GetPos(PInputTag PInp, char *dest, size_t DestSize, Boolean A
 
 static void IRP_OutProcessor(void)
 {
-  POutputTag Tmp;
-
   WasMACRO = True;
 
   /* Schachtelungen mitzaehlen */
@@ -1207,24 +1217,24 @@ static void IRP_OutProcessor(void)
 
   if (FirstOutputTag->NestLevel == -1)
   {
-    Tmp = FirstOutputTag;
+    POutputTag p_this_output_tag = FirstOutputTag;
     FirstOutputTag = FirstOutputTag->Next;
-    Tmp->Tag->IsEmpty = !Tmp->Tag->Lines;
+    p_this_output_tag->Tag->IsEmpty = !p_this_output_tag->Tag->Lines;
     if (IfAsm)
     {
-      NextDoLst = ApplyLstMacroExpMod(DoLst, &LstMacroExpModDefault);
+      NextDoLst = ApplyLstMacroExpMod(DoLst, &p_this_output_tag->LstMacroExpMod);
       NextDoLst = ApplyLstMacroExpMod(NextDoLst, &LstMacroExpModOverride);
-      Tmp->Tag->Next = FirstInputTag;
-      FirstInputTag = Tmp->Tag;
+      p_this_output_tag->Tag->Next = FirstInputTag;
+      FirstInputTag = p_this_output_tag->Tag;
     }
     else
     {
-      ClearStringList(&(Tmp->Tag->Lines));
-      ClearStringList(&(Tmp->Tag->Params));
-      free(Tmp->Tag);
+      ClearStringList(&(p_this_output_tag->Tag->Lines));
+      ClearStringList(&(p_this_output_tag->Tag->Params));
+      free(p_this_output_tag->Tag);
     }
-    ClearStringList(&(Tmp->ParamNames));
-    free(Tmp);
+    ClearStringList(&(p_this_output_tag->ParamNames));
+    free(p_this_output_tag);
   }
 }
 
@@ -1246,7 +1256,8 @@ static void ProcessIRPArgs(Boolean CtrlArg, const tStrComp *pArg, void *pUser)
 
   if (CtrlArg)
   {
-    if (ReadMacro_SearchArg(pArg->str.p_str, "GLOBALSYMBOLS", &pContext->GlobalSymbols));
+    if (SearchMacroArg(pArg->str.p_str, "GLOBALSYMBOLS", &pContext->GlobalSymbols));
+    else if (SearchLstMacroExpArg(pArg, &pContext->pOutputTag->LstMacroExpMod));
     else
     {
       WrStrErrorPos(ErrNum_UnknownMacArg, pArg);
@@ -1277,10 +1288,12 @@ static void ProcessIRPArgs(Boolean CtrlArg, const tStrComp *pArg, void *pUser)
   }
 }
 
-static Boolean ExpandIRP(void)
+static void ExpandIRP(Word code)
 {
   PInputTag Tag;
   tExpandIRPContext Context;
+
+  UNUSED(code);
 
   WasMACRO = True;
 
@@ -1289,7 +1302,8 @@ static Boolean ExpandIRP(void)
   if (!IfAsm)
   {
     AddWaitENDM_Processor();
-    return True;
+    ResetLastLabel = False;
+    return;
   }
 
   /* 1. Parameter pruefen */
@@ -1314,7 +1328,8 @@ static Boolean ExpandIRP(void)
     ClearStringList(&(Context.Params));
     free(Context.pOutputTag);
     AddWaitENDM_Processor();
-    return False;
+    ResetLastLabel = True;
+    return;
   }
 
   /* 2. Tag erzeugen */
@@ -1336,7 +1351,7 @@ static Boolean ExpandIRP(void)
 
   FirstOutputTag = Context.pOutputTag;
 
-  return True;
+  ResetLastLabel = False;
 }
 
 /*--- IRPC: dito fuer Zeichen eines Strings ---------------------------------*/
@@ -1413,7 +1428,8 @@ static void ProcessIRPCArgs(Boolean CtrlArg, const tStrComp *pArg, void *pUser)
 
   if (CtrlArg)
   {
-    if (ReadMacro_SearchArg(pArg->str.p_str, "GLOBALSYMBOLS", &pContext->GlobalSymbols));
+    if (SearchMacroArg(pArg->str.p_str, "GLOBALSYMBOLS", &pContext->GlobalSymbols));
+    else if (SearchLstMacroExpArg(pArg, &pContext->pOutputTag->LstMacroExpMod));
     else
     {
       WrStrErrorPos(ErrNum_UnknownMacArg, pArg);
@@ -1445,11 +1461,12 @@ static void ProcessIRPCArgs(Boolean CtrlArg, const tStrComp *pArg, void *pUser)
   }
 }
 
-static Boolean ExpandIRPC(void)
+static void ExpandIRPC(Word code)
 {
   PInputTag Tag;
   tExpandIRPCContext Context;
 
+  UNUSED(code);
   WasMACRO = True;
 
   /* 0. terminate if conditinal assembly bites */
@@ -1457,7 +1474,8 @@ static Boolean ExpandIRPC(void)
   if (!IfAsm)
   {
     AddWaitENDM_Processor();
-    return True;
+    ResetLastLabel = False;
+    return;
   }
 
   /* 1.Parameter pruefen */
@@ -1480,7 +1498,8 @@ static Boolean ExpandIRPC(void)
   {
     ClearStringList(&(Context.pOutputTag->ParamNames));
     AddWaitENDM_Processor();
-    return False;
+    ResetLastLabel = True;
+    return;
   }
 
   /* 2. Tag erzeugen */
@@ -1502,7 +1521,7 @@ static Boolean ExpandIRPC(void)
   Context.pOutputTag->Tag = Tag;
   FirstOutputTag = Context.pOutputTag;
 
-  return True;
+  ResetLastLabel = False;
 }
 
 /*--- Repetition -----------------------------------------------------------*/
@@ -1571,8 +1590,6 @@ Boolean REPT_Processor(PInputTag PInp, as_dynstr_t *p_dest)
 
 static void REPT_OutProcessor(void)
 {
-  POutputTag Tmp;
-
   WasMACRO = True;
 
   /* Schachtelungen mitzaehlen */
@@ -1594,22 +1611,24 @@ static void REPT_OutProcessor(void)
 
   if (FirstOutputTag->NestLevel == -1)
   {
-    Tmp = FirstOutputTag;
+    POutputTag p_this_output_tag = FirstOutputTag;
+
     FirstOutputTag = FirstOutputTag->Next;
-    Tmp->Tag->IsEmpty = !Tmp->Tag->Lines;
-    if ((IfAsm) && (Tmp->Tag->ParCnt > 0))
+    p_this_output_tag->Tag->IsEmpty = !p_this_output_tag->Tag->Lines;
+    if (IfAsm && (p_this_output_tag->Tag->ParCnt > 0))
     {
-      NextDoLst = ApplyLstMacroExpMod(DoLst, &LstMacroExpModDefault);
+      NextDoLst = ApplyLstMacroExpMod(DoLst, &p_this_output_tag->LstMacroExpMod);
       NextDoLst = ApplyLstMacroExpMod(NextDoLst, &LstMacroExpModOverride);
-      Tmp->Tag->Next = FirstInputTag;
-      FirstInputTag = Tmp->Tag;
+      p_this_output_tag->Tag->Next = FirstInputTag;
+      FirstInputTag = p_this_output_tag->Tag;
+      p_this_output_tag->Tag = NULL;
     }
     else
     {
-      ClearStringList(&(Tmp->Tag->Lines));
-      free(Tmp->Tag);
+      ClearStringList(&(p_this_output_tag->Tag->Lines));
+      free(p_this_output_tag->Tag);
     }
-    free(Tmp);
+    free(p_this_output_tag);
   }
 }
 
@@ -1617,6 +1636,7 @@ typedef struct
 {
   Boolean ErrFlag;
   Boolean GlobalSymbols;
+  tLstMacroExpMod LstMacroExpMod;
   int ArgCnt;
   LongInt ReptCount;
 } tExpandREPTContext;
@@ -1627,7 +1647,8 @@ static void ProcessREPTArgs(Boolean CtrlArg, const tStrComp *pArg, void *pUser)
 
   if (CtrlArg)
   {
-    if (ReadMacro_SearchArg(pArg->str.p_str, "GLOBALSYMBOLS", &pContext->GlobalSymbols));
+    if (SearchMacroArg(pArg->str.p_str, "GLOBALSYMBOLS", &pContext->GlobalSymbols));
+    else if (SearchLstMacroExpArg(pArg, &pContext->LstMacroExpMod));
     else
     {
       WrStrErrorPos(ErrNum_UnknownMacArg, pArg);
@@ -1648,11 +1669,13 @@ static void ProcessREPTArgs(Boolean CtrlArg, const tStrComp *pArg, void *pUser)
   }
 }
 
-static Boolean ExpandREPT(void)
+static void ExpandREPT(Word code)
 {
   PInputTag Tag;
   POutputTag Neu;
   tExpandREPTContext Context;
+
+  UNUSED(code);
 
   WasMACRO = True;
 
@@ -1661,11 +1684,13 @@ static Boolean ExpandREPT(void)
   if (!IfAsm)
   {
     AddWaitENDM_Processor();
-    return True;
+    ResetLastLabel = False;
+    return;
   }
 
   /* 1. Repetitionszahl ermitteln */
 
+  Context.LstMacroExpMod = LstMacroExpModDefault;
   Context.GlobalSymbols = False;
   Context.ReptCount = 0;
   Context.ErrFlag = False;
@@ -1679,7 +1704,8 @@ static Boolean ExpandREPT(void)
   if (Context.ErrFlag)
   {
     AddWaitENDM_Processor();
-    return False;
+    ResetLastLabel = True;
+    return;
   }
 
   /* 2. Tag erzeugen */
@@ -1697,11 +1723,12 @@ static Boolean ExpandREPT(void)
   /* 3. einbetten */
 
   Neu = GenerateOUTProcessor(REPT_OutProcessor, ErrNum_OpenREPT);
+  Neu->LstMacroExpMod = Context.LstMacroExpMod;
   Neu->Next      = FirstOutputTag;
   Neu->Tag       = Tag;
   FirstOutputTag = Neu;
 
-  return True;
+  ResetLastLabel = False;
 }
 
 /*- bedingte Wiederholung -------------------------------------------------------*/
@@ -1789,7 +1816,6 @@ Boolean WHILE_Processor(PInputTag PInp, as_dynstr_t *p_dest)
 
 static void WHILE_OutProcessor(void)
 {
-  POutputTag Tmp;
   Boolean OK;
   tSymbolFlags SymbolFlags;
   LongInt Erg;
@@ -1815,10 +1841,11 @@ static void WHILE_OutProcessor(void)
 
   if (FirstOutputTag->NestLevel == -1)
   {
-    Tmp = FirstOutputTag;
+    POutputTag p_this_output_tag;
+    p_this_output_tag = FirstOutputTag;
     FirstOutputTag = FirstOutputTag->Next;
-    Tmp->Tag->IsEmpty = !Tmp->Tag->Lines;
-    Erg = EvalStrIntExpressionWithFlags(&Tmp->Tag->SpecName, Int32, &OK, &SymbolFlags);
+    p_this_output_tag->Tag->IsEmpty = !p_this_output_tag->Tag->Lines;
+    Erg = EvalStrIntExpressionWithFlags(&p_this_output_tag->Tag->SpecName, Int32, &OK, &SymbolFlags);
     if (mFirstPassUnknown(SymbolFlags))
     {
       WrError(ErrNum_FirstPassCalc);
@@ -1827,17 +1854,17 @@ static void WHILE_OutProcessor(void)
     OK = (OK && (Erg != 0));
     if (IfAsm && OK)
     {
-      NextDoLst = ApplyLstMacroExpMod(DoLst, &LstMacroExpModDefault);
+      NextDoLst = ApplyLstMacroExpMod(DoLst, &p_this_output_tag->LstMacroExpMod);
       NextDoLst = ApplyLstMacroExpMod(NextDoLst, &LstMacroExpModOverride);
-      Tmp->Tag->Next = FirstInputTag;
-      FirstInputTag = Tmp->Tag;
+      p_this_output_tag->Tag->Next = FirstInputTag;
+      FirstInputTag = p_this_output_tag->Tag;
     }
     else
     {
-      ClearStringList(&(Tmp->Tag->Lines));
-      free(Tmp->Tag);
+      ClearStringList(&(p_this_output_tag->Tag->Lines));
+      free(p_this_output_tag->Tag);
     }
-    free(Tmp);
+    free(p_this_output_tag);
   }
 }
 
@@ -1845,6 +1872,7 @@ typedef struct
 {
   Boolean ErrFlag;
   Boolean GlobalSymbols;
+  tLstMacroExpMod LstMacroExpMod;
   int ArgCnt;
   String SpecNameStr;
   tStrComp SpecName;
@@ -1856,7 +1884,8 @@ static void ProcessWHILEArgs(Boolean CtrlArg, const tStrComp *pArg, void *pUser)
 
   if (CtrlArg)
   {
-    if (ReadMacro_SearchArg(pArg->str.p_str, "GLOBALSYMBOLS", &pContext->GlobalSymbols));
+    if (SearchMacroArg(pArg->str.p_str, "GLOBALSYMBOLS", &pContext->GlobalSymbols));
+    else if (SearchLstMacroExpArg(pArg, &pContext->LstMacroExpMod));
     else
     {
       WrStrErrorPos(ErrNum_UnknownMacArg, pArg);
@@ -1870,11 +1899,13 @@ static void ProcessWHILEArgs(Boolean CtrlArg, const tStrComp *pArg, void *pUser)
   }
 }
 
-static Boolean ExpandWHILE(void)
+static void ExpandWHILE(Word code)
 {
   PInputTag Tag;
   POutputTag Neu;
   tExpandWHILEContext Context;
+
+  UNUSED(code);
 
   WasMACRO = True;
 
@@ -1883,11 +1914,13 @@ static Boolean ExpandWHILE(void)
   if (!IfAsm)
   {
     AddWaitENDM_Processor();
-    return True;
+    ResetLastLabel = False;
+    return;
   }
 
   /* 1. Bedingung ermitteln */
 
+  Context.LstMacroExpMod = LstMacroExpModDefault;
   Context.GlobalSymbols = False;
   Context.ErrFlag = False;
   Context.ArgCnt = 0;
@@ -1902,7 +1935,8 @@ static Boolean ExpandWHILE(void)
   if (Context.ErrFlag)
   {
     AddWaitENDM_Processor();
-    return False;
+    ResetLastLabel = True;
+    return;
   }
 
   /* 2. Tag erzeugen */
@@ -1920,11 +1954,62 @@ static Boolean ExpandWHILE(void)
   /* 3. einbetten */
 
   Neu = GenerateOUTProcessor(WHILE_OutProcessor, ErrNum_OpenWHILE);
+  Neu->LstMacroExpMod = Context.LstMacroExpMod;
   Neu->Next      = FirstOutputTag;
   Neu->Tag       = Tag;
   FirstOutputTag = Neu;
 
-  return True;
+  ResetLastLabel = False;
+}
+
+/*!------------------------------------------------------------------------
+ * \fn     MacroStart(void)
+ * \brief  check whether the current instruction will open another macro nesting level
+ * \return True if yes
+ * ------------------------------------------------------------------------ */
+
+static Boolean MacroStart(void)
+{
+  const TInstTableEntry *p_entry =
+    inst_table_search(oppart_leading_dot
+                      ? main_inst_table_leading_dot
+                      : main_inst_table_no_leading_dot,
+                      OpPart.str.p_str);
+
+  return p_entry &&
+         ((p_entry->Procs[0] == ReadMacro)
+       || (p_entry->Procs[0] == ExpandIRP)
+       || (p_entry->Procs[0] == ExpandIRPC)
+       || (p_entry->Procs[0] == ExpandREPT)
+       || (p_entry->Procs[0] == ExpandWHILE));
+}
+
+/*!------------------------------------------------------------------------
+ * \fn     MacroEnd(void)
+ * \brief  check for end of macro body
+ * \return True if yes
+ * ------------------------------------------------------------------------ */
+
+static Boolean MacroEnd(void)
+{
+  if (Memo("ENDM") || (!HasAttrs && Memo(".ENDM")))
+  {
+    WasMACRO = True;
+    return True;
+  }
+  else
+    return False;
+}
+
+/*!------------------------------------------------------------------------
+ * \fn     misplaced_endm(Word code)
+ * \brief  handle misplaced ENDM outside of macro body
+ * ------------------------------------------------------------------------ */
+
+static void misplaced_endm(Word code)
+{
+  UNUSED(code);
+  WrStrErrorPos(ErrNum_ENDMOutsideMacro, &OpPart);
 }
 
 /*--------------------------------------------------------------------------*/
@@ -2010,7 +2095,7 @@ static void INCLUDE_Restorer(PInputTag PInp)
  * \fn     ExpandINCLUDE_Core(const tStrComp *pArg, Boolean SearchPath)
  * \brief  The actual core code to open a source file for assembly
  * \param  pArg file's name to open
- * \param  SearchPath searhc file in include path?
+ * \param  SearchPath search file in include path?
  * ------------------------------------------------------------------------ */
 
 static void ExpandINCLUDE_Core(const tStrComp *pArg, Boolean SearchPath)
@@ -2062,12 +2147,13 @@ static void ExpandINCLUDE_Core(const tStrComp *pArg, Boolean SearchPath)
 }
 
 /*!------------------------------------------------------------------------
- * \fn     ExpandINCLUDE(void)
+ * \fn     ExpandINCLUDE(Word code)
  * \brief  Handle INCLUDE statement
  * ------------------------------------------------------------------------ */
 
-static void ExpandINCLUDE(void)
+static void ExpandINCLUDE(Word code)
 {
+  UNUSED(code);
   if (!IfAsm)
     return;
 
@@ -2289,7 +2375,7 @@ void WriteCode(void)
   if ((ActPC != StructSeg) && (!ChkPC(PCs[ActPC] + CodeLen - 1)) && (CodeLen != 0))
   {
     WrError(ErrNum_AdrOverflow);
-    CodeLen = 0;
+    code_len_reset();
   }
   else
   {
@@ -2303,7 +2389,7 @@ void WriteCode(void)
       if (StructStack->StructRec->IsUnion)
       {
         BumpStructLength(StructStack->StructRec, CodeLen);
-        CodeLen = 0;
+        code_len_reset();
         NewPC = 0;
       }
     }
@@ -2311,9 +2397,12 @@ void WriteCode(void)
     {
       PCsUsed[ActPC] = True;
       if (DontPrint)
+      {
+        flush_bytes();
         NewRecord(PCs[ActPC] + CodeLen);
+      }
       else
-        WriteBytes();
+        as_code_write_bytes(CodeLen);
     }
     PCs[ActPC] = NewPC;
   }
@@ -2323,12 +2412,14 @@ static void Produce_Code(void)
 {
   PMacroRec OneMacro;
   PStructRec OneStruct;
-  Boolean SearchMacros, Found, IsMacro = False, IsStruct = False, ResetLastLabel = True;
+  Boolean SearchMacros, IsMacro = False, IsStruct = False;
   tStrComp non_upper_case_op_part;
   String non_upper_case_op_part_buf;
   const tStrComp *p_search_op_part;
 
+  ResetLastLabel = True;
   ActListGran = ListGran();
+  act_list_gran_bits_unused = list_gran_bits_unused();
   WasIF = WasMACRO = False;
 
   /* Makrosuche unterdruecken ? */
@@ -2365,7 +2456,7 @@ static void Produce_Code(void)
 
   /* otherwise generate code: check for macro/structs here */
 
-  IsMacro = (SearchMacros) && (FoundMacro(&OneMacro, p_search_op_part));
+  IsMacro = SearchMacros && FoundMacro(&OneMacro, p_search_op_part);
   if (IsMacro)
     WasMACRO = True;
   if (!IsMacro)
@@ -2384,67 +2475,10 @@ static void Produce_Code(void)
       LabelHandle(&LabPart, EProgCounter(), False);
   }
 
-  Found = False;
-  switch (*OpPart.str.p_str)
-  {
-    case 'I':
-      /* Makroliste ? */
-      Found = True;
-      if (Memo("IRP")) ResetLastLabel = !ExpandIRP();
-      else if (Memo("IRPC")) ResetLastLabel = !ExpandIRPC();
-      else Found = False;
-      break;
-    case 'R':
-      /* Repetition ? */
-      Found = True;
-      if (Memo("REPT")) ResetLastLabel = !ExpandREPT();
-      else Found = False;
-      break;
-    case 'W':
-      /* bedingte Repetition ? */
-      Found = True;
-      if (Memo("WHILE")) ResetLastLabel = !ExpandWHILE();
-      else Found = False;
-      break;
-  }
-
-  /* bedingte Assemblierung ? */
-
-  if (!Found)
-    WasIF = Found = CodeIFs();
-
-  if (!Found)
-    switch (*OpPart.str.p_str)
-    {
-      case 'M':
-        /* Makrodefinition ? */
-        Found = True;
-        if (Memo("MACRO")) ReadMacro();
-        else Found = False;
-        break;
-      case 'E':
-        /* Abbruch Makroexpansion ? */
-        Found = True;
-        if (Memo("EXITM")) ExpandEXITM();
-        else Found = False;
-        break;
-      case 'S':
-        /* shift macro arguments ? */
-        Found = True;
-        if (memo_shift_pseudo() || (ShiftIsOccupied && Memo("SHFT"))) ExpandSHIFT();
-        else Found = False;
-        break;
-      case 'I':
-        /* Includefile? */
-        Found = True;
-        if (Memo("INCLUDE"))
-          ExpandINCLUDE();
-        else
-          Found = False;
-        break;
-    }
-
-  if (Found);
+  if (LookupInstTable(oppart_leading_dot
+                    ? main_inst_table_leading_dot
+                    : main_inst_table_no_leading_dot,
+                    OpPart.str.p_str));
 
   /* Makroaufruf ? */
 
@@ -2453,11 +2487,13 @@ static void Produce_Code(void)
     ResetLastLabel = False;
     if (IfAsm)
     {
-      ExpandMacro(OneMacro);
+      Boolean expanded = ExpandMacro(OneMacro);
       if ((MacroNestLevel > 1) && (MacroNestLevel < 100))
         as_snprintf(ListLine, STRINGSIZE, "%*s(MACRO-%u)", MacroNestLevel - 1, "", MacroNestLevel);
       else
         strmaxcpy(ListLine, "(MACRO)", STRINGSIZE);
+      if (expanded)
+        as_snprcatf(ListLine, STRINGSIZE, "[%lu]", (unsigned long)(FirstInputTag->LocHandle - LOC_HANDLE_OFFSET));
 
       /* Macro call itself must not appear in expanded output.  However, a label
          in the same line that is not consumed by the macro must.  In this case,
@@ -2471,7 +2507,7 @@ static void Produce_Code(void)
   else
   {
     StopfZahl = 0;
-    CodeLen = 0;
+    code_len_reset();
     DontPrint = False;
 
 #ifdef PROFILE_MEMO
@@ -2493,7 +2529,7 @@ static void Produce_Code(void)
         if (DecodeAttrPart ? DecodeAttrPart() : True)
         {
           if (!CodeGlobalPseudo())
-          MakeCode();
+            MakeCode();
         }
       }
       if (MacProOutput && ((*OpPart.str.p_str != '\0') || (*LabPart.str.p_str != '\0') || (*CommPart.str.p_str != '\0')))
@@ -2523,6 +2559,38 @@ static void Produce_Code(void)
   SetRelocs(NULL);
 }
 
+/*!------------------------------------------------------------------------
+ * \fn     as_rebuild_main_inst_tables(void)
+ * \brief  rebuild the instruction tables holding instructions not overwritable
+ * ------------------------------------------------------------------------ */
+
+void as_rebuild_main_inst_tables(void)
+{
+  DestroyInstTable(main_inst_table_no_leading_dot);
+  DestroyInstTable(main_inst_table_leading_dot);
+
+  main_inst_table_no_leading_dot = CreateInstTable(57);
+  if (HasAttrs)
+    main_inst_table_leading_dot = CreateInstTable(57);
+  else
+    main_inst_table_leading_dot = NULL;
+
+  as_augment_main_inst_tables(".IRP", 0, ExpandIRP, False);
+  as_augment_main_inst_tables(".IRPC", 0, ExpandIRPC, False);
+  as_augment_main_inst_tables(".REPT", 0, ExpandREPT, False);
+  as_augment_main_inst_tables(".WHILE", 0, ExpandWHILE, False);
+
+  as_if_augment_main_inst_tables();
+
+  as_augment_main_inst_tables(".MACRO", 0, ReadMacro, False);
+  as_augment_main_inst_tables(".EXITM", 0, ExpandEXITM, False);
+  as_augment_main_inst_tables(".INCLUDE", 0, ExpandINCLUDE, False);
+  as_augment_main_inst_tables(".SHIFT", 0, ExpandSHIFT, ShiftIsOccupied);
+  as_augment_main_inst_tables(".ENDM", 0, misplaced_endm, False);
+  if (ShiftIsOccupied)
+    as_augment_main_inst_tables(".SHFT", 0, ExpandSHIFT, False);
+}
+
 /*--- Zeile in Listing zerteilen -------------------------------------------*/
 
 static void adjust_copy_comp(tStrComp *p_comp, const char *p_src, size_t newsz)
@@ -2530,6 +2598,46 @@ static void adjust_copy_comp(tStrComp *p_comp, const char *p_src, size_t newsz)
   if (newsz + 1 > p_comp->str.capacity)
     as_dynstr_realloc(&p_comp->str, as_dynstr_roundup_len(newsz));
   p_comp->Pos.Len = strmemcpy(p_comp->str.p_str, p_comp->str.capacity, p_src, newsz);
+}
+
+static void split_arguments(tStrComp *p_args, const char *p_divide_chars)
+{
+  const char *p_div_pos, *p_act_div, *p_act_div_pos, *p_run, *p_end;
+
+  p_run = p_args->str.p_str;
+  p_end = p_run + strlen(p_run);
+  p_act_div_pos = NULL;
+
+  /* A separator found in the previous iteration forces another argument,
+     even if it will be empty because the separator is right at the end: */
+
+  while ((p_run < p_end) || p_act_div_pos)
+  {
+    while (*p_run && as_isspace(*p_run))
+      p_run++;
+#if 0 /* TODO: should work, but doesn't yet */
+    p_div_pos = QuotMultPosFixup(p_run, p_divide_chars, NULL);
+    if (!p_div_pos)
+      p_div_pos = p_end;
+#endif
+    p_div_pos = p_end;
+    for (p_act_div = p_divide_chars; *p_act_div; p_act_div++)
+    {
+      p_act_div_pos = QuotPosQualify(p_run, *p_act_div, QualifyQuote);
+      if (p_act_div_pos && (p_act_div_pos < p_div_pos))
+        p_div_pos = p_act_div_pos;
+    }
+    if (ArgCnt >= ArgCntMax)
+    {
+      WrError(ErrNum_TooManyArgs);
+      break;
+    }
+    AppendArg(p_div_pos - p_run);
+    adjust_copy_comp(&ArgStr[ArgCnt], p_run, p_div_pos - p_run);
+    ArgStr[ArgCnt].Pos.StartCol = p_args->Pos.StartCol + (p_run - p_args->str.p_str);
+    KillPostBlanksStrComp(&ArgStr[ArgCnt]);
+    p_run = (p_div_pos < p_end) ? p_div_pos + 1 : p_end;
+  }
 }
 
 static void SplitLine(void)
@@ -2687,44 +2795,7 @@ again:
   /* Argumente zerteilen: */
 
   if (*ArgPart.str.p_str)
-  {
-    const char *pDivPos, *pActDiv, *pActDivPos;
-
-    pRun = ArgPart.str.p_str;
-    pEnd = pRun + strlen(pRun);
-    pActDivPos = NULL;
-
-    /* A separator found in the previous iteration forces another argument,
-       even if it will be empty because the separator is right at the end: */
-
-    while ((pRun < pEnd) || pActDivPos)
-    {
-      while (*pRun && as_isspace(*pRun))
-        pRun++;
-#if 0 /* TODO: should work, but doesn't yet */
-      pDivPos = QuotMultPosFixup(pRun, DivideChars, NULL);
-      if (!pDivPos)
-        pDivPos = pEnd;
-#endif
-      pDivPos = pEnd;
-      for (pActDiv = DivideChars; *pActDiv; pActDiv++)
-      {
-        pActDivPos = QuotPosQualify(pRun, *pActDiv, QualifyQuote);
-        if (pActDivPos && (pActDivPos < pDivPos))
-          pDivPos = pActDivPos;
-      }
-      if (ArgCnt >= ArgCntMax)
-      {
-        WrError(ErrNum_TooManyArgs);
-        break;
-      }
-      AppendArg(pDivPos - pRun);
-      adjust_copy_comp(&ArgStr[ArgCnt], pRun, pDivPos - pRun);
-      ArgStr[ArgCnt].Pos.StartCol = ArgPart.Pos.StartCol + (pRun - ArgPart.str.p_str);
-      KillPostBlanksStrComp(&ArgStr[ArgCnt]);
-      pRun = (pDivPos < pEnd) ? pDivPos + 1 : pEnd;
-    }
-  }
+    split_arguments(&ArgPart, DivideChars);
 }
 
 /*------------------------------------------------------------------------*/
@@ -2752,7 +2823,7 @@ static void ProcessFile(char *pFileName)
     /* Ergebnisfelder vorinitialisieren */
 
     DontPrint = False;
-    CodeLen = 0;
+    code_len_reset();
     *ListLine = '\0';
 
     NextDoLst = DoLst;
@@ -2770,6 +2841,12 @@ static void ProcessFile(char *pFileName)
     }
 
     MakeList(OneLine.p_str);
+
+    /* Do the transfer of a partial byte in bitwise segment from end to (next)
+       beginning after printing the listing: */
+
+    transfer_partial_byte();
+
     DoLst = NextDoLst;
     IncDepth = NextIncDepth;
     if (MaxIncDepth < IncDepth)
@@ -2863,7 +2940,6 @@ static void AssembleFile_InitPass(void)
   FirstOutputTag = NULL;
 
   MomLocHandle = -1;
-  LocHandleCnt = 0;
   SectSymbolCounter = 0;
 
   SectionStack = NULL;
@@ -2874,8 +2950,7 @@ static void AssembleFile_InitPass(void)
   for (z = 0; z < SegCount; z++)
     pPhaseStacks[z] = NULL;
 
-  InitPass();
-  AsmLabelPassInit();
+  exec_init_pass_fncs();
 
   ActPC = SegCode;
   PCs[ActPC] = 0;
@@ -2916,16 +2991,24 @@ static void AssembleFile_InitPass(void)
   ResetStructDefines();
   strmaxcpy(TmpCompStr, FlagTrueName, sizeof(TmpCompStr)); EnterIntSymbol(&TmpComp, 1, SegNone, True);
   strmaxcpy(TmpCompStr, FlagFalseName, sizeof(TmpCompStr)); EnterIntSymbol(&TmpComp, 0, SegNone, True);
-  strmaxcpy(TmpCompStr, PiName, sizeof(TmpCompStr)); EnterFloatSymbol(&TmpComp, 4.0 * atan(1.0), True);
+  strmaxcpy(TmpCompStr, PiName, sizeof(TmpCompStr)); EnterFloatSymbol(&TmpComp, 4.0 * as_atan(1.0), True);
+
+  /* Valgrind breaks usage of long doubles on x86.  Limit
+     to double if using it: */
+
+  strmaxcpy(TmpCompStr, FloatMaxName, sizeof(TmpCompStr));
+#if defined(IEEEFLOAT_10_16_LONG_DOUBLE) || defined (IEEEFLOAT_10_12_LONG_DOUBLE)
+  if (getenv("VALGRIND") && !strcmp(getenv("VALGRIND"), "1"))
+    EnterFloatSymbol(&TmpComp, DBL_MAX, True);
+  else
+#endif
+    EnterFloatSymbol(&TmpComp, AS_FLOAT_MAX, True);
+
   strmaxcpy(TmpCompStr, VerName, sizeof(TmpCompStr)); EnterIntSymbol(&TmpComp, VerNo, SegNone, True);
   as_snprintf(ArchVal, sizeof(ArchVal), "%s-%s", ARCHPRNAME, ARCHSYSNAME);
   strmaxcpy(TmpCompStr, ArchName, sizeof(TmpCompStr)); EnterStringSymbol(&TmpComp, ArchVal, True);
-  strmaxcpy(TmpCompStr, Has64Name, sizeof(TmpCompStr));
-#ifdef HAS64
-  EnterIntSymbol(&TmpComp, 1, SegNone, True);
-#else
-  EnterIntSymbol(&TmpComp, 0, SegNone, True);
-#endif
+  strmaxcpy(TmpCompStr, IntWidthName, sizeof(TmpCompStr)); EnterIntSymbol(&TmpComp, LARGEBITS, SegNone, True);
+  strmaxcpy(TmpCompStr, Has64Name, sizeof(TmpCompStr)); EnterIntSymbol(&TmpComp, (LARGEBITS >= 64) ? 1 : 0, SegNone, True);
   strmaxcpy(TmpCompStr, CaseSensName, sizeof(TmpCompStr)); EnterIntSymbol(&TmpComp, Ord(CaseSensitive), SegNone, True);
   if (PassNo == 0)
   {
@@ -2960,6 +3043,16 @@ static void AssembleFile_InitPass(void)
   InitLstMacroExpMod(&LstMacroExpModDefault);
   SetFlag(&RelaxedMode, RelaxedName, DefRelaxedMode);
   SetIntConstRelaxedMode(DefRelaxedMode);
+  if (def_int_syntax.p_str && *def_int_syntax.p_str)
+  {
+    tStrComp int_comp;
+
+    LineCompReset(&int_comp.Pos);
+    as_dynstr_ini_clone(&int_comp.str, &def_int_syntax);
+    split_arguments(&int_comp, ",");
+    CodeINTSYNTAX(0);
+    as_dynstr_free(&int_comp.str);
+  }
   strmaxcpy(TmpCompStr, NestMaxName, sizeof(TmpCompStr)); EnterIntSymbol(&TmpComp, NestMax = DEF_NESTMAX, SegNone, True);
   CopyDefSymbols();
 
@@ -2998,7 +3091,7 @@ static void AssembleFile_ExitPass(void)
   UnsetCPU();
   ClearLocStack();
   ClearStacks();
-  AsmErrPassExit();
+  exec_exit_pass_fncs();
   for (z = 0; z < SegCount; z++)
     while (pPhaseStacks[z])
     {
@@ -3157,8 +3250,6 @@ static void AssembleFile(char *Name)
     /* Durchlauf initialisieren */
 
     AssembleFile_InitPass();
-    AsmSubPassInit();
-    AsmErrPassInit();
     if (msg_level >= e_msg_level_normal)
     {
       as_snprintf(Tmp, sizeof(Tmp), "%s", getmessage(Num_InfoMessPass));
@@ -3403,8 +3494,8 @@ static void AssembleFile(char *Name)
               getmessage((PassNo == 1) ? Num_InfoMessPassCnt : Num_InfoMessPPassCnt), STRINGSIZE);
   AssembleFile_WrSummary(s);
 
-  if ((ErrorCount > 0) && (Repass) && (ListMode != 0))
-    WrLstLine(getmessage(Num_InfoMessNoPass));
+  if ((ErrorCount > 0) && Repass)
+    AssembleFile_WrSummary(getmessage(Num_InfoMessNoPass));
 
 #ifdef __TURBOC__
   as_snprintf(s, sizeof(s), "%7lu%s", coreleft() >> 10,
@@ -3598,8 +3689,9 @@ static as_cmd_result_t CMD_ListConsole(Boolean Negate, const char *Arg)
 
 static as_cmd_result_t CMD_ListRadix(Boolean Negate, const char *Arg)
 {
-  Boolean OK, new_zero_pad = False;
+  Boolean new_zero_pad = False;
   LargeWord NewListRadixBase;
+  const char *p_end;
 
   if (Negate)
   {
@@ -3613,8 +3705,10 @@ static as_cmd_result_t CMD_ListRadix(Boolean Negate, const char *Arg)
     new_zero_pad = True;
     Arg++;
   }
-  NewListRadixBase = ConstLongInt(Arg, &OK, 10);
-  if (!OK || (NewListRadixBase < 2) || (NewListRadixBase > 36))
+  if (!*Arg)
+    return e_cmd_err;
+  NewListRadixBase = as_cmd_strtol(Arg, &p_end);
+  if (*p_end || (NewListRadixBase < 2) || (NewListRadixBase > 36))
     return e_cmd_err;
   ListRadixBase = NewListRadixBase;
   ListPCZeroPad = new_zero_pad;
@@ -3623,7 +3717,7 @@ static as_cmd_result_t CMD_ListRadix(Boolean Negate, const char *Arg)
 
 static as_cmd_result_t CMD_screen_height(Boolean negate, const char *p_arg)
 {
-  Boolean ok;
+  const char *p_end;
   int new_screen_height;
 
   if (negate)
@@ -3631,8 +3725,8 @@ static as_cmd_result_t CMD_screen_height(Boolean negate, const char *p_arg)
     screen_height = 0;
     return e_cmd_ok;
   }
-  new_screen_height = ConstLongInt(p_arg, &ok, 10);
-  if (!ok)
+  new_screen_height = as_cmd_strtol(p_arg, &p_end);
+  if (*p_end || (new_screen_height < 0))
     return e_cmd_err;
   screen_height = new_screen_height;
   return e_cmd_arg;
@@ -3743,21 +3837,20 @@ static as_cmd_result_t CMD_CodeOutput(Boolean Negate, const char *Arg)
 
 static as_cmd_result_t CMD_MsgIfRepass(Boolean Negate, const char *Arg)
 {
-  Boolean OK;
-  UNUSED(Arg);
-
   MsgIfRepass = !Negate;
+
   if (MsgIfRepass)
   {
-    if (Arg[0] == '\0')
+    if (!*Arg)
     {
       PassNoForMessage = 1;
       return e_cmd_ok;
     }
     else
     {
-      PassNoForMessage = ConstLongInt(Arg, &OK, 10);
-      if (!OK)
+      const char *p_end;
+      PassNoForMessage = as_cmd_strtol(Arg, &p_end);
+      if (*p_end || (PassNoForMessage < 0))
       {
         PassNoForMessage = 1;
         return e_cmd_ok;
@@ -3778,6 +3871,22 @@ static as_cmd_result_t CMD_Relaxed(Boolean Negate, const char *pArg)
 
   DefRelaxedMode = !Negate;
   return e_cmd_ok;
+}
+
+static as_cmd_result_t cmd_int_syntax(Boolean negate, const char *p_arg)
+{
+  if (negate)
+  {
+    as_dynstr_ini_c_str(&def_int_syntax, "");
+    return e_cmd_ok;
+  }
+  else
+  {
+    as_sdprcatf(&def_int_syntax, "%s%s",
+                "," + !(def_int_syntax.p_str && *def_int_syntax.p_str),
+                p_arg);
+    return e_cmd_arg;
+  }
 }
 
 static as_cmd_result_t CMD_ExtendErrors(Boolean Negate, const char *Arg)
@@ -3851,7 +3960,14 @@ static as_cmd_result_t CMD_GNUErrors(Boolean Negate, const char *Arg)
 {
   UNUSED(Arg);
 
-  GNUErrors  =  !Negate;
+  GNUErrors  = !Negate;
+  return e_cmd_ok;
+}
+
+static as_cmd_result_t CMD_ListMacroHandles(Boolean negate, const char *p_arg)
+{
+  UNUSED(p_arg);
+  list_macro_handles = !negate;
   return e_cmd_ok;
 }
 
@@ -3889,19 +4005,18 @@ static as_cmd_result_t CMD_IncludeList(Boolean Negate, const char *Arg)
 
 static as_cmd_result_t CMD_ListMask(Boolean Negate, const char *Arg)
 {
-  Word erg;
-  Boolean OK;
-
-  if (Arg[0] == '\0')
+  if (!*Arg)
     return e_cmd_err;
   else
   {
-    erg = ConstLongInt(Arg, &OK, 10);
-    if ((!OK) || (erg > 511))
+    const char *p_end;
+    long mask = as_cmd_strtol(Arg, &p_end);
+
+    if (*p_end || (mask < 0) || (mask > 511))
       return e_cmd_err;
     else
     {
-      ListMask = Negate ? (ListMask & ~erg) : (ListMask | erg);
+      ListMask = Negate ? (ListMask & ~mask) : (ListMask | mask);
       return e_cmd_arg;
     }
   }
@@ -4136,24 +4251,22 @@ static as_cmd_result_t CMD_SetCPU(Boolean Negate, const char *Arg)
 
 static as_cmd_result_t CMD_NoICEMask(Boolean Negate, const char *Arg)
 {
-  Word erg;
-  Boolean OK;
-
   if (Negate)
   {
     NoICEMask = 1 << SegCode;
     return e_cmd_ok;
   }
-  else if (Arg[0] == '\0')
+  else if (!*Arg)
     return e_cmd_err;
   else
   {
-    erg = ConstLongInt(Arg, &OK, 10);
-    if (!OK || (erg >= (1 << SegCount)))
+    const char *p_end;
+    long mask = as_cmd_strtol(Arg, &p_end);
+    if (*p_end || (mask < 0) || (mask >= (1 << SegCount)))
       return e_cmd_err;
     else
     {
-      NoICEMask = erg;
+      NoICEMask = mask;
       return e_cmd_arg;
     }
   }
@@ -4166,14 +4279,14 @@ static as_cmd_result_t CMD_MaxErrors(Boolean Negate, const char *Arg)
     MaxErrors = 0;
     return e_cmd_ok;
   }
-  else if (Arg[0] == '\0')
+  else if (!*Arg)
     return e_cmd_err;
   else
   {
-    Boolean OK;
-    LongWord NewMaxErrors = ConstLongInt(Arg, &OK, 10);
+    const char *p_end;
+    long NewMaxErrors = as_cmd_strtol(Arg, &p_end);
 
-    if (!OK)
+    if (*p_end || (NewMaxErrors < 0))
       return e_cmd_err;
     MaxErrors = NewMaxErrors;
     return e_cmd_arg;
@@ -4197,16 +4310,39 @@ static as_cmd_result_t CMD_MaxIncludeLevel(Boolean Negate, const char *pArg)
     MaxErrors = DEFAULT_MAXINCLUDELEVEL;
     return e_cmd_ok;
   }
-  else if (pArg[0] == '\0')
+  else if (!pArg[0])
     return e_cmd_err;
   else
   {
-    Boolean OK;
-    Integer NewMaxIncludeLevel = ConstLongInt(pArg, &OK, 10);
+    const char *p_end;
+    Integer NewMaxIncludeLevel = as_cmd_strtol(pArg, &p_end);
 
-    if (!OK)
+    if (*p_end || (NewMaxIncludeLevel < 0))
       return e_cmd_err;
     MaxIncludeLevel = NewMaxIncludeLevel;
+    return e_cmd_arg;
+  }
+}
+
+#define DEFAULT_MAXSYMPASS 1
+
+static as_cmd_result_t CMD_MaxSymPass(Boolean Negate, const char *pArg)
+{
+  if (Negate)
+  {
+    MaxSymPass = DEFAULT_MAXSYMPASS;
+    return e_cmd_ok;
+  }
+  else if (!pArg[0])
+    return e_cmd_err;
+  else
+  {
+    const char *p_end;
+    Integer NewMaxSymPass = as_cmd_strtol(pArg, &p_end);
+
+    if (*p_end || (NewMaxSymPass < 0))
+      return e_cmd_err;
+    MaxSymPass = NewMaxSymPass;
     return e_cmd_arg;
   }
 }
@@ -4227,6 +4363,7 @@ static const as_cmd_rec_t ASParams[] =
   { "h"             , CMD_HexLowerCase    },
   { "i"             , CMD_IncludeList     },
   { "I"             , CMD_MakeIncludeList },
+  { "intsyntax"     , cmd_int_syntax      },
   { "L"             , CMD_ListFile        },
   { "l"             , CMD_ListConsole     },
   { "listradix"     , CMD_ListRadix       },
@@ -4234,6 +4371,7 @@ static const as_cmd_rec_t ASParams[] =
   { "M"             , CMD_MacroOutput     },
   { "maxerrors"     , CMD_MaxErrors       },
   { "maxinclevel"   , CMD_MaxIncludeLevel },
+  { "maxsympass"    , CMD_MaxSymPass      },
   { "n"             , CMD_NumericErrors   },
   { "noicemask"     , CMD_NoICEMask       },
   { "o"             , CMD_OutFile         },
@@ -4245,6 +4383,7 @@ static const as_cmd_rec_t ASParams[] =
   { "screenheight"  , CMD_screen_height   },
   { "shareout"      , CMD_ShareOutFile    },
   { "olist"         , CMD_ListOutFile     },
+  { "list-macro-handles", CMD_ListMacroHandles },
   { "t"             , CMD_ListMask        },
   { "u"             , CMD_UseList         },
   { "U"             , CMD_CaseSensitive   },
@@ -4319,6 +4458,7 @@ int main(int argc, char **argv)
     cpulist_init();
     asmsub_init();
     asmpars_init();
+    as_forward_ref_init();
     intformat_init();
 
     asmmac_init();
@@ -4328,6 +4468,7 @@ int main(int argc, char **argv)
     asmcode_init();
     asmlabel_init();
     asmdebug_init();
+    asmlist_init();
 
     codeallg_init();
     onoff_common_init();
@@ -4388,6 +4529,7 @@ int main(int argc, char **argv)
     code87c800_init();
     code870c_init();
     code47c00_init();
+    code42c00_init();
     code97c241_init();
     code9331_init();
     code16c5x_init();
@@ -4405,6 +4547,7 @@ int main(int argc, char **argv)
     code3205x_init();
     code32054x_init();
     code3206x_init();
+    code340xx_init();
     code9900_init();
     codetms7_init();
     code370_init();
@@ -4420,6 +4563,7 @@ int main(int argc, char **argv)
     code7720_init();
     code77230_init();
     codev60_init();
+    codeuc43_init();
     codescmp_init();
     codeimp16_init();
     code807x_init();
@@ -4427,6 +4571,8 @@ int main(int argc, char **argv)
     codecop8_init();
     codesc14xxx_init();
     codens32k_init();
+    codecr16_init();
+    codewe32_init();
     codeace_init();
     codecp3f_init();
     codef8_init();
@@ -4488,9 +4634,11 @@ int main(int argc, char **argv)
   MakeSectionList = False;
   MakeIncludeList = False;
   ListMask = 0x1ff;
+  list_macro_handles = False;
   MakeDebug = False;
   ExtendErrors = 0;
   DefRelaxedMode = False;
+  as_dynstr_ini_c_str(&def_int_syntax, "");
   MacroOutput = False;
   MacProOutput = False;
   CodeOutput = True;
@@ -4508,6 +4656,7 @@ int main(int argc, char **argv)
   ListPCZeroPad = False;
   MaxIncludeLevel = DEFAULT_MAXINCLUDELEVEL;
   write_cpu_list_exit = False;
+  MaxSymPass = DEFAULT_MAXSYMPASS;
 
   LineZ = 0;
   screen_height = 0;
@@ -4515,10 +4664,16 @@ int main(int argc, char **argv)
 #if defined(INCDIR)
   CMD_IncludeList(False, INCDIR);
 #endif
-  if (e_cmd_err == as_cmd_process(argc, argv, EnvName, &cmd_results))
+  switch (as_cmd_process(argc, argv, EnvName, &cmd_results))
   {
-    printf("%s%s\n", getmessage(cmd_results.error_arg_in_env ? Num_ErrMsgInvEnvParam : Num_ErrMsgInvParam), cmd_results.error_arg);
-    exit(4);
+    case e_cmd_err:
+      printf("%s%s\n", getmessage(cmd_results.error_arg_in_env ? Num_ErrMsgInvEnvParam : Num_ErrMsgInvParam), cmd_results.error_arg);
+      exit(4);
+    case e_cmd_unknown:
+      printf("%s%s\n", getmessage(cmd_results.error_arg_in_env ? Num_ErrMsgInvEnvOption : Num_ErrMsgInvOption), cmd_results.error_arg);
+      exit(4);
+    default:
+      break;
   }
 
   if ((msg_level >= e_msg_level_verbose) || cmd_results.write_version_exit)
@@ -4560,7 +4715,7 @@ int main(int argc, char **argv)
 
   /* ListRadixBase must have been set */
 
-  asmlist_init();
+  asmlist_setup();
 
   GlobErrFlag = False;
   if (ErrorPath[0] != '\0')

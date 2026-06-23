@@ -1,5 +1,5 @@
 
-; LAST UPDATE: 10.02.2024 savelij
+; LAST UPDATE: 02.06.2025 savelij
 
 ; автоопределение кодировки работает неправильно
 
@@ -19,10 +19,10 @@ DZ		MACRO DEFZ
 
 ; вставка текстовой строки с установкой 7 бита у последнего символа
 DC		MACRO DEFC
-	IF STRLEN(DEFC)>1
+	IF STRLEN(DEFC) > 1
 		DB SUBSTR(DEFC,0,STRLEN(DEFC)-1)
 	ENDIF
-	IF STRLEN(DEFC)>0
+	IF STRLEN(DEFC) > 0
 		DB CHARFROMSTR(DEFC,STRLEN(DEFC)-1)|80H
 	ENDIF
 		ENDM
@@ -38,20 +38,20 @@ $$I := 0
 $$S := 0
 		REPT 9
 $$N := CHARFROMSTR (STR,STRLEN(STR)+$$S-9)
-$$I := ($$I+$$S+$$N+($$N*256))&0XFFFF
+$$I := ($$I+$$S+$$N+($$N*256))&0xFFFF
 $$S := $$S+1
 		ENDM
-$$I := ($$I+$$S+LOW (AA)+(LOW (AA)*0X100))&0XFFFF
+$$I := ($$I+$$S+LOW (AA)+(LOW (AA)*0x100))&0xFFFF
 $$S := $$S+1
-$$I := ($$I+$$S+HIGH (AA)+(HIGH (AA)*0X100))&0XFFFF
+$$I := ($$I+$$S+HIGH (AA)+(HIGH (AA)*0x100))&0xFFFF
 $$S := $$S+1
-$$I := ($$I+$$S+LOW (BB)+(LOW (BB)*0X100))&0XFFFF
+$$I := ($$I+$$S+LOW (BB)+(LOW (BB)*0x100))&0xFFFF
 $$S := $$S+1
-$$I := ($$I+$$S+HIGH (BB)+(HIGH (BB)*0X100))&0XFFFF
+$$I := ($$I+$$S+HIGH (BB)+(HIGH (BB)*0x100))&0xFFFF
 $$S := $$S+1
-$$I := ($$I+$$S+LOW (CC)+(LOW (CC)*0X100))&0XFFFF
+$$I := ($$I+$$S+LOW (CC)+(LOW (CC)*0x100))&0xFFFF
 $$S := $$S+1
-$$I := ($$I+$$S+HIGH (CC)+(HIGH (CC)*0X100))&0XFFFF
+$$I := ($$I+$$S+HIGH (CC)+(HIGH (CC)*0x100))&0xFFFF
 $$S := $$S+1
 		DW $$I
 		ENDM
@@ -74,20 +74,20 @@ $$M		EQU (LEN) # 1024
 		ENDM
 
 ; старший байт слова
-HIGH		FUNCTION X,((X >> 8) & 0XFF)
+HIGH		FUNCTION X,((X >> 8) & 0xFF)
 ; младший байт слова
-LOW		FUNCTION X,(X & 0XFF)
+LOW		FUNCTION X,(X & 0xFF)
 
 ; вызов подпрограммы в другой странице ROM
 ROMCALL		MACRO ADR,PAGE
-		RST 0X30
+		RST 0x30
 		DW ADR
 		DB PAGE
 		ENDM
 
 ; вызов подпрограммы в другой странице RAM
 RAMCALL		MACRO ADR,PAGE
-		RST 0X20
+		RST 0x20
 		DW ADR
 		DB PAGE
 		ENDM
@@ -124,7 +124,7 @@ PEC_ON		MACRO BYTE
 ; сброс бита (битов) в порту 0xBF
 PEC_OFF		MACRO BYTE
 		IN A,(PEVO_CONF)
-		AND BYTE!0XFF
+		AND BYTE!0xFF
 		OUT (PEVO_CONF),A
 		ENDM
 
@@ -235,30 +235,47 @@ QWORD		EQU 8
 
 BITMASK		MACRO NAME,NUM
 B_NAME		EQU NUM
-M_NAME		EQU 1<<NUM
+M_NAME		EQU 1 << NUM
 		ENDM
 
-; генерация метки с резервированием места и размера области
+_BITMASK	MACRO NAME,NUM
+.B_NAME		EQU NUM
+.M_NAME		EQU 1 << NUM
+		ENDM
+; генерация метки с резервированием места и размера области (вверх по памяти)
 SETVAR		MACRO NAME,SIZE
 NAME		EQU INITVAR		; номер имени
 	IFNB SIZE
-INITVAR := INITVAR+SIZE
+INITVAR := INITVAR + SIZE
 NAME_Size	EQU SIZE		; размер
 	ELSE
-INITVAR := INITVAR+BYTE
+INITVAR := INITVAR + BYTE
 NAME_Size	EQU BYTE
 	ENDIF
 NAME_CurAdr	EQU $			; текущий адрес
 		ENDM
 
+; генерация метки с резервированием места и размера области (вниз по памяти)
+MINUSVAR	MACRO NAME,SIZE
+	IFNB SIZE
+INITVAR := INITVAR - SIZE
+NAME_Size	EQU SIZE		; размер
+	ELSE
+INITVAR := INITVAR - BYTE
+NAME_Size	EQU BYTE
+	ENDIF
+NAME_CurAdr	EQU $			; текущий адрес
+NAME		EQU INITVAR		; номер имени
+		ENDM
+
 ; перенос метки назад на указанное число байт
 SUBVAR		MACRO SIZE
-INITVAR := INITVAR-SIZE
+INITVAR := INITVAR - SIZE
 		ENDM
 
 ; перенос метки вперед на указанное число байт
 ADDVAR		MACRO SIZE
-INITVAR := INITVAR+SIZE
+INITVAR := INITVAR + SIZE
 		ENDM
 
 ; инициализация переменной для резервирования указанным числом
@@ -322,17 +339,17 @@ WINHDR		MACRO X,Y,V,H,CWIN,CCUR,FLAGS,NUMPKT,TEKPKT,NUMKOL, \
 		DW TEKPKT,NUMKOL,ADRTXT,ADRPRG,ADRMOUSE,ADRHOTKEY
 		ENDM
 
-; генерация метки с резервированием места и размера области
+; генерация метки с резервированием места и размера области (вверх по памяти)
 _SETVAR		MACRO NAME, SIZE
 NAME		EQU .CURRVAR		; номер имени
 	IFNB SIZE
 .CURRVAR := .CURRVAR + SIZE
-.NAME_Size	EQU SIZE		; размер
+NAME_Size	EQU SIZE		; размер
 	ELSE
 .CURRVAR := .CURRVAR + BYTE
-.NAME_Size	EQU BYTE
+NAME_Size	EQU BYTE
 	ENDIF
-.NAME_CurAdr	EQU $			; текущий адрес
+NAME_CurAdr	EQU $			; текущий адрес
 		ENDM
 
 ; перенос метки назад на указанное число байт
@@ -344,6 +361,20 @@ _SUBVAR		MACRO SIZE
 _ADDVAR		MACRO SIZE
 .CURRVAR := .CURRVAR + SIZE
 		ENDM
+
+; генерация метки с резервированием места и размера области (вниз по памяти)
+_MINUSVAR	MACRO NAME, SIZE
+	IFNB SIZE
+.CURRVAR := .CURRVAR - SIZE
+NAME_Size	EQU SIZE		; размер
+	ELSE
+.CURRVAR := .CURRVAR - BYTE
+NAME_Size	EQU BYTE
+	ENDIF
+NAME_CurAdr	EQU $			; текущий адрес
+NAME		EQU .CURRVAR		; номер имени
+		ENDM
+
 
 ; инициализация переменной для резервирования указанным числом
 ; или 0 при отсуствии второго параметра

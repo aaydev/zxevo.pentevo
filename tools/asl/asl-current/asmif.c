@@ -19,6 +19,8 @@
 #include "asmdef.h"
 #include "asmsub.h"
 #include "asmpars.h"
+#include "asmitree.h"
+#include "codevars.h"
 
 #include "asmif.h"
 
@@ -99,9 +101,11 @@ static void PushIF(LongInt IfExpr)
 }
 
 
-static void CodeIF(void)
+static void CodeIF(Word code)
 {
   LongInt IfExpr;
+
+  UNUSED(code);
 
   ActiveIF = IfAsm;
 
@@ -120,7 +124,6 @@ static void CodeIF(void)
 static void CodeIFDEF(Word Negate)
 {
   LongInt IfExpr;
-  Boolean Defined;
 
   ActiveIF = IfAsm;
 
@@ -129,22 +132,45 @@ static void CodeIFDEF(Word Negate)
     IfExpr = 1;
   else
   {
-    Defined = IsSymbolDefined(&ArgStr[1]);
+    Boolean Defined = IsSymbolDefined(&ArgStr[1]);
     if (IfAsm)
-      strmaxcpy(ListLine, (Defined) ? "=>DEFINED" : "=>UNDEFINED", STRINGSIZE);
-    if (!Negate)
-      IfExpr = (Defined) ? 1 : 0;
-    else
-      IfExpr = (Defined) ? 0 : 1;
+      strmaxcpy(ListLine, Defined ? "=>DEFINED" : "=>UNDEFINED", STRINGSIZE);
+    IfExpr = Negate ^ Defined;
   }
   PushIF(IfExpr);
+}
+
+
+/*!------------------------------------------------------------------------
+ * \fn     code_ifsymexist(Word negate)
+ * \brief  handle IFSYMEXIST/IFSYMNEXIST instructions
+ * \param  negate 1 for IFSYMNEXIST
+ * ------------------------------------------------------------------------ */
+
+static void code_ifsymexist(Word negate)
+{
+  LongInt if_expr;
+
+  ActiveIF = IfAsm;
+
+  if (!IfAsm) if_expr = 1;
+  else if (!ChkArgCnt(1, 1))
+    if_expr = 1;
+  else
+  {
+    Boolean existing = is_symbol_existing(&ArgStr[1]);
+
+    if (IfAsm)
+      strmaxcpy(ListLine, existing ? "=>EXISTING" : "=>NOT EXISTING", STRINGSIZE);
+    if_expr = negate ^ existing;
+  }
+  PushIF(if_expr);
 }
 
 
 static void CodeIFUSED(Word Negate)
 {
   LongInt IfExpr;
-  Boolean Used;
 
   ActiveIF = IfAsm;
 
@@ -154,13 +180,10 @@ static void CodeIFUSED(Word Negate)
     IfExpr = 1;
   else
   {
-    Used = IsSymbolUsed(&ArgStr[1]);
+    Boolean Used = IsSymbolUsed(&ArgStr[1]);
     if (IfAsm)
-      strmaxcpy(ListLine, (Used) ? "=>USED" : "=>UNUSED", STRINGSIZE);
-    if (!Negate)
-      IfExpr = (Used) ? 1 : 0;
-    else
-      IfExpr = (Used) ? 0 : 1;
+      strmaxcpy(ListLine, Used ? "=>USED" : "=>UNUSED", STRINGSIZE);
+    IfExpr = Negate ^ Used;
   }
   PushIF(IfExpr);
 }
@@ -169,8 +192,6 @@ static void CodeIFUSED(Word Negate)
 void CodeIFEXIST(Word Negate)
 {
   LongInt IfExpr;
-  Boolean Found;
-  String NPath;
 
   ActiveIF = IfAsm;
 
@@ -181,6 +202,8 @@ void CodeIFEXIST(Word Negate)
   else
   {
     String FileName, Dummy;
+    Boolean Found;
+    String NPath;
 
     strmaxcpy(FileName, (ArgStr[1].str.p_str[0] == '"') ? ArgStr[1].str.p_str + 1 : ArgStr[1].str.p_str, STRINGSIZE);
     if (FileName[strlen(FileName) - 1] == '"')
@@ -192,7 +215,7 @@ void CodeIFEXIST(Word Negate)
     Found = !FSearch(Dummy, sizeof(Dummy), FileName, CurrFileName, NPath);
     if (IfAsm)
       strmaxcpy(ListLine, Found ? "=>FOUND" : "=>NOT FOUND", STRINGSIZE);
-    IfExpr = Negate ? !Found : Found;
+    IfExpr = Negate ^ Found;
   }
   PushIF(IfExpr);
 }
@@ -200,9 +223,7 @@ void CodeIFEXIST(Word Negate)
 
 static void CodeIFB(Word Negate)
 {
-  Boolean Blank = True;
   LongInt IfExpr;
-  int z;
 
   ActiveIF = IfAsm;
 
@@ -210,20 +231,25 @@ static void CodeIFB(Word Negate)
     IfExpr = 1;
   else
   {
+    Boolean Blank = True;
+    int z;
+
     for (z = 1; z <= ArgCnt; z++)
       if (strlen(ArgStr[z++].str.p_str) > 0)
         Blank = False;
     if (IfAsm)
       strmaxcpy(ListLine, (Blank) ? "=>BLANK" : "=>NOT BLANK", STRINGSIZE);
-    IfExpr = Negate ? !Blank : Blank;
+    IfExpr = Negate ^ Blank;
   }
   PushIF(IfExpr);
 }
 
 
-static void CodeELSEIF(void)
+static void CodeELSEIF(Word code)
 {
   LongInt IfExpr;
+
+  UNUSED(code);
 
   if (!FirstIfSave || (FirstIfSave->State != IfState_IFIF)) WrError(ErrNum_MissingIf);
   else if (ArgCnt == 0)
@@ -253,8 +279,9 @@ static void CodeELSEIF(void)
 }
 
 
-static void CodeENDIF(void)
+static void CodeENDIF(Word code)
 {
+  UNUSED(code);
   if (!ChkArgCnt(0, 0));
   else if (!FirstIfSave || ((FirstIfSave->State != IfState_IFIF) && (FirstIfSave->State != IfState_IFELSE))) WrError(ErrNum_MissingIf);
   else
@@ -284,9 +311,11 @@ static void EvalIfExpression(const tStrComp *pCond, TempResult *erg)
 }
 
 
-static void CodeSWITCH(void)
+static void CodeSWITCH(Word code)
 {
   PIfSave NewSave = ifsave_create(IfState_CASESWITCH, False);
+
+  UNUSED(code);
 
   ActiveIF = IfAsm;
 
@@ -306,10 +335,12 @@ static void CodeSWITCH(void)
 }
 
 
-static void CodeCASE(void)
+static void CodeCASE(Word code)
 {
   Boolean eq;
   int z;
+
+  UNUSED(code);
 
   if (!FirstIfSave) WrError(ErrNum_MissingIf);
   else if (ChkArgCnt(1, ArgCntMax))
@@ -366,8 +397,10 @@ static void CodeCASE(void)
 }
 
 
-static void CodeELSECASE(void)
+static void CodeELSECASE(Word code)
 {
+  UNUSED(code);
+
   if (ChkArgCnt(0, 0))
   {
     if ((FirstIfSave->State != IfState_CASESWITCH) && (FirstIfSave->State != IfState_CASECASE)) WrError(ErrNum_InvIfConst);
@@ -383,8 +416,10 @@ static void CodeELSECASE(void)
 }
 
 
-static void CodeENDCASE(void)
+static void CodeENDCASE(Word code)
 {
+  UNUSED(code);
+
   if (!ChkArgCnt(0, 0));
   else if (!FirstIfSave) WrError(ErrNum_MissingIf);
   else
@@ -408,52 +443,35 @@ static void CodeENDCASE(void)
   ActiveIF = IfAsm;
 }
 
+/*!------------------------------------------------------------------------
+ * \fn     as_if_augment_main_inst_tables(void)
+ * \brief  augment instruction tables by conditional assembly instructions
+ * \param  p_inst_table_no_leading_dot hash table if no leading dot was stripped
+ * \param  p_inst_table_leading_dot hash table if leading dot was stripped
+ * ------------------------------------------------------------------------ */
 
-Boolean CodeIFs(void)
+extern void as_if_augment_main_inst_tables(void)
 {
-  Boolean Result = True;
-
-  ActiveIF = False;
-
-  switch (as_toupper(*OpPart.str.p_str))
-  {
-    case 'I':
-      if (Memo("IF")) CodeIF();
-      else if (Memo("IFDEF")) CodeIFDEF(False);
-      else if (Memo("IFNDEF")) CodeIFDEF(True);
-      else if (Memo("IFUSED")) CodeIFUSED(False);
-      else if (Memo("IFNUSED")) CodeIFUSED(True);
-      else if (Memo("IFEXIST")) CodeIFEXIST(False);
-      else if (Memo("IFNEXIST")) CodeIFEXIST(True);
-      else if (Memo("IFB")) CodeIFB(False);
-      else if (Memo("IFNB")) CodeIFB(True);
-      else Result = False;
-      break;
-    case 'E':
-      if ((Memo("ELSE")) || (Memo("ELSEIF"))) CodeELSEIF();
-      else if (Memo("ENDIF")) CodeENDIF();
-      else if (Memo("ELSECASE")) CodeELSECASE();
-      else if (Memo("ENDCASE")) CodeENDCASE();
-      else Result = False;
-      break;
-    case 'S':
-      if (memo_switch_pseudo()) CodeSWITCH();
-      else if (Memo("SELECT") && SwitchIsOccupied) CodeSWITCH();
-      else Result = False;
-      break;
-    case 'C':
-      if (Memo("CASE")) CodeCASE();
-      else Result = False;
-      break;
-    case '.':
-      if (Memo(".SWITCH")) CodeSWITCH();
-      else Result = False;
-      break;
-    default:
-      Result = False;
-  }
-
-  return Result;
+  as_augment_main_inst_tables(".IF", 0, CodeIF, False);
+  as_augment_main_inst_tables(".IFDEF", False, CodeIFDEF, False);
+  as_augment_main_inst_tables(".IFNDEF", True, CodeIFDEF, False);
+  as_augment_main_inst_tables(".IFSYMEXIST", False, code_ifsymexist, False);
+  as_augment_main_inst_tables(".IFSYMNEXIST", True, code_ifsymexist, False);
+  as_augment_main_inst_tables(".IFUSED", False, CodeIFUSED, False);
+  as_augment_main_inst_tables(".IFNUSED", True, CodeIFUSED, False);
+  as_augment_main_inst_tables(".IFEXIST", False, CodeIFEXIST, False);
+  as_augment_main_inst_tables(".IFNEXIST", True, CodeIFEXIST, False);
+  as_augment_main_inst_tables(".IFB", False, CodeIFB, False);
+  as_augment_main_inst_tables(".IFNB", True, CodeIFB, False);
+  as_augment_main_inst_tables(".ELSE", 0, CodeELSEIF, False);
+  as_augment_main_inst_tables(".ELSEIF", 0, CodeELSEIF, False);
+  as_augment_main_inst_tables(".ENDIF", 0, CodeENDIF, False);
+  as_augment_main_inst_tables(".CASE", 0, CodeCASE, False);
+  as_augment_main_inst_tables(".ELSECASE", 0, CodeELSECASE, False);
+  as_augment_main_inst_tables(".ENDCASE", 0, CodeENDCASE, False);
+  as_augment_main_inst_tables(".SWITCH", 0, CodeSWITCH, SwitchIsOccupied);
+  if (SwitchIsOccupied)
+    as_augment_main_inst_tables(".SELECT", 0, CodeSWITCH, False);
 }
 
 Integer SaveIFs(void)

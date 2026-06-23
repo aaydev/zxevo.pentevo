@@ -23,6 +23,7 @@
 #include "fourpseudo.h"
 #include "codevars.h"
 #include "errmsg.h"
+#include "headids.h"
 
 #include "code17c4x.h"
 
@@ -234,7 +235,7 @@ static void DecodeSFR(Word Code)
 {
   UNUSED(Code);
 
-  CodeEquate(SegData, 0, 0xff);
+  code_equate_type(SegData, UInt8);
 }
 
 static void DecodeDATA_17C4x(Word Code)
@@ -298,6 +299,9 @@ static void AddF(const char *NName, Word NCode)
 static void InitFields(void)
 {
   InstTable = CreateInstTable(203);
+
+  add_null_pseudo(InstTable);
+
   AddInstTable(InstTable, "MOVFP", 0x6000, DecodeMOVFP_MOVPF);
   AddInstTable(InstTable, "MOVPF", 0x4000, DecodeMOVFP_MOVPF);
   AddInstTable(InstTable, "TABLRD", 0xa800, DecodeTABLRD_TABLWT);
@@ -373,14 +377,6 @@ static void DeinitFields(void)
 
 static void MakeCode_17c4x(void)
 {
-  CodeLen = 0;
-  DontPrint = False;
-
-  /* zu ignorierendes */
-
-  if (Memo(""))
-    return;
-
   if (!LookupInstTable(InstTable, OpPart.str.p_str))
     WrStrErrorPos(ErrNum_UnknownInstruction, &OpPart);
 }
@@ -397,11 +393,13 @@ static void SwitchFrom_17c4x(void)
 
 static void SwitchTo_17c4x(void)
 {
+  const TFamilyDescr *p_descr = FindFamilyByName("17C4x");
+
   TurnWords = False;
   SetIntConstMode(eIntConstModeMoto);
 
   PCSymbol = "*";
-  HeaderID = 0x72;
+  HeaderID = p_descr->Id;
   NOPCode = 0x0000;
   DivideChars = ",";
   HasAttrs = False;

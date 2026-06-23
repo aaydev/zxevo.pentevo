@@ -20,8 +20,11 @@
 #include "asmitree.h"
 #include "codevars.h"
 #include "headids.h"
+#include "assume.h"
 
+#include "codepseudo.h"
 #include "motpseudo.h"
+#include "intpseudo.h"
 #include "code6809.h"
 #include "codeko09.h"
 
@@ -750,6 +753,8 @@ static void init_fields(void)
   InstTable = CreateInstTable(207);
   SetDynamicInstTable(InstTable);
 
+  add_null_pseudo(InstTable);
+
   add_reg_16("LEA", 0x08, 1, decode_idx);
   add_reg_stack("PSH", 0x0c, DecodeStack_6809);
   add_reg_stack("PUL", 0x0e, DecodeStack_6809);
@@ -843,7 +848,10 @@ static void init_fields(void)
   AddInstTable(InstTable, "BSETA", 0xcf, decode_bset);
   AddInstTable(InstTable, "BSETD", 0xd0, decode_bset);
 
-  init_moto8_pseudo(InstTable, e_moto_8_be | e_moto_8_db | e_moto_8_dw);
+  add_moto8_pseudo(InstTable, e_moto_pseudo_flags_be);
+  AddMoto16Pseudo(InstTable, e_moto_pseudo_flags_be);
+  AddInstTable(InstTable, "DB", eIntPseudoFlag_BigEndian | eIntPseudoFlag_AllowInt | eIntPseudoFlag_AllowString | eIntPseudoFlag_MotoRep, DecodeIntelDB);
+  AddInstTable(InstTable, "DW", eIntPseudoFlag_BigEndian | eIntPseudoFlag_AllowInt | eIntPseudoFlag_AllowString | eIntPseudoFlag_MotoRep, DecodeIntelDW);
 }
 
 /*!------------------------------------------------------------------------
@@ -881,21 +889,8 @@ static Boolean decode_attr_part_ko09(void)
 
 static void make_code_ko09(void)
 {
-  tSymbolSize op_size;
-
-  CodeLen = 0;
-  DontPrint = False;
-  op_size = (AttrPartOpSize[0] != eSymbolSizeUnknown) ? AttrPartOpSize[0] : eSymbolSize8Bit;
-
-  /* to be ignored */
-
-  if (Memo(""))
-    return;
-
-  /* pseudo instructions */
-
-  if (DecodeMoto16Pseudo(op_size, True))
-    return;
+  if (AttrPartOpSize[0] == eSymbolSizeUnknown)
+    AttrPartOpSize[0] = eSymbolSize8Bit;
 
   if (!LookupInstTable(InstTable, OpPart.str.p_str))
     WrStrErrorPos(ErrNum_UnknownInstruction, &OpPart);
@@ -919,7 +914,7 @@ static Boolean is_def_ko09(void)
 static void switch_to_ko09(void)
 {
   const TFamilyDescr *p_descr = FindFamilyByName("052001");
-  static const ASSUMERec ASSUME09s[] =
+  static const as_assume_rec_t ASSUME09s[] =
   {
     { "DPR", &DPRValue, 0, 0xff, 0x100, NULL }
   };
@@ -946,8 +941,7 @@ static void switch_to_ko09(void)
   init_fields();
   AddMoto16PseudoONOFF(False);
 
-  pASSUMERecs = ASSUME09s;
-  ASSUMERecCnt = as_array_size(ASSUME09s);
+  assume_set(ASSUME09s, as_array_size(ASSUME09s));
 }
 
 /*!------------------------------------------------------------------------

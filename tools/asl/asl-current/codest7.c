@@ -27,6 +27,7 @@
 #include "motpseudo.h"
 #include "codevars.h"
 #include "errmsg.h"
+#include "headids.h"
 
 #include "codest7.h"
 
@@ -191,11 +192,25 @@ static void AddPrefix(Byte Pref)
  * \brief  check whether certain addressing mode is set in mask
  * \param  Mask list of allowed modes
  * \param  Mode addressing mode to check
+ * \return True if allowed
  * ------------------------------------------------------------------------ */
 
 static Boolean ModeInMask(LongWord Mask, tAdrMode Mode)
 {
   return !!((Mask >> Mode) & 1);
+}
+
+/*!------------------------------------------------------------------------
+ * \fn     mode_or_none(LongWord Mask, tAdrMode Mode)
+ * \brief  wrapper to mute addressing mode
+ * \param  Mask list of allowed modes
+ * \param  Mode addressing mode to check
+ * \return mode if allowed or none
+ * ------------------------------------------------------------------------ */
+
+static tAdrMode mode_or_none(LongWord Mask, tAdrMode Mode)
+{
+  return ModeInMask(Mask, Mode) ? Mode : eModNone;
 }
 
 /*!------------------------------------------------------------------------
@@ -230,9 +245,8 @@ static tSymbolSize CutSizeSuffix(const tStrComp *pArg)
 }
 
 /*!------------------------------------------------------------------------
- * \fn     DecideSize(LongWord Mask, const tStrComp *pArg, tAdrMode Mode8, tAdrMode Mode16, tAdrMode Mode24, Byte Part8, Byte Part16, Byte Part24, Boolean IsCode, tAdrVals *pAdrVals)
+ * \fn     DecideSize(const tStrComp *pArg, tAdrMode Mode8, tAdrMode Mode16, tAdrMode Mode24, Byte Part8, Byte Part16, Byte Part24, Boolean IsCode, tAdrVals *pAdrVals)
  * \brief  decide about length of absolute or indexed operand
- * \param  Mask bit mask of allowed modes
  * \param  pArg address argument
  * \param  Mode8 AdrMode for 8-bit address/displacement
  * \param  Mode16 AdrMode for 16-bit address/displacement
@@ -244,20 +258,13 @@ static tSymbolSize CutSizeSuffix(const tStrComp *pArg)
  * \param  pAdrVals destination to fill out
  * ------------------------------------------------------------------------ */
 
-static void DecideSize(LongWord Mask, const tStrComp *pArg, tAdrMode Mode8, tAdrMode Mode16, tAdrMode Mode24, Byte Part8, Byte Part16, Byte Part24, Boolean IsCode, tAdrVals *pAdrVals)
+static void DecideSize(const tStrComp *pArg, tAdrMode Mode8, tAdrMode Mode16, tAdrMode Mode24, Byte Part8, Byte Part16, Byte Part24, Boolean IsCode, tAdrVals *pAdrVals)
 {
   tSymbolSize Size = eSymbolSizeUnknown;
   IntType SizeType;
   LongWord Value;
   Boolean OK;
   tSymbolFlags Flags;
-
-  if ((Mode8 != eModNone) && !ModeInMask(Mask, Mode8))
-    Mode8 = eModNone;
-  if ((Mode16 != eModNone) && !ModeInMask(Mask, Mode16))
-    Mode16 = eModNone;
-  if ((Mode24 != eModNone) && !ModeInMask(Mask, Mode24))
-    Mode24 = eModNone;
 
   Size = CutSizeSuffix(pArg);
   switch (Size)
@@ -349,12 +356,11 @@ static void DecideSize(LongWord Mask, const tStrComp *pArg, tAdrMode Mode8, tAdr
 }
 
 /*!------------------------------------------------------------------------
- * \fn     DecideIndirectSize(LongWord Mask, const tStrComp *pArg,
+ * \fn     DecideIndirectSize(const tStrComp *pArg,
                               tAdrMode Mode8_8, tAdrMode Mode8_16, tAdrMode Mode16_16, tAdrMode Mode16_24,
                               Byte Part8_8, Byte Part8_16, Byte Part16_16, Byte Part16_24,
                               tAdrVals *pAdrVals)
  * \brief  address mode decision for indirect operands []
- * \param  Mask bit mask of allowed modes
  * \param  pArg expression
  * \param  Mode8_8 requested mode for 8-bit pointer on 8-bit address
  * \param  Mode8_16 requested mode for 16-bit pointer on 8-bit address
@@ -368,7 +374,7 @@ static void DecideSize(LongWord Mask, const tStrComp *pArg, tAdrMode Mode8, tAdr
  * \return True if successfully parsed
  * ------------------------------------------------------------------------ */
 
-static Boolean DecideIndirectSize(LongWord Mask, const tStrComp *pArg,
+static Boolean DecideIndirectSize(const tStrComp *pArg,
                                   tAdrMode Mode8_8, tAdrMode Mode8_16, tAdrMode Mode16_16, tAdrMode Mode16_24,
                                   Byte Part8_8, Byte Part8_16, Byte Part16_16, Byte Part16_24,
                                   tAdrVals *pAdrVals)
@@ -380,15 +386,6 @@ static Boolean DecideIndirectSize(LongWord Mask, const tStrComp *pArg,
   IntType SizeType;
   Word Address;
   tSymbolFlags Flags;
-
-  if ((Mode8_8 != eModNone) && !ModeInMask(Mask, Mode8_8))
-    Mode8_8 = eModNone;
-  if ((Mode8_16 != eModNone) && !ModeInMask(Mask, Mode8_16))
-    Mode8_16 = eModNone;
-  if ((Mode16_16 != eModNone) && !ModeInMask(Mask, Mode16_16))
-    Mode16_16 = eModNone;
-  if ((Mode16_24 != eModNone) && !ModeInMask(Mask, Mode16_24))
-    Mode16_24 = eModNone;
 
   /* Cut off address byte size, signified by leading '<' or '>': */
 
@@ -663,7 +660,12 @@ static Boolean DecodeAdr(const tStrComp *pArg, LongWord Mask, Boolean IsCode, tA
 
     StrCompRefRight(&Comp, pArg, 1);
     Comp.str.p_str[ArgLen - 2] = '\0'; Comp.Pos.Len--;
-    OK = DecideIndirectSize(Mask, &Comp, eModIAbs8, eModIAbs16, eModI16Abs16, eModI16Abs24, 0xb, 0xc, 0xc, 0xb, pAdrVals);
+    OK = DecideIndirectSize(&Comp,
+                            mode_or_none(Mask, eModIAbs8),
+                            mode_or_none(Mask, eModIAbs16),
+                            mode_or_none(Mask, eModI16Abs16),
+                            mode_or_none(Mask, eModI16Abs24),
+                            0xb, 0xc, 0xc, 0xb, pAdrVals);
     Comp.str.p_str[ArgLen - 2] = ']';
     if (OK)
       AddPrefix((pAdrVals->Mode == eModI16Abs16) ? 0x72: 0x92);
@@ -731,20 +733,42 @@ static Boolean DecodeAdr(const tStrComp *pArg, LongWord Mask, Boolean IsCode, tA
       StrCompShorten(&Right, 1);
       if (YReg)
       {
-        if (DecideIndirectSize(Mask, &Right, eModIYAbs8, eModIYAbs16, eModNone, eModI16YAbs24, 0xe, 0xd, 0x0, 0xa, pAdrVals))
+        if (DecideIndirectSize(&Right,
+                               mode_or_none(Mask, eModIYAbs8),
+                               mode_or_none(Mask, eModIYAbs16),
+                               eModNone,
+                               mode_or_none(Mask, eModI16YAbs24),
+                               0xe, 0xd, 0x0, 0xa, pAdrVals))
           AddPrefix(0x91);
       }
       else
       {
-        if (DecideIndirectSize(Mask, &Right, eModIXAbs8, eModIXAbs16, eModI16XAbs16, eModI16YAbs24, 0xe, 0xd, 0xd, 0xa, pAdrVals))
+        if (DecideIndirectSize(&Right,
+                               mode_or_none(Mask, eModIXAbs8),
+                               mode_or_none(Mask, eModIXAbs16),
+                               mode_or_none(Mask, eModI16XAbs16),
+                               mode_or_none(Mask, eModI16YAbs24),
+                               0xe, 0xd, 0xd, 0xa, pAdrVals))
           AddPrefix((pAdrVals->Mode == eModI16XAbs16) ? 0x72 : 0x92);
       }
     }
     else
     {
-      if (YReg) DecideSize(Mask, &Left, eModIY8, eModIY16, eModIY24, 0xe, 0xd, 0xa, IsCode, pAdrVals);
-      else if (SPReg) DecideSize(Mask, &Left, eModISP8, eModNone, eModNone, 0x1, 0x0, 0x0, IsCode, pAdrVals);
-      else DecideSize(Mask, &Left, eModIX8, eModIX16, eModIX24, 0xe, 0xd, 0xa, IsCode, pAdrVals);
+      if (YReg) DecideSize(&Left,
+                           mode_or_none(Mask, eModIY8),
+                           mode_or_none(Mask, eModIY16),
+                           mode_or_none(Mask, eModIY24),
+                           0xe, 0xd, 0xa, IsCode, pAdrVals);
+      else if (SPReg) DecideSize(&Left,
+                                 mode_or_none(Mask, eModISP8),
+                                 eModNone,
+                                 eModNone,
+                                 0x1, 0x0, 0x0, IsCode, pAdrVals);
+      else DecideSize(&Left,
+                      mode_or_none(Mask, eModIX8),
+                      mode_or_none(Mask, eModIX16),
+                      mode_or_none(Mask, eModIX24),
+                      0xe, 0xd, 0xa, IsCode, pAdrVals);
       if ((pAdrVals->Mode != eModNone) && YReg) AddPrefix(0x90);
     }
 
@@ -753,7 +777,11 @@ static Boolean DecodeAdr(const tStrComp *pArg, LongWord Mask, Boolean IsCode, tA
 
   /* dann absolut */
 
-  DecideSize(Mask, pArg, eModAbs8, eModAbs16, eModAbs24, 0xb, 0xc, 0xb, IsCode, pAdrVals);
+  DecideSize(pArg,
+             mode_or_none(Mask, eModAbs8),
+             mode_or_none(Mask, eModAbs16),
+             mode_or_none(Mask, eModAbs24),
+             0xb, 0xc, 0xb, IsCode, pAdrVals);
 
 chk:
   return ChkAdrValsMode(pAdrVals, Mask, ErrNum_InvAddrMode, pArg);
@@ -2265,6 +2293,8 @@ static void InitFields(void)
 {
   InstTable = CreateInstTable(201);
   SetDynamicInstTable(InstTable);
+  add_null_pseudo(InstTable);
+
   AddInstTable(InstTable, "LD", 0, DecodeLD);
   AddInstTable(InstTable, "LDF", 0, DecodeLDF);
   AddInstTable(InstTable, "LDW", 0, DecodeLDW);
@@ -2340,7 +2370,8 @@ static void InitFields(void)
   AddRel("JRULT", 0x25);
   AddRel("JRV"  , (pCurrCPUProps->Core == eCoreSTM8) ? 0x29 : 0x00);
 
-  init_moto8_pseudo(InstTable, e_moto_8_be);
+  add_moto8_pseudo(InstTable, e_moto_pseudo_flags_be);
+  AddMoto16Pseudo(InstTable, e_moto_pseudo_flags_be);
 }
 
 /*!------------------------------------------------------------------------
@@ -2370,18 +2401,10 @@ static Boolean DecodeAttrPart_ST7(void)
 
 static void MakeCode_ST7(void)
 {
-  CodeLen = 0;
-  DontPrint = False;
-  OpSize = (AttrPartOpSize[0] != eSymbolSizeUnknown) ? AttrPartOpSize[0] : eSymbolSize8Bit;
+  if (AttrPartOpSize[0] == eSymbolSizeUnknown)
+    AttrPartOpSize[0] = eSymbolSize8Bit;
+  OpSize = AttrPartOpSize[0];
   PrefixCnt = 0;
-
-  /* zu ignorierendes */
-
-  if (Memo("")) return;
-
-  /* Pseudoanweisungen */
-
-  if (DecodeMoto16Pseudo(OpSize,True)) return;
 
   if (!LookupInstTable(InstTable, OpPart.str.p_str))
     WrStrErrorPos(ErrNum_UnknownInstruction, &OpPart);
@@ -2405,13 +2428,18 @@ static Boolean IsDef_ST7(void)
 
 static void SwitchTo_ST7(void *pUser)
 {
+  const TFamilyDescr *p_descr = FindFamilyByName("ST7");
+
   pCurrCPUProps = (const tCPUProps*)pUser;
   TurnWords = False;
   SetIntConstMode(eIntConstModeMoto);
 
-  PCSymbol = "PC"; HeaderID = 0x33; NOPCode = 0x9d;
-  DivideChars = ","; HasAttrs = True; AttrChars = ".";
-
+  PCSymbol = "PC";
+  HeaderID = p_descr->Id;
+  NOPCode = 0x9d;
+  DivideChars = ",";
+  HasAttrs = True;
+  AttrChars = ".";
 
   ValidSegs = 1 << SegCode;
   Grans[SegCode] = 1; ListGrans[SegCode] = 1; SegInits[SegCode] = 0;

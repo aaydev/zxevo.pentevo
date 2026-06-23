@@ -12,6 +12,7 @@
 
 #include <stddef.h>
 #include "datatypes.h"
+#include "striter.h"
 
 struct sLineComp;
 struct sStrComp;
@@ -24,22 +25,23 @@ void
 );
 
 
-extern void AsmSubPassInit(void);
-
-
 extern long GTime(void);
 
 
 extern void UpString(char *s);
 
-extern char *QuotPosQualify(const char *s, char Zeichen, tQualifyQuoteFnc QualifyQuoteFnc);
+extern char *QuotPosQualify(const char *s, char Zeichen, as_qualify_quote_fnc_t QualifyQuoteFnc);
 #define QuotPos(s, Zeichen) QuotPosQualify(s, Zeichen, NULL)
-extern char *QuotMultPosQualify(const char *s, const char *pSearch, tQualifyQuoteFnc QualifyQuoteFnc);
+extern char *QuotMultPosQualify(const char *s, const char *pSearch, as_qualify_quote_fnc_t QualifyQuoteFnc);
 #define QuotMultPos(s, pSearch) QuotMultPosQualify(s, pSearch, NULL)
-extern char *QuotSMultPosQualify(const char *s, const char *pStrs, tQualifyQuoteFnc QualifyQuoteFnc);
+extern char *QuotSMultPosQualify(const char *s, const char *pStrs, as_qualify_quote_fnc_t QualifyQuoteFnc);
 #define QuotSMultPos(s, pStrs) QuotSMultPosQualify(s, pStrs, NULL)
 
 extern char *RQuotPos(char *s, char Zeichen);
+
+extern void KillBlanks(char *s);
+
+extern int CopyNoBlanks(char *pDest, const char *pSrc, size_t MaxLen);
 
 extern char *FirstBlank(const char *s);
 
@@ -49,14 +51,6 @@ extern ShortInt StrCaseCmp(const char *s1, const char *s2, LongInt Hand1, LongIn
 
 extern char *MatchChars(const char *pStr, const char *pPattern, ...);
 extern char *MatchCharsRev(const char *pStr, const char *pPattern, ...);
-
-typedef struct as_quoted_iterator_cb_data
-{
-  const char *p_str;
-  Boolean in_single_quote, in_double_quote;
-} as_quoted_iterator_cb_data_t;
-typedef Boolean (*as_quoted_iterator_cb_t)(const char *p_pos, as_quoted_iterator_cb_data_t *p_cb_data);
-extern void as_iterate_str_quoted(const char *p_str, as_quoted_iterator_cb_t callback, as_quoted_iterator_cb_data_t *p_cb_data);
 
 extern char *FindClosingParenthese(const char *pStr);
 
@@ -73,7 +67,7 @@ static inline Boolean Memo(const char *s)
 #endif
 
 
-extern void AddSuffix(char *s, const char *Suff);
+extern Boolean AddSuffix(char *s, const char *Suff);
 
 extern void KillSuffix(char *s);
 
@@ -82,7 +76,7 @@ extern const char *NamePart(const char *Name);
 extern char *PathPart(char *Name);
 
 
-extern void FloatString(char *pDest, size_t DestSize, Double f);
+extern void FloatString(char *pDest, size_t DestSize, as_float_t f);
 
 struct sTempResult;
 extern void StrSym(const struct sTempResult *t, Boolean WithSystem, struct as_dynstr *p_dest, unsigned Radix);
@@ -109,6 +103,8 @@ extern LargeWord EProgCounter(void);
 extern Word Granularity(void);
 
 extern Word ListGran(void);
+extern Word gran_bits_unused(void);
+extern Word list_gran_bits_unused(void);
 
 extern void ChkSpace(Byte AddrSpace, unsigned AddrSpaceMask);
 
@@ -190,8 +186,11 @@ extern void BookKeeping(void);
 extern long DTime(long t1, long t2);
 
 
-extern void InitPass(void);
+extern void exec_init_pass_fncs(void);
 extern void AddInitPassProc(SimpProc NewProc);
+
+extern void exec_exit_pass_fncs(void);
+extern void add_exit_pass_proc(SimpProc new_proc);
 
 extern void ClearUp(void);
 extern void AddClearUpProc(SimpProc NewProc);

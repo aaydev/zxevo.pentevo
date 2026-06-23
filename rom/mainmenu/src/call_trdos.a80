@@ -1,5 +1,5 @@
 
-; LAST UPDATE: 04.10.2022 savelij
+; LAST UPDATE: 14.02.2025 savelij
 
 		TITLE "call_trdos.a80"
 
@@ -13,7 +13,7 @@
 SEL_FILES_WIN	LD HL,ERS_FLAGS
 		BIT B_VIEW_IMG,(HL)
 		JP Z,RESTART
-		JP FILES_BROWSE
+		JP FILE_BROWSER
 
 VIEW_IMAGE	DI
 		LD BC,ADR_CAT_FAT
@@ -310,7 +310,7 @@ OTF7		LD HL,OUT_NAME_FILE
 
 NO_BAS		LD HL,ERS_FLAGS
 		BIT B_VIEW_IMG,(HL)
-		JP NZ,FILES_BROWSE
+		JP NZ,FILE_BROWSER
 		LD IX,NOBASIC
 	RST8 _WINW
 		JP _RULILKA
@@ -386,7 +386,7 @@ NEXTVIRT	LD HL,MAINLOP
 		LD A,(ERS_FLAGS)
 		AND M_CLOCK_ON
 		RET Z
-		LD H,VIRT_REAL_DRIVE
+		LD H,CMOS.VIRT_REAL_DRIVE
 		CALL READCMOS
 		AND 3				; A = сдвинутый номер виртуального дисковода
 		INC A
@@ -419,7 +419,7 @@ SELDRVPP	LD (DRV_SYM),A			; сохранили новый номер реального дисковода
 		LD A,(ERS_FLAGS)
 		AND M_CLOCK_ON
 		RET Z				; если кмос не найден, выходим
-		LD H,VIRT_REAL_DRIVE
+		LD H,CMOS.VIRT_REAL_DRIVE
 		CALL READCMOS
 		AND %11110011			; сбросили старый номер реального дисковода
 		OR D				; добавили новый номер реального дисковода

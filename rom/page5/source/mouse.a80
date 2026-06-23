@@ -1,14 +1,14 @@
 
-;LAST UPDATE; 03.05.2019 savelij
+; LAST UPDATE: 14.02.2025 savelij
 
-;СОХРАНЕНИЕ КУСКА ЭКРАНА
-SAVE2X2		LD HL,FLAGS
-		BIT B_VIDEO_MODE,(HL)
+; сохранение куска экрана
+SAVE2X2		LD HL,SYSFLAGS
+		BIT SYSFLAGS.B_VIDEO_MODE,(HL)
 		RET NZ
 		LD HL,(ADR_REST)
 		LD DE,MOUSE_BUFF
 		LD B,8
-SAVE2X21	LD A,(HL)
+.L1		LD A,(HL)
 		LD (DE),A
 		INC DE
 		INC L
@@ -17,17 +17,17 @@ SAVE2X21	LD A,(HL)
 		INC DE
 		DEC L
 		CALL INC_H
-		DJNZ SAVE2X21
+		DJNZ .L1
 		RET
 
-;ВОССТАНОВЛЕНИЕ КУСКА ЭКРАНА
-REST2X2		LD HL,FLAGS
-		BIT B_VIDEO_MODE,(HL)
+; восстановление куска экрана
+REST2X2		LD HL,SYSFLAGS
+		BIT SYSFLAGS.B_VIDEO_MODE,(HL)
 		RET NZ
 		LD HL,(ADR_REST)
 		LD DE,MOUSE_BUFF
 		LD B,8
-REST2X21	LD A,(DE)
+.L1		LD A,(DE)
 		LD (HL),A
 		INC DE
 		INC L
@@ -36,108 +36,108 @@ REST2X21	LD A,(DE)
 		INC DE
 		DEC L
 		CALL INC_H
-		DJNZ REST2X21
+		DJNZ .L1
 		RET
 
-DETECTMOUSE	LD HL,FLAGS
-		LD BC,0XFBDF
-		LD E,0X20
+DETECTMOUSE	LD HL,SYSFLAGS
+		LD BC,0xFBDF
+		LD E,0x20
 		EI
 		HALT
-		IN D,(C)			;1.СТАБИЛЬНОСТЬ X
-SETMOU1		IN A,(C)
+		IN D,(C)			; 1.стабильность X
+.L1		IN A,(C)
 		CP D
-		JR NZ,SETMOU2
+		JR NZ,.L2
 		DEC E
-		JR NZ,SETMOU1			;2.KEYS<>X
+		JR NZ,.L1			; 2.keys<>X
 		DEC B
 		IN A,(C)
 		CP D
-		JR Z,SETMOU2			;3.KEYS&7=7(LION17)
+		JR Z,.L2			; 3.keys&7=7(LION17)
 		CPL
 		AND 7
-		SET B_MOUSE_PRESENT,(HL)
+		SET SYSFLAGS.B_MOUSE_PRESENT,(HL)
 		RET Z
-SETMOU2		RES B_MOUSE_PRESENT,(HL)
+.L2		RES SYSFLAGS.B_MOUSE_PRESENT,(HL)
 		SCF
 		RET
 
-MOUSE		LD HL,FLAGS
-		BIT B_VIDEO_MODE,(HL)
+MOUSE		LD HL,SYSFLAGS
+		BIT SYSFLAGS.B_VIDEO_MODE,(HL)
 		RET NZ
 		LD HL,(ARXY)
-		LD DE,(MOUPOS)			;D=Y КООДИНАТА, E=X КООРДИНАТА
-		LD BC,0XFBDF
-		IN A,(C)			;ЧТЕНИЕ КООРДИНАТЫ X
+		LD DE,(MOUPOS)			; D=Y коодината, E=X координата
+		LD BC,MOUSE_X
+		IN A,(C)			; чтение координаты X
 		LD (MOUPOS),A
 		SUB E
 		JR Z,MOUNX
 		JP P,MOUPX
 		ADD A,L
-		JR C,$+3
+		JR C,.L1
 		XOR A
-		LD L,A
+.L1		LD L,A
 		JR MOUNX
 
 MOUPX		ADD A,L
-		JR C,$+6
-		CP 0XF9
-		JR C,$+4
-		LD A,0XF9
-		LD L,A
-MOUNX		LD BC,0XFFDF			;ЧТЕНИЕ КООРДИНАТЫ Y
-		IN A,(C)
+		JR C,.L1
+		CP 0xF9
+		JR C,.L2
+.L1		LD A,0xF9
+.L2		LD L,A
+MOUNX		LD BC,MOUSE_Y
+		IN A,(C)			; чтение координаты Y
 		LD (MOUPOS+1),A
 		SUB D
 		JR Z,MOUNY
 		NEG
 		JP P,MOUPY
 		ADD A,H
-		JR C,$+3
+		JR C,.L1
 		XOR A
-		LD H,A
+.L1		LD H,A
 		JR MOUNY
 
 MOUPY		ADD A,H
-		JR C,$+6
-		CP 0XB8
-		JR C,$+4
-		LD A,0XB8
-		LD H,A
+		JR C,.L1
+		CP 0xB8
+		JR C,.L2
+.L1		LD A,0xB8
+.L2		LD H,A
 MOUNY		LD (ARXY),HL
 		RET
 
-MOUOPT		LD H,(IX+1)
-		LD L,(IX+0)
+MOUOPT		LD H,(IX+_Y_COORD)
+		LD L,(IX+_X_COORD)
 		LD DE,(ARXY)
 		LD B,3
-		SRL D
+.L2		SRL D
 		SRL E
-		DJNZ $-4
+		DJNZ .L2
 		LD A,E
 		CP L
-		RET C				;КУРСОР ЛЕВЕЕ ОКНА
+		RET C				; курсор левее окна
 		LD A,L
-		ADD A,(IX+3)
+		ADD A,(IX+_H_SIZE)
 		DEC A
 		CP E
-		RET C				;КУРСОР ПРАВЕЕ ОКНА
+		RET C				; курсор правее окна
 		LD A,D
 		INC H
 		CP H
-		RET C				;КУРСОР ВЫШЕ ОКНА ИЛИ НА ВЕРХНЕЙ ПОЛОСКЕ
+		RET C				; курсор выше окна или на верхней полоске
 		LD A,H
-		ADD A,(IX+2)
+		ADD A,(IX+_V_SIZE)
 		SUB 3
 		CP D
-		RET C				;КУРСОР НИЖЕ ОКНА ИЛИ НА ПОСЛЕДНЕЙ ПОЛОСКЕ
-;КУРСОР В ПРЕДЕЛАХ РАБОЧЕЙ ОБЛАСТИ
+		RET C				; курсор ниже окна или на последней полоске
+; курсор в пределах рабочей области
 		LD A,(IX+_NUM_KOL_H)
 		AND A
 		JR NZ,.L1		
 		OR (IX+_NUM_KOL_L)
 		JR Z,.L1
-;ПРОВЕРКА ДЛЯ КОЛИЧЕСТВА ПУНКТОВ МЕНЬШЕ ВЫСОТЫ ОКНА - 2
+; проверка для количества пунктов меньше высоты окна - 2
 		PUSH HL
 		LD L,A
 		LD H,(IX+_NUM_KOL_H)
@@ -149,13 +149,12 @@ MOUOPT		LD H,(IX+1)
 		SBC HL,BC
 		POP HL
 		RET C
-
 .L1		LD A,D
 		SUB H
 		LD C,A
-		LD L,(IX+8)
-		LD H,(IX+9)
-		BIT 7,(IX+7)
+		LD L,(IX+_TEK_PKT_L)
+		LD H,(IX+_TEK_PKT_H)
+		BIT B_ADR_PUNKT,(IX+_NUM_PKT)
 		JR Z,MOUOPT1
 		LD B,0
 		LD C,(HL)
@@ -177,12 +176,12 @@ MOUOPT		LD H,(IX+1)
 
 MOUOPT1		LD B,0
 		LD D,B
-		LD E,(IX+7)
+		LD E,(IX+_NUM_PKT)
 		SBC HL,DE
 		ADD HL,BC
-		LD (IX+7),C
-		LD (IX+8),L
-		LD (IX+9),H
+		LD (IX+_NUM_PKT),C
+		LD (IX+_TEK_PKT_L),L
+		LD (IX+_TEK_PKT_H),H
 		JP COLOR_CURSOR
 
 DRAW_MOUSE	LD BC,(ARXY)
@@ -195,7 +194,7 @@ DRAW_MOUSE	LD BC,(ARXY)
 		RRCA
 		RRCA
 		RRCA
-		AND 0X1F
+		AND 0x1F
 		ADD A,(HL)
 		INC HL
 		LD H,(HL)
@@ -205,10 +204,10 @@ DRAW_MOUSE	LD BC,(ARXY)
 		CALL SAVE2X2
 		LD A,(_MORG)
 		INC A
-		LD HL,FLAGS
-		CP 0X0C
+		LD HL,SYSFLAGS
+		CP 0x0C
 		JR NZ,_MORG3
-		LD A,M_CURSOR_NUM
+		LD A,SYSFLAGS.M_CURSOR_NUM
 		XOR (HL)
 		LD (HL),A
 		XOR A
@@ -218,28 +217,28 @@ _MORG3		LD (_MORG),A
 		CPL
 		ADD A,9
 		LD C,A
-		LD A,(FLAGS)
-		AND M_CURSOR_NUM
+		LD A,(SYSFLAGS)
+		AND SYSFLAGS.M_CURSOR_NUM
 		LD HL,SPRAR
 		JR Z,_MORG2
 		LD HL,SPRAR2
 _MORG2		LD B,8
 		POP DE
-PRAR0		PUSH BC
+.L2		PUSH BC
 		LD B,C
 		LD C,(HL)
 		INC HL
 		PUSH HL
 		LD L,(HL)
 		EX DE,HL
-		LD A,0XFF
+		LD A,0xFF
 		LD D,0
-PRAR1		SCF
+.L1		SCF
 		RL C
 		RLA
 		SLA E
 		RL D
-		DJNZ PRAR1
+		DJNZ .L1
 		AND (HL)
 		OR D
 		LD (HL),A
@@ -254,48 +253,48 @@ PRAR1		SCF
 		POP HL
 		INC HL
 		POP BC
-		DJNZ PRAR0
+		DJNZ .L2
 		RET
 
-;МЕСТОПОЛОЖЕНИЕ КУРСОРА
-OPMSPL		LD E,(IX+0X10)
-		LD D,(IX+0X11)
+; местоположение курсора
+OPMSPL		LD E,(IX+_ADR_MOUSE_L)
+		LD D,(IX+_ADR_MOUSE_H)
 		LD A,D
 		OR E
-		RET Z				;АДРЕС ОПИСАТЕЛЕЙ НЕ ЗАДАН
+		RET Z				; адрес описателей не задан
 		PUSH IX
 		PUSH DE
 		POP IX
-		LD HL,(ARXY)			;H=Y, L=X
+		LD HL,(ARXY)			; H=Y, L=X
 		SRL H
 		SRL H
 		SRL H
 		SRL L
 		SRL L
-		SRL L				;HL=HL/8
+		SRL L				; HL=HL/8
 NXTPOS2		LD A,(IX+0)
 		INC A
 		JR Z,ENDWI
 		LD A,L
 		CP (IX+1)
-		JR C,NXTPOS1			;КУРСОР ЛЕВЕЕ
+		JR C,NXTPOS1			; курсор левее
 		LD A,(IX+1)
 		ADD A,(IX+4)
 		DEC A
 		CP L
-		JR C,NXTPOS1			;КУРСОР ПРАВЕЕ
+		JR C,NXTPOS1			; курсор правее
 		LD A,H
 		CP (IX+2)
-		JR C,NXTPOS1			;КУРСОР ВЫШЕ
+		JR C,NXTPOS1			; курсор выше
 		LD A,(IX+2)
 		ADD A,(IX+3)
 		DEC A
 		CP H
-		JR C,NXTPOS1			;КУРСОР НИЖЕ
-		LD A,(IX+5)			;ПОЛУЧИЛИ КОД КНОПКИ  
-ENDWI		POP IX				;ПОПАЛИ В ЗАДАННУЮ ЗОНУ
-		RET				;ВЫХОДИМ
+		JR C,NXTPOS1			; курсор ниже
+		LD A,(IX+5)			; получили код кнопки  
+ENDWI		POP IX				; попали в заданную зону
+		RET				; выходим
 
-NXTPOS1		LD DE,6				;ПОКА НИКУДА НЕ ПОПАЛИ
-		ADD IX,DE			;ПЕРЕХОДИМ К ПРОВЕРКЕ СЛЕДУЩЕГО
+NXTPOS1		LD DE,6				; пока никуда не попали
+		ADD IX,DE			; переходим к проверке следущего
 		JR NXTPOS2

@@ -1,5 +1,8 @@
+# SPDX-License-Identifier: GPL-2.0-only OR GPL-3.0-only
+
 NULL=
 BLANK=$(NULL) $(NULL)
+DEPEXTENSION = .d
 
 # These may be overwritten in Makefile.def:
 
@@ -11,6 +14,7 @@ TARG_EOBJ=$(EOBJ)
 CURRDIR=./
 LIBM=-lm
 CHECK_TARG_CC=check_targ_cc_unix
+MAKEDEFS_RC=makedefs.nul
 
 # assure binaries are the default target
 
@@ -31,6 +35,12 @@ include makedefs.mi
 ALLFLAGS = $(TARG_CFLAGS) -I$(TARG_OBJDIR)./ $(MSX_FLAGS) -DINCDIR=\"$(INCDIR)\"
 
 include makedefs.files
+
+# $(MAKEDEFS_RC) may have been overridden in Makefile.def.
+# It must be included after $(ASLTARGET) and others were defined,
+# but before $(AS_RC_OBJECTS) and others are used:
+
+include $(MAKEDEFS_RC)
 
 #---------------------------------------------------------------------------
 # Primary Targets
@@ -121,7 +131,7 @@ clean_doc: clean_doc_DE clean_doc_EN
 clean: clean_doc
 	if test "$(HOST_OBJEXTENSION)" != ""; then $(RM) *$(HOST_OBJEXTENSION) $(OBJDIR)*$(HOST_OBJEXTENSION); fi
 	if test "$(TARG_OBJEXTENSION)" != ""; then $(RM) *$(TARG_OBJEXTENSION) $(TARG_OBJDIR)*$(TARG_OBJEXTENSION); fi
-	$(RM) $(ALLTARGETS) $(HOSTTARGETS) $(OBJDIR)*.dep $(TARG_OBJDIR)*.dep *.p $(TARG_OBJDIR)*.msg *.rsc $(TARG_OBJDIR)*.msh $(TARG_OBJDIR)*.rsc tests/testlog testlog
+	$(RM) $(ALLTARGETS) $(HOSTTARGETS) $(OBJDIR)*$(DEPEXTENSION) $(TARG_OBJDIR)*$(DEPEXTENSION) *.p $(TARG_OBJDIR)*.msg *.rsc $(TARG_OBJDIR)*.msh $(TARG_OBJDIR)*.rsc tests/testlog testlog
 
 #---------------------------------------------------------------------------
 # Create Distributions
@@ -139,7 +149,7 @@ distdir: all $(UNUMLAUTTARGET)
 	@if test "$(VERSION)" = ""; then echo "VERSION is not set - please specify VERSION=... as argument"; exit 1; fi; exit 0
 	mkdir asl-$(VERSION)
 	chmod 755 asl-$(VERSION)
-	OBJDIR=$(OBJDIR) TARG_OBJDIR=$(TARG_OBJDIR) TARG_EXEXTENSION=$(TARG_EXEXTENSION) ./install.sh asl-$(VERSION)/bin asl-$(VERSION)/include asl-$(VERSION)/man asl-$(VERSION)/lib asl-$(VERSION)/doc
+	OBJDIR=$(OBJDIR) TARG_OBJDIR=$(TARG_OBJDIR) TARG_EXEXTENSION=$(TARG_EXEXTENSION) INSTROOT=asl-$(VERSION)/ ./install.sh bin include man lib doc
 
 win32-distdir: all $(UNUMLAUTTARGET)
 	rm -rf as

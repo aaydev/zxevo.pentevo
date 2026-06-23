@@ -23,6 +23,7 @@
 #include "tipseudo.h"
 #include "be_le.h"
 #include "errmsg.h"
+#include "headids.h"
 
 #include "code3202x.h"
 
@@ -472,7 +473,7 @@ static void DecodePORT(Word Code)
 {
   UNUSED(Code);
 
-  CodeEquate(SegIO, 0, 15);
+  code_equate_type(SegIO, UInt4);
 }
 
 /* ---------------------------------------------------------------------- */
@@ -531,6 +532,9 @@ static void AddAdrMode(const char *NName, Word NMode)
 static void InitFields(void)
 {
   InstTable = CreateInstTable(307);
+
+  add_null_pseudo(InstTable);
+
   AddInstTable(InstTable, "CNFD", 0, DecodeCNFD);
   AddInstTable(InstTable, "CNFP", 0, DecodeCNFP);
   AddInstTable(InstTable, "CONF", 0, DecodeCONF);
@@ -631,6 +635,8 @@ static void InitFields(void)
   AddAdrMode( "*AR0-",  0xd0 ); AddAdrMode( "*0+",    0xe0 );
   AddAdrMode( "*AR0+",  0xe0 ); AddAdrMode( "*BR0+",  0xf0 );
   AddAdrMode( "*",      0x80 ); AddAdrMode( NULL,     0);
+
+  add_ti_pseudo(InstTable);
 }
 
 static void DeinitFields(void)
@@ -648,17 +654,9 @@ static void DeinitFields(void)
 
 static void MakeCode_3202x(void)
 {
-  CodeLen = 0;
-  DontPrint = False;
-
-  /* zu ignorierendes */
-
-  if (Memo(""))
-    return;
-
   /* Pseudoanweisungen */
 
-  if (DecodeTIPseudo())
+  if (decode_ti_qxx())
     return;
 
   if (!LookupInstTable(InstTable, OpPart.str.p_str))
@@ -683,11 +681,13 @@ static void SwitchFrom_3202x(void)
 
 static void SwitchTo_3202x(void)
 {
+  const TFamilyDescr *p_descr = FindFamilyByName("TMS3202x");
+
   TurnWords = False;
   SetIntConstMode(eIntConstModeIntel);
 
   PCSymbol = "$";
-  HeaderID = 0x75;
+  HeaderID = p_descr->Id;
   NOPCode = 0x5500;
   DivideChars = ",";
   HasAttrs = False;

@@ -1,87 +1,83 @@
 
-; LAST UPDATE: 14.10.2023 savelij
+; LAST UPDATE: 16.02.2025 savelij
 
 PAGE	
 	TITLE "rst8service.a80 ROM_RST83"
 
-		include ../../macros.a80
-		include ../../define.a80
-		include ../../global_vars.a80
-		include ../../ports_ide.a80
-		include ../../ports_ngs.a80
-		include ../../sdcomand.a80
-
- INIT_VAR BUF_TEKVOL
-		include ../../fat_vars.a80
-
-		include ../../bootsecfat.a80
-		include ../../evodos_vars.a80
-		include ../../tmpkeys.a80
-		include ../../nums_devices.a80
-		include ../../version.a80
-		include ../../cmd_cdhdd.a80
-		include ../../fat_dir.a80
+		include macros.a80
+		include define.a80
+		include global_vars.a80
+		include ports_ide.a80
+		include ports_ngs.a80
+		include sdcomand.a80
+		include bootsecfat.a80
+		include evodos_vars.a80
+		include tmpkeys.a80
+		include nums_devices.a80
+		include version.a80
+		include cmd_cdhdd.a80
+		include fat_dir.a80
 		include fat/sl811_equ.a80
 		include struct_mount.a80
+FATVAR
+ _INIT_VAR BUF_CURRFATVAR
+		include fat_vars.a80
 
 USB_ENABLE	EQU 0
-
-CPU5		EQU CPU1
-CPU6		EQU CPU2
-WIN_A5		EQU WIN_A1
-WIN_A6		EQU WIN_A2
-WIN_P5		EQU WIN_P1
-WIN_P6		EQU WIN_P2
 
 _CMP_FONT	EQU 0
 TXTMODE_DEBUG	EQU 0
 
-H_FILES		EQU 60
-V_FILES		EQU 25
+TXT
+.H_FILES	EQU 60
+.V_FILES	EQU 25
+ZX
+.H_FILES	EQU 32
+.V_FILES	EQU 24
 
 MAGIC_COLOR	EQU BLUE << 3 + WHITE + BR_INK
 
 	PHASE 0
 		JP $				; 0000
 
-		DUPL 0x0008-$,0xFF
+		DB 0x0008-$ DUP 0xFF
 		JP $				; 0008
 
-		DUPL 0x0010-$,0xFF
+		DB 0x0010-$ DUP 0xFF
 		JP $				; 0010
 
-		DUPL ADR_SEL_ROM-$,0xFF
+		DB ADR_SEL_ROM-$ DUP 0xFF
 		OUT (C),A			; 0014
 		NOP
 		RET
 
-		DUPL 0x0018-$,0xFF
+		DB 0x0018-$ DUP 0xFF
 		JP $				; 0018
 
-		DUPL 0x001C-$,0xFF
+		DB 0x001C-$ DUP 0xFF
 		JP RST8_DOS
 
-		DUPL 0x0020-$,0xFF
+		DB 0x0020-$ DUP 0xFF
 		JP CALL2RAMPAGE			; 0020
 
-		DUPL 0x0024-$,0xFF
+		DB 0x0024-$ DUP 0xFF
 		JP RST8PAGE0			; 0024
 
-		DUPL 0x0028-$,0xFF
+		DB 0x0028-$ DUP 0xFF
 		JP $				; 0028
 
-		DUPL CONT_RST8-$,0xFF		; 002C
+		DB CONT_RST8-$ DUP 0xFF		; 002C
 		JP NEXT_RST8
 
 ; переход в страницу 4 с возвратом
-		DUPL 0x0030-$,0xFF
+		DB 0x0030-$ DUP 0xFF
 		JP CALL2PAGE			; 0030
 
 ; продолжение обработки нажатия MAGIC
-		DUPL CONTINUE_MAGIC-$,0xFF	; 0034
+		DB CONTINUE_MAGIC-$ DUP 0xFF	; 0034
 		JP CONT_MAGIC
 
-		DUPL 0x0038-$,0xFF		; 0038
+		DB 0x0038-$ DUP 0xFF		; 0038
 ;		PUSH HL				; 11
 ;		LD HL,(ADR_INT)			; 16
 ;		EX (SP),HL			; 19
@@ -90,7 +86,7 @@ MAGIC_COLOR	EQU BLUE << 3 + WHITE + BR_INK
 		EI				; 4
 		RET				; 10=14
 
-		DUPL 0x003E-$,0xFF
+		DB 0x003E-$ DUP 0xFF
 		EI
 		RET
 
@@ -111,16 +107,16 @@ ERST8_DOS	LD BC,WIN_A0
 		JP ADR_SEL_ROM
 
 ; обработчик MAGIC
-		DUPL 0x0066-$,0xFF
+		DB 0x0066-$ DUP 0xFF
 		NOP
 CONT_MAGIC	NOP
 		DI
 		LD HL,N_77
 		CALL CONVERT_BPORT
 		CALL STORE_AY			; сохранение состояния регистров и заглушение AY
-		LD A,(CPU6+DEBUG_ONOFF)
-		BIT B_TRACE_DBG,A
-		JP NZ,DEBUGGER			; если активен отладчик, то переход на его запуск
+		LD A,(CPU2 + DEBUG_ONOFF)
+		BIT DEBUGGER.B_TRACE,A
+		JP NZ,NMI_DEBUG			; если активен отладчик, то переход на его запуск
 		LD A,(N_BF)
 		AND M_BREAK_BF
 		JP Z,CONT_MAGIC2
@@ -133,7 +129,6 @@ CONT_MAGIC	NOP
 		JP NC,CONT_MAGIC2
 		CP 0x67
 		JP C,CONT_MAGIC2
-
 		CALL MAINPAGE3_TAP
 		LD HL,(NREG_IXL)
 		LD (RREG_IXL),HL
@@ -152,7 +147,7 @@ CONT_MAGIC	NOP
 		LD (NREG_F),HL
 		JP CONTMAGIC3
 
-		DUPL 0x00FF-$,0xFF
+		DB 0x00FF - $ DUP 0xFF
 		DW 0x0038
 
 ; таблица переходов для RST 8
@@ -170,8 +165,8 @@ CODE_TABL	DW AY_PRN_INIT_			; 40
 		DW SET_MODE_			; 4B
 		DW MATH				; 4C
 		DW VERSION_			; 4D
-		DW RESERVED			; 4E
-		DW RESERVED			; 4F
+		DW EXT_FILE_BROWSER_		; 4E
+		DW NMI_FB_BLOCK_		; 4F
 		DW COM_DEV			; 50
 		DW COM_FAT			; 51
 		DW SORT_FINDFILES		; 52
@@ -186,7 +181,6 @@ ECODE_TABL
 
 ; вход в основное меню MAGIC если не перехвачено отладчиком
 CONT_MAGIC2	LD BC,CONF_128
-;		LD A,(N_7FFD)
 	READ_7FFD
 		AND M_ZX_SCREEN ! 0xFF
 		OUT (C),A			; включение отображения экрана 0
@@ -205,10 +199,64 @@ CONT_MAGIC2	LD BC,CONF_128
 	ENDIF
 ;==========времянка
 	ROMCALL MAGIC_FONT,ROM_RST82		; установка временного шрифта для MAGIC режима
-CONT_MAGIC1	LD A,(CPU6+DEBUG_ONOFF)
-		BIT B_DBG_ACTIV,A
-		JP NZ,DEBUGGER			; если активен отладчик, то переход на его запуск
-		JP RESTART_NMI
+		LD A,(CPU2 + DEBUG_ONOFF)
+		BIT DEBUGGER.B_ACTIV,A
+		JP NZ,NMI_DEBUG			; если активен отладчик, то переход на его запуск
+	ROMCALL STORE_FATVARS,ROM_RST82		; сохранили переменные FAT внешнего софта
+RESTART_NMI
+	ROMCALL CLS_TXTMODE8,ROM_RST82		; очистка текстмодного экрана
+	EVOPORT WIN_A1,ROM_RST83		; включение этой страницы ROM в 1 окно проецирования
+		LD HL,CPU1 + TEXT_PORTREGS
+	ROMCALL PRTT_MSG,ROM_RST82		; печать текста
+		LD A,(SYSFLAGS)
+		AND SYSFLAGS.M_NMI_FB_BLOCK
+		JR Z,.L3
+		LD HL,CPU1 + TXT_FB_BLOCKED
+	ROMCALL PRTT_MSG,ROM_RST82		; печать текста
+.L3
+	ROMCALL PRT_PORTREGS,ROM_RST82		; печать содержимого портов считанной конфигурации
+;==========времянка
+	IF _CMP_FONT=1
+		LD HL,CPU1 + TXT_VERIFY_FONT
+	ROMCALL PRTT_MSG,ROM_RST82		; печать текста о проверке шрифта
+		LD A,(CMP_FONT_FLAG)
+		RRA
+		LD HL,CPU1 + TXT_VERIFY_OK	; текст если все совпало
+		JR NC,.L1
+		LD HL,CPU1 + TXT_VERIFY_ERR	; текст если не совпало
+.L1
+	ROMCALL PRTT_MSG,ROM_RST82		; печать об ошибке
+	ENDIF
+;==========времянка
+	EVOPORT WIN_A1,ROM_RST81		; включение дополнений в 1 окно проецирования
+		LD IX,MAIN_MENU
+	ROMCALL SETUP4SEL,ROM_RST82
+	ROMCALL INT_TXT_WINDOW,ROM_RST82	; вывод окна на текстмодный экран
+	ROMCALL ITSELECTOR,ROM_RST82
+; восстановление буферов FAT внешнего софта
+		AND A
+		JP Z,.L2
+		DEC A
+		JP Z,RESTART_NMI		; нажат BREAK, перезапускаемся
+		DEC A
+		JP Z,CONTMAGIC3
+; выход из MAGIC
+.L2		XOR A
+		IN A,(0xFE)
+		CPL
+		AND 0x1F
+		JR NZ,.L2			; ждем отпускания кнопок клавиатуры
+	ROMCALL RESTORE_TXTMODE,ROM_RST82	; восстановление текстмодного экрана
+	ROMCALL RESTORE_FONT,ROM_RST82		; восстановление шрифта
+	ROMCALL RESTORE_PAL,ROM_RST82		; восстановление палитры
+CONTMAGIC3
+;		CALL RESTORE_AY			; восстановление рагистров AY
+	ROMCALL RESTORE_FATVARS,ROM_RST82	; восстановили переменные FAT внешнего софта
+		LD BC,EXITNMISERVICE
+		PUSH BC
+		LD BC,WIN_P0
+		XOR A
+		JP ADR_SEL_ROM
 
 VERSION_	LD HL,VERSBIN >> 16
 		LD (RREG_C),HL
@@ -230,6 +278,18 @@ VERSION_	LD HL,VERSBIN >> 16
 .L1		LD A,L
 		LD (RREG_A),A			; выставили в A что получилось
 		OUT (C),H			; восстановили текщее значение порта
+		RET
+
+NMI_FB_BLOCK_	LD A,(RREG_A)
+		LD HL,SYSFLAGS
+		RES SYSFLAGS.B_NMI_FB_BLOCK,(HL)
+		AND A
+		RET Z
+		SET SYSFLAGS.B_NMI_FB_BLOCK,(HL)
+		RET
+
+EXT_FILE_BROWSER_
+	ROMCALL EXT_FILE_BROWSER,ROM_RST82
 		RET
 
 SETUP_FONT_
@@ -269,7 +329,7 @@ TAPE_EMUL_
 		RET
 
 WINW_
-		ROMCALL WINW,ROM_RST82
+	ROMCALL EXT_ZX_WINDOW,ROM_RST82
 		RET
 
 PRINT_MESSAGE_
@@ -310,7 +370,6 @@ ERST8PAGE0	LD BC,WIN_A0
 		JP ADR_SEL_ROM
 
 SELECT_MAPPER	
-;		LD A,(R_7FFD)
 	READ_7FFD
 		AND 0x10
 		RET NZ
@@ -318,52 +377,6 @@ SELECT_MAPPER
 		ADD A,L
 		LD L,A
 		RET
-
-RESTART_NMI
-	ROMCALL CLS_TXTMODE8,ROM_RST82		; очистка текстмодного экрана
-	EVOPORT WIN_A5,ROM_RST83		; включение этой страницы ROM во 2 окно проецирования
-		LD HL,CPU5+TEXT_PORTREGS
-	ROMCALL PRTT_MSG,ROM_RST82		; печать текста
-	ROMCALL PRT_PORTREGS,ROM_RST82		; печать содержимого портов считанной конфигурации
-;==========времянка
-	IF _CMP_FONT=1
-		LD HL,CPU5+TXT_VERIFY_FONT
-	ROMCALL PRTT_MSG,ROM_RST82		; печать текста о проверке шрифта
-		LD A,(CMP_FONT_FLAG)
-		RRA
-		LD HL,CPU5+TXT_VERIFY_OK	; текст если все совпало
-		JR NC,CONTMAGIC3_
-		LD HL,CPU5+TXT_VERIFY_ERR	; текст если не совпало
-CONTMAGIC3_
-	ROMCALL PRTT_MSG,ROM_RST82		; печать об ошибке
-	ENDIF
-;==========времянка
-	EVOPORT WIN_A5,ROM_RST81		; включение дополнений в 1 окно проецирования
-		LD IX,MAIN_MENU
-	ROMCALL SETUP4SEL,ROM_RST82
-	ROMCALL ITWINW,ROM_RST82		; вывод окна на текстмодный экран
-	ROMCALL ITSELECTOR,ROM_RST82
-		AND A
-		JR Z,CONTMAGIC2
-		DEC A
-		JR Z,RESTART_NMI
-		DEC A
-		JR Z,CONTMAGIC3
-CONTMAGIC2	XOR A
-		IN A,(0xFE)
-		CPL
-		AND 0x1F
-		JR NZ,CONTMAGIC2		; ждем отпускания кнопок клавиатуры
-	ROMCALL RESTORE_TXTMODE,ROM_RST82	; восстановление текстмодного экрана
-	ROMCALL RESTORE_FONT,ROM_RST82		; восстановление шрифта
-	ROMCALL RESTORE_PAL,ROM_RST82		; восстановление палитры
-CONTMAGIC3
-;		CALL RESTORE_AY			; восстановление рагистров AY
-		LD BC,EXITNMISERVICE
-		PUSH BC
-		LD BC,WIN_P0
-		XOR A
-		JP ADR_SEL_ROM
 
 ; продолжение обработки RST8
 NEXT_RST8	LD HL,EXIT_RST8
@@ -400,16 +413,14 @@ NEXT_RST2	LD (PAGE4READ),A
 ; переконфигурация окон проецирования
 ; страница переменных в окно 1, основная память в зависимости от адреса в окна 2 и 3
 RESETUP_WINS	EXX
-		LD BC,WIN_P5
-		XOR A
-		OUT (C),A			; страница переменных в окно 1
+	EVOPORT WIN_P1,RAM_NMI			; страница переменных в окно 1
 		LD HL,CPU3
 		ADD HL,SP
 		LD SP,HL			; стек тоже в окно 1
-		LD HL,B1_CPU0-CPU5		; для 0 маппера
+		LD HL,B1_CPU0-CPU1		; для 0 маппера
 		CALL SELECT_MAPPER
 RESETUPWINS1	EXX
-		LD BC,CPU6			; адрес чтения/записи на 0x8000 выше
+		LD BC,CPU2			; адрес чтения/записи на 0x8000 выше
 		LD A,H				; проверка старшего байта адреса
 		EXX
 		CP 0x40
@@ -417,7 +428,7 @@ RESETUPWINS1	EXX
 		INC HL
 		INC HL
 		EXX
-		LD BC,CPU5			; адрес чтения/записи на 0x4000 выше
+		LD BC,CPU1			; адрес чтения/записи на 0x4000 выше
 		EXX
 		CP 0x80
 		JR C,RESETUPWINS2		; установка для окон 1,2
@@ -433,13 +444,13 @@ RESETUPWINS1	EXX
 		EXX
 		LD BC,CPU3			; адрес чтения/записи на 0x4000 ниже
 		EXX
-		LD B,HIGH (WIN_A6)		; старший байт адреса порта окна 2
+		LD B,HIGH (WIN_A2)		; старший байт адреса порта окна 2
 		CALL RESETUPWINS4
 		LD DE,0xFFF8
 		ADD HL,DE			; адрес где конфиг страниц основной памяти лежит
 		JR RESETUPWINS5
 
-RESETUPWINS2	LD B,HIGH (WIN_A6)		; старший байт адреса порта окна 2
+RESETUPWINS2	LD B,HIGH (WIN_A2)		; старший байт адреса порта окна 2
 		CALL RESETUPWINS4
 RESETUPWINS5	LD B,HIGH (WIN_A3)		; старший байт адреса порта окна 3
 		CALL RESETUPWINS4
@@ -475,8 +486,8 @@ P5_READ_BYTE	PUSH HL
 READ_CPU0_01	LD D,(HL)			; байт для записи в порт
 		INC HL
 		LD A,(HL)			; старший байт адреса порта нужной страницы
-		AND HIGH (WIN_A5)
-		OR HIGH (WIN_P5)		; преобразовали старший байт адреса для включения в 1 окне
+		AND HIGH (WIN_A1)
+		OR HIGH (WIN_P1)		; преобразовали старший байт адреса для включения в 1 окне
 		LD B,A
 		LD C,LOW (WIN_A0)		; BC = адрес порта
 		LD A,(R_77)
@@ -487,7 +498,7 @@ READ_CPU0_01	LD D,(HL)			; байт для записи в порт
 READ_CPU0_02	LD A,D
 		AND E
 		OUT (C),A			; включаем пагу BASIC или DOS
-		LD DE,CPU5			; смещение до 1 окна проецирования
+		LD DE,CPU1			; смещение до 1 окна проецирования
 		LD HL,(RADRRET_L)		; адрес откуда читать
 		ADD HL,DE			; читать через 1 окно проецирования
 		LD A,(HL)			; прочитали байт
@@ -511,16 +522,16 @@ READBYTE_01	LD A,(RADRRET_H)		; старший байт адреса откуда читать
 		LD D,(HL)			; байт для записи в порт
 		INC HL
 		LD A,(HL)
-		AND HIGH (WIN_A5)
-		OR HIGH (WIN_P5)
+		AND HIGH (WIN_A1)
+		OR HIGH (WIN_P1)
 		LD B,A
-		LD C,LOW (WIN_A5)		; BC = адрес порта для 1 окна проецирования
+		LD C,LOW (WIN_A1)		; BC = адрес порта для 1 окна проецирования
 		LD HL,(RADRRET_L)		; адрес откуда читать
 		OUT (C),D			; включили страницу для чтения байта
 		LD E,L				; младший байт адреса чтения
 		LD A,H
-		AND HIGH (WIN_A5)
-		OR HIGH (CPU5)
+		AND HIGH (WIN_A1)
+		OR HIGH (CPU1)
 		LD D,A				; старший байт адреса чтения
 		LD A,(DE)			; прочитали байт
 		INC HL				; увеличили адрес возврата
@@ -633,11 +644,11 @@ CONVERT_BPORT	LD A,(HL)
 		LD A,C				; конвертить 8 байт
 		ADD HL,BC
 		LD BC,B0_CPU0
-		LD IYL,HIGH (WIN_A3)&0xF8
-CBPORT03	EX AF,AF'
+		LD IYL,HIGH (WIN_A3) & 0xF8
+.L3		EX AF,AF'
 		LD A,(HL)
 		CP 0xC0
-		JR NC,CBPORT01
+		JR NC,.L1
 ; если число менее, то восстанавливать в порты x7F7
 		LD (BC),A			; номер страницы для записи в порт при восстановлении
 		INC BC
@@ -649,10 +660,10 @@ CBPORT03	EX AF,AF'
 		SRL D
 		LD (BC),A			; старший байт адреса порта
 		INC BC
-		JR CBPORT02
+		JR .L2
 
 ; если число больше, то восстанавливать в порты xFF7
-CBPORT01	LD A,(HL)
+.L1		LD A,(HL)
 		RLCA
 		RLCA
 		SRL D
@@ -666,10 +677,10 @@ CBPORT01	LD A,(HL)
 		LD IYL,A
 		LD (BC),A			; старший байт адреса порта
 		INC BC
-CBPORT02	DEC HL
+.L2		DEC HL
 		EX AF,AF'
 		DEC A
-		JR NZ,CBPORT03
+		JR NZ,.L3
 		POP HL
 		LD L,0xBC
 		LD A,H
@@ -751,9 +762,6 @@ STORE_AY	LD BC,0xFFFD
 ;		JP P,.L2
 ;		RET
 
-SYMS4SORT	DB ".!#$%&'()-0123456789@ABCDEFGHIJKLMNOPQRSTUVWXYZ^_`{}~",0x7F
-		DB "АБВГДЕЖЗИЙКЛМНОПРСТУФХЦЧШЩЪЫЬЭЮЯЁ",0
-
 X_OFFSET	EQU 63
 Y_OFFSET	EQU 2
 TEXT_PORTREGS	DB 0x17,MAGIC_COLOR
@@ -777,11 +785,13 @@ TEXT_PORTREGS	DB 0x17,MAGIC_COLOR
 		DB 0x16,Y_OFFSET+0x14,X_OFFSET+0," DOS:   1F:"
 		DB 0x16,Y_OFFSET+0x15,X_OFFSET+0,"BREAK: "
 		DB 0x16,Y_OFFSET+0x16,X_OFFSET+0,"TURBO: "
-		DB 0x16,1,0x10,0x17,0x32," EVO Magic Service beta ",0
+		DB 0x16,1,0x10,0x17,%00110010," EVO Magic Service v"
+		DB VERSBIOS,"beta ",0
 
-TXT_VERIFY_FONT	DB 0x16,0x18,0,0x17,0x22,"  VERIFY READING FONT ",0
-TXT_VERIFY_OK	DB " OK    ",0
-TXT_VERIFY_ERR	DB "ERROR  ",0
+TXT_VERIFY_FONT	DB "\x16\x18\x00\x17\x22  VERIFY READING FONT ",0
+TXT_VERIFY_OK	DZ " OK    "
+TXT_VERIFY_ERR	DZ "ERROR  "
+TXT_FB_BLOCKED	DZ "\x16\x17\x08\x17\xBA  File Browser is blocked  "
 
 ; проверка считанного фонта
 	IF _CMP_FONT=1
@@ -789,42 +799,42 @@ CMP_FONT	LD H,CMOS_BYTE_00
 	ROMCALL READCMOS,ROM_RST82
 		AND M_TYPE_FONT
 		LD HL,CP866_FONT
-		JR NZ,CMPFONT1
+		JR NZ,.L1
 		LD HL,ATM_FONT
-CMPFONT1	LD DE,CPU1+OFFSET_BUFSYM
+.L1		LD DE,CPU1 + OFFSET_BUFSYM
 		PUSH DE
 	ROMCALL UNPACK,ROM_RST80
 		POP DE
 		INC D
 		LD BC,0x700
-		LD HL,CPU1+OFFSET_FNTSAVE+0x100
-CMPFONT2	LD A,(DE)
+		LD HL,CPU1 + OFFSET_FNTSAVE + 0x100
+.L2		LD A,(DE)
 		INC DE
 		CP (HL)
 		SCF
 		RET NZ
 		CPI
-		JP PE,CMPFONT2
+		JP PE,.L2
 		XOR A
 		RET
 	ENDIF
 
-CMP_SCRMODE	LD HL,FLAGS
-		RES B_VIDEO_MODE,(HL)
+CMP_SCRMODE	LD HL,SYSFLAGS
+		RES SYSFLAGS.B_VIDEO_MODE,(HL)
 		AND 7
 		CP 3
 		RET Z
-		SET B_VIDEO_MODE,(HL)
+		SET SYSFLAGS.B_VIDEO_MODE,(HL)
 		RET
 
-SD_CARD_LOST	LD HL,FLAGS_DRV
+SD_CARD_LOST	LD HL,DEVMAN_VARS.FLAGS_DRV
 		LD A,B_NEW_SD
 		OR (HL)
 		LD (HL),A
 	PEC_ON M_SHADOW_BF
 		CALL MAIN_MEM13
 		LD IX,SDCARD_LOST
-	ROMCALL IWINW,ROM_RST82
+	ROMCALL INT_ZX_WINDOW,ROM_RST82
 		JR $
 
 		include math.a80
@@ -832,7 +842,7 @@ SD_CARD_LOST	LD HL,FLAGS_DRV
 
 FREE_MAIN	EQU 0x3FF6-$
 
-		DUPL FREE_MAIN,0xFF
+		DB FREE_MAIN DUP 0xFF
 		DW FREE_MAIN			; размер свободного места
 		DB "RST_08"
 		DW DATA_VERS

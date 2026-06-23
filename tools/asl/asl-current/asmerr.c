@@ -25,6 +25,7 @@
 #include "as.rsc"
 #include "ioerrs.h"
 #include "cmdarg.h"
+#include "asmallg.h"
 #include "asmerr.h"
 
 typedef struct sExpectError
@@ -37,7 +38,12 @@ Word ErrorCount, WarnCount;
 static tExpectError *pExpectErrors = NULL;
 static Boolean InExpect = False;
 static Boolean treat_warnings_as_errors,
-               warn_sign_extension;
+               warn_sign_extension,
+               def_warn_relative,
+               def_warn_relative_set,
+               warn_relative;
+
+static unsigned warn_registered;
 
 static void ClearExpectErrors(void)
 {
@@ -79,6 +85,41 @@ Boolean FindAndTakeExpectError(tErrorNum Num)
       return True;
     }
   return False;
+}
+
+/*!------------------------------------------------------------------------
+ * \fn     registered_test_and_set(unsigned mask)
+ * \brief  check whether on/off insn is registered first time during pass
+ * \param  mask insn to test
+ * \return mask if first time, otherwise 0
+ * ------------------------------------------------------------------------ */
+
+enum
+{
+  e_onoff_reg_warn_relative = 1 << 0
+};
+
+static unsigned registered_test_and_set(unsigned mask)
+{
+  unsigned curr = warn_registered;
+  warn_registered |= mask;
+  return curr & mask;
+}
+
+/*!------------------------------------------------------------------------
+ * \fn     asmerr_warn_relative_add(Boolean def_value)
+ * \brief  register on/off command to warn about possible relative jump
+ * \param  def_value to set as default
+ * ------------------------------------------------------------------------ */
+
+#define WarnRelativeCmdName "WARNRELATIVE"
+#define WarnRelativeSymName "WARNRELATIVE"
+
+void asmerr_warn_relative_add(void)
+{
+  if (!registered_test_and_set(e_onoff_reg_warn_relative))
+    SetFlag(&warn_relative, WarnRelativeSymName, def_warn_relative_set ? def_warn_relative : False);
+  AddONOFF(WarnRelativeCmdName, &warn_relative, WarnRelativeSymName, False);
 }
 
 /*!------------------------------------------------------------------------
@@ -184,6 +225,8 @@ static const char *ErrorNum2String(tErrorNum Num, char *Buf, int BufSize)
       msgno = Num_ErrMsgShortAddrPossible; break;
     case ErrNum_ShortJumpPossible:
       msgno = Num_ErrMsgShortJumpPossible; break;
+    case ErrNum_RelJumpPossible:
+      msgno = Num_ErrMsgRelJumpPossible; break;
     case ErrNum_NoShareFile:
       msgno = Num_ErrMsgNoShareFile; break;
     case ErrNum_BigDecFloat:
@@ -276,12 +319,26 @@ static const char *ErrorNum2String(tErrorNum Num, char *Buf, int BufSize)
       msgno = Num_ErrMsgMeansE; break;
     case ErrNum_NeedShortIO:
       msgno = Num_ErrMsgNeedShortIO; break;
+    case ErrNum_CaseWrongArgCnt:
+      msgno = Num_ErrMsgCaseWrongArgCnt; break;
+    case ErrNum_ReplacedByNOP:
+      msgno = Num_ErrMsgReplacedByNOP; break;
+    case ErrNum_TreatedAsVector:
+      msgno = Num_ErrMsgTreatedAsVector; break;
+    case ErrNum_LargeIntAsFloat:
+      msgno = Num_ErrMsgLargeIntAsFloat; break;
+    case ErrNum_CodeNotInCodeSegment:
+      msgno = Num_ErrMsgCodeNotInCodeSegment; break;
+    case ErrNum_WillOverwriteSP:
+      msgno = Num_ErrMsgWillOverwriteSP; break;
     case ErrNum_DoubleDef:
       msgno = Num_ErrMsgDoubleDef; break;
     case ErrNum_SymbolUndef:
       msgno = Num_ErrMsgSymbolUndef; break;
     case ErrNum_InvSymName:
       msgno = Num_ErrMsgInvSymName; break;
+    case ErrNum_RsvdSymName:
+      msgno = Num_ErrMsgRsvdSymName; break;
     case ErrNum_InvFormat:
       msgno = Num_ErrMsgInvFormat; break;
     case ErrNum_UseLessAttr:
@@ -342,6 +399,8 @@ static const char *ErrorNum2String(tErrorNum Num, char *Buf, int BufSize)
       msgno = Num_ErrMsgIntOrFloatButReg; break;
     case ErrNum_IntOrStringButReg:
       msgno = Num_ErrMsgIntOrStringButReg; break;
+    case ErrNum_StringTooLong:
+      msgno = Num_ErrMsgStringTooLong; break;
     case ErrNum_IntButReg:
       msgno = Num_ErrMsgIntButReg; break;
     case ErrNum_UnresRelocs:
@@ -360,6 +419,10 @@ static const char *ErrorNum2String(tErrorNum Num, char *Buf, int BufSize)
       msgno = Num_ErrMsgOverRange; break;
     case ErrNum_NotPwr2:
       msgno = Num_ErrMsgNotPwr2; break;
+    case ErrNum_InvalidDecDigit:
+      msgno = Num_ErrMsgInvalidDecDigit; break;
+    case ErrNum_DecStringTooLong:
+      msgno = Num_ErrMsgDecStringTooLong; break;
     case ErrNum_NotAligned:
       msgno = Num_ErrMsgNotAligned; break;
     case ErrNum_DistTooBig:
@@ -418,6 +481,12 @@ static const char *ErrorNum2String(tErrorNum Num, char *Buf, int BufSize)
       msgno = Num_ErrMsgInvPMMUType; break;
     case ErrNum_InvCtrlReg:
       msgno = Num_ErrMsgInvCtrlReg; break;
+    case ErrNum_UnknownVector:
+      msgno = Num_ErrMsgUnknownVector; break;
+    case ErrNum_RegAccessibleOnlyInExecMode:
+      msgno = Num_ErrMsgRegAccessibleOnlyInExecMode; break;
+    case ErrNum_RegReadOnlyInExecMode:
+      msgno = Num_ErrMsgRegReadOnlyInExecMode; break;
     case ErrNum_InvReg:
       msgno = Num_ErrMsgInvReg; break;
     case ErrNum_DoubleReg:
@@ -438,6 +507,8 @@ static const char *ErrorNum2String(tErrorNum Num, char *Buf, int BufSize)
       msgno = Num_ErrMsgMissEndif; break;
     case ErrNum_InvIfConst:
       msgno = Num_ErrMsgInvIfConst; break;
+    case ErrNum_ForwardNonCurrent:
+      msgno = Num_ErrMsgForwardNonCurrent; break;
     case ErrNum_DoubleSection:
       msgno = Num_ErrMsgDoubleSection; break;
     case ErrNum_InvSection:
@@ -454,6 +525,8 @@ static const char *ErrorNum2String(tErrorNum Num, char *Buf, int BufSize)
       msgno = Num_ErrMsgContForward; break;
     case ErrNum_InvFuncArgCnt:
       msgno = Num_ErrMsgInvFuncArgCnt; break;
+    case ErrNum_DupFuncArgName:
+      msgno = Num_ErrMsgDupFuncArgName; break;
     case ErrNum_MsgMissingLTORG:
       msgno = Num_ErrMsgMissingLTORG; break;
     case ErrNum_InstructionNotSupported:
@@ -533,6 +606,8 @@ static const char *ErrorNum2String(tErrorNum Num, char *Buf, int BufSize)
       msgno = Num_ErrMsgOpenWHILE; break;
     case ErrNum_EXITMOutsideMacro:
       msgno = Num_ErrMsgEXITMOutsideMacro; break;
+    case ErrNum_ENDMOutsideMacro:
+      msgno = Num_ErrMsgENDMOutsideMacro; break;
     case ErrNum_TooManyMacParams:
       msgno = Num_ErrMsgTooManyMacParams; break;
     case ErrNum_UndefKeyArg:
@@ -691,6 +766,8 @@ static const char *ErrorNum2String(tErrorNum Num, char *Buf, int BufSize)
       msgno = Num_ErrMsgInvCBAR; break;
     case ErrNum_InAccPageErr:
       msgno = Num_ErrMsgInAccPageErr; break;
+    case ErrNum_CurrPCInInAccPageErr:
+      msgno = Num_ErrMsgCurrPCInInAccPageErr; break;
     case ErrNum_InAccFieldErr:
       msgno = Num_ErrMsgInAccFieldErr; break;
     case ErrNum_TargInDiffField:
@@ -703,6 +780,8 @@ static const char *ErrorNum2String(tErrorNum Num, char *Buf, int BufSize)
       msgno = Num_ErrMsgNoTarget; break;
     case ErrNum_MultiCharInvLength:
       msgno = Num_ErrMsgMultiCharInvLength; break;
+    case ErrNum_InvDispLen:
+      msgno = Num_ErrMsgInvDispLen; break;
     case ErrNum_InternalError:
       msgno = Num_ErrMsgInternalError; break;
     case ErrNum_OpeningFile:
@@ -719,6 +798,10 @@ static const char *ErrorNum2String(tErrorNum Num, char *Buf, int BufSize)
       msgno = Num_ErrMsgStackOvfl; break;
     case ErrNum_MaxIncLevelExceeded:
       msgno = Num_ErrMsgMaxIncLevelExceeded; break;
+    case ErrNum_InvListHeadFormat:
+      msgno = Num_ErrMsgInvListHeadFormat; break;
+    case ErrNum_ListHeadFormatElemTooOften:
+      msgno = Num_ErrMsgListHeadFormatElemTooOften; break;
     default:
       as_snprintf(Buf, BufSize, "%s %d", getmessage(Num_ErrMsgIntError), (int) Num);
   }
@@ -849,6 +932,23 @@ void WrXErrorPos(tErrorNum Num, const char *pExtendError, const struct sLineComp
   char Add[11];
   const char *pErrorMsg;
 
+  /* If issuing of a certain error or warning is disabled, a program
+     that expects it should trigger an error. */
+
+  switch (Num)
+  {
+    case ErrNum_RelJumpPossible:
+      if (!warn_relative)
+        return;
+      break;
+    case ErrNum_SignExtension:
+      if (!warn_sign_extension)
+        return;
+      break;
+    default:
+      break;
+  }
+
   if (FindAndTakeExpectError(Num))
     return;
 
@@ -857,16 +957,6 @@ void WrXErrorPos(tErrorNum Num, const char *pExtendError, const struct sLineComp
 
   if (SuppWarns && (Num < 1000))
     return;
-
-  switch (Num)
-  {
-    case ErrNum_SignExtension:
-      if (!warn_sign_extension)
-        return;
-      break;
-    default:
-      break;
-  }
 
   pErrorMsg = ErrorNum2String(Num, h, sizeof(h));
 
@@ -1036,24 +1126,42 @@ void CodeENDEXPECT(Word Code)
 }
 
 /*!------------------------------------------------------------------------
- * \fn     AsmErrPassInit(void)
- * \brief  module initialization prior to (another) pass through sources
+ * \fn     asmerr_check_fp_dispose_result(int ret, const struct sStrComp *p_arg)
+ * \brief  check the result of as_float_2...and throw associated error messages
+ * \param  ret return code
+ * \param  p_arg associated source argument
  * ------------------------------------------------------------------------ */
 
-void AsmErrPassInit(void)
+Boolean asmerr_check_fp_dispose_result(int ret, const struct sStrComp *p_arg)
 {
-  ErrorCount = 0;
-  WarnCount = 0;
-  ClearExpectErrors();
-  InExpect = False;
+  if (ret >= 0)
+    return True;
+  switch (ret)
+  {
+    case -EIO:
+      WrStrErrorPos(ErrNum_UnderRange, p_arg);
+      return False;
+    case -EBADF:
+      WrXErrorPos(ErrNum_InvArg, "raster", &p_arg->Pos);
+      return False;
+    case -E2BIG:
+      WrStrErrorPos(ErrNum_OverRange, p_arg);
+      return False;
+    case -EINVAL:
+      WrXErrorPos(ErrNum_InvArg, "INF/NaN", &p_arg->Pos);
+      return False;
+    default:
+      WrStrErrorPos(ErrNum_InvArg, p_arg);
+      return False;
+  }
 }
 
 /*!------------------------------------------------------------------------
- * \fn     AsmErrPassExit(void)
+ * \fn     exit_pass(void)
  * \brief  module checks & cleanups after a pass through sources
  * ------------------------------------------------------------------------ */
 
-void AsmErrPassExit(void)
+static void exit_pass(void)
 {
   if (InExpect)
     WrError(ErrNum_MissingENDEXPECT);
@@ -1089,12 +1197,50 @@ static as_cmd_result_t cmd_no_warn_sign_extension(Boolean negate, const char *p_
   return e_cmd_ok;
 }
 
+static as_cmd_result_t cmd_warn_relative(Boolean negate, const char *p_arg)
+{
+  UNUSED(p_arg);
+
+  if (negate)
+    return e_cmd_err;
+  def_warn_relative = True;
+  def_warn_relative_set = True;
+  return e_cmd_ok;
+}
+
+static as_cmd_result_t cmd_no_warn_relative(Boolean negate, const char *p_arg)
+{
+  UNUSED(p_arg);
+
+  if (negate)
+    return e_cmd_err;
+  def_warn_relative = False;
+  def_warn_relative_set = True;
+  return e_cmd_ok;
+}
+
 static const as_cmd_rec_t cmd_params[] =
 {
   { "werror"                     , cmd_treat_warnings_as_errors },
   { "wimplicit-sign-extension"   , cmd_warn_sign_extension      },
-  { "wno-implicit-sign-extension", cmd_no_warn_sign_extension   }
+  { "wno-implicit-sign-extension", cmd_no_warn_sign_extension   },
+  { "wrelative"                  , cmd_warn_relative            },
+  { "wno-relative"               , cmd_no_warn_relative         }
 };
+
+/*!------------------------------------------------------------------------
+ * \fn     init_pass(void)
+ * \brief  called before start of each pass
+ * ------------------------------------------------------------------------ */
+
+static void init_pass(void)
+{
+  ErrorCount = 0;
+  WarnCount = 0;
+  ClearExpectErrors();
+  InExpect = False;
+  warn_registered = 0;
+}
 
 /*!------------------------------------------------------------------------
  * \fn     asmerr_init(void)
@@ -1105,5 +1251,8 @@ void asmerr_init(void)
 {
   treat_warnings_as_errors = False;
   warn_sign_extension = True;
+  def_warn_relative = def_warn_relative_set = False;
   as_cmd_register(cmd_params, as_array_size(cmd_params));
+  AddInitPassProc(init_pass);
+  add_exit_pass_proc(exit_pass);
 }

@@ -19,11 +19,13 @@
 #include "asmsub.h"
 #include "asmpars.h"
 #include "asmitree.h"
+#include "assume.h"
 #include "codepseudo.h"
 #include "intpseudo.h"
 #include "codevars.h"
 #include "errmsg.h"
 #include "intformat.h"
+#include "headids.h"
 
 #include "code75k0.h"
 
@@ -1497,7 +1499,7 @@ static void DecodeSFR(Word Code)
 {
   UNUSED(Code);
 
-  CodeEquate(SegData, 0, 0xfff);
+  code_equate_type(SegData, UInt12);
 }
 
 static void DecodeBIT(Word Code)
@@ -1533,6 +1535,9 @@ static void AddFixed(const char *NewName, Word NewCode)
 static void InitFields(void)
 {
   InstTable = CreateInstTable(103);
+
+  add_null_pseudo(InstTable);
+
   AddInstTable(InstTable, "MOV", 0, DecodeMOV);
   AddInstTable(InstTable, "XCH", 0, DecodeXCH);
   AddInstTable(InstTable, "MOVT", 0, DecodeMOVT);
@@ -1585,6 +1590,8 @@ static void InitFields(void)
   AddInstTable(InstTable, "AND1", InstrZ++, DecodeLog1);
   AddInstTable(InstTable, "OR1" , InstrZ++, DecodeLog1);
   AddInstTable(InstTable, "XOR1", InstrZ++, DecodeLog1);
+
+  AddIntelPseudo(InstTable, eIntPseudoFlag_BigEndian);
 }
 
 static void DeinitFields(void)
@@ -1596,19 +1603,7 @@ static void DeinitFields(void)
 
 static void MakeCode_75K0(void)
 {
-  CodeLen = 0;
-  DontPrint = False;
-  OpSize = -1;
-
-  /* zu ignorierendes */
-
-  if (Memo(""))
-    return;
-
-  /* Pseudoanweisungen */
-
-  if (DecodeIntelPseudo(True))
-    return;
+  OpSize = eSymbolSizeUnknown;
 
   if (!LookupInstTable(InstTable, OpPart.str.p_str))
     WrStrErrorPos(ErrNum_UnknownInstruction, &OpPart);
@@ -1629,36 +1624,38 @@ static void SwitchFrom_75K0(void)
   DeinitFields();
 }
 
-static ASSUMERec ASSUME75s[] =
+static as_assume_rec_t ASSUME75s[] =
 {
   {"MBS", &MBSValue, 0, 0x0f, 0x10, NULL},
   {"MBE", &MBEValue, 0, 0x01, 0x01, CheckMBE}
 };
-#define ASSUME75Count (sizeof(ASSUME75s) / sizeof(*ASSUME75s))
 
 static void SwitchTo_75K0(void *pUser)
 {
-  Boolean Err;
+  const TFamilyDescr *p_descr = FindFamilyByName("75K0");
+  char *p_end;
   Word ROMEnd;
 
   pCurrCPUProps = (const tCPUProps*)pUser;
   TurnWords = False;
   SetIntConstMode(eIntConstModeIntel);
 
-  PCSymbol = "PC"; HeaderID = 0x7b; NOPCode = 0x60;
-  DivideChars = ","; HasAttrs = False;
+  PCSymbol = "PC";
+  HeaderID = p_descr->Id;
+  NOPCode = 0x60;
+  DivideChars = ",";
+  HasAttrs = False;
 
   ValidSegs = (1 << SegCode)|(1 << SegData);
   Grans[SegCode] = 1; ListGrans[SegCode] = 1; SegInits[SegCode] = 0;
   Grans[SegData] = 1; ListGrans[SegData] = 1; SegInits[SegData] = 0;
   SegLimits[SegData] = 0xfff;
-  ROMEnd = ConstLongInt(&MomCPUName[3], &Err, 10);
+  ROMEnd = strtoul(&MomCPUName[3], &p_end, 10);
   if (ROMEnd > 2)
     ROMEnd %= 10;
   SegLimits[SegCode] = (ROMEnd << 10) - 1;
 
-  pASSUMERecs = ASSUME75s;
-  ASSUMERecCnt = ASSUME75Count;
+  assume_set(ASSUME75s, as_array_size(ASSUME75s));
 
   MakeCode = MakeCode_75K0; IsDef = IsDef_75K0;
   SwitchFrom = SwitchFrom_75K0; InitFields();

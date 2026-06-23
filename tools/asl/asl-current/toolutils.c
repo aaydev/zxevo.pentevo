@@ -11,12 +11,14 @@
 #include "stdinc.h"
 #include "be_le.h"
 #include <string.h>
+#include <stdarg.h>
 
 #include "strutil.h"
 #include "stringlists.h"
 #include "cmdarg.h"
 #include "stdhandl.h"
 #include "ioerrs.h"
+#include "headids.h"
 
 #include "nls.h"
 #include "nlmessages.h"
@@ -37,6 +39,8 @@ static Byte FilterBytes[100];
 
 Word FileID = 0x1489;       /* Dateiheader Eingabedateien */
 const char *OutName = "STDOUT";   /* Pseudoname Output */
+
+String target_name;
 
 static TMsgCat MsgCat;
 
@@ -114,33 +118,30 @@ void chk_wr_read_error(const char *p_name)
   wr_io_str(p_name, errno ? GetErrorMsg(errno) : GetReadErrorMsg());
 }
 
-Word Granularity(Byte Header, Byte Segment)
+int chkio_fprintf(FILE *p_file, const char *p_name, const char *p_fmt, ...)
 {
-  switch (Header)
-  {
-    case 0x09:
-    case 0x76:
-    case 0x7d:
-      return 4;
-    case 0x36: /* MN161x */
-    case 0x70:
-    case 0x71:
-    case 0x72:
-    case 0x74:
-    case 0x75:
-    case 0x77:
-    case 0x12:
-    case 0x6d:
-      return 2;
-    case 0x3b: /* AVR */
-    case 0x1a: /* PDK13..16 */
-    case 0x1b:
-    case 0x1c:
-    case 0x1d:
-      return (Segment == SegCode) ? 2 : 1;
-    default:
-      return 1;
-  }
+  va_list ap;
+  int ret;
+
+  va_start(ap, p_fmt);
+  ret = vfprintf(p_file, p_fmt, ap);
+  va_end(ap);
+  if (ret < 0)
+    ChkIO(p_name);
+  return ret;
+}
+
+int chkio_printf(const char *p_name, const char *p_fmt, ...)
+{
+  va_list ap;
+  int ret;
+
+  va_start(ap, p_fmt);
+  ret = vprintf(p_fmt, ap);
+  va_end(ap);
+  if (ret < 0)
+    ChkIO(p_name);
+  return ret;
 }
 
 void ReadRecordHeader(Byte *Header, Byte *CPU, Byte* Segment,
@@ -174,10 +175,13 @@ void ReadRecordHeader(Byte *Header, Byte *CPU, Byte* Segment,
     }
     else if (*Header <= 0x7f)
     {
+      const TFamilyDescr *p_descr;
+
       *CPU = *Header;
+      p_descr = FindFamilyById(*CPU);
       *Header = FileHeaderDataRec;
       *Segment = SegCode;
-      *Gran = Granularity(*CPU, *Segment);
+      *Gran = p_descr->get_granularity((as_addrspace_t)*Segment);
     }
   }
 }
@@ -192,7 +196,10 @@ void WriteRecordHeader(Byte *Header, Byte *CPU, Byte *Segment,
   }
   else if ((*Header == FileHeaderDataRec) || (*Header == FileHeaderRDataRec))
   {
-    if ((*Segment != SegCode) || (*Gran != Granularity(*CPU, *Segment)) || (*CPU >= 0x80))
+    const TFamilyDescr *p_descr = FindFamilyById(*CPU);
+    Word def_granularity = p_descr ? p_descr->get_granularity((as_addrspace_t)*Segment) : 1;
+
+    if ((*Segment != SegCode) || (*Gran != def_granularity) || (*CPU >= 0x80))
     {
       if (fwrite(Header, 1, 1, f))
         ChkIO(Name);
@@ -214,6 +221,48 @@ void WriteRecordHeader(Byte *Header, Byte *CPU, Byte *Segment,
     if (fwrite(CPU, 1, 1, f))
       ChkIO(Name);
   }
+}
+
+Byte record_gran_bits(Byte gran_encoded)
+{
+  return (gran_encoded >= 0xf8)
+       ? (256 - gran_encoded)
+       : gran_encoded * 8;
+}
+
+LongWord record_byte_address(LongWord target_word_address, Byte gran_encoded)
+{
+  return (gran_encoded > 0xf8)
+       ? (target_word_address / (8 / (256 - gran_encoded)))
+       : (target_word_address * gran_encoded);
+}
+
+LongWord record_target_word_last_address(LongWord target_word_start_address, LongWord length_bytes, Byte gran_encoded)
+{
+  return (gran_encoded > 0xf8)
+       ? (target_word_start_address + (((LongWord)length_bytes * 8) / (256 - gran_encoded)) - 1)
+       : (target_word_start_address + (length_bytes / gran_encoded) - 1);
+}
+
+LongWord record_target_word_length(LongWord byte_length, Byte gran_encoded)
+{
+  return (gran_encoded > 0xf8)
+       ? (byte_length * 8 / record_gran_bits(gran_encoded))
+       : (byte_length / gran_encoded);
+}
+
+LongWord record_byte_length(LongWord target_word_first_address, LongWord target_word_last_address, Byte gran_encoded)
+{
+  return (gran_encoded > 0xf8)
+       ? ((target_word_last_address - target_word_first_address + 1) / (8 / (256 - gran_encoded)))
+       : ((target_word_last_address - target_word_first_address + 1) * gran_encoded);
+}
+
+LongWord record_byte_offset(LongWord target_word_act_address, LongWord target_word_start_address, Byte gran_encoded)
+{
+  return (gran_encoded > 0xf8)
+       ? ((target_word_act_address - target_word_start_address) / (8 / (256 - gran_encoded)))
+       : ((target_word_act_address - target_word_start_address) * gran_encoded);
 }
 
 void SkipRecord(Byte Header, const char *Name, FILE *f)
@@ -357,7 +406,7 @@ void DestroyRelocInfo(PRelocInfo PInfo)
 as_cmd_result_t CMD_FilterList(Boolean Negate, const char *Arg)
 {
   Byte FTemp;
-  Boolean err;
+  const char *p_end;
   char *p;
   int Search;
   String Copy;
@@ -371,8 +420,8 @@ as_cmd_result_t CMD_FilterList(Boolean Negate, const char *Arg)
     p = strchr(Copy,',');
     if (p != NULL)
       *p = '\0';
-    FTemp = ConstLongInt(Copy, &err, 10);
-    if (!err)
+    FTemp = as_cmd_strtol(Copy, &p_end);
+    if (*p_end)
       return e_cmd_err;
 
     for (Search = 0; Search < FilterCnt; Search++)
@@ -399,29 +448,28 @@ as_cmd_result_t CMD_Range(LongWord *pStartAddr, LongWord *pStopAddr,
                           Boolean *pStartAuto, Boolean *pStopAuto,
                           const char *Arg)
 {
-  const char *p;
+  const char *p, *p_end;
   String StartStr;
-  Boolean ok;
 
   p = strchr(Arg, '-');
   if (!p) return e_cmd_err;
 
   strmemcpy(StartStr, sizeof(StartStr), Arg, p - Arg);
   *pStartAuto = AddressWildcard(StartStr);
-  if (*pStartAuto)
-    ok = True;
-  else
-    *pStartAddr = ConstLongInt(StartStr, &ok, 10);
-  if (!ok)
-    return e_cmd_err;
+  if (!*pStartAuto)
+  {
+    *pStartAddr = as_cmd_strtol(StartStr, &p_end);
+    if (*p_end)
+      return e_cmd_err;
+  }
 
   *pStopAuto = AddressWildcard(p + 1);
-  if (*pStopAuto)
-    ok = True;
-  else
-    *pStopAddr = ConstLongInt(p + 1, &ok, 10);
-  if (!ok)
-    return e_cmd_err;
+  if (!*pStopAuto)
+  {
+    *pStopAddr = as_cmd_strtol(p + 1, &p_end);
+    if (*p_end)
+      return e_cmd_err;
+  }
 
   if (!*pStartAuto && !*pStopAuto && (*pStartAddr > *pStopAddr))
     return e_cmd_err;
@@ -445,6 +493,22 @@ as_cmd_result_t CMD_Verbose(Boolean Negate, const char *Arg)
   return e_cmd_ok;
 }
 
+as_cmd_result_t cmd_target_name(Boolean negate, const char *p_arg)
+{
+  if (negate)
+  {
+    *target_name = '\0';
+    return e_cmd_ok;
+  }
+  else if (!p_arg || !*p_arg)
+    return e_cmd_err;
+  else
+  {
+    strmaxcpy(target_name, p_arg, sizeof target_name);
+    return e_cmd_arg;
+  }
+}
+
 Boolean FilterOK(Byte Header)
 {
   int z;
@@ -463,7 +527,6 @@ Boolean FilterOK(Byte Header)
 Boolean RemoveOffset(char *Name, LongWord *Offset)
 {
   int z, Nest;
-  Boolean err;
 
   *Offset = 0;
   if ((*Name) && (Name[strlen(Name)-1] == ')'))
@@ -484,10 +547,12 @@ Boolean RemoveOffset(char *Name, LongWord *Offset)
       return False;
     else
     {
+      const char *p_end;
+
       Name[strlen(Name) - 1] = '\0';
-      *Offset = ConstLongInt(Name + z + 1, &err, 10);
+      *Offset = as_cmd_strtol(Name + z + 1, &p_end);
       Name[z] = '\0';
-      return err;
+      return !*p_end;
     }
   }
   else

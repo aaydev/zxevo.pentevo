@@ -46,7 +46,7 @@ TARGETS = zx interrupts main ps2 spi depacker_dirty rs232 rtc atx joystick versi
 
 
 ifeq ($(OS),Windows_NT)
-	MAKEFW = "../../../tools/make_fw/make_fw.exe"
+	MAKEFW = "../../../../tools/make_fw/make_fw.exe"
 	AVRSIZEOPT =
 	CP = copy /Y
 else

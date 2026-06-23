@@ -21,6 +21,7 @@
 #include "motpseudo.h"
 #include "asmitree.h"
 #include "codevars.h"
+#include "assume.h"
 #include "headids.h"
 #include "errmsg.h"
 #include "codepseudo.h"
@@ -57,8 +58,7 @@ static CPUVar CPUMN1610, CPUMN1613;
 static tSymbolSize OpSize;
 static LongInt BaseRegVals[4];
 
-#define ASSUMEMN1613Count 4
-static ASSUMERec ASSUMEMN1613[ASSUMEMN1613Count] =
+static as_assume_rec_t ASSUMEMN1613[] =
 {
   { "CSBR", BaseRegVals + 0, 0, 15, 16, NULL },
   { "SSBR", BaseRegVals + 1, 0, 15, 16, NULL },
@@ -315,7 +315,13 @@ static Boolean DecodeMem(tStrComp *pArg, Word *pResult)
     StrCompShorten(&Arg, 4);
     KillPostBlanksStrComp(&Arg);
     DispIndirect = IsIndirect(Arg.str.p_str);
-    Disp = EvalStrIntExpression(&Arg, (R == 2) ? SInt8 : UInt8, &OK);
+    if (Arg.str.p_str[0])
+      Disp = EvalStrIntExpression(&Arg, (R == 2) ? SInt8 : UInt8, &OK);
+    else
+    {
+      Disp = 0;
+      OK = True;
+    }
     if (!OK)
       return False;
     if (R == 2)
@@ -1097,11 +1103,17 @@ static void DecodeDC(Word Code)
         }
         case TempFloat:
         {
+          int ret;
+
           IncMaxCodeLen(2);
-          if (Double2IBMFloat(&WAsmCode[CodeLen], t.Contents.Float, False))
+          ret = as_float_2_ibm_float(&WAsmCode[CodeLen], t.Contents.Float, False);
+          if (ret >= 0)
             CodeLen += 2;
           else
+          {
+            asmerr_check_fp_dispose_result(ret, pArg);
             OK = False;
+          }
           HalfFilledWord = False;
           break;
         }
@@ -1148,6 +1160,8 @@ static void AddFixed(const char *pName, Word Code, CPUVar MinCPU)
 static void InitFields(void)
 {
   InstTable = CreateInstTable(201);
+
+  add_null_pseudo(InstTable);
 
   InstrZ = 0;
   AddFixed("H"   , 0x2000 , CPUMN1610);
@@ -1312,12 +1326,6 @@ static void MakeCode_MN1610_Alt(void)
 {
   OpSize = (AttrPartOpSize[0] != eSymbolSizeUnknown) ? AttrPartOpSize[0] : eSymbolSize16Bit;
 
-  /* Ignore empty instruction */
-
-  if (Memo("")) return;
-
-  /* Pseudo Instructions */
-
   if (!LookupInstTable(InstTable, OpPart.str.p_str))
     WrStrErrorPos(ErrNum_UnknownInstruction, &OpPart);
 }
@@ -1356,8 +1364,7 @@ static void SwitchTo_MN1610_Alt(void)
   {
     SegLimits[SegCode] = 0x3ffff;
     SegLimits[SegIO] = 0xffff;
-    pASSUMERecs = ASSUMEMN1613;
-    ASSUMERecCnt = ASSUMEMN1613Count;
+    assume_set(ASSUMEMN1613, as_array_size(ASSUMEMN1613));
   }
   else
   {

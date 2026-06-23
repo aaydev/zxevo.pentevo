@@ -21,6 +21,7 @@
 #include "asmsub.h"
 #include "asmpars.h"
 #include "asmitree.h"
+#include "assume.h"
 #include "codepseudo.h"
 #include "fourpseudo.h"
 #include "codevars.h"
@@ -466,7 +467,7 @@ static void DecodeSKIP(Word Code)
 static void DecodeSFR(Word Code)
 {
   UNUSED(Code);
-  CodeEquate(SegData, 0, 0xff);
+  code_equate_type(SegData, UInt8);
 }
 
 static void DecodeBIT(Word Code)
@@ -523,6 +524,8 @@ static void DecodeZERO(Word Code)
 static void InitFields(void)
 {
   InstTable = CreateInstTable(103);
+
+  add_null_pseudo(InstTable);
 
   AddInstTable(InstTable, "NOP"  , NOPCode, DecodeFixed);
   AddInstTable(InstTable, "RET"  , 0x00c, DecodeFixed);
@@ -588,12 +591,6 @@ static void DeinitFields(void)
 
 static void MakeCode_SX20(void)
 {
-  CodeLen = 0; DontPrint = False;
-
-  /* zu ignorierendes */
-
-  if (Memo("")) return;
-
   if (!LookupInstTable(InstTable, OpPart.str.p_str))
     WrStrErrorPos(ErrNum_UnknownInstruction, &OpPart);
 }
@@ -611,8 +608,7 @@ static Boolean IsDef_SX20(void)
 static void SwitchTo_SX20(void)
 {
   const TFamilyDescr *pDescr = FindFamilyByName("SX20");
-#define ASSUMESX20Count (sizeof(ASSUMESX20s) / sizeof(*ASSUMESX20s))
-  static const ASSUMERec ASSUMESX20s[] =
+  static const as_assume_rec_t ASSUMESX20s[] =
   {
     { "FSR"   , &Reg_FSR   , 0,  0xff, 0, NULL },
     { "STATUS", &Reg_STATUS, 0,  0xff, 0, NULL },
@@ -640,8 +636,7 @@ static void SwitchTo_SX20(void)
   DissectBit = DissectBit_SX20;
   InitFields();
 
-  pASSUMERecs = ASSUMESX20s;
-  ASSUMERecCnt = ASSUMESX20Count;
+  assume_set(ASSUMESX20s, as_array_size(ASSUMESX20s));
 }
 
 void codesx20_init(void)

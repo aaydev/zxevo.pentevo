@@ -23,6 +23,7 @@
 #include "fourpseudo.h"
 #include "codevars.h"
 #include "errmsg.h"
+#include "headids.h"
 
 #include "code3201x.h"
 
@@ -348,7 +349,7 @@ static void DecodePORT(Word Code)
 {
   UNUSED(Code);
 
-  CodeEquate(SegIO, 0, 7);
+  code_equate_type(SegIO, UInt3);
 }
 
 static void DecodeDATA_3201x(Word Code)
@@ -396,6 +397,9 @@ static void AddImm(const char *NName, Word NCode, Integer NMin, Integer NMax, Wo
 static void InitFields(void)
 {
   InstTable = CreateInstTable(203);
+
+  add_null_pseudo(InstTable);
+
   AddInstTable(InstTable, "IN", 0x4000, DecodeIN_OUT);
   AddInstTable(InstTable, "OUT", 0x4800, DecodeIN_OUT);
   AddInstTable(InstTable, "LARP", 0, DecodeLARP);
@@ -477,14 +481,6 @@ static void InternSymbol_3201X(char *pArg, TempResult *pResult)
 
 static void MakeCode_3201X(void)
 {
-  CodeLen = 0;
-  DontPrint = False;
-
-  /* zu ignorierendes */
-
-  if (Memo(""))
-    return;
-
   if (!LookupInstTable(InstTable, OpPart.str.p_str))
     WrStrErrorPos(ErrNum_UnknownInstruction, &OpPart);
 }
@@ -501,11 +497,13 @@ static void SwitchFrom_3201X(void)
 
 static void SwitchTo_3201X(void)
 {
+  const TFamilyDescr *p_descr = FindFamilyByName("TMS3201x");
+
   TurnWords = False;
   SetIntConstMode(eIntConstModeIntel);
 
   PCSymbol = "$";
-  HeaderID = 0x74;
+  HeaderID = p_descr->Id;
   NOPCode = 0x7f80;
   DivideChars = ",";
   HasAttrs = False;

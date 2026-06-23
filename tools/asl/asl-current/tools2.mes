@@ -1,3 +1,4 @@
+;SPDX-License-Identifier: GPL-2.0-only OR GPL-3.0-only
 ;* tools.mes
 ;*****************************************************************************
 ;* AS-Portierung                                                             *
@@ -11,7 +12,7 @@
 ;-----------------------------------------------------------------------------
 ; Durchsagen
 
-Message InfoMessHead1
+Message InfoMessUsage
  "Aufruf: "
  "usage: "
 
@@ -45,6 +46,14 @@ Message ErrMsgInvEnvParam
 Message ErrMsgInvParam
  "Fehlerhafter Parameter (-help f&uuml;r Hilfe): "
  "invalid parameter (-help for help): "
+
+Message ErrMsgInvEnvOption
+ "Fehlerhafte Environment-Option (-help f&uuml;r Hilfe): "
+ "invalid environment option (-help for help): "
+
+Message ErrMsgInvOption
+ "Fehlerhafte Option (-help f&uuml;r Hilfe): "
+ "invalid option (-help for help): "
 
 Message ErrMsgTargMissing
  "Zieldateiangabe fehlt!"

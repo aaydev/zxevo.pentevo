@@ -1,0 +1,5 @@
+(sym_lib_table
+  (version 7)
+  (lib (name "eva-altium-import")(type "KiCad")(uri "${KIPRJMOD}/eva-altium-import.kicad_sym")(options "")(descr ""))
+  (lib (name "tpa6120")(type "KiCad")(uri "/home/lvd/d/boards/boards/dev_tlc07x_tpa6120/dev_tlc07x_tpa6120/tpa6120.kicad_sym")(options "")(descr ""))
+)

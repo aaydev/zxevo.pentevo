@@ -78,7 +78,7 @@ static void ProcessFile(char *FileName)
 
   if (msg_level >= e_msg_level_normal)
   {
-    errno = 0; printf("%s==>>%s", FileName, TargName); ChkIO(OutName);
+    chkio_printf(OutName, "%s==>>%s", FileName, TargName);
   }
 
   SumLen = 0;
@@ -139,9 +139,9 @@ static void ProcessFile(char *FileName)
 
   if (msg_level >= e_msg_level_normal)
   {
-    errno = 0; printf("  ("); ChkIO(OutName);
-    errno = 0; printf(Integ32Format, SumLen); ChkIO(OutName);
-    errno = 0; printf(" %s)\n", getmessage((SumLen == 1) ? Num_Byte : Num_Bytes)); ChkIO(OutName);
+    chkio_printf(OutName, "  (");
+    chkio_printf(OutName, Integ32Format, SumLen);
+    chkio_printf(OutName, " %s)\n", getmessage((SumLen == 1) ? Num_Byte : Num_Bytes));
   }
 
   if (fclose(SrcFile) == EOF)
@@ -152,12 +152,12 @@ static void ProcessFile(char *FileName)
 
 static const as_cmd_rec_t BINDParams[] =
 {
-  { "f"        , CMD_FilterList      }
+  { "f"        , CMD_FilterList      },
+  { "o"        , cmd_target_name     }
 };
 
 int main(int argc, char **argv)
 {
-  char *p_target_name;
   as_cmd_results_t cmd_results;
 
   if (!NLS_Initialize(&argc, argv))
@@ -178,8 +178,10 @@ int main(int argc, char **argv)
 
   Buffer = (Byte*) malloc(sizeof(Byte) * BufferSize);
 
+  *target_name = '\0';
+
   as_cmd_register(BINDParams, as_array_size(BINDParams));
-  if (e_cmd_err == as_cmd_process(argc, argv, "BINDCMD", &cmd_results))
+  if (e_cmd_err == as_cmd_process(argc, argv, "PBINDCMD", &cmd_results))
   {
     fprintf(stderr, "%s%s\n", getmessage(cmd_results.error_arg_in_env ? Num_ErrMsgInvEnvParam : Num_ErrMsgInvParam), cmd_results.error_arg);
     fprintf(stderr, "%s\n", getmessage(Num_ErrMsgProgTerm));
@@ -196,12 +198,15 @@ int main(int argc, char **argv)
   if (cmd_results.write_help_exit)
   {
     char *ph1, *ph2;
+    const char *p_usage_msg = getmessage(Num_InfoMessUsage);
+    int usage_msg_len = strlen(p_usage_msg);
 
-    errno = 0; printf("%s%s%s\n", getmessage(Num_InfoMessHead1), as_cmdarg_get_executable_name(), getmessage(Num_InfoMessHead2)); ChkIO(OutName);
+    chkio_printf(OutName, "%s%s %s\n", p_usage_msg, as_cmdarg_get_executable_name(), getmessage(Num_InfoMessUsage1));
+    chkio_printf(OutName, "%*.*s%s %s\n", usage_msg_len, usage_msg_len, "", as_cmdarg_get_executable_name(), getmessage(Num_InfoMessUsage2));
     for (ph1 = getmessage(Num_InfoMessHelp), ph2 = strchr(ph1, '\n'); ph2; ph1 = ph2+1, ph2 = strchr(ph1, '\n'))
     {
       *ph2 = '\0';
-      printf("%s\n", ph1);
+      chkio_printf(OutName, "%s\n", ph1);
       *ph2 = '\n';
     }
   }
@@ -215,14 +220,20 @@ int main(int argc, char **argv)
     exit(1);
   }
 
-  p_target_name = MoveAndCutStringListLast(&cmd_results.file_arg_list);
-  strmaxcpy(TargName, p_target_name ? p_target_name : "", STRINGSIZE);
-  free(p_target_name); p_target_name = NULL;
-  if (!*TargName)
+  if (!*target_name)
   {
-    errno = 0; fprintf(stderr, "%s\n", getmessage(Num_ErrMsgTargetMissing)); ChkIO(OutName);
-    exit(1);
+    char *p_target_name = MoveAndCutStringListLast(&cmd_results.file_arg_list);
+    if (!p_target_name || !*p_target_name)
+    {
+      chkio_fprintf(stderr, OutName, "%s\n", getmessage(Num_ErrMsgTargetMissing));
+      if (p_target_name) free(p_target_name);
+      exit(1);
+    }
+    strmaxcpy(target_name, p_target_name, STRINGSIZE);
+    free(p_target_name);
   }
+
+  strmaxcpy(TargName, target_name, STRINGSIZE);
   AddSuffix(TargName, STRINGSIZE, getmessage(Num_Suffix));
 
   OpenTarget();

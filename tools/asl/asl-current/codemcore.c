@@ -26,6 +26,7 @@
 #include "asmitree.h"
 #include "codevars.h"
 #include "errmsg.h"
+#include "headids.h"
 
 #include "codemcore.h"
 
@@ -641,6 +642,17 @@ static void DecodeTrap(Word Index)
   }
 }
 
+/*!------------------------------------------------------------------------
+ * \fn     check_pc_even(Word index)
+ * \brief  assure machine instruction  is at even address
+ * ------------------------------------------------------------------------ */
+
+static void check_pc_even(Word index)
+{
+  UNUSED(index);
+  if (Odd(EProgCounter())) WrError(ErrNum_AddrNotAligned);
+}
+
 /*--------------------------------------------------------------------------*/
 /* Codetabellenverwaltung */
 
@@ -697,6 +709,9 @@ static void InitFields(void)
   InstTable = CreateInstTable(201);
 
   AddInstTable(InstTable, "REG", 0, CodeREG);
+  AddMoto16Pseudo(InstTable, e_moto_pseudo_flags_be);
+
+  inst_table_set_prefix_proc(InstTable, check_pc_even, 0);
 
   InstrZ = 0;
   AddFixed("BKPT" , 0x0000, False);
@@ -842,24 +857,13 @@ static Boolean DecodeAttrPart_MCORE(void)
 
 static void MakeCode_MCORE(void)
 {
-  CodeLen = 0;
-
-  OpSize = (AttrPartOpSize[0] != eSymbolSizeUnknown) ? AttrPartOpSize[0] : eSymbolSize32Bit;
-  DontPrint = False;
+  if (AttrPartOpSize[0] == eSymbolSizeUnknown)
+    AttrPartOpSize[0] = eSymbolSize32Bit;
+  OpSize = AttrPartOpSize[0];
 
   /* Nullanweisung */
 
   if ((*OpPart.str.p_str == '\0') && !*AttrPart.str.p_str && (ArgCnt == 0)) return;
-
-  /* Pseudoanweisungen */
-
-  if (DecodeMoto16Pseudo(OpSize,True)) return;
-
-  /* Befehlszaehler ungerade ? */
-
-  if (Odd(EProgCounter())) WrError(ErrNum_AddrNotAligned);
-
-  /* alles aus der Tabelle */
 
   if (!LookupInstTable(InstTable, OpPart.str.p_str))
     WrStrErrorPos(ErrNum_UnknownInstruction, &OpPart);
@@ -872,25 +876,31 @@ static Boolean IsDef_MCORE(void)
 
 static void SwitchTo_MCORE(void)
 {
+  const TFamilyDescr *p_descr = FindFamilyByName("M-CORE");
+
   TurnWords = True;
   SetIntConstMode(eIntConstModeMoto);
 
-   PCSymbol = "*"; HeaderID = 0x03; NOPCode = 0x1200; /* ==MOV r0,r0 */
-   DivideChars = ","; HasAttrs = True; AttrChars = ".";
+  PCSymbol = "*";
+  HeaderID = p_descr->Id;
+  NOPCode = 0x1200; /* ==MOV r0,r0 */
+  DivideChars = ",";
+  HasAttrs = True;
+  AttrChars = ".";
 
-   ValidSegs = (1 << SegCode);
-   Grans[SegCode] = 1; ListGrans[SegCode] = 2; SegInits[SegCode] = 0;
-   SegLimits[SegCode] = (LargeWord)IntTypeDefs[UInt32].Max;
+  ValidSegs = (1 << SegCode);
+  Grans[SegCode] = 1; ListGrans[SegCode] = 2; SegInits[SegCode] = 0;
+  SegLimits[SegCode] = (LargeWord)IntTypeDefs[UInt32].Max;
 
-   DecodeAttrPart = DecodeAttrPart_MCORE;
-   MakeCode = MakeCode_MCORE;
-   IsDef = IsDef_MCORE;
-   InternSymbol = InternSymbol_MCORE;
-   DissectReg = DissectReg_MCORE;
+  DecodeAttrPart = DecodeAttrPart_MCORE;
+  MakeCode = MakeCode_MCORE;
+  IsDef = IsDef_MCORE;
+  InternSymbol = InternSymbol_MCORE;
+  DissectReg = DissectReg_MCORE;
 
-   SwitchFrom = DeinitFields; InitFields();
-   onoff_supmode_add();
-   AddMoto16PseudoONOFF(True);
+  SwitchFrom = DeinitFields; InitFields();
+  onoff_supmode_add();
+  AddMoto16PseudoONOFF(True);
 }
 
 /*--------------------------------------------------------------------------*/

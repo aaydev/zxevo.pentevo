@@ -51,7 +51,7 @@ fi
 if [ "${INCPATH}" != "" ]; then
  ${MKDIRHIER} ${INCPATH}
  chmod 755 ${INCPATH}
- for path in . avr s12z s12z/vh s12z/vc s12z/vca coldfire st6 st7 stm8 stm8/stm8s stm8/stm8l stm8/stm8af stm8/stm8al stm8/stm8t z8 pdk; do
+ for path in . avr s12z s12z/vh s12z/vc s12z/vca coldfire ez80 st6 st7 stm8 stm8/stm8s stm8/stm8l stm8/stm8af stm8/stm8al stm8/stm8t z8 pdk; do
   if [ "$path" != "." ]; then
    mkdir ${INCPATH}/${path}
    chmod 755 ${INCPATH}/${path}
@@ -81,7 +81,7 @@ fi
 if [ "${LIBPATH}" != "" ]; then
  ${MKDIRHIER} ${LIBPATH}
  chmod 755 ${LIBPATH}
- if [ -f as.msg ]; then
+ if [ -f ${TARG_OBJDIR}as.msg ]; then
   for file in ${TARG_OBJDIR}*.msg; do
    base=`basename ${file}`
    #echo copy ${file} to ${LIBPATH}/${base} ...

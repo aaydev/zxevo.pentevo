@@ -21,6 +21,7 @@
 #include "fourpseudo.h"
 #include "codevars.h"
 #include "errmsg.h"
+#include "headids.h"
 
 
 typedef struct
@@ -40,7 +41,7 @@ static void DecodeSFR(Word Code)
 {
   UNUSED(Code);
 
-  CodeEquate(SegData, 0, 415);
+  code_equate_range(SegData, 0, 415);
 }
 
 static void DecodeDATA_4500(Word Code)
@@ -231,6 +232,9 @@ static void AddConst(const char *NName, Word NCode, IntType NMax)
 static void InitFields(void)
 {
   InstTable = CreateInstTable(307);
+
+  add_null_pseudo(InstTable);
+
   AddInstTable(InstTable, "SZD", 0, DecodeSZD);
   AddInstTable(InstTable, "SEA", 0, DecodeSEA);
   AddInstTable(InstTable, "B", 0, DecodeB);
@@ -293,14 +297,6 @@ static void DeinitFields(void)
 
 static void MakeCode_4500(void)
 {
-  CodeLen = 0;
-  DontPrint = False;
-
-  /* zu ignorierendes */
-
-  if (Memo(""))
-    return;
-
   if (!LookupInstTable(InstTable, OpPart.str.p_str))
     WrStrErrorPos(ErrNum_UnknownInstruction, &OpPart);
 }
@@ -317,11 +313,13 @@ static void SwitchFrom_4500(void)
 
 static void SwitchTo_4500(void)
 {
+  const TFamilyDescr *p_descr = FindFamilyByName("MELPS-4500");
+
   TurnWords = False;
   SetIntConstMode(eIntConstModeMoto);
 
   PCSymbol = "*";
-  HeaderID = 0x12;
+  HeaderID = p_descr->Id;
   NOPCode = 0x000;
   DivideChars = ",";
   HasAttrs = False;

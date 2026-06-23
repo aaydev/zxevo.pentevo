@@ -1,100 +1,102 @@
 
-;LAST UPDATE: 20.08.2019 savelij
+; LAST UPDATE: 14.02.2025 savelij
 
-;ОПИСАТЕЛЬ ОКНА (АДРЕС В IX)
-;+00 X КООРДИНАТА
-;+01 Y КООРДИНАТА
-;+02 V ВЫСОТА
-;+03 H ШИРИНА
-;+04 C ЦВЕТ
-;+05 C ЦВЕТ КУРСОРА
-;+06 F ФЛАГОВЫЙ
-;+07 N НОМЕР ПУНКТА В ОКНЕ
-;  БИТ 7-0 => 8-9 ТЕКУЩИЙ ПУНКТ,
-;        1 => 8-9 АДРЕС ХРАНЕНИЯ
-;      6-0 => A-B КОЛИЧЕСТВО ПУНКТОВ
-;        1 => A-B АДРЕС ХРАНЕНИЯ
-;+08 | ТЕКУЩИЙ
-;+09 | ПУНКТ МЕНЮ
-;+0A : КОЛИЧЕСТВО
-;+0B : ПУНКТОВ
-;+0C | АДРЕС
-;+0D | ТЕКСТА
-;+0E : СПИСОК АДРЕСОВ
-;+0F : ПОДПРОГРАММ
-;+10 | АДРЕС СПИСКА АКТИВНЫХ
-;+11 | ЗОН ДЛЯ МЫШИ
-;+12 : АДРЕС СПИСКА
-;+13 : ГОРЯЧИХ КЛАВИШ
+; описатель окна (адрес в IX)
+; +00 X координата
+; +01 Y координата
+; +02 V высота
+; +03 H ширина
+; +04 C цвет
+; +05 C цвет курсора
+; +06 F флаговый
+; +07 N номер пункта в окне
+;   BIT 7-0 => 8-9 текущий пункт,
+;         1 => 8-9 адрес хранения
+;       6-0 => A-B количество пунктов
+;         1 => A-B адрес хранения
+; +08 | текущий
+; +09 | пункт меню
+; +0A : количество
+; +0B : пунктов
+; +0C | адрес
+; +0D | текста
+; +0E : список адресов
+; +0F : подпрограмм
+; +10 | адрес списка активных
+; +11 | зон для мыши
+; +12 : адрес списка
+; +13 : горячих клавиш
+  
+; формат флагового байта окна
+; IX+6
+; 7-0-нет, 1-есть нижний заголовок
+; 6-0-с рамкой,1-без рамки
+; 5-0-нет, 1-есть верхний заголовок
+; 4-0-есть текст, 1-нет
+; 3
+; 2-
+; 1-
+; 0-
 
-;ФОРМАТ ФЛАГОВОГО БАЙТА ОКНА
-;IX+6
-;7-0-НЕТ, 1-ЕСТЬ НИЖНИЙ ЗАГОЛОВОК
-;6-0-С РАМКОЙ,1-БЕЗ РАМКИ
-;5-0-НЕТ, 1-ЕСТЬ ВЕРХНИЙ ЗАГОЛОВОК
-;4-0-ЕСТЬ ТЕКСТ, 1-НЕТ
-;3
-;2-
-;1-
-;0-
+; раскладка байт выделений. на данный момент не все перенесено из старой реализации
+; +0 флаговый
+;     7 при активности установлен
+;     6 установлен, не выделяется
+;     5 установлен, вызов вектора
+;     4
+;     3 \
+;     2  } форма курсора
+;     1  } при попадании
+;     0 /
+; +1 x координата
+; +2 y координата
+; +3 v высота
+; +4 h ширина
+; +5 k код клавиши
 
-;РАСКЛАДКА БАЙТ ВЫДЕЛЕНИЙ. НА ДАННЫЙ МОМЕНТ НЕ ВСЕ ПЕРЕНЕСЕНО ИЗ СТАРОЙ РЕАЛИЗАЦИИ
-;+0 ФЛАГОВЫЙ
-;    7 ПРИ АКТИВНОСТИ УСТАНОВЛЕН
-;    6 УСТАНОВЛЕН, НЕ ВЫДЕЛЯЕТСЯ
-;    5 УСТАНОВЛЕН, ВЫЗОВ ВЕКТОРА
-;    4
-;    3 \
-;    2  } ФОРМА КУРСОРА
-;    1  } ПРИ ПОПАДАНИИ
-;    0 /
-;+1 X КООРДИНАТА
-;+2 Y КООРДИНАТА
-;+3 V ВЫСОТА
-;+4 H ШИРИНА
-;+5 K КОД КЛАВИШИ
+EXT_WINDOW	LD A,(SYSFLAGS)
+		BIT SYSFLAGS.B_FB_INT_EXT,A
+		JR NZ,EXT_ZX_WINDOW
+; внутренний вызов рисования окна на ZX экране
+INT_ZX_WINDOW	LD A,NUM_ZXSCR
+		JR INT_TXT_WINDOW.L1
 
-;ВНУТРЕННИЙ ВЫЗОВ РИСОВАНИЯ ОКНА НА ZX ЭКРАНЕ
-IWINW		LD A,NUM_ZXSCR
-		JR IWINW0
-
-;ВНУТРЕННИЙ ВЫЗОВ ДЛЯ РИСОВАНИЯ ОКНА НА ТЕКСТОВОМ ЭКРАНЕ
-ITWINW		LD A,NUM_TXTSCR
-;ВНЕШНИЙ ВЫЗОВ ДЛЯ РИСОВАНИЯ ОКНА НА ТЕКСТОВОМ ЭКРАНЕ
-IWINW0		EX AF,AF'
+; внутренний вызов для рисования окна на текстовом экране
+INT_TXT_WINDOW	LD A,NUM_TXTSCR
+; внешний вызов для рисования окна на текстовом экране
+.L1		EX AF,AF'
 		XOR A
 		LD (PAGE4READ),A
 		EX AF,AF'
-		LD HL,FLAGS
-		SET B_WIN_INT_EXT,(HL)
-		JR WINW0
+		LD HL,SYSFLAGS
+		SET SYSFLAGS.B_WIN_INT_EXT,(HL)
+		JR EXT_ZX_WINDOW.L1
 
-;ВНЕШНИЙ ВЫЗОВ ДЛЯ РИСОВАНИЯ ОКНА НА ZX ЭКРАНЕ
-WINW		LD HL,FLAGS
-		RES B_WIN_INT_EXT,(HL)
+; внешний вызов для рисования окна на ZX экране
+EXT_ZX_WINDOW	LD HL,SYSFLAGS
+		RES SYSFLAGS.B_WIN_INT_EXT,(HL)
 		LD IX,(RREG_IXL)
 		LD A,(R_77)
 		AND 7
-WINW0		CP NUM_ZXSCR
+.L1		CP NUM_ZXSCR
 		JP Z,WINW_ZX
 		CP NUM_TXTSCR
 		RET NZ
 		EXX
-		LD BC,WIN_P6
+		LD BC,WIN_P2
 		LD A,(PAGE4READ)
 		OUT (C),A
 		EXX
-		LD D,(IX+0)			;X
-		LD E,(IX+1)			;Y
-		LD C,(IX+4)			;ЦВЕТ ОКНА
+		LD D,(IX+_X_COORD)		; X
+		LD E,(IX+_Y_COORD)		; Y
+		LD C,(IX+_COLOR_WIN)		; цвет окна
 		EXX
-		LD H,(IX+2)			;V
-		LD L,(IX+3)			;H
-		LD D,(IX+6)			;FLAGS
-		XOR A
-		OUT (C),A
+		LD H,(IX+_V_SIZE)		; V
+		LD L,(IX+_H_SIZE)		; H
+		LD D,(IX+_FLAGS)		; FLAGS
+	EVOPORT WIN_P2,RAM_NMI
 		LD B,HIGH (WIN_P3)
-		LD A,0XF7
+		LD A,VMODE7_0
 		OUT (C),A
 		EXX
 		PUSH DE
@@ -116,11 +118,11 @@ WINT1		EX AF,AF'
 		DEC H
 		JR NZ,WINT2
 		POP HL
-		BIT 7,D
+		BIT B_DOWN_HEADER,D
 		EXX
 		POP DE
-		JR Z,TNIZ_RAMKA		;ОКНО БЕЗ НИЖНЕГО ЗАГОЛОВКА
-;РИСУЕМ НИЖНЮЮ ЦВЕТНУЮ ПОЛОСКУ
+		JR Z,TNIZ_RAMKA		; окно без нижнего заголовка
+; рисуем нижнюю цветную полоску
 		PUSH DE
 		EXX
 		LD A,H
@@ -132,9 +134,9 @@ WINT1		EX AF,AF'
 		POP DE
 		JR TCENTR_RAMK
 
-;РИСУЕМ НИЖНЮЮ РАМКУ
+; рисуем нижнюю рамку
 TNIZ_RAMKA	EXX
-		BIT 6,D
+		BIT B_WINFRAME,D
 		EXX
 		JR NZ,TCENTR_RAMK
 		EXX
@@ -145,10 +147,10 @@ TNIZ_RAMKA	EXX
 		ADD A,E
 		LD E,A
 ;		LD B,"└"
-		LD B,5+0XF2			;ЛЕВЫЙ НИЖНИЙ УГОЛ
+		LD B,5+0xF2			; левый нижний угол
 		CALL PRTSYMTXTMODE
 ;		LD B,"─"
-		LD B,6+0XF2			;НИЖНИЙ КРАЙ
+		LD B,6+0xF2			; нижний край
 		INC D
 		EXX
 		LD A,L
@@ -162,21 +164,21 @@ WINT04		EX AF,AF'
 		DEC A
 		JR NZ,WINT04
 ;		LD B,"┘"
-		LD B,7+0XF2			;ПРАВЫЙ НИЖНИЙ УГОЛ
+		LD B,7+0xF2			; правый нижний угол
 		CALL PRTSYMTXTMODE
 		POP DE
 TCENTR_RAMK	EXX
-		BIT 6,D
+		BIT B_WINFRAME,D
 		EXX
-		JR NZ,TWERH_COLOR		;ОКНО БЕЗ РАМКИ
-;РИСУЕМ БОКОВЫЕ РАМКИ
+		JR NZ,TWERH_COLOR		; окно без рамки
+; рисуем боковые рамки
 		EXX
 		LD A,H
 		EXX
 		DEC A
 		DEC A
 ;		LD B,"│"
-		LD B,3+0XF2			;ЛЕВАЯ СТОРОНА
+		LD B,3+0xF2			; левая сторона
 		INC E
 		PUSH DE
 WINT01		EX AF,AF'
@@ -198,7 +200,7 @@ WINT01		EX AF,AF'
 		EXX
 		DEC A
 		DEC A
-		LD B,4+0XF2			;ПРАВАЯ СТОРОНА ОКНА
+		LD B,4+0xF2			; правая сторона окна
 WINT02		EX AF,AF'
 		CALL PRTSYMTXTMODE
 		INC E
@@ -208,24 +210,24 @@ WINT02		EX AF,AF'
 		POP DE
 		DEC E
 TWERH_COLOR	EXX
-		BIT 5,D
+		BIT B_UPHEADER,D
 		EXX
 		JR Z,TWERH_RAMK
-;РИСУЕМ ВЕРХНЮЮ ЦВЕТНУЮ ПОЛОСУ
+; рисуем верхнюю цветную полосу
 		PUSH DE
 		CALL COLOR_LINE
 		POP DE
 		JR TRASCH
 
 TWERH_RAMK	EXX
-		BIT 6,D
+		BIT B_WINFRAME,D
 		EXX
 		JR NZ,TRASCH
 ;		LD B,"┌"
-		LD B,0+0XF2			;ЛЕВЫЙ ВЕРХНИЙ УГОЛ
+		LD B,0+0xF2			; левый верхний угол
 		CALL PRTSYMTXTMODE
 ;		LD B,"─"
-		LD B,1+0XF2			;ВЕРХНИЙ КРАЙ
+		LD B,1+0xF2			; верхний край
 		EXX
 		LD A,L
 		EXX
@@ -240,34 +242,31 @@ WINT3		EX AF,AF'
 		DEC A
 		JR NZ,WINT3
 ;		LD B,"┐"
-		LD B,2+0XF2			;ПРАВЫЙ ВЕРХНИЙ УГОЛ
+		LD B,2+0xF2			; правый верхний угол
 		CALL PRTSYMTXTMODE
 		POP DE
 TRASCH		INC D
 		LD (TADRSTR_Y),DE
 		LD A,D
 		LD (TXNEW),A
-		LD A,(FLAGS)
-		AND M_RUN_FAT_DSK
+		LD A,(SYSFLAGS)
+		AND SYSFLAGS.M_RUN_FAT_DSK
 		JR NZ,TNOSET_MAIN
-		ROMCALL MAIN_MEM13,ROM_RST83
-TNOSET_MAIN	LD BC,WIN_P6
+	ROMCALL MAIN_MEM13,ROM_RST83
+TNOSET_MAIN	LD BC,WIN_P2
 		LD A,(PAGE4READ)
 		OUT (C),A
-		LD L,(IX+0X0C)
-		LD H,(IX+0X0D)
-		XOR A
-		OUT (C),A
+		LD L,(IX+_ADR_TXT_L)
+		LD H,(IX+_ADR_TXT_H)
+	EVOPORT WIN_P2,RAM_NMI
 		EXX
-		BIT 4,D
+		BIT B_TEXT,D
 		EXX
 		RET NZ
 ITPRINT_MESSAGE	EXX
 		LD HL,0
 		LD (TEK_TEXT),HL
-		LD BC,WIN_P6
-		XOR A
-		OUT (C),A
+	EVOPORT WIN_P2,RAM_NMI
 		LD A,(PAGE4READ)
 		LD H,A
 		OUT (C),H
@@ -280,7 +279,7 @@ TNEXT		EXX
 		INC HL
 		AND A
 		JP Z,STOP_TPRINTMSG
-TPRINT		CP 0X20
+TPRINT		CP 0x20
 		JP NC,TPRINTA
 		CP 3
 		JR Z,TNEXT
@@ -296,7 +295,7 @@ TPRINT		CP 0X20
 		LD (TADRSTR_X),A
 		JP TNEXT
 
-TCOD0D		CP 0X0D
+TCOD0D		CP 0x0D
 		JR NZ,TCOD16
 		EXX
 		OUT (C),L
@@ -310,7 +309,7 @@ TCOD0D		CP 0X0D
 		LD E,A
 		JP TNEXT
 
-TCOD16		CP 0X16
+TCOD16		CP 0x16
 		JR NZ,TCOD17
 		LD E,(HL)
 		INC HL
@@ -322,7 +321,7 @@ TCOD16		CP 0X16
 		LD (TADRSTR_Y),DE
 		JP TNEXT
 
-TCOD17		CP 0X17
+TCOD17		CP 0x17
 		JR NZ,TCOD1
 		LD C,(HL)
 		INC HL
@@ -335,8 +334,8 @@ TCOD17		CP 0X17
 
 TCOD1		CP 1
 		JR NZ,TCOD2
-		LD D,(IX+0)
-		LD E,(IX+1)
+		LD D,(IX+_X_COORD)
+		LD E,(IX+_Y_COORD)
 		INC D
 		EXX
 		OUT (C),L
@@ -366,7 +365,7 @@ TCOD2_1		LD HL,(TEK_TEXT)
 TPRINT_A	LD A,(RREG_A)
 ITPRINT_A	EX AF,AF'
 ITPRINT_A1	EXX
-		LD BC,WIN_P6
+		LD BC,WIN_P2
 		LD A,(PAGE4READ)
 		LD H,A
 		LD L,0
@@ -386,7 +385,7 @@ TPRINTA		EX AF,AF'
 		LD A,(COLOR4SYM)
 		LD C,A
 		EXX
-		LD A,0XF7
+		LD A,VMODE7_0
 		OUT (C),A
 		EXX
 		LD H,E
@@ -401,12 +400,13 @@ TPRINTA		EX AF,AF'
 		SRL E
 		ADD HL,DE
 		AND 1
-		REPT 4
 		RRCA
-		ENDM
-		ADD A,HIGH (CPU6+LSYM)
+		RRCA
+		RRCA
+		RRCA
+		ADD A,HIGH (CPU2+LSYM)
 		LD D,A
-		LD E,LOW (CPU6+LSYM)
+		LD E,LOW (CPU2+LSYM)
 		ADD HL,DE
 		EX AF,AF'
 		LD (HL),A
@@ -414,13 +414,14 @@ TPRINTA		EX AF,AF'
 		INC A
 		JP Z,TRINTA0
 		LD A,H
-		XOR 0X30
+		XOR 0x30
 		LD H,A
 		LD A,D
-		AND 0X10
-		REPT 4
+		AND 0x10
 		RRCA
-		ENDM
+		RRCA
+		RRCA
+		RRCA
 		ADD A,L
 		LD L,A
 		LD (HL),C
@@ -435,7 +436,7 @@ STOP_TPRINTMSG	EXX
 		EXX
 		RET
 
-;D-X E-Y B-SYMBOL C-COLOR
+; D-X E-Y B-символ C-цвет
 COLOR_LINE	LD A,C
 		PUSH AF
 		AND 7
@@ -451,7 +452,7 @@ COLOR_LINE	LD A,C
 		OR H
 		LD H,A
 		LD A,C
-		AND 0XC0
+		AND 0xC0
 		OR H
 		LD C,A
 		LD B," "
@@ -468,7 +469,7 @@ WINT03		EX AF,AF'
 		LD C,A
 		RET
 
-;D-X E-Y -> DE=ATTR ADR HL=DISP ADR
+; D-X E-Y -> DE=ATTR ADR HL=DISP ADR
 TDISP_ATTR	LD H,E
 		LD L,0
 		LD E,D
@@ -481,62 +482,62 @@ TDISP_ATTR	LD H,E
 		SRL E
 		ADD HL,DE
 		AND 1
-		REPT 4
 		RRCA
-		ENDM
+		RRCA
+		RRCA
+		RRCA
 		ADD A,HIGH (CPU3+LSYM)
 		LD D,A
 		LD E,LOW (CPU3+LSYM)
-		ADD HL,DE			;HL=АДРЕС СИМВОЛА НА ТЕКСТМОДНОМ ЭКРАНЕ
+		ADD HL,DE			; HL=Адрес символа на текстмодном экране
 		LD E,H
 		LD A,H
-		XOR 0X30
+		XOR 0x30
 		LD D,A
 		LD A,E
-		AND 0X10
-		REPT 4
+		AND 0x10
 		RRCA
-		ENDM
+		RRCA
+		RRCA
+		RRCA
 		ADD A,L
 		LD E,A
 		RET
 
-;ПЕЧАТЬ СИМВОЛА НА ТЕКСТМОДНОМ ЭКРАНЕ
-;D-X E-Y B-SYMBOL C-COLOR
+; печать символа на текстмодном экране
+; D-X E-Y B-символ C-цвет
 PRTSYMTXTMODE	PUSH DE
 		PUSH HL
 		CALL TDISP_ATTR
 		LD (HL),B
 		LD A,C
 		INC A
-		JR Z,PRTSYMTXTMODE0
+		JR Z,.L1
 		EX DE,HL
 		LD (HL),C
-PRTSYMTXTMODE0	POP HL
+.L1		POP HL
 		POP DE
 		RET
 
 WINW_ZX		EXX
-;		LD BC,RD_7FFD
-;		IN A,(C)
-		READ_7FFD
+	READ_7FFD
 		AND 8
 		RRCA
 		RRCA
 		RRCA
 		RRCA
 		LD D,A
-		LD BC,WIN_P6
+		LD BC,WIN_P2
 		LD A,(PAGE4READ)
 		OUT (C),A
-		LD A,(IX+2)
+		LD A,(IX+_V_SIZE)
 		ADD A,A
 		ADD A,A
 		ADD A,A
 		LD E,A
 		EXX
-		LD C,(IX+3)
-		LD L,(IX+1)
+		LD C,(IX+_H_SIZE)
+		LD L,(IX+_Y_COORD)
 		LD H,0
 		ADD HL,HL
 		ADD HL,HL
@@ -545,16 +546,14 @@ WINW_ZX		EXX
 		EX DE,HL
 		LD IY,BUFTSC
 		ADD IY,DE
-WINW3		LD A,(IX+0)
+WINW3		LD A,(IX+_X_COORD)
 		ADD A,(IY+0)
 		LD E,A
-
 		LD A,(IY+1)
 		EXX
 		ADD A,D
 		EXX
 		LD D,A
-
 		AND 7
 		JR NZ,WINW4
 		LD B,C
@@ -563,15 +562,13 @@ WINW3		LD A,(IX+0)
 		RRCA
 		RRCA
 		AND 3
-		ADD A,0X58
-
+		ADD A,0x58
 		EXX
 		ADD A,D
 		EXX
-		
 		LD H,A
 		LD L,E
-		LD A,(IX+4)
+		LD A,(IX+_COLOR_WIN)
 WINW5		LD (HL),A
 		INC L
 		DJNZ WINW5
@@ -586,12 +583,12 @@ WINW6		LD (DE),A
 		DEC E
 		EXX
 		JR NZ,WINW3
-		BIT 7,(IX+6)
-		JR Z,NIZ_RAMKA		;ОКНО БЕЗ НИЖНЕГО ЗАГОЛОВКА
-;РИСУЕМ НИЖНЮЮ ЦВЕТНУЮ ПОЛОСКУ
-		LD DE,0XFFF0
+		BIT B_ADR_PUNKT,(IX+_FLAGS)
+		JR Z,NIZ_RAMKA		; окно без нижнего заголовка
+; рисуем нижнюю цветную полоску
+		LD DE,0xFFF0
 		ADD IY,DE
-		LD A,(IX+0)
+		LD A,(IX+_X_COORD)
 		ADD A,(IY+0)
 		LD E,A
 		LD A,(IY+1)
@@ -599,15 +596,13 @@ WINW6		LD (DE),A
 		RRCA
 		RRCA
 		AND 3
-		ADD A,0X58
-
+		ADD A,0x58
 		EXX
 		ADD A,D
 		EXX
-
 		LD D,A
 		LD B,C
-		LD L,(IX+4)
+		LD L,(IX+_COLOR_WIN)
 		LD A,L
 		AND 7
 		RLCA
@@ -623,29 +618,27 @@ WINW6		LD (DE),A
 WINWN1		LD (DE),A
 		INC E
 		DJNZ WINWN1
-		LD DE,0X0E
+		LD DE,0x0E
 		ADD IY,DE
 		JR CENTR_RAMK
 
-NIZ_RAMKA	BIT 6,(IX+6)
-		JR NZ,CENTR_RAMK		;ОКНО БЕЗ РАМКИ
-;РИСУЕМ НИЖНЮЮ РАМКУ
+NIZ_RAMKA	BIT B_ADR_NUMS_PUNKT,(IX+_FLAGS)
+		JR NZ,CENTR_RAMK		; окно без рамки
+; рисуем нижнюю рамку
 		DEC IY
 		DEC IY
-		LD L,(IX+0)
+		LD L,(IX+_X_COORD)
 		LD A,(IY+0)
 		ADD A,L
 		LD E,A
 		LD H,A
-
 		LD A,(IY+1)
 		EXX
 		ADD A,D
 		EXX
 		LD D,A
-
 		LD B,C
-		LD A,0XFF
+		LD A,0xFF
 NR1		LD (DE),A
 		INC E
 		DJNZ NR1
@@ -653,7 +646,7 @@ NR1		LD (DE),A
 		DEC D
 		LD L,H
 		LD H,D
-		LD A,0X80
+		LD A,0x80
 		LD B,7
 NR2		LD (HL),A
 		RLCA
@@ -662,33 +655,31 @@ NR2		LD (HL),A
 		DEC H
 		DEC D
 		DJNZ NR2
-CENTR_RAMK	BIT 6,(IX+6)
-		JR NZ,WERH_COLOR		;ОКНО БЕЗ РАМКИ
-;РИСУЕМ БОКОВЫЕ РАМКИ
+CENTR_RAMK	BIT B_ADR_NUMS_PUNKT,(IX+_FLAGS)
+		JR NZ,WERH_COLOR		; окно без рамки
+; рисуем боковые рамки
 		EXX
-		LD A,(IX+2)
+		LD A,(IX+_V_SIZE)
 		SUB 2
 		LD E,A
 		EXX
-NR4		LD DE,0XFFF0
+NR4		LD DE,0xFFF0
 		ADD IY,DE
-		LD L,(IX+0)
+		LD L,(IX+_X_COORD)
 		LD A,(IY+0)
 		ADD A,L
 		LD E,A
-
 		LD A,(IY+1)
 		EXX
 		ADD A,D
 		EXX
 		LD D,A
 		LD A,E
-
 		LD H,D
-		ADD A,(IX+3)
+		ADD A,(IX+_H_SIZE)
 		DEC A
 		LD L,A
-		LD A,0X80
+		LD A,0x80
 		LD B,8
 NR3		LD (DE),A
 		RLCA
@@ -701,10 +692,10 @@ NR3		LD (DE),A
 		DEC E
 		EXX
 		JR NZ,NR4
-WERH_COLOR	BIT 5,(IX+6)
-		JR Z,WERH_RAMK		;БЕЗ ВЕРХНЕГО ЗАГОЛОВКА
-;РИСУЕМ ВЕРХНЮЮ ЦВЕТНУЮ ПОЛОСУ
-		LD L,(IX+1)
+WERH_COLOR	BIT B_UPHEADER,(IX+_FLAGS)
+		JR Z,WERH_RAMK		; без верхнего заголовка
+; рисуем верхнюю цветную полосу
+		LD L,(IX+_Y_COORD)
 		LD H,0
 		ADD HL,HL
 		ADD HL,HL
@@ -713,7 +704,7 @@ WERH_COLOR	BIT 5,(IX+6)
 		EX DE,HL
 		LD IY,BUFTSC
 		ADD IY,DE
-		LD A,(IX+0)
+		LD A,(IX+_X_COORD)
 		ADD A,(IY+0)
 		LD E,A
 		LD A,(IY+1)
@@ -721,15 +712,13 @@ WERH_COLOR	BIT 5,(IX+6)
 		RRCA
 		RRCA
 		AND 3
-		ADD A,0X58
-
+		ADD A,0x58
 		EXX
 		ADD A,D
 		EXX
-
 		LD D,A
 		LD B,C
-		LD L,(IX+4)
+		LD L,(IX+_COLOR_WIN)
 		LD A,L
 		AND 7
 		RLCA
@@ -747,28 +736,26 @@ WINWW1		LD (DE),A
 		DJNZ WINWW1
 		JP RADUGA
 
-WERH_RAMK	BIT 6,(IX+6)
-		JR NZ,RADUGA		;ОКНО БЕЗ РАМКИ
-;РИСУЕМ ВЕРХНЮЮ РАМКУ
-WR4		LD DE,0XFFF0
+WERH_RAMK	BIT B_ADR_NUMS_PUNKT,(IX+_FLAGS)
+		JR NZ,RADUGA		; окно без рамки
+; рисуем верхнюю рамку
+WR4		LD DE,0xFFF0
 		ADD IY,DE
-		LD L,(IX+0)
+		LD L,(IX+_X_COORD)
 		LD A,(IY+0)
 		ADD A,L
 		LD E,A
-
 		LD A,(IY+1)
 		EXX
 		ADD A,D
 		EXX
 		LD D,A
 		LD A,E
-
 		LD H,D
-		ADD A,(IX+3)
+		ADD A,(IX+_H_SIZE)
 		DEC A
 		LD L,A
-		LD A,0X80
+		LD A,0x80
 		LD B,7
 WR3		LD (DE),A
 		RLCA
@@ -781,14 +768,14 @@ WR3		LD (DE),A
 		SUB E
 		LD B,A
 		INC B
-		LD A,0XFF
+		LD A,0xFF
 WR5		LD (DE),A
 		INC E
 		DJNZ WR5
-RADUGA		BIT 5,(IX+6)
+RADUGA		BIT B_UPHEADER,(IX+_FLAGS)
 		JR Z,RASCH
 		LD IY,BUFTSC
-		LD L,(IX+1)
+		LD L,(IX+_Y_COORD)
 		LD H,0
 		ADD HL,HL
 		ADD HL,HL
@@ -803,39 +790,37 @@ RADUGA		BIT 5,(IX+6)
 		RRCA
 		RRCA
 		AND 3
-		ADD A,0X58
-
+		ADD A,0x58
 		EXX
 		ADD A,D
 		EXX
-
 		LD H,A
-		LD A,(IX+0)
-		ADD A,(IX+3)
+		LD A,(IX+_X_COORD)
+		ADD A,(IX+_H_SIZE)
 		ADD A,L
 		LD L,A
 		LD E,A
-		LD A,(IX+4)
-		AND 0X47
+		LD A,(IX+_COLOR_WIN)
+		AND 0x47
 		LD C,A
-		AND 0X40
+		AND 0x40
 		LD B,A
 		DEC L
 		LD A,C
 		ADD A,5*8
-		LD (HL),A	;5*8+7
+		LD (HL),A	; 5*8+7
 		DEC L
 		LD A,4*8+5
 		OR B
-		LD (HL),A	;4*8+5
+		LD (HL),A	; 4*8+5
 		DEC L
 		LD A,6*8+4
 		OR B
-		LD (HL),A	;6*8+4
+		LD (HL),A	; 6*8+4
 		DEC L
 		LD A,2*8+6
 		OR B
-		LD (HL),A	;2*8+6
+		LD (HL),A	; 2*8+6
 		DEC L
 		LD A,C
 		AND 7
@@ -844,7 +829,7 @@ RADUGA		BIT 5,(IX+6)
 		RLCA
 		OR B
 		ADD A,2
-		LD (HL),A	;7*8+2
+		LD (HL),A	; 7*8+2
 		EX DE,HL
 		DEC L
 		LD B,8
@@ -864,16 +849,15 @@ RADUGA1		SCF
 		LD L,C
 		INC H
 		DJNZ RADUGA1
-RASCH		LD A,(IX+0)
-		LD L,(IX+1)
+RASCH		LD A,(IX+_X_COORD)
+		LD L,(IX+_Y_COORD)
 		ADD A,A
 		ADD A,A
 		ADD A,A
 		LD H,A
 		INC H
 		EXX
-		XOR A
-		OUT (C),A
+	EVOPORT WIN_P2,RAM_NMI
 		EXX
 		LD A,H
 		LD (XNEW),A
@@ -882,13 +866,12 @@ RASCH		LD A,(IX+0)
 		LD A,(PAGE4READ)
 		OUT (C),A
 		EXX
-		LD L,(IX+0X0C)
-		LD H,(IX+0X0D)
+		LD L,(IX+_ADR_TXT_L)
+		LD H,(IX+_ADR_TXT_H)
 		EXX
-		XOR A
-		OUT (C),A
+	EVOPORT WIN_P2,RAM_NMI
 		EXX
-		BIT 4,(IX+6)
+		BIT B_TEXT,(IX+_FLAGS)
 		JP Z,IPRINT_MESSAGE
 		RET
 
@@ -896,71 +879,70 @@ CLS		LD HL,0
 		LD D,H
 		LD E,L
 		ADD HL,SP
-		LD B,0X60
-		LD SP,0X5800
-CLS1		REPT 0X20
+		LD B,0x60
+		LD SP,0x5800
+CLS1
+	REPT 0x20
 		PUSH DE
-		ENDM
+	ENDM
 		DJNZ CLS1
 		LD SP,HL
 CLSSCR		LD HL,0
 		LD D,A
 		LD E,A
 		ADD HL,SP
-		LD SP,0X5B00
+		LD SP,0x5B00
 		LD B,12
-CLS2		REPT 0X20
+CLS2
+	REPT 0x20
 		PUSH DE
-		ENDM
+	ENDM
 		DJNZ CLS2
 		LD SP,HL
 		RRCA
 		RRCA
 		RRCA
 		AND 7
-		OUT (0XFE),A
+		OUT (0xFE),A
 		RET
 
-STOP_PRINTMSG	LD BC,WIN_P6
-		XOR A
-		OUT (C),A
+STOP_PRINTMSG
+	EVOPORT WIN_P2,RAM_NMI
 		RET
 
-;ПЕЧАТЬ ТЕКСТОВОЙ СТРОКИ С УПРАВЛЮЯЩИМИ КОДАМИ (ВНЕШНИЙ ВЫЗОВ)
+; печать текстовой строки с управляющими кодами (внешний вызов)
 PRINT_MESSAGE	LD HL,(RREG_L)
-;ПЕЧАТЬ ТЕКСТОВОЙ СТРОКИ С УПРАВЛЮЯЩИМИ КОДАМИ (ВНУТРЕННИЙ ВЫЗОВ)
+; печать текстовой строки с управляющими кодами (внутренний вызов)
 IPRINT_MESSAGE	LD A,(R_77)
 		AND 7
 		CP 7
 		JP Z,ITPRINT_MESSAGE
 		CP 3
 		RET NZ
-;		LD BC,RD_7FFD
-;		IN A,(C)
-		READ_7FFD
+	READ_7FFD
 		AND 8
 		LD BC,BUFTSC
 		JR Z,IPM1
 		LD BC,BUFTSC1
 IPM1		LD (TEKBUFTSC),BC
-		LD BC,WIN_P6
-;ПЕЧАТЬ ТЕКСТОВОЙ СТОРОКИ С УПРАВЛЯЮЩИМИ КОДАМИ (ВНУТРЕННИЙ ВЫЗОВ)
+		LD BC,WIN_P2
+; печать текстовой стороки с управляющими кодами (внутренний вызов)
 NEXT		LD A,(PAGE4READ)
 		OUT (C),A
 		LD A,(HL)
 		INC HL
 		AND A
 		JR Z,STOP_PRINTMSG
-PRINT		CP 0X20
+PRINT		CP 0x20
 		JP NC,PRINTA
 COD03		CP 3
 		JR NZ,COD9
-		LD D,0				;ЦЕНТРОВКА СТРОКИ В ОКНЕ
+		LD D,0				; центровка строки в окне
 		LD A,H
 		EX AF,AF'
 		LD E,L
 CEN2		LD A,(HL)
-		CP 0X20
+		CP 0x20
 		JR C,CEN3
 		LD A,6
 		ADD A,D
@@ -968,9 +950,9 @@ CEN2		LD A,(HL)
 		INC HL
 		JR CEN2
 
-CEN3		XOR A
-		OUT (C),A
-		LD A,(IX+3)
+CEN3
+	EVOPORT WIN_P2,RAM_NMI
+		LD A,(IX+_H_SIZE)
 		ADD A,A
 		ADD A,A
 		ADD A,A
@@ -988,59 +970,54 @@ CEN3		XOR A
 
 COD9		CP 9
 		JR NZ,COD0D
-		LD D,(HL)			;ТАБУЛЯЦИЯ НА N ПОЗИЦИЙ
+		LD D,(HL)			; табуляция на N позиций
 		INC HL
 		LD A,D
 		ADD A,A
 		ADD A,D
 		ADD A,A
 		LD D,A
-		XOR A
-		OUT (C),A
+	EVOPORT WIN_P2,RAM_NMI
 		LD A,(ADRSTR_X)
 		ADD A,D
 		LD (ADRSTR_X),A
 		JR NEXT
 
-COD0D		CP 0X0D
+COD0D		CP 0x0D
 		JR NZ,COD16
-		XOR A
-		OUT (C),A
-		LD A,(XNEW)			;ПЕРЕВОД СТРОКИ
+	EVOPORT WIN_P2,RAM_NMI
+		LD A,(XNEW)			; перевод строки
 		LD (ADRSTR_X),A
 		LD A,(ADRSTR_Y)
 		INC A
 		LD (ADRSTR_Y),A
 		JP NEXT
 
-COD16		CP 0X16
+COD16		CP 0x16
 		JR NZ,COD17
-		LD E,(HL)			;ПЕЧАТЬ В УКАЗАННОЙ ПОЗИЦИИ
+		LD E,(HL)			; печать в указанной позиции
 		INC HL
 		LD D,(HL)
 		INC HL
-		XOR A
-		OUT (C),A
+	EVOPORT WIN_P2,RAM_NMI
 		LD (ADRSTR_Y),DE
 		JP NEXT
 
-COD17		CP 0X17
+COD17		CP 0x17
 		JR NZ,COD1
 		LD D,(HL)
 		INC HL
-		XOR A
-		OUT (C),A
+	EVOPORT WIN_P2,RAM_NMI
 		LD A,D
 		LD (COLOR4SYM),A
 		JP NEXT
 
-;КООРДИНАТА ПЕЧАТИ В ИСХОДНУЮ ПОЗИЦИЮ ОКНА
+; координата печати в исходную позицию окна
 COD1		CP 1
 		JP NZ,NEXT
-		XOR A
-		OUT (C),A
-		LD A,(IX+0)
-		LD E,(IX+1)
+	EVOPORT WIN_P2,RAM_NMI
+		LD A,(IX+_X_COORD)
+		LD E,(IX+_Y_COORD)
 		ADD A,A
 		ADD A,A
 		ADD A,A
@@ -1058,12 +1035,11 @@ IPRINT_A	EX AF,AF'
 		CP 3
 		RET NZ
 		EX AF,AF'
-		LD BC,WIN_P6
+		LD BC,WIN_P2
 		LD HL,STOP_PRINTA
-;ПЕЧАТЬ СИМВОЛА В "A"
+; печать символа в "A"
 PRINTA		EX AF,AF'
-		XOR A
-		OUT (C),A
+	EVOPORT WIN_P2,RAM_NMI
 		PUSH HL
 		LD H,A
 		EX AF,AF'
@@ -1076,7 +1052,7 @@ PRINTA		EX AF,AF'
 		LD A,(COLOR4SYM)
 		LD D,A
 		EXX
-		LD HL,(ADRSTR_Y)		;H=X L=Y
+		LD HL,(ADRSTR_Y)		; H=X L=Y
 		LD B,0
 		LD D,B
 		LD A,H
@@ -1085,7 +1061,7 @@ PRINTA		EX AF,AF'
 		LD IY,SDVIG
 		ADD IY,BC
 		LD A,H
-		AND 0XF8
+		AND 0xF8
 		RRCA
 		RRCA
 		RRCA
@@ -1127,9 +1103,10 @@ SLEDU		EX AF,AF'
 		LD H,0
 		JP (IY)
 
-SDVIG		REPT 8
+SDVIG
+	REPT 8
 		ADD HL,HL
-		ENDM
+	ENDM
 		LD A,(DE)
 		AND B
 		OR H
@@ -1157,12 +1134,11 @@ SDVIG		REPT 8
 		RRCA
 		RRCA
 		AND 3
-		OR 0X58
+		OR 0x58
 		LD H,A
 		LD (HL),E
 PRINTA1		EXX
-		XOR A
-		OUT (C),A
+	EVOPORT WIN_P2,RAM_NMI
 		POP HL
 		JP NEXT
 
@@ -1177,30 +1153,30 @@ BUFMSK		DB %00000011,%11111111
 		DB %11111100,%00001111
 		DB %11111110,%00000111
 
-;РИСОВАЛКА ЦВЕТНОЙ ПОЛОСКИ В МЕНЮ
-COLOR_CURSOR	LD HL,FLAGS
-		BIT B_VIDEO_MODE,(HL)
+; рисовалка цветной полоски в меню
+COLOR_CURSOR	LD HL,SYSFLAGS
+		BIT SYSFLAGS.B_VIDEO_MODE,(HL)
 		JP Z,COLORCURS4
-		EVOPORT WIN_P3,0XF7
-		LD B,(IX+3)
+	EVOPORT WIN_P3,VMODE7_0
+		LD B,(IX+_H_SIZE)
 		LD DE,(COL_CURSOR)
 		CALL TRESTORE_CLINE
-COLORCURS6	LD A,(IX+7)
-		BIT 7,A
+COLORCURS6	LD A,(IX+_NUM_PKT)
+		BIT B_ADR_PUNKT,A
 		JR Z,COLORCURS5
-		LD L,(IX+8)
-		LD H,(IX+9)
+		LD L,(IX+_TEK_PKT_L)
+		LD H,(IX+_TEK_PKT_H)
 		LD A,(HL)
-COLORCURS5	LD D,(IX+0)
-		ADD A,(IX+1)
+COLORCURS5	LD D,(IX+_X_COORD)
+		ADD A,(IX+_Y_COORD)
 		LD E,A
 		INC E
 		LD (COL_CURSOR),DE
-		EVOPORT WIN_P3,0XF7
-		LD B,(IX+3)
+	EVOPORT WIN_P3,VMODE7_0
+		LD B,(IX+_H_SIZE)
 		CALL TSTORE_CLINE
-		LD A,(IX+5)
-		AND 0XF8
+		LD A,(IX+_COLOR_CUR)
+		AND 0xF8
 		LD C,A
 		PUSH HL
 		PUSH DE
@@ -1208,18 +1184,19 @@ COLORCURS5	LD D,(IX+0)
 		LD (COL_CURSOR),DE
 		CALL TDISP_ATTR
 		LD A,D
-		XOR 0X10
+		XOR 0x10
 		LD H,A
 		LD A,D
-		AND 0X10
-		REPT 4
+		AND 0x10
 		RRCA
-		ENDM
+		RRCA
+		RRCA
+		RRCA
 		ADD A,E
 		LD L,A
 TCOLORLINE2	EX DE,HL
 		LD A,(HL)
-		AND 0XC7
+		AND 0xC7
 		OR C
 		LD (HL),A
 		INC HL
@@ -1229,21 +1206,21 @@ TCOLORLINE2	EX DE,HL
 		POP HL
 		RET
 
-;РИСОВАНИЕ ЦВЕТНОЙ ПОЛОСЫ
-;D-X E-Y B-ДЛИНА C-ЦВЕТ
+; рисование цветной полосы
+; D-X E-Y B-длина C-цвет
 TCOLOR_LINE	PUSH HL
 		PUSH DE
 		PUSH BC
 		LD (COL_CURSOR),DE
 		CALL TDISP_ATTR
 		LD A,D
-		XOR 0X10
+		XOR 0x10
 		LD H,A
 		LD A,D
-		AND 0X10
-		REPT 4
+		AND 0x10
+	REPT 4
 		RRCA
-		ENDM
+	ENDM
 		ADD A,E
 		LD L,A
 TCOLORLINE1	EX DE,HL
@@ -1254,23 +1231,23 @@ TCOLORLINE1	EX DE,HL
 		POP DE
 		POP HL
 		RET
-; 00   01   02   03   04   05   06
-;F1C0 E1C1 F1C1 E1C2 F1C2 E1C3 F1C3
+;  00   01   02   03   04   05   06
+; F1C0 E1C1 F1C1 E1C2 F1C2 E1C3 F1C3
 
-;СОХРАНЕНИЕ ЧАСТИ ЭКРАНА ДЛЯ ВЫВОДА ЦВЕТНОЙ ЛИНИИ
-;D-X E-Y B-ДЛИНА
+; сохранение части экрана для вывода цветной линии
+; D-X E-Y B-длина
 TSTORE_CLINE	PUSH HL
 		PUSH DE
 		PUSH BC
 		CALL TDISP_ATTR
 		LD A,D
-		XOR 0X10
+		XOR 0x10
 		LD H,A
 		LD A,D
-		AND 0X10
-		REPT 4
+		AND 0x10
+	REPT 4
 		RRCA
-		ENDM
+	ENDM
 		ADD A,E
 		LD L,A
 TSTORECLINE1	EXX
@@ -1289,22 +1266,22 @@ TSTORECLINE2	EX DE,HL
 		POP HL
 		RET
 
-;ВОССТАНОВЛЕНИЕ ЧАСТИ ЭКРАНА ПОД ЦВЕТНОЙ ЛИНИЕЙ
-;D-X E-Y B-ДЛИНА
+; восстановление части экрана под цветной линией
+; D-X E-Y B-длина
 TRESTORE_CLINE	PUSH HL
 		PUSH DE
 		PUSH BC
-		LD B,(IX+3)
+		LD B,(IX+_H_SIZE)
 		LD DE,(COL_CURSOR)
 		CALL TDISP_ATTR
 		LD A,D
-		XOR 0X10
+		XOR 0x10
 		LD H,A
 		LD A,D
-		AND 0X10
-		REPT 4
+		AND 0x10
+	REPT 4
 		RRCA
-		ENDM
+	ENDM
 		ADD A,E
 		LD L,A
 TRESTCLINE1	EXX
@@ -1323,66 +1300,67 @@ TRESTCLINE2	EX DE,HL
 		POP HL
 		RET
 
-RESTORE_CLINE	LD HL,FLAGS
-		BIT B_VIDEO_MODE,(HL)
+RESTORE_CLINE	LD HL,SYSFLAGS
+		BIT SYSFLAGS.B_VIDEO_MODE,(HL)
 		JR NZ,TREST_CLINE
 		LD DE,(COL_CURSOR)
 		LD HL,COLBUF
-		LD C,(IX+3)
+		LD C,(IX+_H_SIZE)
 		LD B,0
 		LDIR
 		RET
 
-TREST_CLINE	EVOPORT WIN_P3,0XF7
-		LD B,(IX+3)
+TREST_CLINE
+	EVOPORT WIN_P3,VMODE7_0
+		LD B,(IX+_H_SIZE)
 		LD DE,(COL_CURSOR)
 		JP TRESTORE_CLINE
 
 COLORCURS4	LD DE,(COL_CURSOR)
 		LD HL,COLBUF
-		LD C,(IX+3)
-;		BIT 2,(IY+55)		;ФАЙЛОВ БОЛЬШЕ ВЫСОТЫ ОКНА?
+		LD C,(IX+_H_SIZE)
+;		BIT 2,(IY+55)		; файлов больше высоты окна?
 ;		JR Z,COLCURS1
-;		DEC C			;ЦВЕТНАЯ ПОЛОСКА НА 1 КОРОЧЕ
+;		DEC C			; цветная полоска на 1 короче
 COLCURS1	LD B,0
 		LDIR
-SET_ADR_ATR	LD HL,FLAGS
-		BIT B_VIDEO_MODE,(HL)
+SET_ADR_ATR
+	EVOPORT WIN_P3,VMODE7_0
+		LD HL,SYSFLAGS
+		BIT SYSFLAGS.B_VIDEO_MODE,(HL)
 		JP NZ,COLORCURS6
-		LD A,(IX+7)
-		BIT 7,A
+		BIT B_ADR_PUNKT,(IX+_NUM_PKT)
 		JR Z,COLCURS3
-		LD L,(IX+8)
-		LD H,(IX+9)
+		LD L,(IX+_TEK_PKT_L)
+		LD H,(IX+_TEK_PKT_H)
 		LD A,(HL)
-COLCURS3	;LD B,A
-		LD H,(IX+0)
-		LD L,(IX+1)
+COLCURS3	LD H,(IX+_X_COORD)
+		LD L,(IX+_Y_COORD)
 		ADD A,L
 		LD L,A
 		INC L
 		CALL ADRDIS
 		EX DE,HL
-		LD (COL_CURSOR),HL	;ПОЛОЖИЛИ АДРЕС ДЛЯ ВОССТАНОВЛЕНИЯ ЦВЕТА
+		LD (COL_CURSOR),HL	; положили адрес для восстановления цвета
 		LD DE,COLBUF
-		LD B,(IX+3)
-;		BIT 2,(IY+55)		;ФАЙЛОВ БОЛЬШЕ ВЫСОТЫ ОКНА?
+		LD B,(IX+_H_SIZE)
+;		BIT 2,(IY+55)		; файлов больше высоты окна?
 ;		JR Z,COLCURS2
-;		DEC B			;ЦВЕТНАЯ ПОЛОСКА НА 1 КОРОЧЕ
-COLCURS2	LD C,(IX+5)
-		LD A,(HL)
+;		DEC B			; цветная полоска на 1 короче
+COLCURS2	LD C,(IX+_COLOR_CUR)
+.L1		LD A,(HL)
 		LD (DE),A
 		LD (HL),C
 		INC L
 		INC E
-		DJNZ $-5
+		DJNZ .L1
 		RET
 
-;H-X, L-Y
+; H-X, L-Y
 ADRDIS		LD C,A
 		LD A,L
-		AND 0X18
-		OR 0X40
+		AND 0x18
+		OR 0x40
 		EX AF,AF'
 		LD A,L
 		AND 7
@@ -1399,7 +1377,7 @@ ADRATR		LD A,H
 		RRCA
 		RRCA
 		AND 3
-		OR 0X58
+		OR 0x58
 		LD D,A
 		LD A,C
 		RET
@@ -1409,7 +1387,7 @@ INC_H		INC H
 		AND 7
 		RET NZ
 		LD A,L
-		ADD A,0X20
+		ADD A,0x20
 		LD L,A
 		RET C
 UMEHL1		LD A,H
@@ -1417,25 +1395,25 @@ UMEHL1		LD A,H
 		LD H,A
 		RET	
 
-;СДВИГ ОКНА ВВЕРХ
-SCRUP		LD HL,FLAGS
-		BIT B_VIDEO_MODE,(HL)
+; сдвиг окна вверх
+SCRUP		LD HL,SYSFLAGS
+		BIT SYSFLAGS.B_VIDEO_MODE,(HL)
 		JP NZ,TSCRUP
-;СДВИГ ОКНА ВВЕРХ (ZX)
+; сдвиг окна вверх (ZX)
 		PUSH IY
 		PUSH IX
 		EXX
 		LD A,(SCROLL_MODE)
 		LD E,A
 		EXX
-		LD L,(IX+1)
+		LD L,(IX+_Y_COORD)
 		INC L
 		CALL USTAN
-;СДВИГ ПИКСЕЛЕЙ ВВЕРХ
-SCRUP1		LD A,(IX+0X10)
+; сдвиг пикселей вверх
+SCRUP1		LD A,(IX+0x10)
 		ADD A,C
 		LD L,A
-		LD H,(IX+0X11)
+		LD H,(IX+0x11)
 		LD A,(IX+0)
 		ADD A,C
 		LD E,A
@@ -1448,26 +1426,26 @@ SCRUP1		LD A,(IX+0X10)
 		EXX
 		AND 1;A
 		JR Z,SCRUP2
-		LD A,(IX+0X11)
+		LD A,(IX+0x11)
 		LD H,A
 		AND 7
 		CP 7
 		JR NZ,SCRUP2
-;СДВИГ ВВЕРХ ЦВЕТОВОЙ СТРОКИ ПОСЛЕ ПЕРЕНОСА 7 ЛИНИЙ ЗНАКОРЯДА
+; сдвиг вверх цветовой строки после переноса 7 линий знакоряда
 		LD A,H
 		RRCA
 		RRCA
 		RRCA
 		AND 3
-		OR 0X58
+		OR 0x58
 		LD H,A
-		LD L,(IX+0X10)
+		LD L,(IX+0x10)
 		LD A,(IX+1)
 		RRCA
 		RRCA
 		RRCA
 		AND 3
-		OR 0X58
+		OR 0x58
 		LD D,A
 		LD E,(IX+0)
 		PUSH BC
@@ -1480,17 +1458,17 @@ SCRUP3		POP IX
 		POP IY
 		RET
 
-;СДВИГ ОКНА ВВЕРХ (TXT)
+; сдвиг окна вверх (TXT)
 TSCRUP		PUSH IY
 		PUSH IX
-		EVOPORT WIN_P3,0XF7
-		LD A,(IX+2)
+	EVOPORT WIN_P3,VMODE7_0
+		LD A,(IX+_V_SIZE)
 		SUB 3
-		LD B,A				;СКОЛЬКО СТРОК В ОКНЕ СКРОЛЛИРОВАТЬ
-		LD C,(IX+3)			;ШИРИНА ОКНА
-		LD D,(IX+0)			;X КООРДИНАТА ЛЕВОГО ВЕРХНЕГО УГЛА ДЛЯ СКРОЛЛЕРА
-		LD E,(IX+1)
-		INC E				;Y КООРДИНАТА ЛЕВОГО ВЕРХНЕГО УГЛА ДЛЯ СКРОЛЛЕРА
+		LD B,A				; сколько строк в окне скроллировать
+		LD C,(IX+_H_SIZE)		; ширина окна
+		LD D,(IX+_X_COORD)		; X координата левого верхнего угла для скроллера
+		LD E,(IX+_Y_COORD)
+		INC E				; Y координата левого верхнего угла для скроллера
 		LD A,E
 		ADD A,A
 		ADD A,A
@@ -1498,15 +1476,15 @@ TSCRUP		PUSH IY
 		LD C,A
 		LD B,0
 		LD IX,TBUFTSC
-		ADD IX,BC			;IX=СПИСОК АДРЕСОВ НАЧАЛ СТРОК ДЛЯ СКРОЛЛЕРА
+		ADD IX,BC			; IX=список адресов начал строк для скроллера
 		EXX
 		LD A,C
-		AND 0XFE
+		AND 0xFE
 		NEG
-		LD H,A				;ШИРИНА ДЛЯ ЛЕВЫЙ СИМВОЛОВ
-		LD L,A				;ШИРИНА ДЛЯ ПРАВЫХ СИМВОЛОВ
+		LD H,A				; ширина для левый символов
+		LD L,A				; ширина для правых символов
 		BIT 0,C
-		JR Z,TSCRUP1			;ЕСЛИ ШИРИНА ЧЕТНАЯ, НИЧЕГО НЕ ДЕЛАЕМ
+		JR Z,TSCRUP1			; если ширина четная, ничего не делаем
 		DEC L
 		DEC L
 		BIT 0,D
@@ -1523,7 +1501,7 @@ TSCRUP2		LD A,H
 		EXX
 		LD IY,LDI_END
 		LD E,A
-		LD D,0XFF
+		LD D,0xFF
 		ADD IY,DE
 		EXX
 		LD A,E
@@ -1536,7 +1514,7 @@ TSCRUP2		LD A,H
 		ADD A,(IX+0)
 		LD E,A
 		LD D,(IX+1)
-		CALL LDIST			;ПЕРЕНОС МОНОХРОМНОЙЙ СТРОКИ 
+		CALL LDIST			; перенос монохромнойй строки
 		EXX
 		LD A,E
 		EXX
@@ -1548,13 +1526,13 @@ TSCRUP2		LD A,H
 		ADD A,(IX+0+100)
 		LD E,A
 		LD D,(IX+1+100)
-		CALL LDIST			;ПЕРЕНОС ЦВЕТНОЙ СТРОКИ
+		CALL LDIST			; перенос цветной строки
 		EXX
 		LD A,L
 		EXX
 		LD IY,LDI_END
 		LD E,A
-		LD D,0XFF
+		LD D,0xFF
 		ADD IY,DE
 		EXX
 		LD A,D
@@ -1567,7 +1545,7 @@ TSCRUP2		LD A,H
 		ADD A,(IX+2)
 		LD E,A
 		LD D,(IX+3)
-		CALL LDIST			;ПЕРЕНОС МОНОХРОМНОЙ СТРОКИ
+		CALL LDIST			; перенос монохромной строки
 		EXX
 		LD A,D
 		EXX
@@ -1579,10 +1557,10 @@ TSCRUP2		LD A,H
 		ADD A,(IX+2+100)
 		LD E,A
 		LD D,(IX+3+100)
-		CALL LDIST			;ПЕРЕНОС СТРОКИ ЦВЕТА
-		REPT 4
+		CALL LDIST			; перенос строки цвета
+	REPT 4
 		INC IX
-		ENDM
+	ENDM
 		EXX
 		DJNZ TSCRUP2
 		POP IX
@@ -1591,10 +1569,10 @@ TSCRUP2		LD A,H
 
 ;0 2 4 6 8
 ; 1 3 5 7 9
-; =====		3 НЕЧЕТ + 2 ЧЕТ
-;=====		2 НЕЧЕТ + 3 ЧЕТ
-; ====		2 НЕЧЕТ + 2 ЧЕТ
-;====		2 НЕЧЕТ + 2 ЧЕТ
+; =====		3 нечет + 2 чет
+;=====		2 нечет + 3 чет
+; ====		2 нечет + 2 чет
+;====		2 нечет + 2 чет
 ;0 2 4 6 8
 ; 1 3 5 7 9
 
@@ -1604,33 +1582,33 @@ TSCRUP2		LD A,H
 ;C240    C241    C242    C243    C244
 ;    D240    D241    D242    D243    D244
 
-;СДВИГ ОКНА ВНИЗ
+; сдвиг окна вниз
 TSCRDN		DI
 		PUSH IX
 		PUSH IY
-		EVOPORT WIN_P3,0XF7
-		LD A,(IX+2)
+	EVOPORT WIN_P3,VMODE7_0
+		LD A,(IX+_V_SIZE)
 		SUB 3
-		LD B,A				;СКОЛЬКО СТРОК В ОКНЕ СКРОЛЛИРОВАТЬ
-		LD C,(IX+3)			;ШИРИНА ОКНА
-		LD D,(IX+0)			;X КООРДИНАТА ЛЕВОГО ВЕРХНЕГО УГЛА ДЛЯ СКРОЛЛЕРА
-		LD A,(IX+1)
-		ADD A,(IX+2)
+		LD B,A				; сколько строк в окне скроллировать
+		LD C,(IX+_H_SIZE)		; ширина окна
+		LD D,(IX+_X_COORD)		; X координата левого верхнего угла для скроллера
+		LD A,(IX+_Y_COORD)
+		ADD A,(IX+_V_SIZE)
 		SUB 2
-		LD E,A				;Y КООРДИНАТА ЛЕВОГО ВЕРХНЕГО УГЛА ДЛЯ СКРОЛЛЕРА
+		LD E,A				; Y координата левого верхнего угла для скроллера
 		ADD A,A
 		ADD A,A
 		EXX
 		LD C,A
 		LD B,0
 		LD IX,TBUFTSC
-		ADD IX,BC			;IX=СПИСОК АДРЕСОВ НАЧАЛ СТРОК ДЛЯ СКРОЛЛЕРА
+		ADD IX,BC			; IX=список адресов начал строк для скроллера
 		EXX
 		LD A,C
-		AND 0XFE
+		AND 0xFE
 		NEG
-		LD H,A				;ШИРИНА ДЛЯ ЛЕВЫЙ СИМВОЛОВ
-		LD L,A				;ШИРИНА ДЛЯ ПРАВЫХ СИМВОЛОВ
+		LD H,A				; ширина для левый символов
+		LD L,A				; ширина для правых символов
 		BIT 0,C
 		JR Z,TSCRDN1
 		DEC L
@@ -1645,14 +1623,15 @@ TSCRDN1		LD A,D
 		LD D,A
 		ADC A,0
 		LD E,A
-TSCRDN2		REPT 4
+TSCRDN2
+	REPT 4
 		DEC IX
-		ENDM
+	ENDM
 		LD A,H
 		EXX
 		LD IY,LDI_END
 		LD E,A
-		LD D,0XFF
+		LD D,0xFF
 		ADD IY,DE
 		EXX
 		LD A,E
@@ -1665,7 +1644,7 @@ TSCRDN2		REPT 4
 		ADD A,(IX+4)
 		LD E,A
 		LD D,(IX+5)
-		CALL LDIST			;ПЕРЕНОС МОХОРОМНОЙ СТРОКИ
+		CALL LDIST			; перенос мохоромной строки
 		EXX
 		LD A,E
 		EXX
@@ -1677,13 +1656,13 @@ TSCRDN2		REPT 4
 		ADD A,(IX+4+100)
 		LD E,A
 		LD D,(IX+5+100)
-		CALL LDIST			;ПЕРЕНОС ЦВЕТНОЙ СТРОКИ
+		CALL LDIST			; перенос цветной строки
 		EXX
 		LD A,L
 		EXX
 		LD IY,LDI_END
 		LD E,A
-		LD D,0XFF
+		LD D,0xFF
 		ADD IY,DE
 		EXX
 		LD A,D
@@ -1696,7 +1675,7 @@ TSCRDN2		REPT 4
 		ADD A,(IX+6)
 		LD E,A
 		LD D,(IX+7)
-		CALL LDIST			;ПЕРЕНОС МОНОХРОМНОЙ СТРОКИ
+		CALL LDIST			; перенос монохромной строки
 		EXX
 		LD A,D
 		EXX
@@ -1708,25 +1687,25 @@ TSCRDN2		REPT 4
 		ADD A,(IX+6+100)
 		LD E,A
 		LD D,(IX+7+100)
-		CALL LDIST			;ПЕРЕНОС ЦВЕТНОЙ СТРОКИ
+		CALL LDIST			; перенос цветной строки
 		EXX
 		DJNZ TSCRDN2
 		POP IY
 		POP IX
 		RET
 
-SCRDN		LD HL,FLAGS
-		BIT B_VIDEO_MODE,(HL)
+SCRDN		LD HL,SYSFLAGS
+		BIT SYSFLAGS.B_VIDEO_MODE,(HL)
 		JP NZ,TSCRDN
-;СКРОЛЛ ОКНА ВВЕРХ (ZX)
+; скролл окна вверх (ZX)
 		PUSH IX
 		PUSH IY
 		EXX
 		LD A,(SCROLL_MODE)
 		LD E,A
 		EXX
-		LD A,(IX+2)
-		ADD A,(IX+1)
+		LD A,(IX+_V_SIZE)
+		ADD A,(IX+_Y_COORD)
 		SUB 2
 		LD L,A
 		CALL USTAN
@@ -1736,10 +1715,10 @@ SCRDN1		LD A,(IX+0)
 		ADD A,C
 		LD L,A
 		LD H,(IX+1)
-		LD A,(IX+0X10)
+		LD A,(IX+0x10)
 		ADD A,C
 		LD E,A
-		LD D,(IX+0X11)
+		LD D,(IX+0x11)
 		PUSH BC
 		CALL LDIST
 		POP BC
@@ -1758,17 +1737,17 @@ SCRDN1		LD A,(IX+0)
 		RRCA
 		RRCA
 		AND 3
-		OR 0X58
+		OR 0x58
 		LD H,A
 		LD L,(IX+0)
-		LD A,(IX+0X11)
+		LD A,(IX+0x11)
 		RRCA
 		RRCA
 		RRCA
 		AND 3
-		OR 0X58
+		OR 0x58
 		LD D,A
-		LD E,(IX+0X10)
+		LD E,(IX+0x10)
 		PUSH BC
 		CALL LDIST
 		POP BC
@@ -1779,8 +1758,8 @@ SCRDN2		DEC IX
 		POP IX
 		RET
 
-;УСТАНОВКИ ДЛЯ СКРОЛЛЕРА ОКНА
-USTAN		LD A,(IX+3)
+; установки для скроллера окна
+USTAN		LD A,(IX+_H_SIZE)
 		ADD A,A
 		LD E,A
 		LD A,L
@@ -1790,9 +1769,9 @@ USTAN		LD A,(IX+3)
 		SBC HL,DE
 		PUSH HL
 		POP IY
-		LD C,(IX+0)
+		LD C,(IX+_X_COORD)
 		LD L,A
-		LD A,(IX+2)
+		LD A,(IX+_V_SIZE)
 		SUB 3
 		ADD A,A
 		ADD A,A
@@ -1808,11 +1787,10 @@ USTAN		LD A,(IX+3)
 		ADD IX,DE
 		RET
 
-LDIST		DB 0XFD
-		JP (HL)
-		REPT 80
+LDIST		JP (IY)
+	REPT 80
 		LDI
-		ENDM
+	ENDM
 LDI_END		RET
 
 SYM00		DB %11111111

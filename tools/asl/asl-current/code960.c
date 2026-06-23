@@ -22,6 +22,7 @@
 #include "onoff_common.h"
 #include "asmitree.h"
 #include "codevars.h"
+#include "codepseudo.h"
 #include "intpseudo.h"
 #include "headids.h"
 #include "errmsg.h"
@@ -288,7 +289,7 @@ static tRegEvalResult DecodeIOrFPReg(const tStrComp *pArg, LongWord *pResult, tS
 
 static Boolean DecodeAdr(const tStrComp *pArg, Byte Mask, OpType Type, LongWord *Erg, LongWord *Mode)
 {
-  Double FVal;
+  as_float_t FVal;
   tEvalResult EvalResult;
   tSymbolSize DataSize;
 
@@ -322,7 +323,7 @@ static Boolean DecodeAdr(const tStrComp *pArg, Byte Mask, OpType Type, LongWord 
 
   if (Type != IntOp)
   {
-    FVal = EvalStrFloatExpressionWithResult(pArg, Float64, &EvalResult);
+    FVal = EvalStrFloatExpressionWithResult(pArg, &EvalResult);
     if (EvalResult.OK)
     {
       if (mFirstPassUnknown(EvalResult.Flags))
@@ -423,7 +424,13 @@ static int DecodeMem(const tStrComp *pArg, LongWord *Erg, LongWord *Ext)
   }
   while (!Done);
 
-  DispAcc = EvalStrIntExpression(&Arg, Int32, &OK);
+  if (Arg.str.p_str[0])
+    DispAcc = EvalStrIntExpression(&Arg, Int32, &OK);
+  else
+  {
+    DispAcc = 0;
+    OK = True;
+  }
 
   if (Base == IPREG)
   {
@@ -636,30 +643,25 @@ static void DecodeSPACE(Word Code)
   }
 }
 
-/*--------------------------------------------------------------------------*/
+/*!------------------------------------------------------------------------
+ * \fn     void check_alignment(Word index)
+ * \brief  check dword alignment of program counter (required for machine insns)
+ * ------------------------------------------------------------------------ */
 
-static void MakeCode_960(void)
+static void check_alignment(Word index)
 {
-  CodeLen = 0;
-  DontPrint = False;
-
-  /* Nullanweisung */
-
-  if (Memo(""))
-    return;
-
-  /* Pseudoanweisungen */
-
-  if (DecodeIntelPseudo(False))
-    return;
+  UNUSED(index);
 
   /* Befehlszaehler nicht ausgerichtet? */
 
   if (EProgCounter() & 3)
     WrError(ErrNum_AddrNotAligned);
+}
 
-  /* CPU-Anweisungen */
+/*--------------------------------------------------------------------------*/
 
+static void MakeCode_960(void)
+{
   if (!LookupInstTable(InstTable, OpPart.str.p_str))
     WrStrErrorPos(ErrNum_UnknownInstruction, &OpPart);
 }
@@ -716,6 +718,9 @@ static void InitFields(void)
 {
   InstTable = CreateInstTable(301);
 
+  add_null_pseudo(InstTable);
+
+  inst_table_set_prefix_proc(InstTable, check_alignment, 0);
   InstrZ = 0;
   AddFixed("FLUSHREG", 0x66000680);
   AddFixed("FMARK"   , 0x66000600);
@@ -896,9 +901,11 @@ static void InitFields(void)
   AddMem("LDIS" , 0xc8, IntOp   , 2);
   AddMem("STIS" , 0xca, IntOp   , 1);
 
-  AddInstTable(InstTable, "WORD", 0, DecodeWORD);
+  inst_table_set_prefix_proc(InstTable, NULL, 0);
   AddInstTable(InstTable, "SPACE", 0, DecodeSPACE);
   AddInstTable(InstTable, "REG", 0, CodeREG);
+  AddInstTable(InstTable, "WORD", 0, DecodeWORD);
+  AddIntelPseudo(InstTable, eIntPseudoFlag_LittleEndian);
 }
 
 static void DeinitFields(void)

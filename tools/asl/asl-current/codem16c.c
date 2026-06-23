@@ -20,9 +20,11 @@
 #include "asmpars.h"
 #include "asmitree.h"
 #include "asmallg.h"
+#include "codepseudo.h"
 #include "intpseudo.h"
 #include "codevars.h"
 #include "errmsg.h"
+#include "headids.h"
 
 #include "codem16c.h"
 
@@ -238,6 +240,17 @@ static tRegEvalResult DecodeReg(const tStrComp *pArg, Byte *pResult, Boolean Mus
   return RegEvalResult;
 }
 
+static LargeInt eval_outer_disp(const tStrComp *p_arg, IntType type, Boolean *p_ok)
+{
+  if (p_arg->str.p_str[0])
+    return EvalStrIntExpression(p_arg, type, p_ok);
+  else
+  {
+    *p_ok = True;
+    return 0;
+  }
+}
+
 static ShortInt DecodeAdr(const tStrComp *pArg, Word Mask, tAdrResult *pResult)
 {
   LongInt DispAcc;
@@ -298,7 +311,7 @@ static ShortInt DecodeAdr(const tStrComp *pArg, Word Mask, tAdrResult *pResult)
     StrCompShorten(&RegPart, 1);
     if (!as_strcasecmp(RegPart.str.p_str, "SP"))
     {
-      DispAcc = EvalStrIntExpression(&DispPart, SInt8, &OK);
+      DispAcc = eval_outer_disp(&DispPart, SInt8, &OK);
       if (OK)
       {
         pResult->Type = ModSPRel;
@@ -317,7 +330,7 @@ static ShortInt DecodeAdr(const tStrComp *pArg, Word Mask, tAdrResult *pResult)
           switch (pResult->Mode)
           {
             case REG_SB:
-              DispAcc = EvalStrIntExpression(&DispPart, Int16, &OK);
+              DispAcc = eval_outer_disp(&DispPart, Int16, &OK);
               if (OK)
               {
                 if ((DispAcc >= 0) && (DispAcc <= 255))
@@ -338,7 +351,7 @@ static ShortInt DecodeAdr(const tStrComp *pArg, Word Mask, tAdrResult *pResult)
               }
               break;
             case REG_FB:
-              DispAcc = EvalStrIntExpression(&DispPart, SInt8, &OK);
+              DispAcc = eval_outer_disp(&DispPart, SInt8, &OK);
               if (OK)
               {
                 pResult->Type = ModGen;
@@ -349,7 +362,7 @@ static ShortInt DecodeAdr(const tStrComp *pArg, Word Mask, tAdrResult *pResult)
               break;
             case 4: case 5:
             {
-              DispAcc = EvalStrIntExpression(&DispPart, (Mask & MModDisp20)  ? Int20 : Int16, &OK);
+              DispAcc = eval_outer_disp(&DispPart, (Mask & MModDisp20)  ? Int20 : Int16, &OK);
               if (OK)
               {
                 if ((DispAcc == 0) && (Mask & MModGen))
@@ -393,7 +406,7 @@ static ShortInt DecodeAdr(const tStrComp *pArg, Word Mask, tAdrResult *pResult)
           if (pResult->Mode != 2) WrStrErrorPos(ErrNum_InvReg, &RegPart);
           else
           {
-            DispAcc = EvalStrIntExpression(&DispPart, SInt8, &OK);
+            DispAcc = eval_outer_disp(&DispPart, SInt8, &OK);
             if (OK)
             {
               if (DispAcc != 0) WrError(ErrNum_OverRange);
@@ -489,9 +502,9 @@ static Boolean DecodeCReg(char *Asc, Byte *Erg)
 static void DecodeDisp(tStrComp *pArg, IntType Type1, IntType Type2, LongInt *DispAcc, Boolean *OK)
 {
   if (ArgCnt == 2)
-    *DispAcc += EvalStrIntExpression(pArg, Type2, OK) * 8;
+    *DispAcc += eval_outer_disp(pArg, Type2, OK) * 8;
   else
-    *DispAcc = EvalStrIntExpression(pArg, Type1, OK);
+    *DispAcc = eval_outer_disp(pArg, Type1, OK);
 }
 
 static Boolean DecodeBitAdr(Boolean MayShort, tAdrResult *pResult)
@@ -2525,6 +2538,9 @@ static void AddBit(const char *NName, Word NCode)
 static void InitFields(void)
 {
   InstTable = CreateInstTable(403);
+
+  add_null_pseudo(InstTable);
+
   AddInstTable(InstTable, "MOV", 0, DecodeMOV);
   AddInstTable(InstTable, "LDC", 0, DecodeLDC_STC);
   AddInstTable(InstTable, "STC", 1, DecodeLDC_STC);
@@ -2571,7 +2587,7 @@ static void InitFields(void)
   AddInstTable(InstTable, "LDINTB", 0, DecodeLDINTB);
   AddInstTable(InstTable, "LDIPL", 0, DecodeLDIPL);
 
-  Format = (char*)malloc(sizeof(Char) * STRINGSIZE);
+  Format = (char*)malloc(sizeof(char) * STRINGSIZE);
 
   AddFixed("BRK"   , 0x0000);
   AddFixed("EXITD" , 0x7df2);
@@ -2634,6 +2650,7 @@ static void InitFields(void)
   AddBit("BTST"  ,11);
 
   AddInstTable(InstTable, "REG", 0, CodeREG);
+  AddIntelPseudo(InstTable, eIntPseudoFlag_LittleEndian);
 }
 
 static void DeinitFields(void)
@@ -2727,14 +2744,6 @@ static void MakeCode_M16C(void)
 {
   OpSize = AttrPartOpSize[0];
 
-  /* zu ignorierendes */
-
-  if (Memo("")) return;
-
-  /* Pseudoanweisungen */
-
-  if (DecodeIntelPseudo(False)) return;
-
   if (!LookupInstTable(InstTable, OpPart.str.p_str))
     WrStrErrorPos(ErrNum_UnknownInstruction, &OpPart);
 }
@@ -2751,11 +2760,13 @@ static void SwitchFrom_M16C(void)
 
 static void SwitchTo_M16C(void)
 {
+  const TFamilyDescr *p_descr = FindFamilyByName("M16C");
+
   TurnWords = True;
   SetIntConstMode(eIntConstModeIntel);
 
   PCSymbol = "$";
-  HeaderID = 0x14;
+  HeaderID = p_descr->Id;
   NOPCode = 0x04;
   DivideChars = ",";
   HasAttrs = True;

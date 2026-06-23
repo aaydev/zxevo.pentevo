@@ -21,11 +21,13 @@
 #include "asmpars.h"
 #include "asmallg.h"
 #include "onoff_common.h"
+#include "assume.h"
 #include "asmitree.h"
 #include "codepseudo.h"
 #include "intpseudo.h"
 #include "codevars.h"
 #include "errmsg.h"
+#include "headids.h"
 
 #include "code29k.h"
 
@@ -96,25 +98,25 @@ static Boolean ChkCPU(CPUVar Min)
 static Boolean DecodeRegCore(const char *pArg, LongWord *pResult)
 {
   int l = strlen(pArg);
-  Boolean OK;
+  char *p_end;
 
   if ((l >= 2) && (as_toupper(*pArg) == 'R'))
   {
-    *pResult = ConstLongInt(pArg + 1, &OK, 10);
-    return OK && (*pResult <= 255);
+    *pResult = strtoul(pArg + 1, &p_end, 10);
+    return !*p_end && (*pResult <= 255);
   }
   else if ((l >= 3) && (as_toupper(*pArg) == 'G') && (as_toupper(pArg[1]) == 'R'))
   {
-    *pResult = ConstLongInt(pArg + 2, &OK, 10);
-    if (!OK || (*pResult >= 128))
+    *pResult = strtoul(pArg + 2, &p_end, 10);
+    if (*p_end || (*pResult >= 128))
       return False;
     *pResult |= REG_LRMARK;
     return True;
   }
   else if ((l >= 3) && (as_toupper(*pArg) == 'L') && (as_toupper(pArg[1]) == 'R'))
   {
-    *pResult = ConstLongInt(pArg + 2, &OK, 10);
-    if (!OK || (*pResult >= 128))
+    *pResult = strtoul(pArg + 2, &p_end, 10);
+    if (*p_end || (*pResult >= 128))
       return False;
     *pResult |= 128 | REG_LRMARK;
     return True;
@@ -228,7 +230,7 @@ static tRegEvalResult DecodeReg(const tStrComp *pArg, LongWord *pResult, Boolean
 
 static Boolean DecodeArgReg(int ArgIndex, LongWord *pRes)
 {
-  return DecodeReg(&ArgStr[ArgIndex], pRes, True);
+  return (DecodeReg(&ArgStr[ArgIndex], pRes, True) == eIsReg);
 }
 
 static Boolean DecodeSpReg(char *Asc_O, LongWord *Erg)
@@ -263,20 +265,28 @@ static Boolean DecodeArgSpReg(int ArgIndex, LongWord *pRes)
 static void DecodeStd(Word Index)
 {
   const StdOrder *pOrder = StdOrders + Index;
-  LongWord Dest, Src1, Src2, Src3;
-  Boolean OK;
+  LongWord Dest;
 
   if (ChkArgCnt(2, 3) && DecodeArgReg(1, &Dest))
   {
-    OK = True;
-    if (ArgCnt == 2) Src1 = Dest;
-    else OK = DecodeArgReg(2, &Src1);
+    LongWord Src1;
+    Boolean OK;
+
+    if (ArgCnt == 2)
+    {
+      Src1 = Dest;
+      OK = True;
+    }
+    else
+      OK = DecodeArgReg(2, &Src1);
     if (OK)
     {
+      LongWord Src2, Src3 = 0;
+
       switch (DecodeReg(&ArgStr[ArgCnt], &Src2, False))
       {
         case eIsReg:
-          OK = True; Src3 = 0;
+          OK = True;
           break;
         case eIsNoReg:
           Src2 = EvalStrIntExpression(&ArgStr[ArgCnt], UInt8, &OK);
@@ -1009,6 +1019,8 @@ static void InitFields(void)
   AddSP("INTE",161);
   AddSP("FPS", 162);
   AddSP(NULL ,   0);
+
+  AddIntelPseudo(InstTable, eIntPseudoFlag_BigEndian);
 }
 
 static void DeinitFields(void)
@@ -1048,17 +1060,9 @@ static void InternSymbol_29K(char *pArg, TempResult *pResult)
 
 static void MakeCode_29K(void)
 {
-  CodeLen = 0;
-  DontPrint = False;
-
   /* Nullanweisung */
 
   if (Memo("") && !*AttrPart.str.p_str && (ArgCnt == 0))
-    return;
-
-  /* Pseudoanweisungen */
-
-  if (DecodeIntelPseudo(True))
     return;
 
   if (!LookupInstTable(InstTable, OpPart.str.p_str))
@@ -1078,16 +1082,17 @@ static Boolean IsDef_29K(void)
 
 static void SwitchTo_29K(void)
 {
-  static ASSUMERec ASSUME29Ks[] =
+  static as_assume_rec_t ASSUME29Ks[] =
   {
     {"RBP", &Reg_RBP, 0, 0xff, 0x00000000, NULL}
   };
-  static const int ASSUME29KCount = sizeof(ASSUME29Ks) / sizeof(*ASSUME29Ks);
+  const TFamilyDescr *p_descr = FindFamilyByName("29xxx");
+
   TurnWords = True;
   SetIntConstMode(eIntConstModeC);
 
   PCSymbol = "$";
-  HeaderID = 0x29;
+  HeaderID = p_descr->Id;
   NOPCode = 0x000000000;
   DivideChars = ",";
   HasAttrs = False;
@@ -1102,8 +1107,7 @@ static void SwitchTo_29K(void)
   DissectReg = DissectReg_29K;
   onoff_supmode_add();
 
-  pASSUMERecs = ASSUME29Ks;
-  ASSUMERecCnt = ASSUME29KCount;
+  assume_set(ASSUME29Ks, as_array_size(ASSUME29Ks));
 
   SwitchFrom = DeinitFields; InitFields();
 }

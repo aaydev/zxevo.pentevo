@@ -26,6 +26,7 @@
 #include "motpseudo.h"
 #include "codevars.h"
 #include "errmsg.h"
+#include "headids.h"
 
 #include "code7000.h"
 
@@ -152,7 +153,7 @@ static void SetOpSize(tSymbolSize Size)
 static Boolean DecodeRegCore(const char *pArg, Word *pResult)
 {
   size_t l;
-  Boolean OK;
+  char *p_end;
 
   if (!as_strcasecmp(pArg, "SP"))
   {
@@ -164,8 +165,8 @@ static Boolean DecodeRegCore(const char *pArg, Word *pResult)
   if ((l < 2) || (l > 3) || (as_toupper(*pArg) != 'R'))
     return False;
 
-  *pResult = ConstLongInt(pArg + 1, &OK, 10);
-  return OK && (*pResult <= 15);
+  *pResult = strtoul(pArg + 1, &p_end, 10);
+  return !*p_end && (*pResult <= 15);
 }
 
 /*!------------------------------------------------------------------------
@@ -1251,6 +1252,9 @@ static void AddSReg(const char *NName, Word NCode, CPUVar NMin, Boolean NDSP)
 static void InitFields(void)
 {
   InstTable = CreateInstTable(201);
+
+  add_null_pseudo(InstTable);
+
   AddInstTable(InstTable, "MOV", 0, DecodeMOV);
   AddInstTable(InstTable, "MOVA", 0, DecodeMOVA);
   AddInstTable(InstTable, "PREF", 0, DecodePREF);
@@ -1351,6 +1355,7 @@ static void InitFields(void)
   AddInstTable(InstTable, "OR" , InstrZ++, DecodeLog);
 
   AddInstTable(InstTable, "REG", 0, CodeREG);
+  AddMoto16Pseudo(InstTable, e_moto_pseudo_flags_be);
 
   InstrZ = 0;
   AddSReg("MACH",  0, CPU7000, FALSE);
@@ -1395,13 +1400,7 @@ static Boolean DecodeAttrPart_7000(void)
 
 static void MakeCode_7000(void)
 {
-  CodeLen = 0;
-  DontPrint = False;
   OpSize = eSymbolSizeUnknown;
-
-  /* zu ignorierendes */
-
-  if (Memo("")) return;
 
   /* ab hier (und weiter in der Hauptroutine) stehen die Befehle,
      die Code erzeugen, deshalb wird der Merker fuer verzoegerte
@@ -1414,9 +1413,6 @@ static void MakeCode_7000(void)
 
   if (*AttrPart.str.p_str)
     SetOpSize(AttrPartOpSize[0]);
-
-  if (DecodeMoto16Pseudo(OpSize, True))
-    return;
 
   if (!LookupInstTable(InstTable, OpPart.str.p_str))
     WrStrErrorPos(ErrNum_UnknownInstruction, &OpPart);
@@ -1455,11 +1451,13 @@ static void SwitchFrom_7000(void)
 
 static void SwitchTo_7000(void)
 {
+  const TFamilyDescr *p_descr = FindFamilyByName("SH7x00");
+
   TurnWords = True;
   SetIntConstMode(eIntConstModeMoto);
 
   PCSymbol = "*";
-  HeaderID = 0x6c;
+  HeaderID = p_descr->Id;
   NOPCode = 0x0009;
   DivideChars = ",";
   HasAttrs = True;

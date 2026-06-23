@@ -24,6 +24,7 @@
 #include "natpseudo.h"
 #include "codevars.h"
 #include "errmsg.h"
+#include "headids.h"
 
 #include "codecop8.h"
 
@@ -630,6 +631,9 @@ static void AddBit(const char *NName, Byte NCode)
 static void InitFields(void)
 {
   InstTable = CreateInstTable(103);
+
+  add_null_pseudo(InstTable);
+
   AddInstTable(InstTable, "LD", 0, DecodeLD);
   AddInstTable(InstTable, "X", 0, DecodeX);
   AddInstTable(InstTable, "ANDSZ", 0, DecodeANDSZ);
@@ -658,6 +662,9 @@ static void InitFields(void)
   AddAccMem("IFGT" , 0x83);
 
   AddBit("IFBIT", 0x70); AddBit("SBIT", 0x78); AddBit("RBIT", 0x68);
+
+  AddNatPseudo(InstTable);
+  AddIntelPseudo(InstTable, eIntPseudoFlag_LittleEndian);
 }
 
 static void DeinitFields(void)
@@ -669,17 +676,6 @@ static void DeinitFields(void)
 
 static void MakeCode_COP8(void)
 {
-  CodeLen = 0; DontPrint = False;
-
-  /* zu ignorierendes */
-
-  if (Memo("")) return;
-
-  /* Pseudoanweisungen */
-
-  if (DecodeNatPseudo()) return;
-  if (DecodeIntelPseudo(False)) return;
-
   if (!LookupInstTable(InstTable, OpPart.str.p_str))
     WrStrErrorPos(ErrNum_UnknownInstruction, &OpPart);
 }
@@ -696,11 +692,13 @@ static void SwitchFrom_COP8(void)
 
 static void SwitchTo_COP8(void)
 {
+  const TFamilyDescr *p_descr = FindFamilyByName("COP8");
+
   TurnWords = False;
   SetIntConstMode(eIntConstModeC);
 
   PCSymbol = ".";
-  HeaderID = 0x6f;
+  HeaderID = p_descr->Id;
   NOPCode = 0xb8;
   DivideChars = ",";
   HasAttrs = False;

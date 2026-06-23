@@ -1,19 +1,20 @@
 
-; LAST UPDATE: 24.02.2023 savelij
+; LAST UPDATE: 16.02.2025 savelij
 
 PAGE
 		TITLE "main.a80"
 
-		include ../../macros.a80
-		include ../../define.a80
-		include ../../global_vars.a80
-		include ../../ports_ide.a80
-		include ../../basic_tokens.a80
-		include ../../bas_trd_vars.a80
-		include ../../tmpkeys.a80
-		include ../../version.a80
-		include ../../nums_devices.a80
-		include ../../ports_ngs.a80
+		include macros.a80
+		include define.a80
+		include global_vars.a80
+		include ports_ide.a80
+		include basic_tokens.a80
+		include bas_trd_vars.a80
+		include tmpkeys.a80
+		include version.a80
+		include nums_devices.a80
+		include ports_ngs.a80
+		include fat_dir.a80
 
 TO_DOS		EQU 0x3D2F
 
@@ -55,7 +56,7 @@ START3
 		EI
 		HALT
 		DI
-		LD H,0
+		LD H,CMOS.SECOND
 		CALL READCMOS			; чтение секунд для определения наличия кмос
 		INC L
 		LD HL,ERS_FLAGS
@@ -74,6 +75,8 @@ START1		CALL DETECTMOUSE		; определение наличия мыши
 		CALL SYSTEM
 		CALL RESET_VG			; сброс вгшки и установка перехватчика ошибок dos
 RESTART		DI
+		XOR A
+	RST8 _NMI_FB_BLOCK			; разблокировка File Browser на NMI
 		LD A,0x10
 		CALL SET_7FFD			; включили басик48 и страничку 0
 		CALL TURBO_7MHZ
@@ -90,7 +93,7 @@ RESTART		DI
 		LD IX,MAINMENU
 	RST8 _WINW
 		RES 5,(IY+1)			; на клавиатуре ничего не нажато
-		LD H,HDD_TIMEOUT
+		LD H,CMOS.HDD_TIMEOUT
 		CALL READCMOS
 		RRCA
 		RRCA
@@ -107,7 +110,7 @@ RESTART		DI
 	EVOPORT WIN_P2,ZXSTD_CPU2
 	PEC_OFF M_SHADOW_BF!0xFF
 
-		LD HL,VIRT_REAL_DRIVE << 8
+		LD HL,CMOS.VIRT_REAL_DRIVE << 8
 		CALL WRITECMOS
 		LD HL,ADR_TXT_BOOT
 		JP RUNFILE1
@@ -321,7 +324,7 @@ CHNGMODEY1	LD A,(SYSREG1)
 		RLCA
 		OR L
 		LD C,A
-		LD H,CMOS_BYTE_01
+		LD H,CMOS.BYTE_01
 		CALL READCMOS
 		AND %01111100
 		OR C
@@ -351,57 +354,57 @@ CHNGTURBO1	LD A,(HL)
 		DEC A
 		LD DE,0
 		JR Z,CHNGTURBO2
-		LD DE,0X10*0X100+M_TURBO14
+		LD DE,0x10 << 8 + CMOS_ED.M_TURBO14
 CHNGTURBO2	LD A,D
 		LD HL,SYSREG1
 		LD A,(HL)
 		AND %11101111			; инверсия бита турборежима
 		OR D
 		LD (HL),A
-		LD H,CMOS_BYTE_00
+		LD H,CMOS.BYTE_00
 		CALL READCMOS
-		AND M_TURBO14!0XFF
+		AND CMOS_ED.M_TURBO14 ! 0xFF
 		OR E
 		LD L,A
-		LD H,CMOS_BYTE_00
+		LD H,CMOS.BYTE_00
 		CALL WRITECMOS
 		JP CHNGMODEY
 
-CHNGTAPMODE	LD H,CMOS_BYTE_00
+CHNGTAPMODE	LD H,CMOS.BYTE_00
 		CALL READCMOS
-		XOR M_EMUL_TAPE
+		XOR CMOS_ED.M_EMUL_TAPE
 		JR CHANGE_MODES
 
-CHNGGLUKMOD	LD H,CMOS_BYTE_00
+CHNGGLUKMOD	LD H,CMOS.BYTE_00
 		CALL READCMOS
-		AND MKOL_MODES!0xFF
+		AND CMOS_EC.MKOL_MODES ! 0xFF
 		LD C,A
 		LD A,L
-		AND MKOL_MODES
+		AND CMOS_EC.MKOL_MODES
 		INC A
-		CP KOL_MODES
+		CP CMOS_EC.KOL_MODES
 		JR C,CHNGGLUKMOD1
 		XOR A
 CHNGGLUKMOD1	OR C
 		LD L,A
 		JR CHANGE_MODES
 
-EN_AUTOMNT	LD H,CMOS_BYTE_01
+EN_AUTOMNT	LD H,CMOS.BYTE_01
 		CALL READCMOS
-		XOR M_AUTOMOUNT
+		XOR CMOS_EC.M_AUTOMOUNT
 		JP CHANGE_MODES
 
-EN_LOADFONT	LD H,CMOS_BYTE_00
+EN_LOADFONT	LD H,CMOS.BYTE_00
 		CALL READCMOS
-		XOR M_RELOAD_FONT
+		XOR CMOS_ED.M_RELOAD_FONT
 		JP CHANGE_MODES
 
-SET_TYPEFONT	LD H,CMOS_BYTE_00
+SET_TYPEFONT	LD H,CMOS.BYTE_00
 		CALL READCMOS
-		XOR M_TYPE_FONT
+		XOR CMOS_ED.M_TYPE_FONT
 		PUSH AF
 		PUSH HL
-		AND M_TYPE_FONT
+		AND CMOS_ED.M_TYPE_FONT
 		JR Z,SETTYPEFONT
 		LD A,1
 SETTYPEFONT
@@ -414,15 +417,15 @@ SETTYPEFONT
 CMOS_ONOFF	LD A,(ERS_FLAGS)
 		AND M_CLOCK_ON			; проверка наличия кмоса
 		JP Z,MAINLOP
-		LD H,CMOS_BYTE_01
+		LD H,CMOS.BYTE_01
 		CALL READCMOS
-		XOR M_CLOCK_VIEW
+		XOR CMOS_EC.M_CLOCK_VIEW
 		LD L,A
 		PUSH AF
-		LD H,CMOS_BYTE_01
+		LD H,CMOS.BYTE_01
 		CALL WRITECMOS
 		POP AF
-		AND M_CLOCK_VIEW
+		AND CMOS_EC.M_CLOCK_VIEW
 		JP Z,MAINLOP
 		LD HL,TIME_OFF
 	RST8 _PRINT_MESSAGE
@@ -461,7 +464,7 @@ E4E2		EX AF,AF'
 		RET
 
 E4E3		XOR A
-		IN A,(0XFE)
+		IN A,(0xFE)
 		CPL
 		AND 0x1F
 		JR NZ,E4E3
@@ -498,7 +501,7 @@ PRT_MODES	LD HL,SPEED_MODE
 PRT_VIRTDRV
 	RST8 _MOUNTER,_GET_VIRT_BITS
 		LD D,A
-		LD H,VIRT_REAL_DRIVE
+		LD H,CMOS.VIRT_REAL_DRIVE
 		CALL READCMOS
 		AND 3
 		LD B,A
@@ -657,25 +660,25 @@ MEMORY48	CALL ON_BIT128
 		JR SET_7FFD
 
 ; чтение CMOS и изменение сообщений для вывода на экран об установленных режимах
-SET_MODES	LD H,0x0B			; читать режим счета часов
+SET_MODES	LD H,CMOS.REG_B			; читать режим счета часов
 		CALL READCMOS
-		RES 2,L				; принудительно включаем бинарный счет
+		RES CMOSREG.B_B_RW_DM,L		; принудительно включаем бинарный счет
 		CALL WRITECMOS			; сохраняем изменения
-		LD H,CMOS_BYTE_01		; читаем установки турбо и памяти
+		LD H,CMOS.BYTE_01		; читаем установки турбо и памяти
 		CALL READCMOS
-		AND M_TURBO357
+		AND CMOS_EC.M_TURBO357
 		RRCA
 		RRCA
 		RRCA
 		LD (SYSREG1),A			; содержимое для записи в порт EFF7
 		LD B,A
 		LD A,L
-		AND _128K | _48K | _1MB
+		AND CMOS_EC._128K | CMOS_EC._48K | CMOS_EC._1MB
 		LD (MEMMODE),A			; выбранный режим памяти
-		LD H,CMOS_BYTE_00
+		LD H,CMOS.BYTE_00
 		CALL READCMOS			; читаем основные установки
 		LD C,A
-		AND M_TURBO14
+		AND CMOS_ED.M_TURBO14
 		LD HL,TURBO_NUM			; номер турбо режима
 		LD (HL),2			; режим 14МГЦ
 		JR NZ,SETMODES04
@@ -698,16 +701,16 @@ SETMODES04	LD A,(HL)			; взяли текущий турбо режим
 		LDI
 		LDI				; перенесли для вывода экран
 		LD C,A
-		AND M_EMUL_TAPE
+		AND CMOS_ED.M_EMUL_TAPE
 		LD HL,EMTAPLOAD
 		CALL SET_ONOFF			; перенос символов для вывода на экран, ON или OFF
 		LD A,C
-		AND M_RELOAD_FONT
-		XOR M_RELOAD_FONT
+		AND CMOS_ED.M_RELOAD_FONT
+		XOR CMOS_ED.M_RELOAD_FONT
 		LD HL,EROMLOADFONT
 		CALL SET_ONOFF			; перенос символов для вывода на экран, ON или OFF
 		LD A,C
-		AND M_TYPE_FONT
+		AND CMOS_ED.M_TYPE_FONT
 		PUSH BC
 		LD HL,TXTMODTYPE
 		LD BC,5
@@ -717,8 +720,8 @@ SET_FONT2	LD DE,ETYPESFONT
 		LDIR
 		POP BC
 		LD A,C
-		AND MKOL_MODES
-		CP KOL_MODES
+		AND CMOS_EC.MKOL_MODES
+		CP CMOS_EC.KOL_MODES
 		JR C,SETMODES03
 		XOR A
 SETMODES03	LD L,A
@@ -735,7 +738,7 @@ SETMODES03	LD L,A
 		LD BC,0x0C
 		LDIR
 		LD C,A
-		AND M_PRINTER_AY
+		AND CMOS_ED.M_PRINTER_AY
 		LD HL,ETXT_AYPRINTER
 		CALL SET_ONOFF			; перенос символов для вывода на экран, ON или OFF
 SETMODES02	LD A,(MEMMODE)
@@ -750,20 +753,20 @@ SETMODES01	LD DE,TXT_MEM			; режим памяти
 		LD A,C
 		LD BC,3
 		LDIR
-		LD H,CMOS_BYTE_01
+		LD H,CMOS.BYTE_01
 		CALL READCMOS
 		PUSH AF
-		AND M_AUTOMOUNT
+		AND CMOS_EC.M_AUTOMOUNT
 		LD HL,ETXT_AUTOMOUNT
 		CALL SET_ONOFF
 		POP AF
 ; для резидента HONEY COMANDER
-		AND M_REZIDENT
+		AND CMOS_EC.M_REZIDENT
 		LD HL,TXT_REZIDENT
 		CALL SET_ONOFF
-		LD H,CMOS_BYTE_03
+		LD H,CMOS.BYTE_03
 		CALL READCMOS
-		AND M_KILL_REZIDENT
+		AND CMOS_E9.M_KILL_REZIDENT
 		LD HL,TXT_KILLREZID
 		CALL SET_ONOFF
 		LD A,(ERS_FLAGS)
@@ -937,7 +940,7 @@ SYSTEM		LD HL,BAS_VAR
 GET_DRV_SYM	LD A,(ERS_FLAGS)		; проверяем наличие кмоса
 		AND M_CLOCK_ON
 		JR Z,SET_DRIVE
-		LD H,VIRT_REAL_DRIVE
+		LD H,CMOS.VIRT_REAL_DRIVE
 		CALL READCMOS
 		RRCA
 		RRCA
@@ -953,9 +956,9 @@ SET_DRIVE	LD A,(DRV_SYM)			; изменение системных переменных для диска
 		LD (TRD_5D16),A
 		RET
 
-GLUDIN		LD H,CMOS_BYTE_01
+GLUDIN		LD H,CMOS.BYTE_01
 		CALL READCMOS
-		AND M_SOUNDKEYS
+		AND CMOS_EC.M_SOUNDKEYS
 		RET Z
 		LD HL,DIN+0x0D
 		LD A,0x0D
@@ -967,9 +970,9 @@ GLUDIN1		LD BC,0xFFFD
 		JR NC,GLUDIN1
 		RET
 
-SHUT2AY		LD H,CMOS_BYTE_01
+SHUT2AY		LD H,CMOS.BYTE_01
 		CALL READCMOS
-		AND M_SOUNDKEYS
+		AND CMOS_EC.M_SOUNDKEYS
 		RET Z
 		LD DE,0x0E00
 SHUT2AY1	DEC D

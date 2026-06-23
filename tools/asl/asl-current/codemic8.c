@@ -21,6 +21,7 @@
 #include "asmpars.h"
 #include "asmitree.h"
 #include "asmallg.h"
+#include "codepseudo.h"
 #include "intpseudo.h"
 #include "codevars.h"
 #include "headids.h"
@@ -71,13 +72,13 @@ static CPUVar CPUMico8_05, CPUMico8_V3, CPUMico8_V31;
 
 static Boolean IsWRegCore(const char *pArg, LongWord *pValue)
 {
-  Boolean OK;
+  char *p_end;
 
   if ((strlen(pArg) < 2) || (as_toupper(*pArg) != 'R'))
     return False;
 
-  *pValue = ConstLongInt(pArg + 1, &OK, 10);
-  if (!OK)
+  *pValue = strtoul(pArg + 1, &p_end, 10);
+  if (*p_end)
     return False;
 
   return (*pValue < 32);
@@ -135,7 +136,7 @@ static void DecodePort(Word Index)
 {
   UNUSED(Index);
 
-  CodeEquate(SegIO, 0, SegLimits[SegIO]);
+  code_equate_type(SegIO, UInt8);
 }
 
 static void DecodeFixed(Word Index)
@@ -360,6 +361,8 @@ static void InitFields(void)
 {
   InstTable = CreateInstTable(97);
 
+  add_null_pseudo(InstTable);
+
   InstrZ = 0;
   AddFixed("CLRC"  , 0x2c000);
   AddFixed("SETC"  , 0x2c001);
@@ -469,6 +472,7 @@ static void InitFields(void)
 
   AddInstTable(InstTable, "REG", 0, CodeREG);
   AddInstTable(InstTable, "PORT", 0, DecodePort);
+  AddIntelPseudo(InstTable, eIntPseudoFlag_BigEndian);
 }
 
 static void DeinitFields(void)
@@ -519,18 +523,8 @@ static void SwitchFrom_Mico8(void)
 
 static void MakeCode_Mico8(void)
 {
-  CodeLen = 0; DontPrint = False;
-
-  /* zu ignorierendes */
-
-   if (Memo("")) return;
-
-   /* Pseudoanweisungen */
-
-   if (DecodeIntelPseudo(True)) return;
-
-   if (!LookupInstTable(InstTable, OpPart.str.p_str))
-     WrStrErrorPos(ErrNum_UnknownInstruction, &OpPart);
+  if (!LookupInstTable(InstTable, OpPart.str.p_str))
+    WrStrErrorPos(ErrNum_UnknownInstruction, &OpPart);
 }
 
 static void SwitchTo_Mico8(void)

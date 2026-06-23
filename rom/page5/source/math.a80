@@ -1,5 +1,5 @@
 
-;LAST UPDATE: 27.02.2021 savelij
+; LAST UPDATE: 06.02.2025 savelij
 
 MATH		CALL P5_READ_BYTE
 		LD A,(NEXTBYTERST8)
@@ -15,10 +15,10 @@ MATH		CALL P5_READ_BYTE
 		LD L,A
 		JP (HL)
 
-.MATH_FUNC	DW .XDIVIDE16		;DE = HL/DE					;BC = BC / DE
-		DW .XMULTIPLY16		;BCDE = HL * DE					;HLDE = BC * DE
-		DW .XDIVIDE32		;BCDE = HLDE / HL'DE', BC'DE' = HLDE % HL'DE'	;HL'HL = HL'HL / DE'DE, DE'DE = HL'HL % DE'DE
-		DW .XMULTIPLY32		;BC'DE'BCDE = BCDE * HL				;DE'HL'DEHL = DEHL * BC
+.MATH_FUNC	DW .XDIVIDE16		; DE = HL/DE					;BC = BC / DE
+		DW .XMULTIPLY16		; BCDE = HL * DE				;HLDE = BC * DE
+		DW .XDIVIDE32		; BCDE = HLDE / HL'DE', BC'DE' = HLDE % HL'DE'	;HL'HL = HL'HL / DE'DE, DE'DE = HL'HL % DE'DE
+		DW .XMULTIPLY32		; BC'DE'BCDE = BCDE * HL			;DE'HL'DEHL = DEHL * BC
 		DW .XHEX4DEC
 		DW .XHEX2DEC
 		DW .XHEX1DEC
@@ -26,7 +26,7 @@ MATH		CALL P5_READ_BYTE
 .XHEX4DEC	LD BC,(RREG_C)
 		LD DE,(RREG_E)
 		CALL .HEX4DEC
-.LDIRSTRTEXT	LD BC,CPU6
+.LDIRSTRTEXT	LD BC,CPU2
 		AND A
 		SBC HL,BC
 		LD DE,(RREG_L)
@@ -41,24 +41,24 @@ MATH		CALL P5_READ_BYTE
 		CALL .HEX1DEC
 		JR .LDIRSTRTEXT
 
-;BCDE = HLDE / HL'DE', BC'DE' = HLDE % HL'DE'	;HL'HL = HL'HL / DE'DE, DE'DE = HL'HL % DE'DE
-;BCDE = BCDE / BC'DE', BC'DE' = BCDE % BC'DE'
-.XDIVIDE32	LD HL,(RREG_C)		;HL'
-		LD DE,(RREG_CC)		;DE'
+; BCDE = HLDE / HL'DE', BC'DE' = HLDE % HL'DE'	;HL'HL = HL'HL / DE'DE, DE'DE = HL'HL % DE'DE
+; BCDE = BCDE / BC'DE', BC'DE' = BCDE % BC'DE'
+.XDIVIDE32	LD HL,(RREG_C)		; HL'
+		LD DE,(RREG_CC)		; DE'
 		EXX
-		LD HL,(RREG_E)		;HL
-		LD DE,(RREG_EE)		;DE
+		LD HL,(RREG_E)		; HL
+		LD DE,(RREG_EE)		; DE
 		CALL .ldiv
-		LD (RREG_EE),DE		;DE'
-		LD (RREG_E),HL		;DE
+		LD (RREG_EE),DE		; DE'
+		LD (RREG_E),HL		; DE
 		EXX
-		LD (RREG_CC),DE		;BC'
-		LD (RREG_C),HL		;BC
+		LD (RREG_CC),DE		; BC'
+		LD (RREG_C),HL		; BC
 		RET
 
-;BC'DE'BCDE = BCDE * HL			;DE'HL'DEHL = DEHL * BC
-.XMULTIPLY32	LD DE,(RREG_C)		;BC
-		LD HL,(RREG_E)		;DE *
+; BC'DE'BCDE = BCDE * HL		; DE'HL'DEHL = DEHL * BC
+.XMULTIPLY32	LD DE,(RREG_C)		; BC
+		LD HL,(RREG_E)		; DE *
 		EXX
 		LD BC,(RREG_L)		;   * HL
 		CALL .MUL_BC_DEHL
@@ -70,22 +70,22 @@ MATH		CALL P5_READ_BYTE
 		EXX
 		RET
 
-;DE = HL/DE				;BC = BC / DE
-.XDIVIDE16	LD BC,(RREG_L)		;HL /
+; DE = HL/DE				; BC = BC / DE
+.XDIVIDE16	LD BC,(RREG_L)		; HL /
 		LD DE,(RREG_E)		;   / DE
 		CALL .DIVIDE
 		LD (RREG_E),BC		;   = DE
 		RET
 
-;BCDE = HL * DE					;HLDE = BC * DE
-.XMULTIPLY16	LD BC,(RREG_C)		;HL *
+; BCDE = HL * DE			; HLDE = BC * DE
+.XMULTIPLY16	LD BC,(RREG_C)		; HL *
 		LD DE,(RREG_E)		;   * DE
 		CALL .MULTIPLY
 		LD (RREG_C),HL		;   = BC
 		LD (RREG_E),DE		;     DE
 		RET
 
-;[деление bc=bc/de]
+; деление BC = BC / DE
 .DIVIDE		xor	a
 		ld	h,a
 		ld	l,a
@@ -102,7 +102,7 @@ MATH		CALL P5_READ_BYTE
 		or	a
 		jr	.loc_3E2A
 
-;[умножение hlde=bc*de]
+; умножение HLDE = BC * DE
 .MULTIPLY	push	bc
 		ld	a,b
 		ld	hl,0
@@ -123,7 +123,7 @@ MATH		CALL P5_READ_BYTE
 		pop	bc
 		ret
 
-;[умножение DE'HL'DEHL=DEHL*BC]
+; умножение DE'HL'DEHL = DEHL * BC
 .MUL_BC_DEHL	XOR A
 		LD H,A
 		LD L,A
@@ -132,7 +132,7 @@ MATH		CALL P5_READ_BYTE
 		EXX
 		LD B,A
 		LD C,A
-		LD A,0X20
+		LD A,0x20
 .MUL1		EX AF,AF'
 		EXX
 		ADD HL,HL
@@ -156,7 +156,7 @@ MATH		CALL P5_READ_BYTE
 		EXX
 		RET
 
-;[BCDE=BCDE/HL]
+; BCDE = BCDE / HL
 .LDIV_HL	EX DE,HL
 		PUSH BC
 		EXX
@@ -164,22 +164,22 @@ MATH		CALL P5_READ_BYTE
 		LD DE,0
 		JR .LDIV1
 
-;[BCDE=(HL)/BCDE]
-.LDIV__HL_	PUSH BC		;DE'
+; BCDE = (HL) / BCDE
+.LDIV__HL_	PUSH BC		; DE'
 		LD C,(HL)
 		INC HL
-		LD B,(HL)	;HL
+		LD B,(HL)	; HL
 		INC HL
 		LD A,(HL)
 		INC HL
 		LD H,(HL)
-		LD L,A		;HL'
+		LD L,A		; HL'
 		PUSH HL
 		LD H,B
-		LD L,C		;HL
+		LD L,C		; HL
 		EXX
-		POP HL		;HL'
-		POP DE		;DE'
+		POP HL		; HL'
+		POP DE		; DE'
 .LDIV1		EXX
 		CALL .ldiv
 		EXX
@@ -197,8 +197,8 @@ MATH		CALL P5_READ_BYTE
 ; делитель.
 ; 2. 32-раздядное делимое и 32-разрядный
 ; делитель.
-; hl'hl = hl'hl / de'de
-; de'de = hl'hl % de'de
+; HL'HL = HL'HL / DE'DE
+; DE'DE = HL'HL % DE'DE
 .ldiv		push hl
 		xor a
 		ld l,a
@@ -213,19 +213,19 @@ MATH		CALL P5_READ_BYTE
 		ld a,0
 		sbc a,e
 		ld e,a
-		sbc a,d		; de'de=0-divisor
+		sbc a,d		; DE'DE=0-divisor
 		sub e
 		ld d,a
 		and e
 		inc a		; Z=short divisor
 		push hl
-		ld hl,0		; hl'hl=reminder
+		ld hl,0		; HL'HL=reminder
 		exx
 		pop bc
-		ld a,b		; a,c,bc'=divident
+		ld a,b		; A,C,BC'=divident
 		jr nz,.ldiv_long
 
-; divisor = -00de
+; divisor = -00DE
 		ld b,8
 		rla
 .ldivs0		rl l
@@ -247,7 +247,7 @@ MATH		CALL P5_READ_BYTE
 		djnz .ldivs2
 		jr .ldiv_long1
 
-; divisor=-de'de
+; divisor = -DE'DE
 .ldiv_long	call .ldiv_8
 		ld b,c
 		ld c,a
@@ -269,8 +269,8 @@ MATH		CALL P5_READ_BYTE
 		ex af,af'
 		exx
 		call .ldiv_8
-; result=c,bc',a -> hl'hl
-; reminder=hl'hl -> de'de
+; result = C,BC',A -> HL'HL
+; reminder = HL'HL -> DE'DE
 		ex de,hl
 		ld l,a
 		ld a,c
@@ -283,9 +283,9 @@ MATH		CALL P5_READ_BYTE
 		ld h,a
 		ret
 
-; hl'hl=reminder
-; de'de=divisor
-; a=divident
+; HL'HL = reminder
+; DE'DE = divisor
+; A = divident
 .ldiv_8		ld b, 8
 		rla
 .ldiv_8_0	adc hl,hl
@@ -305,14 +305,13 @@ MATH		CALL P5_READ_BYTE
 		djnz .ldiv_8_0
 		ret
 
-;[HEX6DEC]
-;HLBCDE->текст
+; HEX6DEC
+; HLBCDE->текст
 
 .HEX6DEC	
 		
-
-;[HEX4DEC]
-;BCDE->текст
+; HEX4DEC
+; BCDE->текст
 .HEX4DEC	EXX
 		LD HL,VARS_TXT_DEC
 		PUSH HL
@@ -342,8 +341,8 @@ MATH		CALL P5_READ_BYTE
 .H2D3		POP HL
 		RET
 
-;[HEX2DEC]
-;DE->текст
+; HEX2DEC
+; DE->текст
 .HEX2DEC	EXX
 		LD HL,VARS_TXT_DEC
 		PUSH HL
@@ -354,8 +353,8 @@ MATH		CALL P5_READ_BYTE
 		LD BC,0
 		JR .H2D1-(4*3)
 
-;[HEX1DEC]
-;E->текст
+; HEX1DEC
+; E->текст
 .HEX1DEC	EXX
 		LD HL,VARS_TXT_DEC
 		PUSH HL
@@ -384,7 +383,7 @@ MATH		CALL P5_READ_BYTE
 .CHISLA1	DD 100
 		DD 10
 
-;[BCDE-(ADR)=BCDE]
+; BCDE - (ADR) = BCDE
 .BCDEMHL	XOR A
 		EX AF,AF'
 .BCDEMHL1	LD A,E
@@ -409,7 +408,7 @@ MATH		CALL P5_READ_BYTE
 		INC A
 		EX AF,AF'
 		LD A,B
-		CP 0XC4
+		CP 0xC4
 		JR C,.BCDEMHL1
 		LD A,(HL)
 		ADD A,E
@@ -442,7 +441,7 @@ MATH		CALL P5_READ_BYTE
 		EXX
 		RET
 
-;[BCDE=BCDE+HL]
+; BCDE = BCDE + HL
 .BCDE_BCDE_HL	ADD HL,DE
 		EX DE,HL
 		LD HL,0

@@ -14,41 +14,53 @@
 
 #include "sysdefs.h"
 
-typedef Card8 Byte;       /* Integertypen */
-typedef Integ8 ShortInt;
+typedef as_uint8_t Byte;       /* Integertypen */
+typedef as_int8_t ShortInt;
 
 #ifdef HAS16
-typedef Card16 Word;
-typedef Integ16 Integer;
+typedef as_uint16_t Word;
+typedef as_int16_t Integer;
 #endif
 
-typedef Card32 LongWord;
-typedef Integ32 LongInt;
-#define PRILongInt PRIInteg32
+typedef as_uint32_t LongWord;
+typedef as_int32_t LongInt;
+#define PRILongInt PRIas_int32_t
 #define MaxLongInt 2147483647
 
 #ifdef HAS64
-typedef Card64 QuadWord;
-typedef Integ64 QuadInt;
+typedef as_uint64_t QuadWord;
+typedef as_int64_t QuadInt;
 #endif
 
-#ifdef HAS64
+#ifdef HAS128
+typedef as_uint128_t OctaWord;
+typedef as_int128_t OctaInt;
+#endif
+
+/* On pure 32 bit platforms, avoid warnings about shift
+   count being equal to operand size: */
+
+#ifdef HAS128
+typedef OctaInt LargeInt;
+typedef OctaWord LargeWord;
+# define LARGEBITS 128
+#define largeint_shr32(l) (l >>= 32)
+#else
+# ifdef HAS64
 typedef QuadInt LargeInt;
 typedef QuadWord LargeWord;
-#define LARGEBITS 64
-#else
+# define LARGEBITS 64
+#define largeint_shr32(l) (l >>= 32)
+# else
 typedef LongInt LargeInt;
 typedef LongWord LargeWord;
-#define LARGEBITS 32
+# define LARGEBITS 32
+#define largeint_shr32(l) (l = 0)
+# endif
 #endif
 
 typedef signed int sint;
 typedef unsigned int usint;
-
-typedef char Char;
-
-typedef double Double;
-typedef float Single;
 
 typedef Byte Boolean;
 

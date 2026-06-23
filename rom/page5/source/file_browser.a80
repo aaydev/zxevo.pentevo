@@ -1,63 +1,76 @@
 
-;LAST UPDATE: 30.06.2019 savelij
+; LAST UPDATE: 16.02.2025 savelij
+
+EXT_FILE_BROWSER
+	ROMCALL P5_READ_BYTE,ROM_RST83
+;		LD A,(NEXTBYTERST8)
+		LD HL,SYSFLAGS
+		SET SYSFLAGS.B_NMI_FB_BLOCK,(HL); блокируем FILE BROWSER на NMI
+		SET SYSFLAGS.B_FB_INT_EXT,(HL)
+		JR FILE_BROWSER.L1
 
 FILE_BROWSER	DI
-		LD IYL,INTERNAL
-		ROMCALL DEVFIND,ROM_RST83		;ПОИСК УСТРОЙСТВ ЕСЛИ НЕ БЫЛИ НАЙДЕНЫ
+		LD HL,SYSFLAGS
+		BIT SYSFLAGS.B_NMI_FB_BLOCK,(HL)
+		RET NZ
+.L1		LD IYL,INTERNAL
+	ROMCALL DEVFIND,ROM_RST83		; поиск устройств
 		LD A,E
 		AND A
-		JR NZ,FILEBROWSE1
-;ЕСЛИ НИ ОДНОГО УСТРОЙСТВА НЕ НАЙДЕНО, ТО ВЫВОДИМ ОШИБКУ
+		JR NZ,FILEBROWSE
+; если ни одного устройства не найдено, то выводим ошибку
 		LD IX,DEV_NOTFOUND
-ERROR		EVOPORT WIN_A5,ROM_RST81
-		CALL ITWINW
+ERROR
+	EVOPORT WIN_A1,ROM_RST81
+		CALL INT_TXT_WINDOW
 		CALL ANY_KEYS
+		CALL RESTORE_FATVARS
 		JP RESTART_MAIN
 
-FILEBROWSE1	DI
-		EVOPORT WIN_A5,ROM_RST81
-		LD HL,FILES_EXT_ALL
+FILEBROWSE	DI
+	EVOPORT WIN_A1,ROM_RST81
+		LD HL,FILES_EXT
 		LD DE,EXT4FOUND
 		LD BC,EFILES_EXT-FILES_EXT
-		LDIR				;УСТАНОВКА МАСКИ РАСШИРЕНИЙ ДЛЯ ПОИСКА
-		ROMCALL FIND_FILEITEM,ROM_RST83	;ПОИСК 
+		LDIR				; установка маски расширений для поиска
+	ROMCALL FIND_FILEITEM,ROM_RST83		; поиск
 		LD A,B
-		OR C				;ЗДЕСЬ КОЛИЧЕСТВО НАЙДЕННЫХ ОПИСАТЕЛЕЙ В HL
-		JR NZ,SEARCHF1
+		OR C				; здесь количество найденных описателей
+		JR NZ,SEARCHFILES
 		LD IX,NOFILES
-		CALL ITWINW
+		CALL INT_TXT_WINDOW
 		JP SELECT_DRIVE
 
-SEARCHF1	PUSH BC
-		ROMCALL SORT_FINDFILES,ROM_RST83
-		EVOPORT WIN_A5,ROM_RST81
-		LD IX,LEGEND_EXT
-		CALL ITWINW
-		POP BC
-FBR00		PUSH BC
-		LD IX,FILESBROWSER
-		CALL ITWINW
-		EVOPORT WIN_P3,RAM_TEMP2
-		POP BC
-		BIT 7,(IX+7)
+SEARCHFILES	LD (FOUND_FAT_FILES),BC
+	ROMCALL SORT_FINDFILES,ROM_RST83
+.L1
+	EVOPORT WIN_A1,ROM_RST81
+		LD IX,LEGEND_EXT		; окошко с подсказкой по цветам файлов
+		CALL INT_TXT_WINDOW
+	EVOPORT WIN_A1,ROM_RST81
+		LD IX,FILESBROWSER		; окно файлового браузера
+		CALL INT_TXT_WINDOW
+	EVOPORT WIN_P3,RAM_SORTFILES
+		LD BC,(FOUND_FAT_FILES)
+		BIT B_ADR_PUNKT,(IX+_NUM_PKT)
 		JR NZ,FBR02
-		LD (IX+0X0A),C
-		LD (IX+0X0B),B			;КОЛИЧЕСТВО ПУНКТОВ
-		LD L,(IX+8)
-		LD H,(IX+9)			;ПОЛУЧИЛИ НОМЕР ТЕКУЩЕЙ ПОЗИЦИИ
-		LD E,(IX+7)			;ПОЛУЧИЛИ ПОЗИЦИЮ КУРСОРА В ОКНЕ
+		LD (IX+_NUM_KOL_L),C
+		LD (IX+_NUM_KOL_H),B		; количество пунктов
+		LD L,(IX+_TEK_PKT_L)
+		LD H,(IX+_TEK_PKT_H)		; получили номер текущей позиции
+		LD E,(IX+_NUM_PKT)		; получили позицию курсора в окне
 		JR FBR06
 
-OUT_TEK_DIR	BIT 3,(IX+6)			;ЕСЛИ МЕНЮ ТО ПЕРЕХОД НА ПРОДОЛЖЕНИЕ
-		JP Z,OTF1
-;ИНАЧЕ ПОКАЗ ФАЙЛОВ
-		EVOPORT WIN_P3,RAM_TEMP2
-		LD E,(IX+7)
-		LD L,(IX+8)
-		LD H,(IX+9)
-		LD C,(IX+0X0A)
-		LD B,(IX+0X0B)
-		BIT 6,E
+OUT_CURR_DIR	BIT B_MENU_FILE,(IX+_FLAGS)	; если меню то переход на продолжение
+		JP Z,SET_ADR_ATR
+; иначе показ файлов
+	EVOPORT WIN_P3,RAM_SORTFILES
+		LD E,(IX+_NUM_PKT)
+		LD L,(IX+_TEK_PKT_L)
+		LD H,(IX+_TEK_PKT_H)
+		LD C,(IX+_NUM_KOL_L)
+		LD B,(IX+_NUM_KOL_H)
+		BIT B_ADR_NUMS_PUNKT,E
 		JR Z,FBR06
 		LD A,(HL)
 		INC HL
@@ -72,8 +85,8 @@ OUT_TEK_DIR	BIT 3,(IX+6)			;ЕСЛИ МЕНЮ ТО ПЕРЕХОД НА ПРОДОЛЖЕНИЕ
 		LD E,A
 		JR FBR06
 
-FBR02		LD L,(IX+8)
-		LD H,(IX+9)			;УКАЗАТЕЛЬ НА ТЕКУЩИЙ ПУНКТ
+FBR02		LD L,(IX+_TEK_PKT_L)
+		LD H,(IX+_TEK_PKT_H)		; указатель на текущий пункт
 		LD A,(HL)
 		INC HL
 		LD E,(HL)
@@ -87,21 +100,21 @@ FBR02		LD L,(IX+8)
 		LD E,A
 FBR06		XOR A
 		LD D,A
-		SBC HL,DE			;ВЫЧИСЛИЛИ ПОЗИЦИЮ ФАЙЛА С КОТОРОГО БУДЕМ ВЫВОДИТЬ
+		SBC HL,DE			; вычислили позицию файла с которого будем выводить
 		LD DE,CPU3
 		ADD HL,HL
 		ADD HL,DE
-		LD D,(IX+0)
-		LD E,(IX+1)
+		LD D,(IX+_X_COORD)
+		LD E,(IX+_Y_COORD)
 		INC D
-		INC E				;ВЫЧИСЛИЛИ ПОЗИЦИЮ ВЫВОДА НА ЭКРАН
+		INC E				; вычислили позицию вывода на экран
 		LD A,B
 		AND A
 		JR NZ,FBR07
 		LD A,C
-		CP V_FILES-2
+		CP TXT.V_FILES-2
 		JR C,OTF2
-FBR07		LD C,V_FILES-2
+FBR07		LD C,TXT.V_FILES-2
 OTF2		PUSH BC
 		LD C,(HL)
 		INC HL
@@ -109,37 +122,34 @@ OTF2		PUSH BC
 		INC HL
 		PUSH HL
 		PUSH DE
-		ROMCALL POSTF06,ROM_RST83
-		LD HL,BUF_256
-		ROMCALL READ_DIR,ROM_RST83
-		LD DE,FILES_EXT;SUPPORT_EXT
-		ROMCALL CP_EXT,ROM_RST83
-		EX AF,AF'
+	ROMCALL POSTF06,ROM_RST83
+		LD HL,BUF_MOVE256
+	ROMCALL READ_DIR,ROM_RST83
+		LD DE,FILES_EXT
+	ROMCALL CP_EXT,ROM_RST83
+		EX AF,AF'			; прячем номер расширения
 		POP DE
 		PUSH DE
-		LD BC,0X0B
+		LD BC,_DIR_Attr
 		ADD HL,BC
 		LD A,(HL)
 		SBC HL,BC
-		AND 0X10
-		LD A,BLUE<<3+WHITE+BR_INK
-		LD (OUT_NAME_FILE+1),A		;ЕСЛИ ДИРЕКТОРИЯ ТО ЦВЕТ БЕЛЫЙ
+		AND M_DIR_Directory
+		LD A,BLUE << 3 + WHITE + BR_INK
+		LD (OUT_NAME_FILE+1),A		; если директория то цвет белый
 		JR NZ,OTF9
-		EX AF,AF'
-		LD L,A
-		INC A
-		JR Z,OTF8
-		LD A,L
-OTF8		LD HL,COLOR_EXT
+		EX AF,AF'			; возвращаем номер расширения
+		LD HL,COLOR_EXT
 		ADD A,L
 		LD L,A
 		ADC A,H
 		SUB L
-		LD A,(HL)
-		ADD A,BLUE<<3+BR_INK
+		LD H,A
+		LD A,(HL)			; взяли цвет из таблицы
+		ADD A,BLUE << 3 + BR_INK	; добавили цвет фона окна
 		LD (OUT_NAME_FILE+1),A
-OTF9		LD HL,BUF_256
-		ROMCALL GET_LONGNAME,ROM_RST83
+OTF9		LD HL,BUF_MOVE256
+	ROMCALL GET_LONGNAME,ROM_RST83
 		POP DE
 		PUSH DE
 		CALL FILENAME8_3
@@ -149,22 +159,21 @@ OTF9		LD HL,BUF_256
 		INC E
 		DEC C
 		JR NZ,OTF2
-OTF1		EVOPORT WIN_P3,VMODE7_0
 		JP SET_ADR_ATR
 
 FILENAME8_3	LD C,A
 		LD B,0
 		EX DE,HL
 		LD (OUT_NAME_FILET),HL
-		LD HL,BUF_256
-		LD A,H_FILES-3
+		LD HL,BUF_MOVE256
+		LD A,TXT.H_FILES-3
 		CP C
 		JR Z,OTF7
 		JR NC,OTF6
 		EX DE,HL
-		LD HL,H_FILES-3
+		LD HL,TXT.H_FILES-3
 		ADD HL,DE
-		LD (HL),">"
+		LD (HL),'>'
 		INC HL
 		LD (HL),0
 		JR OTF7
@@ -175,92 +184,93 @@ OTF6		SUB C
 		LD D,H
 		LD E,L
 		INC DE
-		LD (HL)," "
+		LD (HL),' '
 		LDIR
 		XOR A
 		LD (DE),A
 OTF7		LD HL,OUT_NAME_FILE
 		CALL ITPRINT_MESSAGE
-		LD HL,BUF_256
+		LD HL,BUF_MOVE256
 		JP ITPRINT_MESSAGE
 
-;ВЫБОР ФАЙЛА ИЛИ ХОЖДЕНИЕ ПО ДИРЕКТОРИЯМ
+; выбор файла или хождение по директориям
 SELECT_FILE	DI
-		EVOPORT WIN_P3,RAM_TEMP2
-		LD L,(IX+8)
-		LD H,(IX+9)			;ВЗЯЛИ НОМЕР ФАЙЛА/ДИРЫ ИЛИ АДРЕС ГДЕ ЭТО ЛЕЖИТ
-		BIT 7,(IX+7)
-		JR Z,SELFILES01
+	EVOPORT WIN_P3,RAM_SORTFILES
+		LD L,(IX+_TEK_PKT_L)
+		LD H,(IX+_TEK_PKT_H)		; взяли номер файла/диры или адрес где это лежит
+		BIT B_ADR_PUNKT,(IX+_NUM_PKT)
+		JR Z,.L1
 		INC HL
 		LD E,(HL)
 		INC HL
-		LD D,(HL)			;ЕСЛИ АДРЕС ТО ИЗВЛЕКЛИ ОТТУДА НОМЕР
+		LD D,(HL)			; если адрес то извлекли оттуда номер
 		EX DE,HL
-SELFILES01	LD DE,CPU3
+.L1		LD DE,CPU3
 		ADD HL,HL
 		ADD HL,DE
 		LD C,(HL)
 		INC HL
-		LD B,(HL)			;ВЗЯЛИ РЕАЛЬНЫЙ НОМЕР ФАЙЛА/ДИРЫ
-		ROMCALL POSTF06,ROM_RST83		;УСТАНОВИЛИ ПОЗИЦИЮ
-		LD HL,BUF_256
-		ROMCALL READ_DIR,ROM_RST83	;ПОЛУЧИЛИ АДРЕС ОТКУДА ОПИСАТЕЛЬ ВЗЯТЬ
+		LD B,(HL)			; взяли реальный номер файла/диры
+	ROMCALL POSTF06,ROM_RST83		; установили позицию
+		LD HL,BUF_MOVE256
+	ROMCALL READ_DIR,ROM_RST83		; получили адрес откуда описатель взять
 		PUSH HL
 		LD DE,BUF_FILEITEM
-		LD BC,0X20
-		LDIR				;ПЕРЕНЕСЛИ ОПИСАТЕЛЬ В БУФЕР
+		LD BC,_DIR_StructSize
+		LDIR				; перенесли описатель в буфер
 		POP HL
-		LD DE,0X0B
+		LD DE,_DIR_Attr
 		ADD HL,DE
 		LD A,(HL)
 		SBC HL,DE
-		AND 0X10			;ПРОВЕРЯЕМ ФАЙЛ ИЛИ ДИРА
-		JP Z,SELFILES03			;ВЫБРАН ФАЙЛ ИДЕМ ДАЛЕЕ
-;ВЫБРАНА ДИРА
-		ROMCALL ENTER_DIR,ROM_RST83	;ВХОДИМ В ДИРУ
-		LD HL,BUF_PATH
-		ROMCALL GET_PATH,ROM_RST83	;ПОЛУЧАЕМ ПУТЬ ПОСЛЕ ВХОДА
-		EVOPORT WIN_A5,ROM_RST81
+		AND M_DIR_Directory		; проверяем файл или дира
+		JP Z,.L5			; выбран файл, идем далее
+; выбрана дира
+	ROMCALL ENTER_DIR,ROM_RST83		; входим в диру
+		LD HL,BUF_MOVE256
+	ROMCALL GET_PATH,ROM_RST83		; получаем путь после входа
+	EVOPORT WIN_A1,ROM_RST81
+	EVOPORT WIN_P3,RAM_FATVARS
 		LD A,(HL)
-		SUB "E"
+		SUB 'E'
 		LD H,A
 		LD L,0
 		SRL H
 		RR L
 		SRL H
-		RR L
-		LD DE,BUF_WINPATH
+		RR L				; * 0x40
+		LD DE,FATVARS.WINPOS
 		ADD HL,DE
 		LD A,(BUF_FILEITEM)
-		CP "."
-		JP NZ,SELFILES02		;ВХОД В ДИРЕКТОРИЮ
-;ВЫХОД ИЗ ДИРЕКТОРИИ, ВОССТАНОВЛЕНИЕ УСТАНОВОК ОКНА ПРЕДЫДУЩЕГО УРОВНЯ
+		CP '.'
+		JP NZ,.L3			; вход в директорию
+; выход из директории, восстановление установок окна предыдущего уровня
 		LD A,(HL)
 		ADD A,A
 		ADD A,(HL)
 		LD C,A
 		LD B,0
-		DEC (HL)			;ПЕРЕШЛИ НА ПРЕДЫДУЩУЮ ПОЗИЦИЮ
+		DEC (HL)			; перешли на предыдущую позицию
 		INC HL
-		ADD HL,BC
+.REREAD_WIN	ADD HL,BC
 		DEC HL
 		LD B,(HL)
 		DEC HL
 		LD C,(HL)
 		DEC HL
 		LD A,(HL)
-		BIT 7,(IX+7)
-		JR NZ,SELFILES04
-		LD (IX+7),A
-		LD (IX+8),C
-		LD (IX+9),B
-		ROMCALL FIND_FILEITEM,ROM_RST83
-		LD (IX+0X0A),C
-		LD (IX+0X0B),B
-		JR SELFILES05
+		BIT B_ADR_PUNKT,(IX+_NUM_PKT)
+		JR NZ,.L2
+		LD (IX+_NUM_PKT),A
+		LD (IX+_TEK_PKT_L),C
+		LD (IX+_TEK_PKT_H),B
+	ROMCALL FIND_FILEITEM,ROM_RST83
+		LD (IX+_NUM_KOL_L),C
+		LD (IX+_NUM_KOL_H),B
+		JP SEARCHFILES
 
-SELFILES04	LD L,(IX+8)
-		LD H,(IX+9)
+.L2		LD L,(IX+_TEK_PKT_L)
+		LD H,(IX+_TEK_PKT_H)
 		LD (HL),A
 		INC HL
 		LD (HL),C
@@ -268,21 +278,18 @@ SELFILES04	LD L,(IX+8)
 		LD (HL),B
 		INC HL
 		PUSH HL
-		ROMCALL FIND_FILEITEM,ROM_RST83
+	ROMCALL FIND_FILEITEM,ROM_RST83
 		LD B,H
 		LD C,L
 		POP HL
 		LD (HL),C
 		INC HL
 		LD (HL),B
-SELFILES05	PUSH BC
-		ROMCALL SORT_FINDFILES,ROM_RST83
-		POP BC
-		JP FBR00
+		JP SEARCHFILES
 
-;ВХОД В ДИРЕКТОРИЮ, СОХРАНЕНИЕ ТЕКУЩИХ УСТАНОВОК ОКНА
-SELFILES02	LD A,(HL)
-		CP 0X10
+; вход в директорию, сохранение текущих установок окна
+.L3		LD A,(HL)
+		CP 64 / 3;0x10
 		RET NC
 		LD A,(HL)
 		ADD A,A
@@ -292,118 +299,191 @@ SELFILES02	LD A,(HL)
 		LD C,A
 		LD B,0
 		ADD HL,BC
-		BIT 7,(IX+7)
-		JR NZ,SELFILES06
-		LD A,(IX+7)
+		BIT B_ADR_PUNKT,(IX+_NUM_PKT)
+		JR NZ,.L4
+		LD A,(IX+_NUM_PKT)
 		LD (HL),A
 		INC HL
-		LD A,(IX+8)
+		LD A,(IX+_TEK_PKT_L)
 		LD (HL),A
 		INC HL
-		LD A,(IX+9)
+		LD A,(IX+_TEK_PKT_H)
 		LD (HL),A
 		INC HL
-		ROMCALL FIND_FILEITEM,ROM_RST83
+	ROMCALL FIND_FILEITEM,ROM_RST83
 		XOR A
-		LD (IX+7),A
-		LD (IX+8),A
-		LD (IX+9),A
-		LD (IX+0X0A),L
-		LD (IX+0X0B),H
+		LD (IX+_NUM_PKT),A
+		LD (IX+_TEK_PKT_L),A
+		LD (IX+_TEK_PKT_H),A
+		LD (IX+_NUM_KOL_L),L
+		LD (IX+_NUM_KOL_H),H
 		LD B,H
 		LD C,L
-		JP SELFILES05
+		JP SEARCHFILES
 
-SELFILES06	LD E,(IX+8)
-		LD D,(IX+9)
+.L4		LD E,(IX+_TEK_PKT_L)
+		LD D,(IX+_TEK_PKT_H)
 		EX DE,HL
 		LDI
 		LDI
 		LDI
-		ROMCALL FIND_FILEITEM,ROM_RST83
-		LD L,(IX+8)
-		LD H,(IX+9)
+	ROMCALL FIND_FILEITEM,ROM_RST83
+		LD L,(IX+_TEK_PKT_L)
+		LD H,(IX+_TEK_PKT_H)
 		XOR A
 		LD (HL),A
 		INC HL
 		LD (HL),A
 		INC HL
 		LD (HL),A
-		JP SELFILES05
+		JP SEARCHFILES
 
-SELFILES03	LD HL,BUF_FILEITEM
-		LD DE,FILES_EXT;SUPPORT_EXT
-		ROMCALL CP_EXT,ROM_RST83
-		CP _SPG				;ТОЛЬКО ОБРАЗЫ TRD,SCL,FDI,TAP
-		RET NC
+; выбран файл
+.L5		LD HL,BUF_FILEITEM
+		LD DE,FILES_EXT
+	ROMCALL CP_EXT,ROM_RST83
+; только образы TRD,SCL,FDI,TAP
 		LD (EXT_TYPE),A
 		CP _TAP
 		JR Z,SEL_TAP
 		CP _TRD
-		JR NZ,LOADIMAGES
-		LD IX,SEL_MOUNT			;ВЫВОД МЕНЮ МОНТИРОВАНИЯ ИЛИ ЗАГРУЗКИ В РАМДИСК
-		CALL ITWINW
+		JR Z,SEL_TRD
+		CP _SCL
+		JR Z,SEL_SCLFDI
+		CP _FDI
+		JR Z,SEL_SCLFDI
+		RET
+
+SEL_SCLFDI	LD IX,WIN_SEL_MOUNT		; вывод меню монтирования или загрузки в рамдиск
+		CALL INT_TXT_WINDOW
 		JP SET_ADR_ATR
 
-;ЕСЛИ ВЫБРАН TAP ТО ПРИНУДИТЕЛЬНОЕ ВКЛЮЧЕНИЕ ЭМУЛЯЦЦИИ ЛЕНИЫ
-SEL_TAP		LD H,CMOS_BYTE_00
+SEL_TRD		LD IX,WIN_SEL_TRD
+		CALL INT_TXT_WINDOW
+		JP SET_ADR_ATR
+
+; если выбран tap то принудительное включение эмуляции ленты
+SEL_TAP		LD H,CMOS.BYTE_00
 		CALL READCMOS
-		OR M_EMUL_TAPE
+		OR CMOS_ED.M_EMUL_TAPE
 		LD L,A
 		CALL IWRITECMOS
-LOADIMAGES	ROMCALL LOADIMAGE,ROM_RST83
+; загрузка образа
+LOADIMAGES
+	ROMCALL LOADIMAGE,ROM_RST83
 		JP C,ERROR
 		JP RESTART_MAIN
 
+; монтирование образа TRD на A
 MOUNT_A		XOR A
-		JR MOUNT_TRD
+		JR MOUNT_D.L1
 
+; монтирование образа TRD на B
 MOUNT_B		LD A,1
-		JR MOUNT_TRD
+		JR MOUNT_D.L1
 
+; монтирование образа TRD на C
 MOUNT_C		LD A,2
-		JR MOUNT_TRD
+		JR MOUNT_D.L1
 
+; монтирование образа TRD на D
 MOUNT_D		LD A,3
-MOUNT_TRD	ROMCALL OPEN_MOUNT_INT,ROM_RST83
+.L1		PUSH AF
+	ROMCALL OPEN_MOUNT_INT,ROM_RST83
+		POP AF
+	ROMCALL SET_VIRTREAL.NUMDRV,ROM_RST83
 		JP RESTART_MAIN
 
-;СМЕНА ДИСКА/РАЗДЕЛА
+; загрузка образа TRD в рамдиск и переключение его на D
+TRD2RAMDISKD	LD A,3
+		JR TRD2RAMDISKA.L1
+
+; загрузка образа TRD в рамдиск и переключение его на C
+TRD2RAMDISKC	LD A,2
+		JR TRD2RAMDISKA.L1
+
+; загрузка образа TRD в рамдиск и переключение его на B
+TRD2RAMDISKB	LD A,1
+		JR TRD2RAMDISKA.L1
+
+; загрузка образа TRD в рамдиск и переключение его на A
+TRD2RAMDISKA	XOR A
+.L1
+	ROMCALL SET_VIRTREAL.NUMDRV,ROM_RST83
+		JR LOADIMAGES
+
+; сохранение буферов FAT внешнего софта
+STORE_FATVARS
+	EVOPORT WIN_P3,RAM_FATVARS
+		LD HL,BUF_DIRCEP
+		LD DE,FATVARS.COPY_VARS_EXT
+		LD BC,FATVARS.COPY_VARS_INT_Size
+		LDIR				; сохранили буфера FAT внешнего софта
+		LD HL,FATVARS.COPY_VARS_INT
+		LD DE,BUF_DIRCEP
+		LD BC,FATVARS.COPY_VARS_INT_Size
+		LDIR				; восстановили буфера FAT внутреннего софта
+		LD HL,FATVARSFLAGS
+		RES FATVARSFLAGS.B_INT,(HL)
+		SET FATVARSFLAGS.B_EXT,(HL)
+		SET FATVARSFLAGS.B_TYPE,(HL)
+		RET
+
+; восстановление FAT переменных
+RESTORE_FATVARS	LD A,(FATVARSFLAGS)
+		BIT FATVARSFLAGS.B_TYPE,A
+		RET Z
+	EVOPORT WIN_P3,RAM_FATVARS
+		LD HL,BUF_DIRCEP
+		LD DE,FATVARS.COPY_VARS_INT
+		LD BC,FATVARS.COPY_VARS_INT_Size
+		LDIR				; сохранили буфера FAT внутреннего софта
+		LD HL,FATVARS.COPY_VARS_EXT
+		LD DE,BUF_DIRCEP
+		LD BC,FATVARS.COPY_VARS_INT_Size
+		LDIR				; восстановили буфера FAT внешнего софта
+		LD HL,FATVARSFLAGS
+		SET FATVARSFLAGS.B_EXT,(HL)
+		RES FATVARSFLAGS.B_INT,(HL)
+		RES FATVARSFLAGS.B_TYPE,(HL)
+		RET
+
+; смена диска/раздела
 SELECT_DRIVE	DI
-		LD IX,ENMI_SERVICE		;ОПИСАТЕЛЬ ОКНА ВЫБОРА ДИСКА/РАЗДЕЛА
+		LD IX,ENMI_SERVICE		; описатель окна выбора диска/раздела
 		LD HL,SEL_DRIVE
 		LD D,IXH
 		LD E,IXL
 		LD BC,ESEL_DRIVE-SEL_DRIVE
 		LDIR
-		LD BC,0X14-(ESEL_DRIVE-SEL_DRIVE)
+		LD BC,0x14-(ESEL_DRIVE-SEL_DRIVE)
 		EX DE,HL
 		ADD HL,BC
-		LD (IX+0X0C),L
-		LD (IX+0X0D),H
+		LD (IX+_ADR_TXT_L),L
+		LD (IX+_ADR_TXT_H),H
 		EX DE,HL
 		LD BC,ETXT_SELDRIVES-TXT_SELDRIVES
 		LDIR
-		LD A,(SETDVOL)			;НОМЕР ТЕКУЩЕГО ДИСКА/РАЗДЕЛА
-		LD (IX+7),A
-		LD (IX+8),A
-		LD (IX+9),0
-		LD A,(KOLDVOL)			;КОЛИЧЕСТВО РАЗДЕЛОВ
-		LD (IX+0X0A),A
-		LD (IX+0X0B),0
+		LD A,(DEVMAN_VARS.SETDVOL)	; номер текущего диска/раздела
+		LD (IX+_NUM_PKT),A
+		LD (IX+_TEK_PKT_L),A
+		LD (IX+_TEK_PKT_H),0
+		LD A,(DEVMAN_VARS.KOLDVOL)	; количество разделов
+		LD (IX+_NUM_KOL_L),A
+		LD (IX+_NUM_KOL_H),0
 		LD B,A
 		ADD A,2
-		LD (IX+2),A			;УСТАНОВИЛИ ВЫСОТУ ОКНА
+		LD (IX+_V_SIZE),A		; установили высоту окна
 		PUSH DE
 		LD DE,6
-		LD HL,BUF_TABLVOL
+		LD HL,BUF_VOLUMES;BUF_TABLVOL
 		EXX
 		POP HL
 		EXX
-SELECTDRIVE1	EXX
-		LD (HL),0X0D
+.L1		EXX
+		LD (HL),0x0D
 		INC HL
-		LD (HL)," "
+		LD (HL),' '
 		INC HL
 		EXX
 		LD A,(HL)
@@ -423,15 +503,15 @@ SELECTDRIVE1	EXX
 		LD C,A
 		LD B,0
 		ADD HL,BC
-		LD BC,0X10
+		LD BC,0x10
 		EXX
 		LD A,L
 		EXX
 		RRCA
 		RRCA
 		RRCA
-		AND 0X1F
-		ADD A,"E"
+		AND 0x1F
+		ADD A,'E'
 		LD (DE),A
 		INC DE
 		LDIR
@@ -450,37 +530,60 @@ SELECTDRIVE1	EXX
 		EX DE,HL
 		EXX
 		ADD HL,DE
-		DJNZ SELECTDRIVE1
+		DJNZ .L1
 		EXX
 		LD (HL),0
 		INC HL
-		LD B,(IX+2)
+		LD B,(IX+_V_SIZE)
 		DEC B
 		DEC B
 		LD C,B
-		LD A,"e"
-		LD (IX+0X12),L
-		LD (IX+0X13),H			;УСТАНОВКА АДРЕСА ГОРЯЧИХ КЛАВИШ МЕНЮ
+		LD A,'e'
+		LD (IX+_ADR_HOTKEY_L),L
+		LD (IX+_ADR_HOTKEY_H),H		; установка адреса горячих клавиш меню
 		LD (HL),B
 		INC HL
-SELECTDRIVE2	LD (HL),A
+.L2		LD (HL),A
 		INC HL
 		INC A
-		DJNZ SELECTDRIVE2
-		LD (IX+0X0E),L
-		LD (IX+0X0F),H			;УСТАНОВКА АДРЕСА СПИСКА ПОДПРОГРАММ
+		DJNZ .L2
+		LD (IX+_ADR_PRG_L),L
+		LD (IX+_ADR_PRG_H),H		; установка адреса списка подпрограмм
 		LD B,C
-SELECTDRIVE3	LD (HL),LOW (SELDRIVE)
+.L3		LD (HL),LOW (SELDRIVE)
 		INC HL
 		LD (HL),HIGH (SELDRIVE)
 		INC HL
-		DJNZ SELECTDRIVE3
+		DJNZ .L3
 		LD A,C
 		EXX
 		DEC A
-		CALL ITWINW
+		CALL INT_TXT_WINDOW
 		JP SET_ADR_ATR
 
-SELDRIVE	LD A,(IX+7)
-		ROMCALL SET_VOL,ROM_RST83
-		JP FILEBROWSE1
+SELDRIVE	LD A,(IX+_NUM_PKT)
+	ROMCALL SET_VOL,ROM_RST83
+	IF 0
+		LD IX,FILESBROWSER
+		LD HL,BUF_PATH
+	ROMCALL GET_PATH,ROM_RST83		; получаем путь после входа
+	EVOPORT WIN_A1,ROM_RST81
+		LD A,(HL)
+		SUB 'E'
+		LD H,A
+		LD L,0
+		SRL H
+		RR L
+		SRL H
+		RR L
+		LD DE,BUF_WINPATH
+		ADD HL,DE
+		LD A,(HL)
+		ADD A,A
+		ADD A,(HL)
+		LD C,A
+		LD B,0
+		JP SELECT_FILE.REREAD_WIN
+	ELSE
+		JP FILEBROWSE
+	ENDIF

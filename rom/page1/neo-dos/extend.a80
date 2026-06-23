@@ -1,5 +1,5 @@
 
-; LAST UPDATE: 12.02.2024 savelij
+; LAST UPDATE: 13.02.2025 savelij
 
 		TITLE "extend.a80"
 
@@ -11,7 +11,7 @@ DSKINFO		DB 0			; +0xE1 - номер первого свободного сектора
 SECFREE		DW 2544			; +0xE5 - количество свободных секторов
 		DB 0x10			; +0xE7 - идентификационный код TRDOS
 		DW 0			; +0xE8 - 2 байта 0
-		DUPL 9," "		; +0xEA - 9 байт 0x20
+		DB 9 DUP ' '		; +0xEA - 9 байт 0x20
 		DB 0			; +0xF3 - 1 байт 0
 		DB 0			; +0xF4 - количество удаленных файлов
 		DB "RAMDISKO"		; +0xF5 - имя дискеты
@@ -100,7 +100,7 @@ END_EXT_COM	INC DE
 		LD (TRD_5D16),A			; копия	системного регистра (порт 0xFF)
 		LD HL,ERR_OK
 		PUSH HL
-SET_CURRVIRT	LD H,VIRT_REAL_DRIVE
+SET_CURRVIRT	LD H,CMOS.VIRT_REAL_DRIVE
 		CALL READCMOS
 		AND %00000011
 		LD L,A
@@ -173,7 +173,7 @@ PRT_NUM_VIRT	LD HL,TXT4VIRTDRV
 		CALL PRT_B_HL_
 		LD A," "
 		RST 0x10
-		LD H,VIRT_REAL_DRIVE
+		LD H,CMOS.VIRT_REAL_DRIVE
 		CALL READCMOS
 		AND 3
 		ADD A,"A"
@@ -182,7 +182,7 @@ PRT_NUM_VIRT	LD HL,TXT4VIRTDRV
 		RST 0x10
 		RET
 
-		DUPL 0x0B01 - $,0xFF
+		DB 0x0B01 - $ DUP 0xFF
 
 ; прирудительное переключение турбо
 SET_TURBO	LD A,(DE)

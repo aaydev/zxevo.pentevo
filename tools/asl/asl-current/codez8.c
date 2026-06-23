@@ -20,6 +20,7 @@
 #include "asmpars.h"
 #include "asmstructs.h"
 #include "asmitree.h"
+#include "assume.h"
 #include "asmallg.h"
 #include "codepseudo.h"
 #include "intpseudo.h"
@@ -120,6 +121,7 @@ enum
 static ShortInt AdrType, OpSize;
 static Byte AdrVal;
 static Word AdrWVal;
+static tSymbolFlags adr_val_flags;
 static LongInt AdrIndex;
 
 static BaseOrder *FixedOrders;
@@ -151,10 +153,10 @@ static Boolean IsWRegCore(const char *pArg, Byte *pResult)
   if ((strlen(pArg) < 2) || (as_toupper(*pArg) != 'R')) return False;
   else
   {
-    Boolean OK;
+    char *p_end;
 
-    *pResult = ConstLongInt(pArg + 1, &OK, 10);
-    return OK && (*pResult <= 15);
+    *pResult = strtoul(pArg + 1, &p_end, 10);
+    return !*p_end && (*pResult <= 15);
   }
 }
 
@@ -194,10 +196,10 @@ static Boolean IsWRRegCore(const char *pArg, Byte *pResult)
   if ((strlen(pArg) < 3) || as_strncasecmp(pArg, "RR", 2)) return False;
   else
   {
-    Boolean OK;
+    char *p_end;
 
-    *pResult = ConstLongInt(pArg + 2, &OK, 10);
-    return OK && (*pResult <= 15);
+    *pResult = strtoul(pArg + 2, &p_end, 10);
+    return !*p_end && (*pResult <= 15);
   }
 }
 
@@ -501,6 +503,7 @@ static Boolean DecodeAdr(const tStrComp *pArg, Word Mask)
     Mask &= ~(MModXReg | MModWeird);
 
   AdrType = ModNone;
+  adr_val_flags = eSymbolFlag_None;
 
   /* immediate ? */
 
@@ -509,10 +512,10 @@ static Boolean DecodeAdr(const tStrComp *pArg, Word Mask)
     switch (OpSize)
     {
       case eSymbolSize8Bit:
-        AdrVal = EvalStrIntExpressionOffs(pArg, 1, Int8, &OK);
+        AdrVal = EvalStrIntExpressionOffsWithFlags(pArg, 1, Int8, &OK, &adr_val_flags);
         break;
       case eSymbolSize16Bit:
-        AdrWVal = EvalStrIntExpressionOffs(pArg, 1, Int16, &OK);
+        AdrWVal = EvalStrIntExpressionOffsWithFlags(pArg, 1, Int16, &OK, &adr_val_flags);
         break;
       default:
         OK = False;
@@ -544,6 +547,7 @@ static Boolean DecodeAdr(const tStrComp *pArg, Word Mask)
       if (!mFirstPassUnknown(EvalResult.Flags) && !IsWRegAddress(AdrWVal, &AdrVal))
         WrError(ErrNum_InAccPage);
       AdrType = ModWReg;
+      adr_val_flags = EvalResult.Flags;
       return ChkAdr(Mask, pArg);
     }
     return False;
@@ -563,6 +567,7 @@ static Boolean DecodeAdr(const tStrComp *pArg, Word Mask)
       if (EvalResult.OK)
       {
         AdrType = ModWeird;
+        adr_val_flags = EvalResult.Flags;
         ChkSpace(SegData, EvalResult.AddrSpaceMask);
       }
     }
@@ -678,6 +683,7 @@ static Boolean DecodeAdr(const tStrComp *pArg, Word Mask)
     if (Mask & MModDA)
     {
       AdrType = ModDA;
+      adr_val_flags = EvalResult.Flags;
       ChkSpace(SegCode, EvalResult.AddrSpaceMask);
     }
     else
@@ -1635,9 +1641,15 @@ static void DecodeCALL(Word Index)
         CodeLen = 3;
         break;
       case ModImm:
-        BAsmCode[0] = 0xd4;
-        BAsmCode[1] = AdrVal;
-        CodeLen = 2;
+        if (!mFirstPassUnknownOrQuestionable(adr_val_flags)
+         && (AdrVal & 1))
+         WrStrErrorPos(ErrNum_AddrMustBeEven, &ArgStr[1]);
+        else
+        {
+          BAsmCode[0] = 0xd4;
+          BAsmCode[1] = AdrVal;
+          CodeLen = 2;
+        }
         break;
     }
   }
@@ -2386,7 +2398,7 @@ static void DecodeSFR(Word Code)
 {
   UNUSED(Code);
 
-  CodeEquate(SegData, 0, mIsZ8Encore() ? 0xfff : 0xff);
+  code_equate_type(SegData, mIsZ8Encore() ? UInt12 : UInt8);
 }
 
 static void DecodeDEFBIT(Word Code)
@@ -2477,6 +2489,8 @@ static void AddCondition(const char *NName, Byte NCode)
 static void InitFields(void)
 {
   InstTable = CreateInstTable(201);
+
+  add_null_pseudo(InstTable);
 
   InstrZ = 0;
   AddFixed("CCF"  , 0xef   , eCoreZ8NMOS | eCoreZ8CMOS | eCoreSuper8 | eCoreZ8Encore);
@@ -2624,6 +2638,7 @@ static void InitFields(void)
   AddInstTable(InstTable, "SFR", 0, DecodeSFR);
   AddInstTable(InstTable, "REG", 0, CodeREG);
   AddInstTable(InstTable, "DEFBIT", 0, DecodeDEFBIT);
+  AddIntelPseudo(InstTable, eIntPseudoFlag_BigEndian);
 }
 
 static void DeinitFields(void)
@@ -2670,16 +2685,7 @@ static void InternSymbol_Z8(char *pArg, TempResult *pResult)
 
 static void MakeCode_Z8(void)
 {
-  CodeLen = 0; DontPrint = False; OpSize = eSymbolSize8Bit;
-
-  /* zu ignorierendes */
-
-  if (Memo("")) return;
-
-  /* Pseudo Instructions */
-
-  if (DecodeIntelPseudo(True))
-    return;
+  OpSize = eSymbolSize8Bit;
 
   if (!LookupInstTable(InstTable, OpPart.str.p_str))
     WrStrErrorPos(ErrNum_UnknownInstruction, &OpPart);
@@ -2715,7 +2721,7 @@ static void AdaptRP01(void)
 
 #define ASSUMEeZ8Count 1
 #define ASSUMESuper8Count 3
-static ASSUMERec ASSUMEeZ8s[] =
+static as_assume_rec_t ASSUMEeZ8s[] =
 {
   {"RP"  , &RPVal  , 0, 0xff, 0x100, AdaptRP01},
   {"RP0" , &RP0Val , 0, 0xff, 0x100, NULL},
@@ -2766,8 +2772,7 @@ static void SwitchTo_Z8(void *pUser)
     SegLimits[SegData] = 0xff;
   }
 
-  pASSUMERecs = ASSUMEeZ8s;
-  ASSUMERecCnt = mIsSuper8() ? ASSUMESuper8Count : ASSUMEeZ8Count;
+  assume_set(ASSUMEeZ8s, mIsSuper8() ? ASSUMESuper8Count : ASSUMEeZ8Count);
 
   MakeCode = MakeCode_Z8;
   IsDef = IsDef_Z8;

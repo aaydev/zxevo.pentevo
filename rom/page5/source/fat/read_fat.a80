@@ -1,5 +1,5 @@
 
-; LAST UPDATE: 13.10.2022 savelij
+; LAST UPDATE: 23.03.2025 savelij
 
 COM_FAT		EX AF,AF'
 		CALL P5_READ_BYTE
@@ -9,7 +9,7 @@ COM_FAT		EX AF,AF'
 		LD IYL,EXTERNAL
 		JR ICOM_FAT1
 
-;ОБЩАЯ ТОЧКА ВХОДА ДЛЯ РАБОТЫ С FAT
+; общая точка входа для работы с FAT
 ICOM_FAT	EX AF,AF'
 		EX (SP),HL
 		LD A,(HL)
@@ -18,7 +18,7 @@ ICOM_FAT	EX AF,AF'
 		PUSH IX
 		PUSH IY
 		LD IYL,INTERNAL
-ICOM_FAT1	LD (ERORDRV),SP
+ICOM_FAT1	LD (ADR_SP_COMFAT),SP
 		PUSH HL
 		LD HL,EXITDRV
 		EX (SP),HL
@@ -38,7 +38,7 @@ ICOM_FAT1	LD (ERORDRV),SP
 		EX (SP),HL
 		RET
 
-ERR_DRV		LD SP,(ERORDRV)
+ERR_DRV		LD SP,(ADR_SP_COMFAT)
 EXITDRV		POP IY
 		POP IX
 		RET
@@ -59,20 +59,20 @@ TABLFAT		DW INIT_FATVARS			; инициализация переменных FAT
 
 ROOTDIR		PUSH IY
 		LD IYL,INTERNAL
-		LD A,(SETDVOL)
+		LD A,(DEVMAN_VARS.SETDVOL)
 		LD D,A
 		LD L,A
 		LD H,0
 		ADD HL,HL
 		ADD HL,HL
 		ADD HL,HL
-		LD BC,BUF_TABLVOL + 2
+		LD BC,BUF_VOLUMES + 2
 		ADD HL,BC
 		LD A,(HL)
-		LD HL,BUF_TABLVOL
+		LD HL,BUF_VOLUMES
 		CALL INIT_FATVARS
-		LD DE,(CurrentDIRCluster)
-		LD BC,(CurrentDIRCluster + 2)
+		LD DE,(FATVAR.CurrentDIRCluster)
+		LD BC,(FATVAR.CurrentDIRCluster + 2)
 		CALL INIT_TEKDIR
 		POP IY
 		RET
@@ -87,8 +87,8 @@ ROOTDIR		PUSH IY
 ; A = тип раздела если MBR не найден
 INIT_FATVARS	PUSH HL
 		LD HL,0xFFFF
-		LD (NumSec2Buf + 2),HL
-		LD (FATType),A
+		LD (FATVAR.NumSec2Buf + 2),HL
+		LD (FATVAR.FATType),A
 		LD E,D
 		LD D,0
 		EX DE,HL
@@ -100,51 +100,51 @@ INIT_FATVARS	PUSH HL
 		INC HL
 		INC HL
 		INC HL
-		CALL LOADZP
-		LD (StartSecVol),DE
-		LD (StartSecVol + 2),BC		; номер первого сектора раздела
+		CALL RD_DWORD
+		LD (FATVAR.StartSecVol),DE
+		LD (FATVAR.StartSecVol + 2),BC	; номер первого сектора раздела
 		CALL LOADLST
 		CALL VALID_BOOTSEC
 		AND A
-		JR Z,RDFAT07
+		JR Z,.L6
 		SCF
 		RET
 
-RDFAT07		LD A,(BUF_512 + _BPB_SecPerClus)
-		LD (SecPerClus),A
+.L6		LD A,(BUF_512 + _BPB_SecPerClus)
+		LD (FATVAR.SecPerClus),A
 		LD HL,(BUF_512 + _BPB_RsvdSecCnt)
 		ADD HL,DE
-		LD (NumSecFAT1),HL
+		LD (FATVAR.NumSecFAT1),HL
 		LD HL,0
 		ADC HL,BC
-		LD (NumSecFAT1 + 2),HL
+		LD (FATVAR.NumSecFAT1 + 2),HL
 		LD HL,0
 		LD DE,(BUF_512 + _BPB_FATSz16)
 		LD A,D
 		OR E
-		JR NZ,RDFAT01			; если не FAT12/16 (_BPB_FATSz16 == 0)
+		JR NZ,.L7			; если не FAT12/16 (_BPB_FATSz16 == 0)
 		LD DE,(BUF_512 + _BPB_FATSz32)
 		LD HL,(BUF_512 + _BPB_FATSz32 + 2)	; то берем из смещения +36
-RDFAT01		LD (FATSize),DE
-		LD (FATSize + 2),HL		; число секторов на FAT таблицу
+.L7		LD (FATVAR.FATSize),DE
+		LD (FATVAR.FATSize + 2),HL	; число секторов на FAT таблицу
 
 		LD HL,0
 		LD DE,(BUF_512 + _BPB_TotSec16)
 		LD A,D
 		OR E
-		JR NZ,.L1			; если не FAT12/16 (BPB_TOTSEC16=0)
+		JR NZ,.L5			; если не FAT12/16 (BPB_TOTSEC16=0)
 		LD DE,(BUF_512 + _BPB_TotSec32)
 		LD HL,(BUF_512 + _BPB_TotSec32+2)
 						; то берем из смещения +32
-.L1		LD (NumsSectorsVol + 2),HL
-		LD (NumsSectorsVol),DE		; к-во секторов на диске/разделе
+.L5		LD (FATVAR.NumsSectorsVol + 2),HL
+		LD (FATVAR.NumsSectorsVol),DE	; к-во секторов на диске/разделе
 
 ; вычисляем ROOTDIRSECTORS
 		LD DE,(BUF_512 + _BPB_RootEntCnt)
 		LD BC,0
 		LD A,D
 		OR E
-		JR Z,RDFAT03
+		JR Z,.L8
 		LD A,0x10
 		CALL BCDE_A
 
@@ -152,21 +152,21 @@ RDFAT01		LD (FATSize),DE
 ; ROOTDIRSECTORS = ((BPB_ROOTENTCNT * 32) + (BPB_BYTSPERSEC - 1)) / BPB_BYTSPERSEC
 ; в HL ROOTDIRSECTORS. если FAT32, то HL = 0 всегда
 
-RDFAT03		PUSH DE				; ROOTDIRSECTORS
-		LD HL,NumSecFAT1
-		CALL LOADZP
+.L8		PUSH DE				; ROOTDIRSECTORS
+		LD HL,FATVAR.NumSecFAT1
+		CALL RD_DWORD
 		LD A,(BUF_512 + _BPB_NumFATs)
-		LD (NumFATs),A
+		LD (FATVAR.NumFATs),A
 		DEC A
 		JR Z,.L1
-		LD HL,FATSize
+		LD HL,FATVAR.FATSize
 		CALL BCDEHLP
-		LD (NumSecFAT2),DE
-		LD (NumSecFAT2 + 2),BC
-.L1		LD HL,FATSize
+		LD (FATVAR.NumSecFAT2),DE
+		LD (FATVAR.NumSecFAT2 + 2),BC
+.L1		LD HL,FATVAR.FATSize
 		CALL BCDEHLP
-		LD (NumSecRootDir),DE
-		LD (NumSecRootDir + 2),BC
+		LD (FATVAR.NumSecRootDir),DE
+		LD (FATVAR.NumSecRootDir + 2),BC
 		POP HL
 ; добавляем размер ROOTDIR
 		ADD HL,DE
@@ -175,16 +175,16 @@ RDFAT03		PUSH DE				; ROOTDIRSECTORS
 		ADC HL,BC
 		LD B,H
 		LD C,L
-		LD (FirstSecData),DE
-		LD (FirstSecData + 2),BC
-		LD HL,NumsSectorsVol
+		LD (FATVAR.FirstSecData),DE
+		LD (FATVAR.FirstSecData + 2),BC
+		LD HL,FATVAR.NumsSectorsVol
 		CALL BCDEHLM
-		LD A,(SecPerClus)
+		LD A,(FATVAR.SecPerClus)
 		CALL BCDE_A
-		LD (NumsClustersVol),DE
-		LD (NumsClustersVol + 2),BC
+		LD (FATVAR.NumsClustersVol),DE
+		LD (FATVAR.NumsClustersVol + 2),BC
 
-		LD A,(FATType)
+		LD A,(FATVAR.FATType)
 		CP 0xFF
 		JR NZ,.L4
 ; определение типа FAT при отсуствии MBR
@@ -193,10 +193,10 @@ RDFAT03		PUSH DE				; ROOTDIRSECTORS
 		OR L
 		LD A,2
 		JR Z,.L2
-		LD DE,(FATSize - 1)
-		LD BC,(FATSize + 1)
+		LD DE,(FATVAR.FATSize - 1)
+		LD BC,(FATVAR.FATSize + 1)
 		LD E,0				; BCDE = количество секторов * 0x100
-		LD HL,NumsClustersVol		; количество кластеров на FAT
+		LD HL,FATVAR.NumsClustersVol	; количество кластеров на FAT
 		CALL HLBCDEM			; количество кластеров - (количество секторов * 0x100)
 		LD A,D
 		OR C
@@ -204,30 +204,29 @@ RDFAT03		PUSH DE				; ROOTDIRSECTORS
 		LD A,1				; FAT16
 		JR Z,.L2			; FAT16 если флаг Z=0
 		XOR A				; иначе FAT12
-.L2		LD (FATType),A
+.L2		LD (FATVAR.FATType),A
 
 ; для FAT12/16 ROOT кластер = 0
 ; для FAT32 берем по смещению +44
-; На выходе: BCDE - СЕКТОР ROOTDIR КЛАСТЕР
+; На выходе: BCDE - ROOTDIR кластер
 .L4		XOR A
-		LD (TEK_LEV),A
-		LD (BUF_PATH),A
+		LD (FATVAR.CurrentNumLevDIR),A
 		CALL INIT_PATH
-		LD A,(FATType)
+		LD A,(FATVAR.FATType)
 		PUSH AF
 		AND A
 		LD DE,0
 		LD B,D
 		LD C,E
-		JR Z,.L3			; FAT12-NONE
+		JR Z,.L3				; FAT12-NONE
 		DEC A
-		JR Z,.L3			; FAT16
+		JR Z,.L3				; FAT16
 		LD DE,(BUF_512 + _BPB_RootClus)
 		LD BC,(BUF_512 + _BPB_RootClus + 2)	; FAT32
-.L3		LD (CurrentDIRCluster),DE
-		LD (CurrentDIRCluster + 2),BC	; номер текущего кластера
-		LD (RootDIRCluster),DE
-		LD (RootDIRCluster + 2),BC	; номер корневого кластера
+.L3		LD (FATVAR.CurrentDIRCluster),DE
+		LD (FATVAR.CurrentDIRCluster + 2),BC	; номер текущего кластера
+		LD (FATVAR.RootDIRCluster),DE
+		LD (FATVAR.RootDIRCluster + 2),BC	; номер корневого кластера
 		POP AF
 		RET
 
@@ -236,58 +235,58 @@ VALID_BOOTSEC	LD HL,(BUF_512 + _BPB_BytsPerSec)
 		LD A,H
 		SUB 2
 		OR L
-		JR NZ,VALID_BOOTSEC1
+		JR NZ,.L1
 		LD HL,(BUF_512 + _BPB_SecPerClus)
 		OR L
-		JR Z,VALID_BOOTSEC1
+		JR Z,.L1
 		NEG
 		AND L
 		CP L
-		JR NZ,VALID_BOOTSEC1
+		JR NZ,.L1
 		LD A,(BUF_512 + _BPB_NumFATs)
 		DEC A
 		CP 7
-		JR NC,VALID_BOOTSEC1
+		JR NC,.L1
 		XOR A
 		RET
 
-VALID_BOOTSEC1	OR IXH
+.L1		OR IXH
 		RET
 
 ; формирование таблицы кластеров DIR
 ; и поиск первой "легальной" записи в DIR
 INIRTSC		PUSH AF
 		LD HL,0xFFFF
-		LD (NumSec2Buf + 2),HL
-		LD HL,BUF_TDIRCLS
-		LD DE,(CurrentDIRCluster)
-		LD BC,(CurrentDIRCluster + 2)
-		CALL SAVEZP
+		LD (FATVAR.NumSec2Buf + 2),HL
+		LD HL,BUF_DIRCLS
+		LD DE,(FATVAR.CurrentDIRCluster)
+		LD BC,(FATVAR.CurrentDIRCluster + 2)
+		CALL WR_DWORD
 		LD A,D
 		OR E
 		OR B
 		OR C
-		JR Z,LASTCLS
-NEXTCLS		PUSH HL
+		JR Z,.L2
+.L1		PUSH HL
 		CALL RDFATZP
 		CALL LST_CLS
 		POP HL
-		JR C,LASTCLS
-		CALL SAVEZP
-		JR NEXTCLS
+		JR C,.L2
+		CALL WR_DWORD
+		JR .L1
 
-LASTCLS		LD BC,0xFFFF
-		CALL SAVEZP
+.L2		LD BC,0xFFFF
+		CALL WR_DWORD
 		CALL POSTF02
 		POP AF
 		RET
 
 ; чтение следующего номера кластера
-RDFATZP		LD A,(FATType)
+RDFATZP		LD A,(FATVAR.FATType)
 		AND A
-		JR Z,RDFATS0
+		JR Z,.L3
 		DEC A
-		JR Z,RDFATS1
+		JR Z,.L1
 		EX DE,HL
 		ADD HL,HL
 		EX DE,HL
@@ -299,20 +298,20 @@ RDFATZP		LD A,(FATType)
 		LD D,L
 		LD C,H
 		LD B,0
-		CALL RDFATS2
+		CALL .L2
 		INC HL
 		LD C,(HL)
 		INC HL
 		LD B,(HL)
 		RET
 
-RDFATS1		LD BC,0
+.L1		LD BC,0
 		LD A,E
 		LD E,D
 		LD D,C
-RDFATS2		PUSH AF
+.L2		PUSH AF
 		PUSH BC
-		LD HL,NumSecFAT1
+		LD HL,FATVAR.NumSecFAT1
 		CALL BCDEHLP
 		CALL LOADLST
 		POP BC
@@ -326,7 +325,7 @@ RDFATS2		PUSH AF
 		LD D,(HL)
 		RET
 
-RDFATS0		LD H,D
+.L3		LD H,D
 		LD L,E
 		ADD HL,HL
 		ADD HL,DE
@@ -340,8 +339,8 @@ RDFATS0		LD H,D
 		SRL E
 		PUSH AF
 		PUSH HL
-		LD DE,(NumSecFAT1)
-		LD BC,(NumSecFAT1 + 2)
+		LD DE,(FATVAR.NumSecFAT1)
+		LD BC,(FATVAR.NumSecFAT1 + 2)
 		CALL LOADLST
 		POP BC
 		LD A,B
@@ -352,23 +351,23 @@ RDFATS0		LD H,D
 		INC HL
 		LD A,H
 		CP HIGH (BUF_512)+2
-		JR NZ,RDFATS4
+		JR NZ,.L4
 		PUSH BC
 		LD BC,0
 		INC DE
 		CALL LOADLST
 		POP BC
-RDFATS4		POP AF
+.L4		POP AF
 		LD D,(HL)
 		LD E,B
 		LD BC,0
 		RRA
-		JR NC,RDFATS3
+		JR NC,.L5
 	REPT 4
 		SRL D
 		RR E
 	ENDM
-RDFATS3		LD A,D
+.L5		LD A,D
 		AND 0x0F
 		LD D,A
 		RET
@@ -380,34 +379,34 @@ REALSEC		LD A,B
 		OR C
 		OR D
 		OR E
-		JR NZ,REALSE1
-		LD DE,(NumSecRootDir)
-		LD BC,(NumSecRootDir + 2)
+		JR NZ,.L1
+		LD DE,(FATVAR.NumSecRootDir)
+		LD BC,(FATVAR.NumSecRootDir + 2)
 		RET
 
-REALSE1		LD HL,0xFFFE
+.L1		LD HL,0xFFFE
 		EX DE,HL
 		ADD HL,DE
 		EX DE,HL
 		INC HL
 		ADC HL,BC			; номер кластера-2
-		LD A,(SecPerClus)
-		JR REALSE2
+		LD A,(FATVAR.SecPerClus)
+		JR .L3
 
-REALSE3		SLA E
+.L2		SLA E
 		RL D
 		RL L
 		RL H
-REALSE2		RRCA
-		JR NC,REALSE3			; умножили на размер кластера
+.L3		RRCA
+		JR NC,.L2			; умножили на размер кластера
 		LD B,H
 		LD C,L
-		LD HL,FirstSecData
+		LD HL,FATVAR.FirstSecData
 		JP BCDEHLP			; прибавили смещение от начала раздела
 
 ; сохраняем сектор загруженный в буфер
-LSTSAVE		LD DE,(NumSec2Buf)
-		LD BC,(NumSec2Buf + 2)
+LSTSAVE		LD DE,(FATVAR.NumSec2Buf)
+		LD BC,(FATVAR.NumSec2Buf + 2)
 		LD HL,BUF_512
 		LD A,1
 		CALL TO_DRV
@@ -422,8 +421,8 @@ LOADLST		CALL CPNUMSC
 		LD HL,BUF_512
 		RET
 
-LOADLS1		LD (NumSec2Buf),DE
-		LD (NumSec2Buf + 2),BC
+LOADLS1		LD (FATVAR.NumSec2Buf),DE
+		LD (FATVAR.NumSec2Buf + 2),BC
 		LD HL,BUF_512
 		PUSH HL
 		LD A,1
@@ -435,7 +434,7 @@ LOADLS1		LD (NumSec2Buf),DE
 		RET
 
 ; проверка на номер уже загруженный сектор
-CPNUMSC		LD HL,NumSec2Buf
+CPNUMSC		LD HL,FATVAR.NumSec2Buf
 		LD A,(HL)
 		INC HL
 		CP E
@@ -453,20 +452,20 @@ CPNUMSC		LD HL,NumSec2Buf
 		RET
 
 ; проверка на последний кластер
-LST_CLS		LD A,(FATType)			; взяли тип FAT
+LST_CLS		LD A,(FATVAR.FATType)		; взяли тип FAT
 		AND A
-		JR NZ,LST_CL1
+		JR NZ,.L1
 		LD HL,0x0FF7			; для FAT12
 		SBC HL,DE
 		RET
 
-LST_CL1		DEC A
-		JR NZ,LST_CL2
+.L1		DEC A
+		JR NZ,.L2
 		LD HL,0xFFF7			; для FAT16
 		SBC HL,DE
 		RET
 
-LST_CL2		LD HL,0x0FFF
+.L2		LD HL,0x0FFF
 		SBC HL,BC
 		RET NZ
 		LD HL,0xFFF7
@@ -476,32 +475,33 @@ LST_CL2		LD HL,0x0FFF
 ; получить описатель текущего файла
 READ_DIR	LD A,IYL
 		AND A
-		JR NZ,GETFZA3
+		JR NZ,.L1
 		PUSH IY
 		LD IYL,INTERNAL
 		PUSH HL
 		LD HL,(RREG_C)
-		LD (TEK_ZAP),HL
-		LD HL,GETFZA4
+		LD (FATVAR.TEK_ZAP),HL
+		LD HL,.L3
 		EX (SP),HL
-GETFZA3		LD BC,(TEK_ZAP)			; текущий номер описателя
+.L1		LD E,0				; сброс флагов предыдущего файла
+		LD BC,(FATVAR.TEK_ZAP)		; текущий номер описателя
 		LD A,B
 		OR C
-		JR Z,GETRZAP			; если номер =0, то предыдущий номер не проверяем
+		JR Z,.GETRZAP			; если номер =0, то предыдущий номер не проверяем
 		PUSH BC				; сохранили текущий номер
 		DEC BC				; нужно проверить предыдущий номер
-		CALL GETRZAP			; проверяем
+		CALL .GETRZAP			; проверяем
 		POP BC				; вернули текущий номер
 		LD E,A				; из предыдущего описателя нужен только флаговый байт
-GETRZAP		PUSH DE
+.GETRZAP	PUSH DE
 		CALL RDDIRSC			; читаем сектор с текущим номером
 		POP DE				; вернули регистр E
 		INC A
 		LD A,E				; вернули наличие/отсуствие длинного имени
 		RET Z				; выходим если вылетели за пределы существующей диры
 		EX AF,AF'			
-GETFZA1		LD A,C
-		AND 0x0F			; получили номер описателя в загруженном секторе диры
+		LD A,C
+		AND %00001111			; получили номер описателя в загруженном секторе диры
 		LD E,A
 		LD D,0
 		EX DE,HL
@@ -511,29 +511,29 @@ GETFZA1		LD A,C
 		ADD HL,HL
 		ADD HL,HL
 		ADD HL,DE			; вычислили адрес выбранного описателя
-		LD DE,0x0B
-		LD A,(HL)			; взяли флаговый байт текущего описателя
+		LD DE,_DIR_Attr
+		LD A,(HL)			; взяли первый байт имени
 		EX DE,HL
 		ADD HL,DE
-		LD L,(HL)			; взяли первый байт имени
+		LD L,(HL)			; взяли флаговый байт текущего описателя
 		LD H,A				; положили флаговый байт этого описателя
 		EX DE,HL
 		CALL CP_TWOT			; проверка на наличие в имени ".." 
 		LD D,0				; будем входить в директорию
-		JR NZ,GETFZA2
+		JR NZ,.L2
 		LD D,0x80			; будем выходить в предыдущую директорию
-GETFZA2		EX AF,AF'
-		CP 0x0F				; проверяем флаговый байт предыдущего описателя
+.L2		EX AF,AF'
+		CP M_DIR_AttrLongName		; проверяем флаговый байт предыдущего описателя
 		LD A,E				; взяли флаговый байт текущего описателя
 		LD E,D				; выставили направление движения в дирах
 		RET NZ
 		INC E				; установка наличия длинного имени
 		RET
 
-GETFZA4		PUSH AF
+.L3		PUSH AF
 		PUSH HL
 		PUSH DE
-		LD DE,CPU6
+		LD DE,CPU2
 		ADD HL,DE
 		LD DE,(RREG_L)
 		LD BC,0x20
@@ -554,15 +554,15 @@ RDDIRSC		PUSH BC
 		CALL BCDE_A
 		LD A,E
 		PUSH AF
-		LD A,(SecPerClus)
+		LD A,(FATVAR.SecPerClus)
 		PUSH AF
 		CALL BCDE_A
-		LD HL,BUF_TDIRCLS
+		LD HL,BUF_DIRCLS
 		EX DE,HL
 		ADD HL,HL
 		ADD HL,HL
 		ADD HL,DE
-		CALL LOADZP
+		CALL RD_DWORD
 		BIT 7,B
 		JR Z,RDDIRS3
 		POP BC
@@ -593,29 +593,29 @@ RDDIRS3		CALL REALSEC
 
 ; проверка на 1 точку
 CP_ONET		LD A,(HL)
-		CP "."
+		CP '.'
 		RET NZ
 		INC HL
 		LD A,(HL)
 		DEC HL
-		CP " "
+		CP ' '
 		RET NZ
 		XOR A
 		RET
 
 ; проверка на 2 точки
 CP_TWOT		LD A,(HL)
-		CP "."
+		CP '.'
 		RET NZ
 		INC HL
 		LD A,(HL)
 		DEC HL
-		CP "."
+		CP '.'
 		RET NZ
 		XOR A
 		RET
 
-EPOS_FILES	LD HL,(TEK_ZAP)
+EPOS_FILES	LD HL,(FATVAR.TEK_ZAP)
 		LD (RREG_C),HL
 		RET
 
@@ -653,13 +653,13 @@ TPOSITF		DW POSTF00			; сохранение текущей позиции файла
 ENDTPOS
 
 ; сохранение текущей позиции файла
-POSTF00		LD HL,(TEK_ZAP)
-		LD (SAVEZAP),HL
+POSTF00		LD HL,(FATVAR.TEK_ZAP)
+		LD (FATVAR.SAVEZAP),HL
 		RET
 
 ; восстановление текущей позиции файла
-POSTF01		LD HL,(SAVEZAP)
-		LD (TEK_ZAP),HL
+POSTF01		LD HL,(FATVAR.SAVEZAP)
+		LD (FATVAR.TEK_ZAP),HL
 		RET
 
 ; перемотать на "B" файлов назад
@@ -691,12 +691,12 @@ POSTF05		LD BC,0
 		CALL RDDIRSC
 		LD DE,_DIR_StructSize
 .L4		LD A,(HL)
-		CP "."
+		CP '.'
 		JR NZ,.L5
 		INC HL
 		LD A,(HL)
 		DEC HL
-		CP "."
+		CP '.'
 		JR Z,.L5
 		INC BC
 		ADD HL,DE
@@ -721,9 +721,9 @@ POSTF05		LD BC,0
 		AND A
 		SBC HL,DE
 		LD E,_DIR_StructSize
-		CP 0x0F				; длинное имя?
+		CP M_DIR_AttrLongName		; длинное имя?
 		JR Z,.L1
-		CP 8				; имя раздела?
+		CP M_DIR_VolumeID		; имя раздела?
 		JR Z,.L1
 		LD A,(HL)
 		CP 0xE5				; удаленный файл?
@@ -745,11 +745,11 @@ POSTF05		LD BC,0
 		RET
 
 ; установить номер "легальной" записи из "BC"
-POSTF06		LD (TEK_ZAP),BC
+POSTF06		LD (FATVAR.TEK_ZAP),BC
 		RET
 
 ; вернуть в "BC" текущий номер "легальной" записи
-POSTF07		LD BC,(TEK_ZAP)
+POSTF07		LD BC,(FATVAR.TEK_ZAP)
 		RET
 
 CPTEKZP		CALL RDDIRSC
@@ -765,7 +765,7 @@ CPTEKZP		CALL RDDIRSC
 		ADD HL,HL
 		ADD HL,HL
 		ADD HL,DE
-		LD DE,0x0B
+		LD DE,_DIR_Attr
 		ADD HL,DE
 		LD A,(HL)
 		SBC HL,DE
@@ -775,49 +775,49 @@ CPTEKZP		CALL RDDIRSC
 
 ; сброс текущей позиции в 0 и поиск первой "легальной" записи
 POSTF02		LD BC,0
-		LD (TEK_ZAP),BC
+		LD (FATVAR.TEK_ZAP),BC
 		CALL RDDIRSC
 		CALL CP_ONET
-		JR Z,NXTLEG1
+		JR Z,NXTLEGZ.L1
 		LD A,(HL)
 		AND A
 		RET Z
-		JR NXTLEG1+1
+		JR NXTLEGZ.L2
 
-NXTLEGZ		LD BC,(TEK_ZAP)
-NXTLEG1		INC BC
-		CALL CPTEKZP
+NXTLEGZ		LD BC,(FATVAR.TEK_ZAP)
+.L1		INC BC
+.L2		CALL CPTEKZP
 		CP 0xFF
 		RET Z
-		CP 0x0F
-		JR Z,NXTLEG1
-		CP 8
-		JR Z,NXTLEG1
+		CP M_DIR_AttrLongName		; длинное имя?
+		JR Z,.L1
+		CP M_DIR_VolumeID		; имя раздела?
+		JR Z,.L1
 		LD A,E
 		AND A
 		RET Z
 		CP 0xE5
-		JR Z,NXTLEG1
-		LD (TEK_ZAP),BC
+		JR Z,.L1
+		LD (FATVAR.TEK_ZAP),BC
 		RET
 
-PRVLEGZ		LD BC,(TEK_ZAP)
+PRVLEGZ		LD BC,(FATVAR.TEK_ZAP)
 		CALL CPTEKZP
 		CALL CP_TWOT
 		RET Z
-PRVLEG1		DEC BC
+.L1		DEC BC
 		CALL CPTEKZP
-		CP 0x0F
-		JR Z,PRVLEG1
-		CP 8
-		JR Z,PRVLEG1
+		CP M_DIR_AttrLongName		; длинное имя?
+		JR Z,.L1
+		CP M_DIR_VolumeID		; имя раздела?
+		JR Z,.L1
 		LD A,E
 		CP 0xE5
-		JR Z,PRVLEG1
-		LD (TEK_ZAP),BC
+		JR Z,.L1
+		LD (FATVAR.TEK_ZAP),BC
 		RET
 
-SAVEZP		LD (HL),E
+WR_DWORD	LD (HL),E
 		INC HL
 		LD (HL),D
 		INC HL
@@ -827,7 +827,7 @@ SAVEZP		LD (HL),E
 		INC HL
 		RET
 
-LOADZP		LD E,(HL)
+RD_DWORD	LD E,(HL)
 		INC HL
 		LD D,(HL)
 		INC HL
@@ -916,19 +916,19 @@ HLDEPBC		EX DE,HL
 		RET
 
 INIT_PATH
-	EVOPORT WIN_P5,RAM_MOUNTER
-		LD A,(SETDVOL)
+	EVOPORT WIN_P1,RAM_MOUNTER
+		LD A,(DEVMAN_VARS.SETDVOL)
 		LD D,A
-		ADD A,HIGH (TEK_BUFPATH + CPU5) + 4
+		ADD A,HIGH (BUF_CURRPATH + CPU1) + 4
 		LD H,A
 		LD L,0
-		LD A,"E"
+		LD A,'E'
 		ADD A,D
 		LD (HL),A
 		INC L
-		LD (HL),":"
+		LD (HL),':'
 		INC L
-		LD (HL),"/"
+		LD (HL),'/'
 		INC L
 		LD (HL),0
 		INC L
@@ -938,13 +938,13 @@ INIT_PATH
 		RET
 
 RENEW_PATH
-	EVOPORT WIN_P5,RAM_MOUNTER
+	EVOPORT WIN_P1,RAM_MOUNTER
 		BIT 7,E
 		JR NZ,MINUS_PATH
 ; добавление директории к текущему пути (вход в директорию)
 		EX DE,HL
-		LD A,(SETDVOL)
-		ADD A,HIGH (TEK_BUFPATH + CPU5) + 4
+		LD A,(DEVMAN_VARS.SETDVOL)
+		ADD A,HIGH (BUF_CURRPATH + CPU1) + 4
 		LD H,A
 		LD L,0xFF
 		LD L,(HL)
@@ -953,31 +953,31 @@ RENEW_PATH
 		LD BC,8
 		LDIR
 		LD B,8
-RENEWPATH3	DEC DE
+.L1		DEC DE
 		LD A,(DE)
 		INC DE
-		CP " "
-		JR NZ,RENEWPATH2
+		CP ' '
+		JR NZ,.L2
 		DEC DE
-		DJNZ RENEWPATH3
-RENEWPATH2	LD A,(HL)
-		CP " "
-		JR Z,RENEWPATH4
-		LD A,"."
+		DJNZ .L1
+.L2		LD A,(HL)
+		CP ' '
+		JR Z,.L4
+		LD A,'.'
 		LD (DE),A
 		INC DE
 		LD BC,3
 		LDIR
 		LD B,3
-RENEWPATH5	DEC DE
+.L3		DEC DE
 		LD A,(DE)
 		INC DE
-		CP " "
-		JR NZ,RENEWPATH4
+		CP ' '
+		JR NZ,.L4
 		DEC DE
-		DJNZ RENEWPATH5
-RENEWPATH4	EX DE,HL
-		LD (HL),"/"
+		DJNZ .L3
+.L4		EX DE,HL
+		LD (HL),'/'
 		INC L
 		LD (HL),0
 		INC L
@@ -987,17 +987,17 @@ RENEWPATH4	EX DE,HL
 		RET
 
 ; укорочение текущего пути (выход в предыдущую директорию)
-MINUS_PATH	LD A,(SETDVOL)
-		ADD A,HIGH (TEK_BUFPATH + CPU5) + 4
+MINUS_PATH	LD A,(DEVMAN_VARS.SETDVOL)
+		ADD A,HIGH (BUF_CURRPATH + CPU1) + 4
 		LD H,A
 		LD L,0xFF
 		LD L,(HL)
 		DEC L
 		DEC L
-MINUS_PATH1	DEC L
+.L1		DEC L
 		LD A,(HL)
-		CP "/"
-		JR NZ,MINUS_PATH1
+		CP '/'
+		JR NZ,.L1
 		INC L
 		LD (HL),0
 		INC L
@@ -1008,32 +1008,32 @@ MINUS_PATH1	DEC L
 
 ; получение текущего пути
 GET_PATH
-	EVOPORT WIN_P5,RAM_MOUNTER
+	EVOPORT WIN_P1,RAM_MOUNTER
 		LD A,IYL
 		AND A
-		JR NZ,GETPATH1
-		LD A,(SETDVOL)
+		JR NZ,.L1
+		LD A,(DEVMAN_VARS.SETDVOL)
 		LD D,A
-		ADD A,HIGH (TEK_BUFPATH+CPU5)+4
+		ADD A,HIGH (BUF_CURRPATH+CPU1)+4
 		LD H,A
 		LD L,0xFF
 		LD A,(HL)
-		LD DE,BUF_256
-		LD BC,0x100
+		LD DE,BUF_MOVE256
+		LD BC,BUF_MOVE256_Size
 		LD L,C
 		LDIR
 		LD C,A				; BC=сколько байт переносить в адрес по запросу
-		LD A,HIGH (CPU6) - 1
+		LD A,HIGH (CPU2) - 1
 		ADD A,D
 		LD H,A
 		LD DE,(RREG_L)			; куда переносить путь
 		JP LDIR_BYTES
 
-GETPATH1	PUSH HL
+.L1		PUSH HL
 		PUSH HL
-		LD A,(SETDVOL)
+		LD A,(DEVMAN_VARS.SETDVOL)
 		LD D,A
-		ADD A,HIGH (TEK_BUFPATH + CPU5) + 4
+		ADD A,HIGH (BUF_CURRPATH + CPU1) + 4
 		LD H,A
 		LD L,0xFF
 		LD A,(HL)
@@ -1049,31 +1049,31 @@ NO_LNG		POP DE
 		LD BC,8
 		LDIR
 		EX DE,HL
-NO_LNG2		DEC HL
+.L1		DEC HL
 		LD A,(HL)
-		CP " "
-		JR Z,NO_LNG2
+		CP ' '
+		JR Z,.L1
 		INC HL
 		LD A,(DE)
 		EX DE,HL
-		CP " "
-		JR Z,NO_LNG1
+		CP ' '
+		JR Z,.L2
 		EX DE,HL
-		LD (HL),"."
+		LD (HL),'.'
 		INC HL
 		EX DE,HL
 		LDI
 		LDI
 		LDI
-NO_LNG1		EX DE,HL
+.L2		EX DE,HL
 		LD (HL),0
 		LD A,L
 		LD (RREG_A),A
 		POP HL
 		RET
 
-GETLNG8		POP IY
-		LD DE,CPU6
+MOVE_LONGNAME	POP IY
+		LD DE,CPU2
 		ADD HL,DE
 		LD DE,(RREG_L)
 		LD BC,0x100
@@ -1082,13 +1082,13 @@ GETLNG8		POP IY
 ; отдача длинного имени файла
 GET_LONGNAME	LD A,IYL
 		AND A
-		JR NZ,GETLNG9
+		JR NZ,.L1
 		PUSH IY
 		LD IYL,INTERNAL
-		LD HL,GETLNG8
+		LD HL,MOVE_LONGNAME
 		PUSH HL
-		LD HL,BUF_256
-GETLNG9		PUSH HL
+		LD HL,BUF_MOVE256
+.L1		PUSH HL
 		PUSH HL
 		CALL READ_DIR
 		BIT 0,E
@@ -1096,50 +1096,50 @@ GETLNG9		PUSH HL
 		EXX
 		LD C,0
 		EXX
-GETLNG2		DEC BC
-		CALL GETRZAP
+.L2		DEC BC
+		CALL READ_DIR.GETRZAP
 		LD A,(HL)
 		INC HL
 		EXX
 		BIT 6,C
 		POP HL
-		JR NZ,GETLNGE + 1
+		JR NZ,.L4
 		LD C,A
 		EXX
 		LD A,5
-		CALL GETLNG1
+		CALL .L5
 		AND A
-		JR Z,GETLNGE
+		JR Z,.L3
 		INC HL
 		INC HL
 		INC HL
 		LD A,6
-		CALL GETLNG1
+		CALL .L5
 		AND A
-		JR Z,GETLNGE
+		JR Z,.L3
 		INC HL
 		INC HL
 		LD A,2
-		CALL GETLNG1
+		CALL .L5
 		AND A
-		JR Z,GETLNGE
+		JR Z,.L3
 		EXX
 		PUSH HL
 		EXX
-		JR GETLNG2
+		JR .L2
 
-GETLNGE		EXX
-		LD (HL),0
+.L3		EXX
+.L4		LD (HL),0
 		LD A,L
 		LD (RREG_A),A
 		EXX
 		POP HL
 		RET
 
-GETLNG1		EXX
+.L5		EXX
 		LD B,A
 		EXX
-		LD D,(HL)
+.L6		LD D,(HL)
 		INC HL
 		LD E,(HL)
 		INC HL
@@ -1148,59 +1148,59 @@ GETLNG1		EXX
 		RET Z
 		LD A,E
 		AND A
-		JR NZ,GETLNG3
+		JR NZ,.L7
 		LD A,D
 		CP 0x80
-		JR C,GETLNG5
+		JR C,.L10
 		LD D,0x5F
-		JR GETLNG5
+		JR .L10
 
-GETLNG3		CP 4
+.L7		CP 4
 		LD A,0x5F
-		JR NZ,GETLNG5
+		JR NZ,.L10
 		LD A,D
 		LD E,0xEF
 		LD D,0x5F
 		CP 1
-		JR Z,GETLNG4
+		JR Z,.L9
 		LD E,0xA0
 		CP 0x51
-		JR Z,GETLNG4
+		JR Z,.L9
 		SUB 0x10
 		LD E,0x80
-		JR NC,GETLNG6
+		JR NC,.L8
 		LD A,D
-		JR GETLNG5
+		JR .L10
 
-GETLNG6		CP 0x30
-		JR C,GETLNG4
+.L8		CP 0x30
+		JR C,.L9
 		LD E,0xB0
 		CP 0x40
-		JR C,GETLNG4
+		JR C,.L9
 		LD A,D
-		JR GETLNG5
+		JR .L10
 
-GETLNG4		ADD A,E
-GETLNG5		EXX
+.L9		ADD A,E
+.L10		EXX
 		LD (HL),A
 		INC HL
 		DEC B
 		EXX
 		RET Z
-		JR GETLNG1 + 3
+		JR .L6
 ;401,410-44F,451
 
 ; на входе:  DE = список расширений
 ; 	     HL = адрес описателя файла
-; на выходе:  A = номер расширения
+; на выходе:  A = номер расширения, 0 если не найдено
 CP_EXT		LD C,0
-CPETR2		LD A,(DE)
+.L1		LD A,(DE)
 		AND A
-		JR Z,CPETR1
+		JR Z,.L3
 		INC C
 		PUSH DE
 		PUSH HL
-		CALL COMPARF
+		CALL .L2
 		POP HL
 		POP DE
 		LD A,C
@@ -1208,16 +1208,16 @@ CPETR2		LD A,(DE)
 		INC DE
 		INC DE
 		INC DE
-		JR CPETR2
+		JR .L1
 
-CPETR1		DEC A
+.L3		DEC A
 		RET
 
-COMPARF		PUSH DE
-		LD DE,8
+.L2		PUSH DE
+		LD DE,_DIR_Ext
 		ADD HL,DE
 		POP DE
-COMPARF1	LD A,(DE)
+		LD A,(DE)
 		CP (HL)
 		RET NZ
 		INC HL
@@ -1234,14 +1234,14 @@ COMPARF1	LD A,(DE)
 FIND_FILEITEM	PUSH IY
 		LD IYL,INTERNAL
 		CALL INIRTSC
-	EVOPORT WIN_P3,RAM_TEMP2
+	EVOPORT WIN_P3,RAM_SORTFILES
 		LD HL,CPU3
 		LD DE,CPU3+1
 		LD BC,0x3FFF
 		LD (HL),L
 		LDIR
 		LD HL,0
-		LD (KOLFIND),HL			; найденных файлов
+		LD (FATVAR.KOLFIND),HL		; найденных файлов
 		LD HL,CPU3
 		LD (ADR_SKLAD),HL		; адрес складирования
 		LD HL,CPU3+0x1000
@@ -1249,23 +1249,24 @@ FIND_FILEITEM	PUSH IY
 		LD BC,0xFFFF
 		EXX
 		LD BC,0
-		LD A,(TEK_LVL)
+		LD A,(FATVAR.CurrentNumLevDIR)
 		AND A
 		EXX
-		JR NZ,FINDF2
-		LD A,(FATType)
+		JR NZ,.L1
+		LD A,(FATVAR.FATType)
 		CP 2
-		JR NC,FINDF2
+		JR NC,.L1
 		EXX
-		LD BC,(ROOTZAP)
+		LD BC,(FATVAR.ROOTZAP)
 		EXX
-FINDF2		INC BC
+.L1		INC BC
 		CALL RDDIRSC
 		LD A,C
 		AND 0x0F
-	REPT 4
 		ADD A,A
-	ENDM
+		ADD A,A
+		ADD A,A
+		ADD A,A
 		LD E,A
 		LD D,0
 		EX DE,HL
@@ -1276,27 +1277,27 @@ FINDF2		INC BC
 		LD A,B
 		OR C
 		EXX
-		JR Z,FINDF3
+		JR Z,.L5
 		LD A,(HL)
 		AND A
-		JR Z,FINDF3
-		CP "."
-		JR NZ,FINDF21
+		JR Z,.L5
+		CP '.'
+		JR NZ,.L2
 		INC HL
 		LD A,(HL)
 		DEC HL
-		CP " "
-		JR Z,FINDF2
-FINDF21		CP 0xE5				; если удалено 
-		JR Z,FINDF2			; то переходим на следующий описатель
-		LD DE,0x0B			; нужен флаговый байт описателя
+		CP ' '
+		JR Z,.L1
+.L2		CP 0xE5				; если удалено 
+		JR Z,.L1			; то переходим на следующий описатель
+		LD DE,_DIR_Attr			; нужен флаговый байт описателя
 		ADD HL,DE			; получили адрес флагового байта
 		LD A,(HL)			; взяли флаговый байт
 		SBC HL,DE
-		CP 0x0F
-		JR Z,FINDF2
-		AND 0x10			; проверка это файл или дира
-		JR NZ,FINDF1
+		CP M_DIR_AttrLongName		; длинное имя?
+		JR Z,.L1
+		AND M_DIR_Directory		; проверка это файл или дира?
+		JR NZ,.L3
 		LD A,(EXT4FOUND)
 		AND A
 		PUSH DE
@@ -1305,8 +1306,8 @@ FINDF21		CP 0xE5				; если удалено
 		CALL NZ,CP_EXT
 		POP BC
 		POP DE
-		JR NZ,FINDF4
-FINDF1		EX DE,HL
+		JR NZ,.L4
+.L3		EX DE,HL
 		ADD HL,DE
 		LD A,(HL)
 		EX AF,AF'
@@ -1316,9 +1317,9 @@ FINDF1		EX DE,HL
 		LD (HL),B			; положили номер диры в табличку
 		INC HL
 		LD (ADR_SKLAD),HL
-		LD HL,(KOLFIND)
+		LD HL,(FATVAR.KOLFIND)
 		INC HL				; +1 найденных файлов
-		LD (KOLFIND),HL
+		LD (FATVAR.KOLFIND),HL
 		LD HL,(ADR_SKLAD_NAME)
 		EX AF,AF'
 		LD (HL),A
@@ -1327,18 +1328,18 @@ FINDF1		EX DE,HL
 		LD (HL),A
 		INC HL
 		LD (ADR_SKLAD_NAME),HL
-FINDF4		LD A,(ADR_SKLAD + 1)
+.L4		LD A,(ADR_SKLAD + 1)
 		CP HIGH (CPU3) + 0x10
-		JR C,FINDF2			; не более 2048 диров/файлов в текущей директории
-FINDF3		LD HL,(KOLFIND)
+		JR C,.L1			; не более 2048 диров/файлов в текущей директории
+.L5		LD HL,(FATVAR.KOLFIND)
 		POP IY
 		LD A,IYL
 		AND A
-		JR NZ,FINDF5
-		LD A,RAM_TEMP2
+		JR NZ,.L6
+		LD A,RAM_SORTFILES
 		LD (RREG_A),A
 		LD (RREG_C),HL
-FINDF5		LD (KOL_FOUNDED),HL
+.L6		LD (KOL_FOUNDED),HL
 		LD B,H
 		LD C,L
 		XOR A
@@ -1346,25 +1347,25 @@ FINDF5		LD (KOL_FOUNDED),HL
 
 SET_MASK_EXT	LD A,(RREG_A)
 		AND A
-		JR NZ,SET_MASK_EXT1
+		JR NZ,.L1
 		LD (EXT4FOUND),A
 		RET
 
-SET_MASK_EXT1	LD HL,(RREG_L)
-		LD DE,BUF_256 - CPU6
+.L1		LD HL,(RREG_L)
+		LD DE,BUF_MOVE256 & 0x3FFF
 		LD BC,0x10 * 3 + 1
 		CALL LDIR_BYTES
-		LD HL,BUF_256
+		LD HL,BUF_MOVE256
 		LD DE,EXT4FOUND
 		LD BC,0x10FF
-SET_MASK_EXT2	LD A,(HL)
+.L2		LD A,(HL)
 		AND A
-		JR Z,SET_MASK_EXT3
+		JR Z,.L3
 		LDI
 		LDI
 		LDI
-		DJNZ SET_MASK_EXT2
-SET_MASK_EXT3	XOR A
+		DJNZ .L2
+.L3		XOR A
 		LD (DE),A
 		RET
 
@@ -1381,6 +1382,8 @@ LD_FILE8	EXX
 ; IYL - E - 
 ; IYH - D - смещение в кластере
 READ_FILE	EX AF,AF'
+		LD A,0xFF
+		LD (FATVAR.NumSec2Buf),A
 		LD A,IYL
 		DEC A
 		JR Z,LD_FILE00
@@ -1390,7 +1393,7 @@ READ_FILE	EX AF,AF'
 		LD HL,(RREG_L)			; адрес загрузки
 		EXX
 		LD DE,(SAVE_IY)			; смещение в кластере
-		LD A,(SecPerClus)
+		LD A,(FATVAR.SecPerClus)
 		LD H,A				; количество секторов в кластере
 		LD A,(RREG_A)
 		LD L,A				; количество секторов для загрузки
@@ -1401,7 +1404,7 @@ LD_FILE00	EXX
 		LD DE,(SAVE_IY)			; смещение в кластере
 		LD HL,LD_FILE8
 		PUSH HL
-		LD A,(SecPerClus)		; КОЛИЧЕСТВО СЕКТОРОВ В КЛАСТЕРЕ
+		LD A,(FATVAR.SecPerClus)	; количество секторов в кластере
 		LD H,A
 		EX AF,AF'
 		LD L,A				; количество секторов для загрузки
@@ -1410,8 +1413,8 @@ LD_FILE00	EXX
 ; IXH - H - размер кластера
 ; IYL - E - 
 ; IYH - D - смещение в кластере
-LD_FILE0	LD DE,(AFILCLS)
-		LD BC,(AFILCLS+2)		; текущий номер кластера
+LD_FILE0	LD DE,(FATVAR.AFILCLS)
+		LD BC,(FATVAR.AFILCLS+2)	; текущий номер кластера
 		PUSH BC
 		PUSH DE
 		PUSH HL
@@ -1462,8 +1465,8 @@ LD_FILE3	LD D,A			; IYH,A
 		LD IYL,INTERNAL
 		CALL RDFATZP			; прочитали номер следующего кластера
 		POP IY
-		LD (AFILCLS),DE
-		LD (AFILCLS + 2),BC
+		LD (FATVAR.AFILCLS),DE
+		LD (FATVAR.AFILCLS + 2),BC
 		CALL LST_CLS			; проверили, а может это последний кластер?
 		POP HL				; восстановили адрес загрузки
 		RET C				; если последний, выходим
@@ -1486,20 +1489,20 @@ OPEN_FILE	LD A,IYL
 OPENFILE1	PUSH IY
 		LD IYL,INTERNAL
 		CALL READ_DIR
-		LD DE,FILE_SRC
+		LD DE,FATVAR.FILE_SRC
 		LD BC,_DIR_StructSize
 		PUSH DE
 		LDIR
 		LD HL,0
-		LD A,(FATType)
+		LD A,(FATVAR.FATType)
 		CP 2
 		JR C,OPENFILE2			; если это не FAT32 то старшие 16 бит обнуляем 
-		LD HL,(FILE_SRC + _DIR_FstClusHI)
-OPENFILE2	LD (AFILCLS + 2),HL
-		LD HL,(FILE_SRC + _DIR_FstClusLO)
-		LD (AFILCLS),HL
-		LD HL,(TEK_ZAP)
-		LD (NUM_FILE_SRC),HL
+		LD HL,(FATVAR.FILE_SRC + _DIR_FstClusHI)
+OPENFILE2	LD (FATVAR.AFILCLS + 2),HL
+		LD HL,(FATVAR.FILE_SRC + _DIR_FstClusLO)
+		LD (FATVAR.AFILCLS),HL
+		LD HL,(FATVAR.TEK_ZAP)
+		LD (FATVAR.NUM_FILE_SRC),HL
 		XOR A
 		LD H,A
 		LD L,A
@@ -1513,7 +1516,7 @@ EOPEN_FILE	PUSH AF
 		LD (RREG_F),HL
 		RET
 
-EFINDNAME	LD HL,(TEK_ZAP)
+EFINDNAME	LD HL,(FATVAR.TEK_ZAP)
 		LD (RREG_C),HL
 		PUSH AF
 		POP HL
@@ -1525,50 +1528,50 @@ FIND_NAME	LD A,IYL
 		JR NZ,FINDNAME01
 		PUSH HL
 		LD HL,(RREG_L)
-		LD DE,BUF_256 - CPU6
+		LD DE,BUF_MOVE256 & 0x3FFF
 		LD BC,0x10
 		CALL LDIR_BYTES
 		LD HL,EFINDNAME
 		EX (SP),HL
 FINDNAME01	PUSH IY
 		LD IYL,INTERNAL
-		LD HL,BUF_256
+		LD HL,BUF_MOVE256
 		LD DE,FB_EXT
 		LD BC,0x8FF
 		LD A,(HL)
-		CP "."
+		CP '.'
 		JR NZ,FINDNAME02
 		LDI
 		LDI
 		LD B,6
 FINDNAME02	LD A,(HL)
-		CP "!"
+		CP '!'
 		JR C,FINDNAME03
-		CP "."
+		CP '.'
 		JR Z,FINDNAME12
 		LDI
 		DJNZ FINDNAME02
 		LD A,(HL)
-		CP "!"
+		CP '!'
 		JR C,FINDNAME06
 		INC HL
 		JR FINDNAME06
 
 FINDNAME12	INC HL
-FINDNAME03	LD A," "
+FINDNAME03	LD A,' '
 FINDNAME05	LD (DE),A
 		INC DE
 		DJNZ FINDNAME05
 FINDNAME06	LD B,3
 FINDNAME08	LD A,(HL)
-		CP "!"
+		CP '!'
 		JR C,FINDNAME07
 		LDI
 		DJNZ FINDNAME08
 		CALL POSTF02
 		JR FINDNAME11
 
-FINDNAME07	LD A," "
+FINDNAME07	LD A,' '
 FINDNAME09	LD (DE),A
 		INC DE
 		DJNZ FINDNAME09
@@ -1588,11 +1591,11 @@ FINDNAME13	POP IY
 		RET
 
 CMP_NAME	LD DE,FB_EXT
-ICMP_NAME	LD B,0x0B
+ICMP_NAME	LD B,8 + 3
 CMP_NAME_B	LD A,(DE)
-		CP "a"
+		CP 'a'
 		JR C,CMPNAME01
-		CP "{"
+		CP 'z' + 1
 		JR NC,CMPNAME01
 		AND %11011111
 CMPNAME01	CP (HL)
@@ -1603,7 +1606,7 @@ CMPNAME01	CP (HL)
 		XOR A
 		RET
 
-; вхождение в dir
+; вхождение в DIR
 ENTER_DIR	LD IYL,INTERNAL
 		CALL READ_DIR
 		PUSH AF
@@ -1613,7 +1616,7 @@ ENTER_DIR	LD IYL,INTERNAL
 		POP HL
 		POP DE
 		POP AF
-		BIT 4,A
+		BIT B_DIR_Directory,A
 		EX AF,AF'
 		LD A,E
 		EX AF,AF'
@@ -1623,8 +1626,9 @@ ENTER_DIR	LD IYL,INTERNAL
 		EXX
 		EX AF,AF'
 		BIT 7,A
-		JR Z,ENT_DI2
-		LD HL,TEK_LEV
+		JR Z,.L1
+; выход из директории
+		LD HL,FATVAR.CurrentNumLevDIR
 		LD A,(HL)
 		AND A
 		EXX
@@ -1633,15 +1637,16 @@ ENTER_DIR	LD IYL,INTERNAL
 		DEC A
 		LD (HL),A
 		ADD A,A
-		LD H,HIGH (BUF_DIRCEP + CPU6)
+		LD H,HIGH (BUF_DIRCEP)
 		LD L,A
 		LD A,(HL)
 		INC L
 		LD H,(HL)
 		LD L,A
-		JR ENT_DI1
+		JR .L2
 
-ENT_DI2		LD HL,TEK_LEV
+; вход в директорию
+.L1		LD HL,FATVAR.CurrentNumLevDIR
 		LD A,(HL)
 		INC A
 		CP 0x10
@@ -1651,13 +1656,13 @@ ENT_DI2		LD HL,TEK_LEV
 		LD (HL),A
 		DEC A
 		ADD A,A
-		LD H,HIGH (BUF_DIRCEP + CPU6)
+		LD H,HIGH (BUF_DIRCEP)
 		LD L,A
-		LD BC,(TEK_ZAP)
+		LD BC,(FATVAR.TEK_ZAP)
 		LD (HL),C
 		INC L
 		LD (HL),B
-ENT_DI1		EXX
+.L2		EXX
 		PUSH DE
 		LD DE,_DIR_FstClusHI
 		ADD HL,DE
@@ -1673,11 +1678,11 @@ ENT_DI1		EXX
 		OR C
 		OR D
 		OR E
-		JR NZ,ENT_DI0
-		LD DE,(RootDIRCluster)
-		LD BC,(RootDIRCluster + 2)
-ENT_DI0		LD (CurrentDIRCluster),DE
-		LD (CurrentDIRCluster + 2),BC
+		JR NZ,.L3
+		LD DE,(FATVAR.RootDIRCluster)
+		LD BC,(FATVAR.RootDIRCluster + 2)
+.L3		LD (FATVAR.CurrentDIRCluster),DE
+		LD (FATVAR.CurrentDIRCluster + 2),BC
 		POP DE
 INIT_TEKDIR	PUSH DE
 		PUSH IY
@@ -1685,4 +1690,22 @@ INIT_TEKDIR	PUSH DE
 		CALL INIRTSC
 		POP IY
 		POP DE
+		RET
+
+STORE_CURRFATVARS
+		ADD A,HIGH (CPU1+BUF_ALLVOL)+4
+		LD HL,BUF_CURRFATVAR
+		LD D,A
+		LD E,0
+		LD BC,BUF_CURRFATVAR_Size
+		LDIR
+		RET
+
+RESTORE_CURRFATVARS
+		ADD A,HIGH (CPU1+BUF_ALLVOL)+4
+		LD H,A
+		LD L,0
+		LD DE,BUF_CURRFATVAR
+		LD BC,BUF_CURRFATVAR_Size
+		LDIR
 		RET

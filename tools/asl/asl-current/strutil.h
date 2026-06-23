@@ -30,6 +30,18 @@ extern int SysString(char *pDest, size_t DestSize, LargeWord i, int System, int 
 
 extern char *as_strdup(const char *s);
 
+typedef enum { e_not_set, e_set, e_finished } as_format_arg_state_t;
+
+typedef struct
+{
+  as_format_arg_state_t arg_state[3];
+  Boolean in_format, lead_zero, is_signed, left_align, add_plus, force_lead_zero, force_upper;
+  int arg[3], curr_arg, int_size;
+} as_format_ctx_t;
+
+extern void as_format_context_reset(as_format_ctx_t *p_context);
+extern Boolean as_format_context_consume(as_format_ctx_t *p_context, char ch);
+
 extern int as_vsnprcatf(char *pDest, size_t DestSize, const char *pFormat, va_list ap);
 extern int as_snprcatf(char *pDest, size_t DestSize, const char *pFormat, ...);
 extern int as_vsnprintf(char *pDest, size_t DestSize, const char *pFormat, va_list ap);
@@ -72,13 +84,7 @@ extern size_t ReadLnCont(FILE *Datei, struct as_dynstr *p_line);
 
 extern int DigitVal(char ch, int Base);
 
-extern LargeInt ConstLongInt(const char *inp, Boolean *pErr, LongInt Base);
-
 extern char *ParenthPos(char *pHaystack, char Needle);
-
-extern void KillBlanks(char *s);
-
-extern int CopyNoBlanks(char *pDest, const char *pSrc, size_t MaxLen);
 
 extern int KillPrefBlanks(char *s);
 
@@ -91,6 +97,8 @@ extern int strqcmp(const char *s1, const char *s2);
 extern char *strmov(char *pDest, const char *pSrc);
 
 extern int strmemcpy(char *pDest, size_t DestSize, const char *pSrc, size_t SrcLen);
+
+extern unsigned as_bit_count(LongWord i);
 
 extern void strutil_init(void);
 
@@ -109,5 +117,6 @@ extern void strutil_init(void);
 #define as_isupper(c) (!!isupper(__chartouint(c)))
 #define as_islower(c) (!!islower(__chartouint(c)))
 #define as_isalnum(c) (!!isalnum(__chartouint(c)))
+#define as_isalnum_ubar(c) (isalnum(__chartouint(c))||((c)=='_'))
 
 #endif /* _STRUTIL_H */

@@ -18,9 +18,11 @@
 #include "asmsub.h"
 #include "asmpars.h"
 #include "asmitree.h"
+#include "codepseudo.h"
 #include "intpseudo.h"
 #include "codevars.h"
 #include "errmsg.h"
+#include "headids.h"
 
 #include "code78k0.h"
 
@@ -172,7 +174,13 @@ static void DecodeAdr(const tStrComp *pArg, Word Mask)
       }
       else
       {
-        AdrVals[0] = EvalStrIntExpression(&Arg, UInt8, &OK);
+        if (Arg.str.p_str[0])
+          AdrVals[0] = EvalStrIntExpression(&Arg, UInt8, &OK);
+        else
+        {
+          AdrVals[0] = 0;
+          OK = True;
+        }
         if (OK)
         {
           if (AdrVals[0] == 0)
@@ -1306,6 +1314,8 @@ static void InitFields(void)
 {
   InstTable = CreateInstTable(201);
 
+  add_null_pseudo(InstTable);
+
   AddInstTable(InstTable, "MOV"  , 0, DecodeMOV);
   AddInstTable(InstTable, "XCH"  , 0, DecodeXCH);
   AddInstTable(InstTable, "MOVW" , 0, DecodeMOVW);
@@ -1356,6 +1366,8 @@ static void InitFields(void)
 
   InstrZ = 0;
   AddBRel("BTCLR"); AddBRel("BT"); AddBRel("BF");
+
+  AddIntelPseudo(InstTable, eIntPseudoFlag_LittleEndian);
 }
 
 static void DeinitFields(void)
@@ -1367,17 +1379,7 @@ static void DeinitFields(void)
 
 static void MakeCode_78K0(void)
 {
-  CodeLen = 0;
-  DontPrint = False;
-  OpSize = 0;
-
-  /* zu ignorierendes */
-
-  if (Memo("")) return;
-
-  /* Pseudoanweisungen */
-
-  if (DecodeIntelPseudo(False)) return;
+  OpSize = eSymbolSize8Bit;
 
   if (!LookupInstTable(InstTable, OpPart.str.p_str))
     WrStrErrorPos(ErrNum_UnknownInstruction, &OpPart);
@@ -1395,11 +1397,12 @@ static void SwitchFrom_78K0(void)
 
 static void SwitchTo_78K0(void)
 {
+  const TFamilyDescr *p_descr = FindFamilyByName("78K0");
   TurnWords = False;
   SetIntConstMode(eIntConstModeIntel);
 
   PCSymbol = "PC";
-  HeaderID = 0x7c;
+  HeaderID = p_descr->Id;
   NOPCode = 0x00;
   DivideChars = ",";
   HasAttrs = False;

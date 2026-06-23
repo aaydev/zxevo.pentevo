@@ -1,0 +1,100 @@
+--== audio specs and reqs ==--
+
+
+1. have sound from AY/YM and beeper/PWM-covox
+2. have some extra line-ins
+3. independent volume regulation for all of them
+4. line out/headset output also volume regulated
+5. be able to drive 32 Ohm headsets
+6. Use only +12v power supply for audio
+7. line-out also goes to extra video output pins
+
+
+
+
+--== audio decisions ==--
+
+(YM2149)
+
+voltage on outputs (loaded as per rev.C)
+2.26v min, 3.40v max => 1.14 Vp-p [me] (max 1.35Vp-p by datasheet)
+2.22v min, 3.36v max => 1.14 Vp-p [dimka_m]
+2.29v min, 3.42v max => 1.13 Vp-p [Nik X]
+
+1.5*1.14 Vp-p (A/C + half B) to 2.0 Vp-p is K=1.17;
+
+
+(AY8910)
+
+Per datasheet, max 2mA current per output, 2 Vp-p @ 1k
+
+(KC89C72)
+
+0.5v min 1.27v max => 0.77 Vp-p [Nik X]
+0.5v min 1.29v max => 0.79 Vp-p [Nik X]
+
+
+
+
+(PT2258 related)
+
+1. Use PT2258 to control volume:
+  1 channel for AY/YM
+  1 channel for beeper/pwm-covox
+  1 channel for output volume
+  3 channels for line-ins (same number of line-ins as in rev.C)
+  total 2 ICs
+
+2. max Vp-p for PT2258 is 2v (1v amplitude or 0.7Vrms, see PT2257 datasheet and THD vs amplitude there).
+   
+
+3. Vcc for PT2258 is ≈9v, can't be 12v. So, there's AVCC9 regulated voltage
+
+
+(headamp related)
+
+1. Use TPA6120 to drive line-one/headset: high power AND high quality
+
+2. Use AVCC12 (non regulated, directly from AT/ATX and passively filtered)
+   to get maximum output swing thus power
+
+3. To compensate for inevitable series resistors at the TPA6120 outputs,
+   use opamps.
+
+4. Output resistors should be of high thermal power, preferably MELF or 1205
+
+
+(general)
+
+1. Use metal film feedback resistors (bigger than 0805, best if MELF),
+   NP0/C0G capacitors for low pass filters. Footprint for 1206+0805 is ideal for that.
+
+2. DC blocking/high pass filtering can't be done with polypropylene/etc. caps (too big!),
+   so we have to use electrolytics. Try to have related cutoff freqs as low as possible (<<20Hz)
+   to decrease distortion from them. Typical distortion disappearance happens at *20 cutoff frequency
+
+Gain (or loss) distribution.
+1. YM seems to have 1.14 Vp-p (or 0.57 ampl) outputs each. Not yet known what is with AY, but that's for future.
+2. for PT2258, supposedly optimal ampl. is 1V, more leads to distortion (guessed from datasheet for PT2257).
+   So we'll keep amplitude from each internal source like that. Afterwards it could be decreased before global
+   volume control and will be amplified by audio output circuit.
+
+
+(low-pass filtering)
+
+3-rd order butterworth, 30kHz -3dB.
+First stage for AY is 2nd order Q=1, (multiple-feedback). 1st stage is 2nd order to keep input impedance more or less constant for AY/YM.
+For beeper there's low impedance buffer, we use single 3rd-order opamp based stage.
+Second stage is just 1st-order RC
+
+(high-pass filtering)
+
+"distributed" 2nd-order high-pass filters with electrolytics.
+<<20Hz cutoffs
+
+(line output vs. headphones output)
+
+for headphones there's a need for huge output capacitor.
+For line output relaxation time would be then too big (like tens of seconds), so need different (smaller) cap.
+Also maybe have line output without volume regulation, from summing opamps.
+

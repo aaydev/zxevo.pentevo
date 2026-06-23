@@ -26,6 +26,7 @@
 #include "motpseudo.h"
 #include "codevars.h"
 #include "errmsg.h"
+#include "headids.h"
 
 #include "codeh8_3.h"
 
@@ -2154,6 +2155,9 @@ static void AddBit2(const char *NName, Word NCode)
 static void InitFields(void)
 {
   InstTable = CreateInstTable(203);
+
+  add_null_pseudo(InstTable);
+
   AddInstTable(InstTable, "EEPMOV", 0, DecodeEEPMOV);
   AddInstTable(InstTable, "MOV", 0, DecodeMOV);
   AddInstTable(InstTable, "MOVTPE", 0x80, DecodeMOVTPE_MOVFPE);
@@ -2223,6 +2227,7 @@ static void InitFields(void)
 
   AddInstTable(InstTable, "REG", 0, CodeREG);
   AddInstTable(InstTable, "BIT", 0, DecodeBIT);
+  AddMoto16Pseudo(InstTable, e_moto_pseudo_flags_be);
 }
 
 static void DeinitFields(void)
@@ -2271,17 +2276,9 @@ static Boolean DecodeAttrPart_H8_3(void)
 
 static void MakeCode_H8_3(void)
 {
-  CodeLen = 0; DontPrint = False;
-
-  /* zu ignorierendes */
-
-  if (Memo("")) return;
-
   OpSize = eSymbolSizeUnknown;
   if (AttrPartOpSize[0] != eSymbolSizeUnknown)
     SetOpSize(AttrPartOpSize[0]);
-
-  if (DecodeMoto16Pseudo(OpSize, True)) return;
 
   if (!LookupInstTable(InstTable, OpPart.str.p_str))
     WrStrErrorPos(ErrNum_UnknownInstruction, &OpPart);
@@ -2295,11 +2292,13 @@ static Boolean IsDef_H8_3(void)
 
 static void SwitchTo_H8_3(void)
 {
+  const TFamilyDescr *p_descr = FindFamilyByName("H8/300(H)");
+
   TurnWords = True;
   SetIntConstMode(eIntConstModeMoto);
 
   PCSymbol = "*";
-  HeaderID = 0x68;
+  HeaderID = p_descr->Id;
   NOPCode = 0x0000;
   DivideChars = ",";
   HasAttrs = True;

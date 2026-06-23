@@ -22,6 +22,7 @@
 #include "fourpseudo.h"
 #include "codevars.h"
 #include "errmsg.h"
+#include "headids.h"
 
 #include "code16c5x.h"
 
@@ -174,7 +175,7 @@ static void DecodeSFR(Word Code)
 {
   UNUSED(Code);
 
-  CodeEquate(SegData, 0, 0x1f);
+  code_equate_type(SegData, UInt5);
 }
 
 static void DecodeDATA_16C5x(Word Code)
@@ -238,6 +239,9 @@ static void AddF(const char *NName, Word NCode)
 static void InitFields(void)
 {
   InstTable = CreateInstTable(103);
+
+  add_null_pseudo(InstTable);
+
   AddInstTable(InstTable, "TRIS", 0, DecodeTRIS);
   AddInstTable(InstTable, "CALL", 0x0900, DecodeCALL_GOTO);
   AddInstTable(InstTable, "GOTO", 0x0a00, DecodeCALL_GOTO);
@@ -291,14 +295,6 @@ static void DeinitFields(void)
 
 static void MakeCode_16C5X(void)
 {
-  CodeLen = 0;
-  DontPrint = False;
-
-  /* zu ignorierendes */
-
-  if (Memo(""))
-    return;
-
   if (!LookupInstTable(InstTable, OpPart.str.p_str))
     WrStrErrorPos(ErrNum_UnknownInstruction, &OpPart);
 }
@@ -315,11 +311,12 @@ static void SwitchFrom_16C5X(void)
 
 static void SwitchTo_16C5X(void)
 {
+  const TFamilyDescr *p_descr = FindFamilyByName("16C5x");
   TurnWords = False;
   SetIntConstMode(eIntConstModeMoto);
 
   PCSymbol = "*";
-  HeaderID = 0x71;
+  HeaderID = p_descr->Id;
   NOPCode = 0x000;
   DivideChars = ",";
   HasAttrs = False;

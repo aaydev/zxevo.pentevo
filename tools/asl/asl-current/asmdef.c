@@ -46,6 +46,8 @@ LargeWord AfterBSRAddr;                  /* address right behind last BSR */
 LargeWord *Phases;                       /* Verschiebungen */
 Word Grans[SegCountPlusStruct];          /* Groesse der Adressierungselemente */
 Word ListGrans[SegCountPlusStruct];      /* Wortgroesse im Listing */
+Boolean grans_bits_unused[SegCountPlusStruct],  /* word size is partially unused */
+        list_grans_bits_unused[SegCountPlusStruct];
 ChunkList SegChunks[SegCountPlusStruct]; /* Belegungen */
 as_addrspace_t ActPC;                    /* gewaehlter Programmzaehler */
 Boolean PCsUsed[SegCountPlusStruct];     /* PCs bereits initialisiert ? */
@@ -56,8 +58,6 @@ Boolean ENDOccured;	                 /* END-Statement aufgetreten ? */
 Boolean Retracted;	                 /* Codes zurueckgenommen ? */
 Boolean ListToStdout, ListToNull;        /* Listing auf Konsole/Nulldevice ? */
 
-unsigned ASSUMERecCnt;
-const ASSUMERec *pASSUMERecs;
 void (*pASSUMEOverride)(void);
 
 Integer PassNo;                          /* Durchlaufsnummer */
@@ -77,7 +77,9 @@ Boolean MakeCrossList;	                 /* Querverweisliste ? */
 Boolean MakeSectionList;                 /* Sektionsliste ? */
 Boolean MakeIncludeList;                 /* Includeliste ? */
 Boolean DefRelaxedMode;                  /* alle Integer-Syntaxen zulassen ? */
+as_dynstr_t def_int_syntax;              /* default integer syntax modifiers */
 Word ListMask;                           /* Listingmaske */
+Boolean list_macro_handles;              /* add macros' symbol handles to listing? */
 ShortInt ExtendErrors;	                 /* erweiterte Fehlermeldungen */
 Integer EnumSegment;                     /* ENUM state & config */
 LongInt EnumIncrement, EnumCurrentValue;
@@ -134,7 +136,7 @@ void (*InternSymbol)();
 #endif
 DissectBitProc DissectBit;
 DissectRegProc DissectReg;
-tQualifyQuoteFnc QualifyQuote;
+as_qualify_quote_fnc_t QualifyQuote;
 
 StringPtr IncludeList;	                /* Suchpfade fuer Includedateien */
 Integer IncDepth, NextIncDepth,         /* Verschachtelungstiefe INCLUDEs */
@@ -198,7 +200,8 @@ Word *WAsmCode;
 Byte *BAsmCode;
 
 Boolean DontPrint;                      /* Flag:PC veraendert, aber keinen Code erzeugt */
-Word ActListGran;                       /* uebersteuerte List-Granularitaet */
+Word ActListGran,                       /* uebersteuerte List-Granularitaet */
+     act_list_gran_bits_unused;
 
 Byte StopfZahl;                         /* Anzahl der im 2.Pass festgestellten
                                            ueberfluessigen Worte, die mit NOP ge-
@@ -224,7 +227,6 @@ void AsmDefInit(void)
 
   DoLst = eLstMacroExpAll;
   PassNo = 1;
-  MaxSymPass = 1;
 
   LineSum = 0;
 
@@ -281,6 +283,7 @@ int SetMaxCodeLen(LongWord NewMaxCodeLen)
     DAsmCode = (LongWord *)pNewMem;
     WAsmCode = (Word *) DAsmCode;
     BAsmCode = (Byte *) DAsmCode;
+    memset(BAsmCode + MaxCodeLen, 0, NewMaxCodeLen - MaxCodeLen);
     MaxCodeLen = NewMaxCodeLen;
   }
   return 0;
@@ -421,18 +424,6 @@ Boolean memo_switch_pseudo(void)
 }
 
 /*!------------------------------------------------------------------------
- * \fn     memo_shift_pseudo(void)
- * \brief  is the current instruction SHIFT, and the pseudo instruction of that name?
- * \return True if yes
- * ------------------------------------------------------------------------ */
-
-Boolean memo_shift_pseudo(void)
-{
-  return Memo("SHIFT")
-      && (oppart_leading_dot || !ShiftIsOccupied);
-}
-
-/*!------------------------------------------------------------------------
  * \fn     is_page_pseudo(void)
  * \brief  is the current PAGE instruction the pseudo instruction of that name?
  * \return True if yes
@@ -441,19 +432,6 @@ Boolean memo_shift_pseudo(void)
 Boolean is_page_pseudo(void)
 {
   return oppart_leading_dot || !PageIsOccupied;
-}
-
-/*!------------------------------------------------------------------------
- * \fn     free_forward_symbol(PForwardSymbol p_symbol)
- * \brief  free entry from forward symbol list
- * \param  p_symbol entry to free
- * ------------------------------------------------------------------------ */
-
-void free_forward_symbol(PForwardSymbol p_symbol)
-{
-  free(p_symbol->Name); p_symbol->Name = NULL;
-  free(p_symbol->pErrorPos); p_symbol->pErrorPos = NULL;
-  free(p_symbol);
 }
 
 void asmdef_init(void)

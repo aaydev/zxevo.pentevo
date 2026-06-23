@@ -1,60 +1,60 @@
 
-; LAST UPDATE: 12.02.2024 savelij
+; LAST UPDATE: 16.02.2025 savelij
 
 	TITLE "addon1.a80 ROM_RST81"
 
-		PHASE CPU0
+	PHASE CPU0
 		JP $
 
-		DUPL 0x0008 - $,0xFF
+		DB 0x0008 - $ DUP 0xFF
 		JP $
 
-		DUPL 0x0010 - $,0xFF
+		DB 0x0010 - $ DUP 0xFF
 		JP $
 
-		DUPL ADR_SEL_ROM - $,0xFF
+		DB ADR_SEL_ROM - $ DUP 0xFF
 		OUT (C),A			; 0014
 		NOP
 		RET
 
-		DUPL 0x0018 - $,0xFF
+		DB 0x0018 - $ DUP 0xFF
 		JP $
 
-		DUPL 0x0020 - $,0xFF
+		DB 0x0020 - $ DUP 0xFF
 		JP $
 
-		DUPL 0x0028 - $,0xFF
+		DB 0x0028 - $ DUP 0xFF
 		JP $
 
-		DUPL 0x0030 - $,0xFF
+		DB 0x0030 - $ DUP 0xFF
 		JP CALL2PAGE
 
-		DUPL ADR_PERFECT - $,0xFF
+		DB ADR_PERFECT - $ DUP 0xFF
 		DW PERFECTCOM
 
-		DUPL 0x0038 - $,0xFF		; 0038
+		DB 0x0038 - $ DUP 0xFF		; 0038
 		EI
 		RET
 
-		DUPL 0x003E - $,0xFF
+		DB 0x003E - $ DUP 0xFF
 		EI
 		RET
 
-		DUPL 0x0040 - $,0xFF
+		DB 0x0040 - $ DUP 0xFF
 		JP INSTALL_NMIRST		; установка обработчиков NMI и RST
 
-		DUPL 0x0080 - $,0xFF
+		DB 0x0080 - $ DUP 0xFF
 		binclude ../../dec40.bin
 
-		DUPL 0x00FF - $,0xFF
+		DB 0x00FF - $ DUP 0xFF
 		DW 0x0038
 
-		PHASE $ + 0x4000
+	PHASE $ + 0x4000
 		include rst8_data.a80
 
-		PHASE $ & 0x3FFF
+	PHASE $ & 0x3FFF
 
-		DUPL (HIGH ($) + 1) * 0x100 - $,0xFF
+		DB (HIGH ($) + 1) * 0x100 - $ DUP 0xFF
 BUF_CRC16_TABL	DB 0x00,0x10,0x20,0x30,0x40,0x50,0x60,0x70,0x81,0x91,0xA1,0xB1,0xC1,0xD1,0xE1,0xF1
 		DB 0x12,0x02,0x32,0x22,0x52,0x42,0x72,0x62,0x93,0x83,0xB3,0xA3,0xD3,0xC3,0xF3,0xE3
 		DB 0x24,0x34,0x04,0x14,0x64,0x74,0x44,0x54,0xA5,0xB5,0x85,0x95,0xE5,0xF5,0xC5,0xD5
@@ -99,7 +99,7 @@ CRC16_FAST	LD B,H
 		LD DE,BUF_CRC16_TABL
 		LD C,0
 		EXX
-CRC16F0		LD A,(IX)
+.L1		LD A,(IX)
 		XOR H
 		INC IX
 		EXX
@@ -118,7 +118,7 @@ CRC16F0		LD A,(IX)
 		DEC BC
 		LD A,B
 		OR C
-		JP NZ,CRC16F0
+		JP NZ,.L1
 		EXX
 		POP HL
 		EXX
@@ -127,7 +127,13 @@ CRC16F0		LD A,(IX)
 ; установка обработчиков RST 8 и NMI, инициализация переменных
 INSTALL_NMIRST
 	ATMPORT WIN_A3,0x40			; сняли зависимость от порта 7FFD
-	EVOPORT WIN_P6,0			; включили страницу переменных
+	EVOPORT WIN_P2,RAM_NMI			; включили страницу переменных
+		LD HL,ADR_MAGIC | CPU2		; восстановление обработчика NMI
+		LD (HL),0xC3
+		INC HL
+		LD (HL),LOW (NMI_SERVICE)
+		INC HL
+		LD (HL),HIGH (NMI_SERVICE)	
 		LD BC,FDD_EMU_PORT
 		XOR A
 		OUT (C),A			; сброс виртуальных дисководов
@@ -136,6 +142,7 @@ INSTALL_NMIRST
 		IN A,(0xFE)
 		RRCA
 		JR NC,.L2
+; если нажат '0' принудительные инит страницы
 		LD IX,CPU2+STACK_NMI
 		LD HL,0x40
 		CALL CRC16_FAST			; считаем CRC на месте обработчика
@@ -146,33 +153,35 @@ INSTALL_NMIRST
 		POP BC				; вернули ранее посчитанное CRC
 		XOR A
 		SBC HL,BC			; сравнили
-		JR Z,.L1			; если совпало больше ничего не делаем
-	EVOPORT WIN_P3,RAM_PROFROM
-		LD HL,CPU0
-		CALL FILL_MEM			; очистка страницы ОЗУ PROFROM
+		JR Z,.L1			; если CRC совпало больше ничего не делаем
 ; не совпало, первый запуск после включения питания или обработчики были испорчены
-.L2		LD A,(HDDTIMEOUT)		; сохраняем ячейку вне зависимости от содежимого
-		LD HL,CPU3
-		CALL FILL_MEM			; очистка последней страницы RAM
-		LD (HDDTIMEOUT),A		; восстанавливаем ячейку
-		LD HL,CODE_NMIRST
-		LD DE,CPU6
-		LD BC,ENMI_SERVICE - ADR_SEL_ROM - CPU6
-		LDIR				; установили обработчики
-		LD (BUF_TABLVOL + 0xFE),BC	; сброс CRC таблицы найденных разделов
+.L2
+	EVOPORT WIN_P3,RAM_FATVARS
+		LD HL,CPU0
+		CALL FILL_MEM			; зачистка страницы переменных FAT
 	EVOPORT WIN_P3,RAM_MOUNTER		; включили страницу монтировщика образов
 		LD HL,CPU0
-		CALL FILL_MEM			; очистка страницы монтировщика образов
+		CALL FILL_MEM			; зачистка страницы монтировщика образов
+		LD A,(HDDTIMEOUT)		; сохраняем ячейку вне зависимости от содержимого
+		LD HL,CPU3
+		CALL FILL_MEM			; зачистка последней страницы RAM
+		LD (HDDTIMEOUT),A		; восстанавливаем ячейку
+		LD HL,CODE_NMIRST
+		LD DE,CPU2
+		LD BC,ENMI_SERVICE - ADR_SEL_ROM - CPU2
+		LDIR				; установили обработчики
+		LD (BUF_VOLUMES + 0xFE),BC	; сброс CRC таблицы найденных разделов
 		XOR A
-		LD (CPU6 + DEBUG_ONOFF),A	; 0 - DEBUGGER OFF
-		LD (FLAGS_DRV),A		; сброс флагов драйверов
-		LD A,CMOS_BYTE_00
+		LD (CPU2 + DEBUG_ONOFF),A	; 0 - DEBUGGER OFF
+		LD (DEVMAN_VARS.FLAGS_DRV),A		; сброс флагов драйверов
+		LD (FATVARSFLAGS),A
+		LD A,CMOS.BYTE_00
 		LD BC,CMOSD_SET_ADR
 		OUT (C),A
 		LD BC,CMOSD_RD_WR
 		IN A,(C)
 		CALL LD_SET_FONT
-		LD A,VIRT_REAL_DRIVE
+		LD A,CMOS.VIRT_REAL_DRIVE
 		LD BC,CMOSD_SET_ADR
 		OUT (C),A
 		LD BC,CMOSD_RD_WR
@@ -193,6 +202,7 @@ INSTALL_NMIRST
 		LDIR
 	EVOPORT WIN_P6,0
 	ENDIF
+	ROMCALL RESTORE_FATVARS,ROM_RST82
 		LD BC,0xFF << 8 + PN_1F7
 		IN A,(C)
 		CP 0x50
@@ -201,7 +211,7 @@ INSTALL_NMIRST
 		LD A,(HDDTIMEOUT)
 		DEC A
 		JR Z,.L5			; если ячейка равна 1 задержку из CMOS игнорируем
-		LD H,HDD_TIMEOUT
+		LD H,CMOS.HDD_TIMEOUT
 	ROMCALL READCMOS,ROM_RST82
 		AND A
 		LD A,1
@@ -217,7 +227,7 @@ INSTALL_NMIRST
 		LD (ADR_INT),HL
 		LD BC,WIN_A0
 		XOR A
-		LD (CPU6 + FOR_RET),A
+		LD (CPU2 + FOR_RET),A
 		JP ADR_SEL_ROM
 
 FILL_MEM	EX DE,HL
@@ -248,16 +258,16 @@ SETUP_FONT	LD A,(RREG_A)
 		LD HL,(RREG_L)
 		JR SET_FONT1
 
-SET4RESETFONT	LD A,CMOS_BYTE_00
+SET4RESETFONT	LD A,CMOS.BYTE_00
 		LD BC,CMOSD_SET_ADR
 		OUT (C),A
 		LD BC,CMOSD_RD_WR
 		IN A,(C)
 		LD L,A
-		AND M_RELOAD_FONT
+		AND CMOS_ED.M_RELOAD_FONT
 		RET NZ				; если 1, то шрифт не перезагружаем
 		LD A,L
-LD_SET_FONT	AND M_TYPE_FONT			; определение выбранного шрифта
+LD_SET_FONT	AND CMOS_ED.M_TYPE_FONT		; определение выбранного шрифта
 		LD HL,ATM_FONT			; 0 = шрифт ATM
 		JR Z,SET_FONT1
 		LD HL,CP866_FONT		; 1 = шрифт CP866
@@ -278,12 +288,13 @@ CurrAdr := $
 
 		include nmi_service.a80
 
-		PHASE $ + CurrAdr
+	PHASE $ + CurrAdr
 PERFECTCOM	binclude perfpack_pack.bin
 
 FREE_ADDON1	EQU 0x3FF6 - $
 
-		DUPL FREE_ADDON1,0xFF
+		DB FREE_ADDON1 DUP 0xFF
 		DW FREE_ADDON1			; размер свободного места
 		DB "ADDON1"
 		DW DATA_VERS
+	DEPHASE

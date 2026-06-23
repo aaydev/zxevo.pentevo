@@ -8,6 +8,7 @@
 /*                                                                           */
 /*****************************************************************************/
 
+#include <stdio.h>
 #include "fileformat.h"
 
 typedef struct
@@ -36,6 +37,8 @@ extern Word FileID;
 
 extern const char *OutName;
 
+extern String target_name;
+
 extern void WrCopyRight(const char *Msg);
 
 extern void DelSuffix(char *Name);
@@ -46,14 +49,34 @@ extern void FormatError(const char *Name, const char *Detail);
 
 extern void ChkIO(const char *Name);
 extern void chk_wr_read_error(const char *p_name);
-
-extern Word Granularity(Byte Header, Byte Segment);
+extern int chkio_fprintf(FILE *p_file, const char *p_name, const char *p_fmt, ...)
+#ifdef __GNUC__
+           __attribute__ ((format (printf, 3, 4)))
+#endif
+           ;
+extern int chkio_printf(const char *p_name, const char *p_fmt, ...)
+#ifdef __GNUC__
+           __attribute__ ((format (printf, 2, 3)))
+#endif
+           ;
 
 extern void ReadRecordHeader(Byte *Header, Byte *Target, Byte* Segment,
                              Byte *Gran, const char *Name, FILE *f);
 
 extern void WriteRecordHeader(Byte *Header, Byte *Target, Byte* Segment,
                               Byte *Gran, const char *Name, FILE *f);
+
+extern Byte record_gran_bits(Byte gran_encoded);
+
+extern LongWord record_byte_address(LongWord target_word_address, Byte gran_encoded);
+
+extern LongWord record_target_word_last_address(LongWord target_word_start_address, LongWord length_bytes, Byte gran_encoded);
+
+extern LongWord record_target_word_length(LongWord byte_length, Byte gran_encoded);
+
+extern LongWord record_byte_length(LongWord target_word_first_address, LongWord target_word_last_address, Byte gran_encoded);
+
+extern LongWord record_byte_offset(LongWord target_word_act_address, LongWord target_word_start_address, Byte gran_encoded);
 
 extern void SkipRecord(Byte Header, const char *Name, FILE *f);
 
@@ -67,6 +90,8 @@ extern as_cmd_result_t CMD_Range(LongWord *pStart, LongWord *pStop,
                            Boolean *pStartAuto, Boolean *pStopAuto,
                            const char *Arg);
 
+extern as_cmd_result_t cmd_target_name(Boolean negate, const char *p_arg);
+
 extern Boolean FilterOK(Byte Header);
 
 extern Boolean RemoveOffset(char *Name, LongWord *Offset);
@@ -76,7 +101,6 @@ extern void EraseFile(const char *FileName, LongWord Offset);
 
 
 extern Boolean AddressWildcard(const char *addr);
-
 
 extern void toolutils_init(const char *ProgPath);
 

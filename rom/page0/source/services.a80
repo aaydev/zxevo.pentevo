@@ -1,5 +1,5 @@
 
-; LAST UPDATE: 25.11.2022 savelij
+; LAST UPDATE: 16.02.2025 savelij
 
 		include ../../macros.a80
 		include ../../define.a80
@@ -12,29 +12,26 @@ DEPKADR		EQU 0x6000
 		DI
 		JP INITPAGE0
 
-		DUPL 0x0008 - $,0xFF
+		DB 0x0008 - $ DUP 0xFF
 		NOP
 		JP DOS2RST8
 
-		DUPL ADR_SEL_ROM - $,0xFF
+		DB ADR_SEL_ROM - $ DUP 0xFF
 		OUT (C),A
 		NOP
 		RET
 
-		DUPL 0x0038 - $,0xFF
+		DB 0x0038 - $ DUP 0xFF
 		EI
 		RET
 
-		DUPL 0x0040 - $,0xFF
-		JP SET_MAPPER
-
-		DUPL 0x0066 - $,0xFF
+		DB 0x0066 - $ DUP 0xFF
 		NOP
 
-		DUPL 0x0080 - $,0xFF
+		DB 0x0080 - $ DUP 0xFF
 		include ../../dec40.a80
 
-		DUPL 0x00FF - $,0xFF
+		DB 0x00FF - $ DUP 0xFF
 		DW 0x0038
 
 INITPAGE0	LD SP,DEPKADR
@@ -49,24 +46,24 @@ INITPAGE0	LD SP,DEPKADR
 		LD A,2
 		OUT (C),A
 		LD DE,0x103F
-INITPAGE2	LD BC,CONF_128
+.L1		LD BC,CONF_128
 		OUT (C),D
 		LD BC,LOW (WIN_A0)
-INITPAGE1	OUTI
+.L2		OUTI
 		LD A,B
 		SUB E
 		LD B,A
-		JR NZ,INITPAGE1
+		JR NZ,.L2
 		LD BC,CONF_128
 		LD A,D
 		XOR 0x10
 		LD D,A
-		JR Z,INITPAGE2
+		JR Z,.L1
 		LD BC,0xFF77
 		LD A,0xAB
 		OUT (C),A
 	PEC_ON M_SHADOW_BF
-		LD HL,INITPAGE3
+		LD HL,.L3
 		PUSH HL
 		LD HL,0x40
 		PUSH HL
@@ -74,25 +71,25 @@ INITPAGE1	OUTI
 		LD A,ROM_RST81
 		JP ADR_SEL_ROM
 
-INITPAGE3
+.L3
 	RST8 _CMOS_RW,_INIT_CMOS
 		LD HL,PAGES_CONF
 		LD A,0xEF
 		IN A,(0xFE)
 		RRCA				; проверка нажатия кнопки "0" при сбросе
 		CALL NC,RES_REZIDENT
-		JR NC,RSTRAM			; сброс в основное пзу
+		JR NC,.L5			; сброс в основное пзу
 		RRCA
 		RRCA
 		RRCA
 		RRCA				; проверка нажатия кнопки "6" при сбросе
-		JR C,INITPAGE4
+		JR C,.L4
 ; вход в отладчик
 		EXX
 		LD BC,WIN_P2
 		XOR A
 		OUT (C),A
-		LD HL,CPU2+DEBUG_ONOFF
+		LD HL,CPU2 + DEBUG_ONOFF
 		SET 7,(HL)
 		EXX
 		IN A,(PEVO_CONF)
@@ -101,44 +98,44 @@ INITPAGE3
 		AND M_NMI_BF ! 0xFF
 		OUT (PEVO_CONF),A
 		HALT
-INITPAGE4	LD BC,CMOSD_SET_ADR
-		LD A,CMOS_BYTE_00
+.L4		LD BC,CMOSD_SET_ADR
+		LD A,CMOS.BYTE_00
 		OUT (C),A
 		LD B,HIGH (CMOSD_RD_WR)
 		IN A,(C)
-		AND MKOL_MODES
-		CP KOL_MODES
-		JR NC,RSTRAM
+		AND CMOS_EC.MKOL_MODES
+		CP CMOS_EC.KOL_MODES
+		JR NC,.L5
 		AND A
-		JR Z,RSTRAM
+		JR Z,.L5
 		DEC A
 		LD HL,PAGES_CONFGLUK		; конфигурировать для GLUK
-		JR Z,RSTRAM
+		JR Z,.L5
 		DEC A
 		LD HL,PAGES_PROFROM		; конфигурировать для PROFROM
-		JR Z,RSTRAM
+		JR Z,.L5
 		LD HL,PAGES_CUSTOM		; конфигурировать для USER ROM
-RSTRAM		LD A,0xEF
+.L5		LD A,0xEF
 		IN A,(0xFE)
 		RRCA				; проверка не нажатости кнопки "0" при сбросе
-		JR NC,RSTRAM			; если нажата ждем отпускания
+		JR NC,.L5			; если нажата ждем отпускания
 		LD BC,0xBC77
 		LD A,2
 		OUT (C),A
 		LD DE,0x103F
-LOOP2		LD BC,CONF_128
+.L6		LD BC,CONF_128
 		OUT (C),D
 		LD BC,LOW (WIN_A0)
-LOOP1		OUTI
+.L7		OUTI
 		LD A,B
 		SUB E
 		LD B,A
-		JR NZ,LOOP1
+		JR NZ,.L7
 		LD BC,CONF_128
 		LD A,D
 		XOR 0x10
 		LD D,A
-		JR Z,LOOP2
+		JR Z,.L6
 		LD A,(HL)
 		LD IXH,A			; номер страницы завершения инита манагера 
 		LD DE,0xAB0F			; ZX SCREEN MODE, TURBO ON 14MHZ
@@ -150,31 +147,31 @@ LOOP1		OUTI
 		LD HL,TRSTPAL			; +15
 		LD BC,0xBD77
 		OUT (C),D			; вкл.PAL
-.L2		LD A,E
+.L8		LD A,E
 		BIT 3,E
 		OUT (0xFE),A
-		JR Z,.L1
+		JR Z,.L9
 		OUT (0xF6),A
-.L1		LD A,(HL)
+.L9		LD A,(HL)
 		INC HL
 		OR %00001100
 		OUT (0xFF),A
 		DEC E
-		JP P,.L2
+		JP P,.L8
 		LD A,0xAB
 		LD BC,0xFF77
 		OUT (C),A			; выкл.PAL
 		LD A,IXH
 		LD BC,0
 		AND 0x3C
-		JR Z,RSTKEYS2			; RESET TO EVO SERVICE PAGE
+		JR Z,.L11			; RESET TO EVO SERVICE PAGE
 		CP CONF4GLUK & 0x3F
-		JR Z,RSTKEYS3			; RESET TO GLUK SERVICE PAGE
+		JR Z,.L10			; RESET TO GLUK SERVICE PAGE
 		CP CONF4CUSTOM & 0x3F
-		JR Z,RSTKEYS3			; RESET TO CUSTOM ROM
+		JR Z,.L10			; RESET TO CUSTOM ROM
 		JP LDIR4PROFROM			; RESET TO PROFROM BASIC 128
 
-RSTKEYS3	PUSH BC
+.L10		PUSH BC
 		LD BC,0xBC77
 		LD A,2
 		OUT (C),A
@@ -186,9 +183,9 @@ RSTKEYS3	PUSH BC
 		LD A,0xA3
 		JP 0x3D2D
 
-RSTKEYS2	LD H,CMOS_BYTE_00
+.L11		LD H,CMOS.BYTE_00
 	RST8 _CMOS_RW,_READ_CMOS
-		AND 0xFC			; сброс для основного пзу
+		AND CMOS_ED.RESET2CUSTOM ! 0xFF	; сброс для основного пзу
 		LD L,A
 	RST8 _CMOS_RW,_WRITE_CMOS		; принудительно выставление в кмос сброса на EVO SERVICE
 	IFDEF DOS_FE
@@ -220,7 +217,7 @@ RSTKEYS2	LD H,CMOS_BYTE_00
 ; для резидента HONEY COMANDER
 		CALL CMP_REZIDENT		; проверка резидента
 		LD BC,0xFEFF
-RSTKEYS1	LD A,B
+.L12		LD A,B
 		IN A,(0xFE)
 	REPT 5
 		RRA
@@ -228,9 +225,9 @@ RSTKEYS1	LD A,B
 		INC C
 	ENDM
 		RLC B
-		JR C,RSTKEYS1
+		JR C,.L12
 		DEC C
-		JP P,GTSTKEY			; нажато более 1 кнопки, переходим к тесту клавиатуры
+		JP P,.L15			; нажато более 1 кнопки, переходим к тесту клавиатуры
 		LD IXL,0			; запуск неосновной прошивки сервиса
 		LD DE,0				; 1 нажата, проверяем что это
 		LD BC,CONF_128
@@ -239,31 +236,31 @@ RSTKEYS1	LD A,B
 		IN A,(0xFE)			; чтение нажатости кнопки "CS"
 		RRA
 		LD A,0
-		JP NC,START_SELECT		; при нажатой "CS" переходим в бейсик 128
+		JP NC,.L18		; при нажатой "CS" переходим в бейсик 128
 		LD A,0x7F
 		IN A,(0xFE)			; чтение нажатости кнопки "SS"
 		LD D,A
 		RRA
 		RRA
 		LD A,0x30
-		JP NC,START_SELECT		; при нажатой "SS" переходим в бейсик 48
+		JP NC,.L18		; при нажатой "SS" переходим в бейсик 48
 		LD A,D
 		RRA				; проверка нажатости кнопки "SPACE"
-		JR C,CMPCFG1			; переходим далее если ничего не нажато
+		JR C,.L13			; переходим далее если ничего не нажато
 		LD A,0x10
 		LD DE,0x3D2F
 		PUSH DE
-		JP START_SELECT			; при нажатой "SPACE" переходим в TR-DOS
+		JP .L18			; при нажатой "SPACE" переходим в TR-DOS
 
-CMPCFG1		LD A,0xFD
+.L13		LD A,0xFD
 		IN A,(0xFE)
 		AND 4				; нажато "D" запуск демки
-		JP Z,GDEMO
+		JP Z,.L17
 		LD IXL,1			; запуск основной прошивки сервиса
 		LD HL,DEPKADR			; ничего не нажато, запускаем основную прошивку
 		LD SP,HL
 		EX DE,HL
-		LD HL,CMPCFG3
+		LD HL,.L14
 		PUSH HL
 		LD HL,0x0101
 		PUSH HL
@@ -271,34 +268,34 @@ CMPCFG1		LD A,0xFD
 		LD A,ROM_MAINMENU
 		JP ADR_SEL_ROM
 
-CMPCFG3		XOR A
+.L14		XOR A
 		IN A,(0xFE)
 		CPL
 		AND 0x1F
 		LD A,0x10
-		JR NZ,CMOSHELP
+		JR NZ,.L16
 		LD HL,0x6000
 		PUSH HL
-		JR START_SELECT
+		JR .L18
 
-GTSTKEY		SCF
+.L15		SCF
 		LD A,0x10
-CMOSHELP	LD HL,BONUADR			; CMOS setup & HELP
+.L16		LD HL,BONUADR			; CMOS setup & HELP
 		LD DE,0x6000			; распаковка и запуск CMOS SETUP
 		PUSH DE
 		PUSH AF
 		CALL DEC40
 		POP AF
-		JR START_SELECT
+		JR .L18
 
-GDEMO		LD HL,0x6000-szdemoini
+.L17		LD HL,0x6000-szdemoini
 		LD SP,HL
 		EX DE,HL
 		PUSH DE
 		LD HL,DEMO
 		LD B,3
 		LDIR
-START_SELECT	EX AF,AF'			; сохранение А и флагов
+.L18		EX AF,AF'			; сохранение А и флагов
 		LD HL,ERAM_CODE-1
 		LD DE,0x5C80
 		LD BC,ERAM_CODE-RAM_CODE
@@ -309,43 +306,44 @@ START_SELECT	EX AF,AF'			; сохранение А и флагов
 		LD A,IXL
 		AND A
 		LD D,0xA3
-		JR NZ,SET_MODE3
-		LD H,CMOS_BYTE_00
+		JR NZ,.L19
+		LD H,CMOS.BYTE_00
 		CALL READCMOS
-		AND M_TURBO14
-	REPT 4
+		AND CMOS_ED.M_TURBO14
 		RRCA
-	ENDM
+		RRCA
+		RRCA
+		RRCA
 		OR D
 		LD D,A				; установка для 14МГЦ
-SET_MODE3	LD H,CMOS_BYTE_01
+.L19		LD H,CMOS.BYTE_01
 		CALL READCMOS
 		LD E,A				; установка для 7.0/3.5МГЦ и модель памяти
 	PEC_OFF M_SHADOW_BF
 		EXX
-CMPCFG2		JP (HL)
+		JP (HL)
 
 RAM_CODE	EXX
 		LD BC,PENT_CONF
 		LD A,IXL
 		AND A
 		LD A,0x10
-		JR NZ,SET_MODE2
+		JR NZ,.L2
 		LD A,E
 		AND 3
 		LD L,0
-		JR Z,SET_MODE1
+		JR Z,.L1
 		LD L,4
-SET_MODE1	LD A,E
-		AND M_TURBO357
-	REPT 3
+.L1		LD A,E
+		AND CMOS_EC.M_TURBO357
 		RRCA
-	ENDM
+		RRCA
+		RRCA
 		OR L
 		BIT 3,D
-		JR Z,SET_MODE2
+		JR Z,.L2
 		SET 4,A
-SET_MODE2	OUT (C),A
+.L2		OUT (C),A
 		LD BC,CONF_128
 		XOR A
 		OUT (C),A			; включили маппер 0
@@ -376,18 +374,18 @@ READCMOS	PUSH BC
 ; сброс включенного резидента
 RES_REZIDENT	PUSH AF
 		PUSH HL
-		LD H,CMOS_BYTE_01
+		LD H,CMOS.BYTE_01
 		CALL READCMOS
-		RES B_REZIDENT,L
+		RES CMOS_EC.B_REZIDENT,L
 	RST8 _CMOS_RW,_WRITE_CMOS
 		POP HL
 		POP AF
 		RET
 
 ; для резидента HONEY COMANDER
-CMP_REZIDENT	LD H,CMOS_BYTE_01
+CMP_REZIDENT	LD H,CMOS.BYTE_01
 		CALL READCMOS
-		AND M_REZIDENT
+		AND CMOS_EC.M_REZIDENT
 		RET Z
 		LD BC,WIN_A3
 		LD A,0x1F ! 0x7F
@@ -442,9 +440,9 @@ DOS2RST8	EX (SP),HL			; HL
 		PUSH AF				; AF
 		PUSH BC				; BC
 		LD A,R
-		JP PE,DOS2RST8_01
+		JP PE,.L1
 		LD A,R
-DOS2RST8_01	DI
+.L1		DI
 		PUSH AF				; RF
 		PUSH HL				; ADR_RET
 		PUSH DE				; DE
@@ -463,7 +461,7 @@ DOS2RST8_01	DI
 		XOR A
 		JP ADR_SEL_ROM
 
-	       	DUPL 0x3D2D - $,0xFF
+	       	DB 0x3D2D - $ DUP 0xFF
 		OUT (C),A
 		NOP
 		RET
@@ -477,8 +475,8 @@ szdemoini	EQU $ - DEMO
 		binclude ../../mainmenu/src/grass.bin
 
 LDIR4PROFROM	LD HL,JMP2PROFROM
-		LD DE,JMP2PROFROM+0x8000
-		LD BC,EJMP2PROFROM-JMP2PROFROM
+		LD DE,JMP2PROFROM + 0x8000
+		LD BC,EJMP2PROFROM - JMP2PROFROM
 		LDIR
 		PUSH BC
 		LD BC,0xBC77
@@ -489,14 +487,11 @@ LDIR4PROFROM	LD HL,JMP2PROFROM
 		OUT (C),A
 		LD BC,0xFF77
 		LD A,0xA3
-		JP JMP2PROFROM+0x8000
+		JP JMP2PROFROM + 0x8000
 
 JMP2PROFROM	OUT (C),A
 		RET
 EJMP2PROFROM	
-
-SET_MAPPER	
-		RET
 
 ; 1000 0001 81 0 BASIC 128 	| EVO
 ; 1000 0011 83 0 BASIC 48	| SERVICE

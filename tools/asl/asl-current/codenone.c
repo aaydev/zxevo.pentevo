@@ -23,9 +23,6 @@ LargeWord none_target_seglimit;
 
 static void make_code_none(void)
 {
-  CodeLen = 0;
-  DontPrint = False;
-
   if (Memo("")) return;
 
   WrError(ErrNum_NoTarget);
@@ -51,8 +48,12 @@ static void switch_to_none(void)
   TurnWords = False;
   SetIntConstMode(eIntConstModeMoto);
 
-  PCSymbol = ""; HeaderID = 0x00; NOPCode = 0x00;
-  DivideChars = ","; HasAttrs = False;
+  PCSymbol = "";
+  HeaderID = 0x00;
+  NOPCode = 0x00;
+  DivideChars = ",";
+  HasAttrs = True;
+  AttrChars = ".";
 
   ValidSegs = 1 << SegCode;
   Grans[SegCode] = 1; ListGrans[SegCode] = 1; SegInits[SegCode] = 0;
