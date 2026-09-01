@@ -1,5 +1,5 @@
 
-; LAST UPDATE: 16.02.2025 savelij
+; LAST UPDATE: 28.08.2026 savelij
 
 		include ports_evo.a80
 
@@ -196,6 +196,7 @@ CMOS
  _MINUSVAR .HDD_TIMEOUT			; EA задержка опредения наличия винта после включения питания
  _MINUSVAR .BYTE_02			; E9 адрес хранения в CMOS
  _MINUSVAR .BYTE_03			; E8 адрес хранения в CMOS
+ _MINUSVAR .AUTOBOOT			; E7 таймаут и флаг автозапуска
 ; расширенный доступ через CMOS к AVR
  _INIT_VAR 0xF0
  _SETVAR .READ_PS2
@@ -275,6 +276,13 @@ CMOS_E9
  _BITMASK KILL_REZIDENT,	7		; изменение резидента перед запуском
  _BITMASK AUTOBOOT,		6		; автостарт загружаемого устройства
 .BOOTDEVICE	EQU %00000011			; номер загружаемого устройства
+
+; ячейка CMOS 0xE7
+CMOS_E7
+.TIMEAUTOBOOT	EQU %11100000			; маска времени таймаута секунд (0-без таймаута, пределы 1..9)
+.TYPEAUTOBOOT	EQU %00000011			; тип запуска: 0-отключен,1-HoBeta,2-из TXT файла
+.SDBOOT		EQU 1				; запускать SD_BOOT.$C, аналогично нажатию 5 в главном меню
+.TXT		EQU 2				; получить имя файла для запуска из текстового файла AUTOBOOT.TXT
 
 ; номера загружаемых устройств
  INIT_VAR

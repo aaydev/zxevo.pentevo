@@ -1,5 +1,5 @@
 
-; LAST UPDATE: 14.02.2025 savelij
+; LAST UPDATE: 28.08.2026 savelij
 
 	TITLE "addons.a80 ROM_RST82"
 
@@ -508,9 +508,9 @@ ISET_MODE	AND A
 		LD (RREG_A),A
 		RET
 
-; дефолтные значения для кмос
-;		    ED   EC   EB   EA   E9   E8
-CMOS_DEFAULT	DB 0x04,0x82,0x00,0x00,0x00,0x00
+; дефолтные значения для CMOS
+;		    ED   EC   EB   EA   E9   E8   E7
+CMOS_DEFAULT	DB 0x04,0x82,0x00,0x00,0x00,0x00,0x00
 ECMOS_DEFAULT
 
 INST_SONGLN     LD HL,SONGLNBIN

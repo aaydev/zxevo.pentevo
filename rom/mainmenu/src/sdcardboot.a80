@@ -1,17 +1,79 @@
 
-; LAST UPDATE: 19.07.2020 savelij
+; LAST UPDATE: 01.09.2026 savelij
 
-; загрузчик с SD карты
-SDCARDBOOT	DI
+; автозапуск, если есть что запускать
+AUTORUNBOOT	DI
+		LD H,CMOS.AUTOBOOT
+		CALL READCMOS
+		AND CMOS_E7.TYPEAUTOBOOT
+		RET Z					; выходим, автозапуск не активен
+		CP CMOS_E7.SDBOOT
+		JR Z,SDCARDBOOT
+		CP CMOS_E7.TXT
+		RET NZ					; на всякий случай по дефолту выходим ничего не делая
+		LD A,1
+		LD (AUTORUNBLOCK),A			; поппытка запуска 1 раз и блокировка
+; ищем SD карту
 		LD HL,ERS_FLAGS
-		SET B_RUN_FAT,(HL)		; работать будем с FAT
+		SET B_RUN_FAT,(HL)			; работать будем с FAT
+	RST8 _COM_DEV,_KOL_VOL
+		LD A,E
+		AND A
+		RET Z					; не найдена, выходим
+		LD HL,ADR_CAT - 0x100			; адрес куда положить таблицу найденных разделов
+		PUSH HL
+	RST8 _COM_DEV,_GET_FNDVOLUME			; получение таблицы найденных разделов
+		PUSH DE
+		LD A,E
+		DEC A
+	RST8 _COM_DEV,_SET_VOL
+	RST8 _COM_FAT,_ROOT_DIR
+		POP DE
+		DEC E
+		LD L,E
+		LD H,0
+		ADD HL,HL
+		ADD HL,HL
+		ADD HL,HL
+		POP DE
+		ADD HL,DE
+		LD A,(HL)
+		CP _SD_SDZ
+		RET NZ					; SD карта не найдена, выходим
+		LD HL,AUTOBOOTNAME			; ищим INI файл автозапуска
+	RST8 _COM_FAT,_FIND_NAME
+		RET C					; файл не найден, выходим
+		CALL SDCARDBOOT.FINDFILE		; получаем описатель файла
+; открываем
+		LD HL,AUTOBOOTNAME
+	RST8 _COM_FAT,_OPEN_FILE
+; грузим первый 2 сектора
+		LD HL,ADR_CAT
+		LD A,4
+	RST8 _COM_FAT,_READ_FILE
+		RET C					; ошибка чтения, выходим
+		CALL FINDFILENAME
+		JP C,RESTART
+		LD HL,AUTOBOOTNAME.FOUNDNAME
+		LD (BOOTNAMEADR),HL
+	RST8 _COM_FAT,_FIND_NAME
+		RET C					; файл не найден, выходим
+		CALL SDCARDBOOT.FINDFILE
+		JP GO_RUN_HOB				; если это файл, то запускаем кодовый блок
+
+; загрузчик с SD карты файла SD_BOOT.$C
+SDCARDBOOT	DI
+		LD HL,BOOTNAME
+		LD (BOOTNAMEADR),HL
+		LD HL,ERS_FLAGS
+		SET B_RUN_FAT,(HL)			; работать будем с FAT
 	RST8 _COM_DEV,_KOL_VOL
 		LD A,E
 		AND A
 		JP Z,_STUPID
-		LD HL,ADR_CAT-0X100		; адрес куда положить таблицу найденных разделов
+		LD HL,ADR_CAT - 0x100			; адрес куда положить таблицу найденных разделов
 		PUSH HL
-	RST8 _COM_DEV,_GET_FNDVOLUME		; получение таблицы найденных разделов
+	RST8 _COM_DEV,_GET_FNDVOLUME			; получение таблицы найденных разделов
 		PUSH DE
 		LD A,E
 		DEC A
@@ -29,19 +91,161 @@ SDCARDBOOT	DI
 		LD A,(HL)
 		CP _SD_SDZ
 		JP NZ,RESTART
-		LD HL,BOOTNAME
+		LD HL,(BOOTNAMEADR)
 	RST8 _COM_FAT,_FIND_NAME
 		JP C,_STUPID
-		LD DE,0X0B			; нужен байт по смещению
-		ADD HL,DE			; для определения файл или директория
-		LD A,(HL)			; из этого байта нужен один бит
-		SBC HL,DE
-		AND 0X10			; проверили
-		JP NZ,RESTART			; это директория
-		LD A,7
+		CALL .FINDFILE
+		JP GO_RUN_HOB				; если это файл, то запускаем кодовый блок
+
+; поиск описателя файла
+.FINDFILE	LD A,_POSTF07
 	RST8 _COM_FAT,_POS_FILES
 		LD HL,BUF_FILEITEM
-	RST8 _COM_FAT,_READ_DIR			; получили описатель по установленному номеру
-		JP GO_RUN_HOB			; если это файл, то запускаем кодовый блок
+	RST8 _COM_FAT,_READ_DIR				; получили описатель по установленному номеру
+		LD DE,_DIR_Attr				; нужен байт по смещению
+		ADD HL,DE				; для определения файл или директория
+		LD A,(HL)				; из этого байта нужен один бит
+		SBC HL,DE
+		AND M_DIR_Directory			; проверили
+		JP NZ,RESTART				; это директория
+		PUSH HL
+		LD DE,_DIR_FileSize
+		ADD HL,DE
+		LD E,(HL)
+		INC HL
+		LD D,(HL)
+		INC HL
+		LD C,(HL)
+		INC HL
+		LD B,(HL)
+		POP HL
+		LD A,B
+		OR C
+		JP NZ,RESTART
+		LD (INISIZE),DE
+		RET
 
-BOOTNAME	DZ "SD_BOOT.$C"
+; поиска имени файла для запуска в загруженном INI файле
+FINDFILENAME	LD BC,(INISIZE)
+		LD HL,ADR_CAT - 1
+.NEXTSYM	INC HL
+		DEC BC
+		LD A,B
+		OR C
+		JP Z,RESTART
+		LD A,(HL)
+		CP ';'
+		JR NZ,.NS1
+.NS2		INC HL
+		DEC BC
+		LD A,B
+		OR C
+		SCF
+		RET Z
+		LD A,(HL)
+		CP ' '
+		JR NC,.NS2
+.NS1		CP 0x0D
+		JR Z,.NEXTSYM
+		CP 0x0A
+		JR Z,.NEXTSYM
+		CP ' '
+		JR Z,.NEXTSYM
+		CP 9
+		JR Z,.NEXTSYM
+		LD DE,AUTOBOOTNAME.FILEEQU
+		LD A,AUTOBOOTNAME.EXTEQU - AUTOBOOTNAME.FILEEQU
+		CALL .STRCHECK				; ищем магикслово
+		JR C,.NEXTSYM
+		CALL .COPYNAME
+		RET C
+; имя файла нащли, проверяем расширение
+		LD HL,0
+.CHKNAME	EQU $-2
+		LD DE,AUTOBOOTNAME.EXTEQU
+		LD BC,AUTOBOOTNAME.END - AUTOBOOTNAME.EXTEQU
+		LD A,C
+		JR .STRCHECK
+
+; копирование имени файла из загруженного INI файла
+.COPYNAME	EXX
+		LD HL,AUTOBOOTNAME.FOUNDNAME
+		LD D,H
+		LD E,L
+		INC DE
+		LD BC,AUTOBOOTNAME.FILEEQU - AUTOBOOTNAME.FOUNDNAME - 1
+		LD (HL),' '
+		LDIR
+		EXX
+		LD IXL,8
+		LD DE,AUTOBOOTNAME.FOUNDNAME
+.CN2		LD A,(HL)
+		CP '.'
+		JR Z,.CN1
+		LDI
+		LD A,B
+		OR C
+		SCF
+		RET Z
+		DEC IXL
+		JR NZ,.CN2
+		LD A,(HL)
+		CP '.'
+		SCF
+		RET NZ
+.CN1		LD A,(HL)
+		LDI
+		LD A,B
+		OR C
+		SCF
+		RET Z
+		LD IXL,3
+		LD (.CHKNAME),DE
+.CN3		LD A,(HL)
+		CP ' '
+		JR C,.CN4
+		LDI
+		LD A,B
+		OR C
+		SCF
+		RET Z
+		DEC IXL
+		JR NZ,.CN3
+.CN4		XOR A
+		RET
+
+; сравнение текста
+.STRCHECK	LD IXL,A
+		EX DE,HL
+.SC1		LD A,B
+		OR C
+		JR Z,.SC2
+		LD A,(DE)
+		CP 'a'
+		JR C,.SC3
+		CP 'z' + 1
+		JR NC,.SC3
+		AND %11011111
+.SC3		CP (HL)
+		JR NZ,.SC2
+		INC HL
+		INC DE
+		DEC BC
+		DEC IXL
+		JR NZ,.SC1
+		EX DE,HL
+		XOR A
+		RET
+
+.SC2		EX DE,HL
+		SCF
+		RET
+
+INISIZE		DW 0					; размер INI файла
+BOOTNAMEADR	DW 0					; адрес имени файла для запуска
+BOOTNAME	DZ "SD_BOOT.$C"				; дефолтное имя для запуска
+AUTOBOOTNAME	DZ "AUTOBOOT.INI"			; имя INI файла
+.FOUNDNAME	DZ "            "			; буфер имени файла для запуска из INI файла
+.FILEEQU	DB "FILE="				; магикслово для поиска в INI файле
+.EXTEQU		DB "$C "				; расширение для проверки
+.END

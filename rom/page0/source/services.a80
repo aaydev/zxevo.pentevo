@@ -1,5 +1,5 @@
 
-; LAST UPDATE: 16.02.2025 savelij
+; LAST UPDATE: 27.08.2026 savelij
 
 		include ../../macros.a80
 		include ../../define.a80
@@ -78,6 +78,7 @@ INITPAGE0	LD SP,DEPKADR
 		IN A,(0xFE)
 		RRCA				; проверка нажатия кнопки "0" при сбросе
 		CALL NC,RES_REZIDENT
+		CALL NC,RES_AUTOBOOT
 		JR NC,.L5			; сброс в основное пзу
 		RRCA
 		RRCA
@@ -369,6 +370,18 @@ READCMOS	PUSH BC
 		IN L,(C)
 		LD A,L
 		POP BC
+		RET
+
+; сброс автозапуска
+RES_AUTOBOOT	PUSH AF
+		PUSH HL
+		LD H,CMOS.AUTOBOOT
+		CALL READCMOS
+		AND CMOS_E7.TYPEAUTOBOOT ! 0xFF
+		LD L,A
+	RST8 _CMOS_RW,_WRITE_CMOS
+		POP HL
+		POP AF
 		RET
 
 ; сброс включенного резидента

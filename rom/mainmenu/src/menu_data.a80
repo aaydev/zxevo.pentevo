@@ -1,5 +1,5 @@
 
-; LAST UPDATE: 14.02.2025 savelij
+; LAST UPDATE: 01.09.2026 savelij
 
 ; описатель окна (адрес в IX)
 ; +00 X координата
@@ -217,36 +217,39 @@ MAINTXT		DB "\x17\xFFMain menu"
 		DB "\r C.Setup"			;c
 		DB "\r R.Service"		;r
 		DB 0
-MAINMENU_KEY	DB LOW (MAIN1-$-1),"zftbd5xsiucrwmlg123489vyhejn"
+MAINMENU_KEY	DB LOW (MAIN1-$-1),"zftbd5xsiucrwmlg123489vyhejnk"
 
-MAIN1		DW GLUBOOT			;z дискетозагрузчик
-		DW FILE_BROWSER			;f загрузчик с FAT
-		DW TAPELOAD			;t загрузка с ленты
-		DW HDD_BOOT			;b старый загрузчик с винта
-		DW CDBOOT			;d старый загрузчик с сидюка
-		DW SDCARDBOOT			;5 загрузчик с SD карты
-		DW PERFECT			;x PERFECT COMANDER
-		DW DOS128			;s переход в TR-DOS
-		DW BAS48			;i переход в бейсик 48
-		DW BAS128			;u переход в бейсик 128
-		DW SETUPM			;c установки
-		DW _KILLS			;r сервис меню
-MAIN2		DW CHNGTURBO			;w изменение турбо
-		DW CHNGMODE			;m изменение режима памяти
-		DW CHNGTAPMODE			;l переключение эмуляции ленты
-		DW CHNGGLUKMOD			;g разрешение сброса в глюк
-		DW SELDRV			;1 выбор дисковода A
-		DW SELDRV			;2 выбор дисковода B
-		DW SELDRV			;3 выбор дисковода C
-		DW SELDRV			;4 выбор дисковода D
-		DW MOUSE_ONOFF			;8 вкл/выкл курсора мыши
-		DW CMOS_ONOFF			;9 вкл/выкл отображения часов
-		DW NEXTDRIVE			;v перебор реальных дисководов
-		DW NEXTVIRT			;y перебор виртуальных дисководов
-		DW VIEW_HELP			;h вывод хелпа
-		DW EN_LOADFONT			;e разрешение перезагрузки шрифта по сбросу
-		DW SET_TYPEFONT			;j выбор типа шрифта
-		DW EN_AUTOMNT			;n вкл/выкл автомонтирования из файла
+; hotkeys главного меню
+MAIN1		DW GLUBOOT			; z дискетозагрузчик
+		DW FILE_BROWSER			; f загрузчик с FAT
+		DW TAPELOAD			; t загрузка с ленты
+		DW HDD_BOOT			; b старый загрузчик с винта
+		DW CDBOOT			; d старый загрузчик с сидюка
+		DW SDCARDBOOT			; 5 загрузчик с SD карты
+		DW PERFECT			; x PERFECT COMANDER
+		DW DOS128			; s переход в TR-DOS
+		DW BAS48			; i переход в бейсик 48
+		DW BAS128			; u переход в бейсик 128
+		DW SETUPM			; c установки
+		DW _KILLS			; r сервис меню
+; hotkeys быстрого сетапа
+MAIN2		DW CHNGTURBO			; w изменение турбо
+		DW CHNGMODE			; m изменение режима памяти
+		DW CHNGTAPMODE			; l переключение эмуляции ленты
+		DW CHNGGLUKMOD			; g разрешение сброса в глюк
+		DW SELDRV			; 1 выбор дисковода A
+		DW SELDRV			; 2 выбор дисковода B
+		DW SELDRV			; 3 выбор дисковода C
+		DW SELDRV			; 4 выбор дисковода D
+		DW MOUSE_ONOFF			; 8 вкл/выкл курсора мыши
+		DW CMOS_ONOFF			; 9 вкл/выкл отображения часов
+		DW NEXTDRIVE			; v перебор реальных дисководов
+		DW NEXTVIRT			; y перебор виртуальных дисководов
+		DW VIEW_HELP			; h вывод хелпа
+		DW EN_LOADFONT			; e разрешение перезагрузки шрифта по сбросу
+		DW SET_TYPEFONT			; j выбор типа шрифта
+		DW EN_AUTOMNT			; n вкл/выкл автомонтирования из файла
+		DW SEL_AUTOBOOT			; k перебор режима автозапуска
 ;===============главное меню===============================
 
 ;===============для загрузки с ленты=======================
@@ -498,19 +501,19 @@ VERS_BOOT	DB "NONE                            "
 		DB "\x16\x17\x00\x17",MAGENTA+BR_INK,"H.Help \x17\xFF",0
 
 ;===============текст смонтированных дисков=============
-MOUNTED_DRV	DB 0x16,0x12,0x00,0x17,GREEN,"Mount A: ",0x17,YELLOW
+MOUNTED_DRV	DB "\x16\x12\x00\x17",GREEN,"Mount A: \x17",YELLOW
 MNT_DRV_A	DB "NONE        "
-		DB 0x16,0x13,0x00,0x17,GREEN,"Mount B: ",0x17,YELLOW
+		DB "\x16\x13\x00\x17",GREEN,"Mount B: \x17",YELLOW
 MNT_DRV_B	DB "NONE        "
-		DB 0x16,0x14,0x00,0x17,GREEN,"Mount C: ",0x17,YELLOW
+		DB "\x16\x14\x00\x17",GREEN,"Mount C: \x17",YELLOW
 MNT_DRV_C	DB "NONE        "
-		DB 0x16,0x15,0x00,0x17,GREEN,"Mount D: ",0x17,YELLOW
+		DB "\x16\x15\x00\x17",GREEN,"Mount D: \x17",YELLOW
 MNT_DRV_D	DB "NONE        "
-		DB 0x16,0x11,0x00,0x17,GREEN,"Ramdisk: ",0x17,YELLOW
+		DB "\x16\x11\x00\x17",GREEN,"Ramdisk: \x17",YELLOW
 IN_RAMDISK	DB "NONE        "
 ;		DB 0x16,0x10,0x00,0x17,GREEN,"Tape: ",0x17,YELLOW
 ;TAPOK		DB "NONE        "
-		DB 0x17,0xFF,0
+		DB "\x17\xFF",0
 ;===============текст смонтированных дисков=============
 
 ;===============текст настроек главного меню============
@@ -532,10 +535,12 @@ TYPESFONT	DB "\x16\x0D\x00\x17",MAGENTA,"J.Type FONT:    \x17\xFF  ATM",0
 ETYPESFONT	EQU $-6
 TXT_AUTOMOUNT	DB "\x16\x0E\x00\x17",MAGENTA,"N.Automount TRD:  \x17\xFFoff",0
 ETXT_AUTOMOUNT	EQU $-3
+TXT_AUTOBOOT	DB "\x16\x0F\x00\x17",MAGENTA,"K.Autoboot run: \x17\xFFSDBoot",0
+ETXT_AUTOBOOT	EQU $-7
 ;===============текст настроек главного меню============
 
 ;===============текст не соответствия прошики FPGA======
-INCORRECTFPGA	DB 0x16,0x16,0x00,0x17,RED << 3 + WHITE," Incorrect FPGA zxevo_fw.bin ",0
+INCORRECTFPGA	DB "\x16\x16\x00\x17",RED << 3 + WHITE," Incorrect FPGA zxevo_fw.bin ",0
 ;===============текст не соответствия прошики FPGA======
 
 ;===============список клавиш проверяемых всегда========
@@ -583,8 +588,7 @@ TXT_DATA	DB "00.00.00",0x17,0xFF
 ; 101	48K	VGA	69888
 ; 110	128K	TV	70908
 ; 111	128K	VGA	70908
-TXT_VMODE	DB 0x16,2,0xD0,0x17,GREEN+BR_INK
-		DB "        ",0
+TXT_VMODE	DB "\x16\x02\xD0\x17",GREEN+BR_INK,"        ",0
 TV_VGA		EQU $-9
 
 TXT_TVVGA	DB "TV VGA"
@@ -602,6 +606,13 @@ TXT_SELDOS	DB "EVO-DOS"
 
 TXTMODTYPE	DB "  ATMCP866"
 TXTTURBOMODE	DB " 3,5 7,014,0"
+
+T_AUTOBOOT
+.OFF		DB "  off "
+.LINESIZE	EQU $ - .OFF
+.SDBOOT		DB "SDBoot"
+.TXT		DB "  INI "
+.SIZE		EQU ($ - T_AUTOBOOT) / .LINESIZE
 
 ;===============поддерживаемые расширения==================
 SUPPORT_EXT	DB "TRD"	; 1
