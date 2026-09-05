@@ -1,5 +1,5 @@
 
-; LAST UPDATE: 28.08.2026 savelij
+; LAST UPDATE: 05.09.2026 savelij
 
 		include ports_evo.a80
 
@@ -272,9 +272,11 @@ CMOS_EA
 .DETECTHDD	EQU %00001111			; таймаут до начала детекта HDD
 
 ; ячейка CMOS 0xE9
-CMOS_E9
+;		пока не используется
+
+; ячейка CMOS 0xE8
+CMOS_E8
  _BITMASK KILL_REZIDENT,	7		; изменение резидента перед запуском
- _BITMASK AUTOBOOT,		6		; автостарт загружаемого устройства
 .BOOTDEVICE	EQU %00000011			; номер загружаемого устройства
 
 ; ячейка CMOS 0xE7

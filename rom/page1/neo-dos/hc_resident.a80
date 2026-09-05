@@ -1,5 +1,5 @@
 
-; LAST UPDATE: 16.02.2025 savelij
+; LAST UPDATE: 05.09.2026 savelij
 
 HC_REZIDENT	LD H,CMOS.BYTE_01
 		CALL READCMOS
@@ -45,7 +45,7 @@ loc_3C61	add	a, (hl)
 		jr	nz, loc_3C47
 		LD H,CMOS.BYTE_03
 		CALL READCMOS
-		AND CMOS_E9.M_KILL_REZIDENT
+		AND CMOS_E8.M_KILL_REZIDENT
 		JR Z,.L1
 		LD (0xC000),A			; портим резидент
 .L1		ld	hl, 0D000h

@@ -1,5 +1,5 @@
 
-; LAST UPDATE: 16.02.2025 savelij
+; LAST UPDATE: 05.09.2026 savelij
 
 		TITLE "menu_execute.a80"
 
@@ -444,7 +444,7 @@ REZID_SETUP	LD C,CMOS_EC.M_REZIDENT
 		JR SET_MENU
 
 ; включение/выключения порчи резидента при запуске
-KILL_REZID	LD C,CMOS_E9.M_KILL_REZIDENT
+KILL_REZID	LD C,CMOS_E8.M_KILL_REZIDENT
 		LD HL,TXT_KILLREZID
 		PUSH HL
 		LD H,CMOS.BYTE_03
